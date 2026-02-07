@@ -47,13 +47,25 @@ def _make_full_library() -> LibraryIndex:
     )
 
 
+def _make_library_with_files() -> LibraryIndex:
+    """Create a LibraryIndex where stacks have convention files."""
+    return LibraryIndex(
+        library_root="/fake/library",
+        stacks=[
+            _make_stack("python", ["conventions.md", "testing.md", "security.md"]),
+            _make_stack("react", ["conventions.md", "testing.md"]),
+            _make_stack("devops", ["conventions.md"]),
+        ],
+    )
+
+
 # ---------------------------------------------------------------------------
 # StackCard — construction
 # ---------------------------------------------------------------------------
 
 @pytest.fixture()
 def card():
-    stack = _make_stack("python", ["conventions.md", "testing.md"])
+    stack = _make_stack("python", ["conventions.md", "testing.md", "security.md"])
     c = StackCard(stack)
     yield c
     c.close()
@@ -71,6 +83,9 @@ class TestStackCardConstruction:
 
     def test_object_name(self, card):
         assert card.objectName() == "stack-card"
+
+    def test_file_count(self, card):
+        assert card.file_count == 3
 
 
 # ---------------------------------------------------------------------------
@@ -115,14 +130,8 @@ class TestStackCardToSelection:
         assert sel.order == 0
 
     def test_custom_order(self, card):
-        card._order_spin.setValue(5)
-        sel = card.to_stack_selection()
-        assert sel.order == 5
-
-    def test_max_order(self, card):
-        card._order_spin.setValue(99)
-        sel = card.to_stack_selection()
-        assert sel.order == 99
+        sel = card.to_stack_selection(order=3)
+        assert sel.order == 3
 
 
 # ---------------------------------------------------------------------------
@@ -130,21 +139,15 @@ class TestStackCardToSelection:
 # ---------------------------------------------------------------------------
 
 class TestStackCardLoadFromSelection:
-    def test_load_restores_checked_and_order(self, card):
-        sel = StackSelection(id="python", order=10)
+    def test_load_checks_card(self, card):
+        sel = StackSelection(id="python", order=2)
         card.load_from_selection(sel)
         assert card.is_selected is True
-        assert card._order_spin.value() == 10
-
-    def test_load_with_zero_order(self, card):
-        sel = StackSelection(id="python", order=0)
-        card.load_from_selection(sel)
-        assert card._order_spin.value() == 0
 
     def test_roundtrip_selection(self, card):
-        original = StackSelection(id="python", order=7)
+        original = StackSelection(id="python", order=5)
         card.load_from_selection(original)
-        result = card.to_stack_selection()
+        result = card.to_stack_selection(order=5)
         assert result.id == original.id
         assert result.order == original.order
 
@@ -155,9 +158,9 @@ class TestStackCardLoadFromSelection:
 
 class TestStackCardUnknownStack:
     def test_unknown_stack_uses_titlecased_id(self):
-        stack = _make_stack("my-custom-stack")
+        stack = _make_stack("custom-framework")
         card = StackCard(stack)
-        assert card.stack_id == "my-custom-stack"
+        assert card.stack_id == "custom-framework"
         card.close()
 
 
@@ -194,7 +197,11 @@ class TestPageConstruction:
         assert page.selected_count() == 0
 
     def test_warning_hidden_initially(self, page):
+        # Warning is hidden initially because there are no cards yet
         assert page._warning_label.isHidden() is True
+
+    def test_ordered_ids_empty(self, page):
+        assert page.ordered_ids == []
 
 
 # ---------------------------------------------------------------------------
@@ -282,20 +289,23 @@ class TestGetStackSelections:
         ids = {s.id for s in selections}
         assert ids == {"python", "react"}
 
-    def test_respects_order_config(self, loaded_page):
-        card = loaded_page.stack_cards["python"]
-        card.is_selected = True
-        card._order_spin.setValue(3)
-        selections = loaded_page.get_stack_selections()
-        assert len(selections) == 1
-        assert selections[0].id == "python"
-        assert selections[0].order == 3
-
     def test_unselected_stacks_excluded(self, loaded_page):
         loaded_page.stack_cards["python"].is_selected = True
         selections = loaded_page.get_stack_selections()
         ids = [s.id for s in selections]
         assert "react" not in ids
+
+    def test_order_values_assigned(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.stack_cards["react"].is_selected = True
+        selections = loaded_page.get_stack_selections()
+        orders = [s.order for s in selections]
+        assert orders == [0, 1]
+
+    def test_selections_are_stack_selection_objects(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        selections = loaded_page.get_stack_selections()
+        assert all(isinstance(s, StackSelection) for s in selections)
 
 
 # ---------------------------------------------------------------------------
@@ -305,24 +315,45 @@ class TestGetStackSelections:
 class TestSetStackSelections:
     def test_restores_selections(self, loaded_page):
         selections = [
-            StackSelection(id="python", order=1),
-            StackSelection(id="react", order=2),
+            StackSelection(id="python", order=0),
+            StackSelection(id="react", order=1),
         ]
         loaded_page.set_stack_selections(selections)
         assert loaded_page.stack_cards["python"].is_selected is True
         assert loaded_page.stack_cards["react"].is_selected is True
         assert loaded_page.stack_cards["java"].is_selected is False
 
-    def test_restores_order(self, loaded_page):
-        selections = [StackSelection(id="python", order=5)]
+    def test_restores_ordering(self, loaded_page):
+        selections = [
+            StackSelection(id="react", order=0),
+            StackSelection(id="python", order=1),
+        ]
         loaded_page.set_stack_selections(selections)
-        card = loaded_page.stack_cards["python"]
-        assert card._order_spin.value() == 5
+        assert loaded_page.ordered_ids == ["react", "python"]
+
+    def test_set_clears_previous(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.stack_cards["java"].is_selected = True
+
+        selections = [StackSelection(id="react", order=0)]
+        loaded_page.set_stack_selections(selections)
+        assert loaded_page.stack_cards["python"].is_selected is False
+        assert loaded_page.stack_cards["java"].is_selected is False
+        assert loaded_page.stack_cards["react"].is_selected is True
+
+    def test_set_updates_warning(self, loaded_page):
+        # Set a valid selection
+        selections = [StackSelection(id="python", order=0)]
+        loaded_page.set_stack_selections(selections)
+        assert loaded_page._warning_label.isHidden() is True
+
+        # Set an empty selection
+        loaded_page.set_stack_selections([])
+        assert loaded_page._warning_label.isHidden() is False
 
     def test_roundtrip_get_set_get(self, loaded_page):
         loaded_page.stack_cards["python"].is_selected = True
         loaded_page.stack_cards["react"].is_selected = True
-        loaded_page.stack_cards["python"]._order_spin.setValue(3)
         original = loaded_page.get_stack_selections()
 
         # Reset all
@@ -337,46 +368,118 @@ class TestSetStackSelections:
         rest_ids = {s.id for s in restored}
         assert orig_ids == rest_ids
 
-    def test_set_selections_clears_previous(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-
-        selections = [StackSelection(id="java")]
+    def test_ignores_unknown_stack_ids(self, loaded_page):
+        selections = [
+            StackSelection(id="python", order=0),
+            StackSelection(id="nonexistent", order=1),
+        ]
         loaded_page.set_stack_selections(selections)
-        assert loaded_page.stack_cards["python"].is_selected is False
-        assert loaded_page.stack_cards["react"].is_selected is False
-        assert loaded_page.stack_cards["java"].is_selected is True
-
-    def test_set_selections_updates_warning(self, loaded_page):
-        # Set a valid config
-        selections = [StackSelection(id="python")]
-        loaded_page.set_stack_selections(selections)
-        assert loaded_page._warning_label.isHidden() is True
-
-        # Set an empty config
-        loaded_page.set_stack_selections([])
-        assert loaded_page._warning_label.isHidden() is False
+        assert loaded_page.stack_cards["python"].is_selected is True
+        assert loaded_page.selected_count() == 1
 
 
 # ---------------------------------------------------------------------------
-# StackSelectionPage — file badge display
+# StackSelectionPage — ordering
+# ---------------------------------------------------------------------------
+
+class TestOrdering:
+    def test_selection_order_tracked(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.stack_cards["react"].is_selected = True
+        assert loaded_page.ordered_ids == ["python", "react"]
+
+    def test_deselection_removes_from_order(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.stack_cards["react"].is_selected = True
+        loaded_page.stack_cards["python"].is_selected = False
+        assert loaded_page.ordered_ids == ["react"]
+
+    def test_move_up(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.stack_cards["react"].is_selected = True
+        loaded_page.move_stack_up("react")
+        assert loaded_page.ordered_ids == ["react", "python"]
+
+    def test_move_up_at_top_no_change(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.stack_cards["react"].is_selected = True
+        loaded_page.move_stack_up("python")
+        assert loaded_page.ordered_ids == ["python", "react"]
+
+    def test_move_down(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.stack_cards["react"].is_selected = True
+        loaded_page.move_stack_down("python")
+        assert loaded_page.ordered_ids == ["react", "python"]
+
+    def test_move_down_at_bottom_no_change(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.stack_cards["react"].is_selected = True
+        loaded_page.move_stack_down("react")
+        assert loaded_page.ordered_ids == ["python", "react"]
+
+    def test_move_unselected_stack_no_error(self, loaded_page):
+        loaded_page.move_stack_up("python")  # not selected, should be no-op
+        assert loaded_page.ordered_ids == []
+
+    def test_move_emits_selection_changed(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.stack_cards["react"].is_selected = True
+        received = []
+        loaded_page.selection_changed.connect(lambda: received.append(True))
+        loaded_page.move_stack_up("react")
+        assert len(received) >= 1
+
+    def test_order_values_in_selections(self, loaded_page):
+        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.stack_cards["react"].is_selected = True
+        loaded_page.stack_cards["typescript"].is_selected = True
+        loaded_page.move_stack_up("typescript")
+        # Order should be: typescript(0), python(1), react(2)
+        selections = loaded_page.get_stack_selections()
+        by_id = {s.id: s.order for s in selections}
+        assert by_id["typescript"] < by_id["react"]
+
+
+# ---------------------------------------------------------------------------
+# StackSelectionPage — file count badge display
 # ---------------------------------------------------------------------------
 
 class TestFileBadge:
-    def test_stack_with_files_shows_badge(self):
-        lib = LibraryIndex(
-            library_root="/fake",
-            stacks=[_make_stack("python", ["conventions.md", "testing.md", "security.md"])],
-        )
+    def test_stack_with_files_shows_count(self):
+        lib = _make_library_with_files()
         page = StackSelectionPage(library_index=lib)
-        assert len(page.stack_cards) == 1
+        assert page.stack_cards["python"].file_count == 3
+        assert page.stack_cards["react"].file_count == 2
+        assert page.stack_cards["devops"].file_count == 1
         page.close()
 
-    def test_stack_with_one_file_singular(self):
-        lib = LibraryIndex(
-            library_root="/fake",
-            stacks=[_make_stack("python", ["conventions.md"])],
-        )
+    def test_stack_with_no_files(self):
+        lib = _make_library("python")
         page = StackSelectionPage(library_index=lib)
-        assert len(page.stack_cards) == 1
+        assert page.stack_cards["python"].file_count == 0
         page.close()
+
+
+# ---------------------------------------------------------------------------
+# STACK_DESCRIPTIONS completeness
+# ---------------------------------------------------------------------------
+
+class TestStackDescriptions:
+    def test_all_11_stacks_have_descriptions(self):
+        expected = {
+            "clean-code", "devops", "dotnet", "java", "node",
+            "python", "python-qt-pyside6", "react", "security",
+            "sql-dba", "typescript",
+        }
+        assert set(STACK_DESCRIPTIONS.keys()) == expected
+
+    def test_descriptions_are_tuples(self):
+        for sid, desc in STACK_DESCRIPTIONS.items():
+            assert isinstance(desc, tuple), f"{sid} description is not a tuple"
+            assert len(desc) == 2, f"{sid} description tuple has {len(desc)} elements"
+
+    def test_descriptions_have_nonempty_values(self):
+        for sid, (name, desc) in STACK_DESCRIPTIONS.items():
+            assert len(name) > 0, f"{sid} has empty display name"
+            assert len(desc) > 0, f"{sid} has empty description"
