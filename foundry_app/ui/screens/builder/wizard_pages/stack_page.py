@@ -1,8 +1,8 @@
 """Wizard page 3 — Technology Stack Selection.
 
 Displays all stacks from the library index with checkboxes for multi-select.
-Each stack row shows name/description and a file-count badge.
-Selected stacks include an order spin box for controlling prompt compilation order.
+Each stack row shows name/description and file count badge.
+Selected stacks can be reordered to control compilation priority.
 """
 
 from __future__ import annotations
@@ -15,8 +15,8 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QPushButton,
     QScrollArea,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -34,21 +34,21 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 STACK_DESCRIPTIONS: dict[str, tuple[str, str]] = {
-    "clean-code": ("Clean Code", "Code quality principles and refactoring conventions"),
-    "devops": ("DevOps", "CI/CD, infrastructure, and deployment conventions"),
-    "dotnet": (".NET", "C# / .NET development conventions and patterns"),
-    "java": ("Java", "Java development conventions and patterns"),
-    "node": ("Node.js", "Node.js runtime and npm ecosystem conventions"),
-    "python": ("Python", "Python development conventions and tooling"),
-    "python-qt-pyside6": ("Python Qt / PySide6", "PySide6 desktop application conventions"),
-    "react": ("React", "React front-end development conventions"),
-    "security": ("Security", "Application security practices and guidelines"),
-    "sql-dba": ("SQL / DBA", "Database administration and SQL conventions"),
-    "typescript": ("TypeScript", "TypeScript language conventions and patterns"),
+    "clean-code": ("Clean Code", "Code quality standards, naming conventions, SOLID principles"),
+    "devops": ("DevOps", "CI/CD pipelines, infrastructure as code, deployment automation"),
+    "dotnet": (".NET / C#", "ASP.NET Core, Entity Framework, NuGet packaging"),
+    "java": ("Java", "Spring Boot, Maven/Gradle, JVM ecosystem conventions"),
+    "node": ("Node.js", "Express/Fastify, npm packaging, API design patterns"),
+    "python": ("Python", "Packaging, testing, performance, security conventions"),
+    "python-qt-pyside6": ("Python Qt (PySide6)", "Desktop GUI with PySide6, Qt patterns"),
+    "react": ("React", "Components, state management, accessibility, testing"),
+    "security": ("Security", "OWASP guidelines, threat modeling, secure coding"),
+    "sql-dba": ("SQL / DBA", "Database design, query optimization, migrations"),
+    "typescript": ("TypeScript", "Type safety, module patterns, build tooling"),
 }
 
 # ---------------------------------------------------------------------------
-# Stylesheet constants
+# Stylesheet constants (Catppuccin Mocha theme)
 # ---------------------------------------------------------------------------
 
 CARD_STYLE = """
@@ -67,11 +67,28 @@ CARD_SELECTED_BORDER = "border-color: #89b4fa;"
 
 LABEL_STYLE = "color: #cdd6f4; font-size: 14px; font-weight: bold;"
 DESC_STYLE = "color: #6c7086; font-size: 12px;"
-CONFIG_LABEL_STYLE = "color: #a6adc8; font-size: 12px;"
 HEADING_STYLE = "color: #cdd6f4; font-size: 18px; font-weight: bold;"
 SUBHEADING_STYLE = "color: #6c7086; font-size: 13px;"
 WARNING_STYLE = "color: #f38ba8; font-size: 12px;"
 FILES_STYLE = "color: #a6adc8; font-size: 11px; font-style: italic;"
+ORDER_BTN_STYLE = """
+QPushButton {
+    background-color: #313244;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+}
+QPushButton:hover {
+    background-color: #45475a;
+}
+QPushButton:disabled {
+    color: #585b70;
+    background-color: #1e1e2e;
+    border-color: #313244;
+}
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +96,7 @@ FILES_STYLE = "color: #a6adc8; font-size: 11px; font-style: italic;"
 # ---------------------------------------------------------------------------
 
 class StackCard(QFrame):
-    """A card representing a single technology stack with checkbox and order control."""
+    """A card representing a single technology stack with checkbox."""
 
     toggled = Signal(str, bool)  # stack_id, checked
 
@@ -93,55 +110,34 @@ class StackCard(QFrame):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        layout = QVBoxLayout(self)
+        layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
-        layout.setSpacing(6)
+        layout.setSpacing(10)
 
-        # --- Top row: checkbox + name + description ---
-        top_row = QHBoxLayout()
-        top_row.setSpacing(10)
-
+        # Checkbox
         self._checkbox = QCheckBox()
         self._checkbox.stateChanged.connect(self._on_toggled)
-        top_row.addWidget(self._checkbox)
+        layout.addWidget(self._checkbox)
 
+        # Name and description
         display_name, desc = STACK_DESCRIPTIONS.get(
             self._stack.id, (self._stack.id.replace("-", " ").title(), "")
         )
 
         name_label = QLabel(display_name)
         name_label.setStyleSheet(LABEL_STYLE)
-        top_row.addWidget(name_label)
+        layout.addWidget(name_label)
 
         desc_label = QLabel(f"— {desc}" if desc else "")
         desc_label.setStyleSheet(DESC_STYLE)
-        top_row.addWidget(desc_label, stretch=1)
+        layout.addWidget(desc_label, stretch=1)
 
         # File count badge
         file_count = len(self._stack.files)
         if file_count > 0:
             badge = QLabel(f"{file_count} file{'s' if file_count != 1 else ''}")
             badge.setStyleSheet(FILES_STYLE)
-            top_row.addWidget(badge)
-
-        layout.addLayout(top_row)
-
-        # --- Config row (order) ---
-        config_row = QHBoxLayout()
-        config_row.setSpacing(16)
-        config_row.setContentsMargins(28, 0, 0, 0)  # indent under checkbox
-
-        order_label = QLabel("Order:")
-        order_label.setStyleSheet(CONFIG_LABEL_STYLE)
-        self._order_spin = QSpinBox()
-        self._order_spin.setRange(0, 99)
-        self._order_spin.setValue(0)
-        self._order_spin.setFixedWidth(60)
-        config_row.addWidget(order_label)
-        config_row.addWidget(self._order_spin)
-
-        config_row.addStretch(1)
-        layout.addLayout(config_row)
+            layout.addWidget(badge)
 
     # -- State access -------------------------------------------------------
 
@@ -157,17 +153,17 @@ class StackCard(QFrame):
     def is_selected(self, value: bool) -> None:
         self._checkbox.setChecked(value)
 
-    def to_stack_selection(self) -> StackSelection:
+    @property
+    def file_count(self) -> int:
+        return len(self._stack.files)
+
+    def to_stack_selection(self, order: int = 0) -> StackSelection:
         """Build a StackSelection from the current card state."""
-        return StackSelection(
-            id=self._stack.id,
-            order=self._order_spin.value(),
-        )
+        return StackSelection(id=self._stack.id, order=order)
 
     def load_from_selection(self, sel: StackSelection) -> None:
         """Restore card state from a StackSelection."""
         self._checkbox.setChecked(True)
-        self._order_spin.setValue(sel.order)
 
     # -- Slots --------------------------------------------------------------
 
@@ -201,6 +197,7 @@ class StackSelectionPage(QWidget):
     ) -> None:
         super().__init__(parent)
         self._cards: dict[str, StackCard] = {}
+        self._ordered_ids: list[str] = []  # tracks selection order
         self._warning_label: QLabel | None = None
         self._build_ui()
         if library_index is not None:
@@ -218,8 +215,9 @@ class StackSelectionPage(QWidget):
         outer.addWidget(heading)
 
         subtitle = QLabel(
-            "Choose which technology stack conventions to include. "
-            "Each stack adds coding standards and best-practice documents."
+            "Choose the technology stacks for your project. "
+            "Each stack provides coding conventions, testing patterns, and best practices. "
+            "Use the arrow buttons to set compilation priority (higher = compiled first)."
         )
         subtitle.setStyleSheet(SUBHEADING_STYLE)
         subtitle.setWordWrap(True)
@@ -230,6 +228,25 @@ class StackSelectionPage(QWidget):
         self._warning_label.setStyleSheet(WARNING_STYLE)
         self._warning_label.setVisible(False)
         outer.addWidget(self._warning_label)
+
+        # Order controls
+        order_row = QHBoxLayout()
+        order_row.setSpacing(8)
+
+        self._move_up_btn = QPushButton("\u25b2 Move Up")
+        self._move_up_btn.setStyleSheet(ORDER_BTN_STYLE)
+        self._move_up_btn.setEnabled(False)
+        self._move_up_btn.clicked.connect(self._on_move_up)
+        order_row.addWidget(self._move_up_btn)
+
+        self._move_down_btn = QPushButton("\u25bc Move Down")
+        self._move_down_btn.setStyleSheet(ORDER_BTN_STYLE)
+        self._move_down_btn.setEnabled(False)
+        self._move_down_btn.clicked.connect(self._on_move_down)
+        order_row.addWidget(self._move_down_btn)
+
+        order_row.addStretch(1)
+        outer.addLayout(order_row)
 
         # Scrollable area for stack cards
         scroll = QScrollArea()
@@ -255,6 +272,7 @@ class StackSelectionPage(QWidget):
             self._card_layout.removeWidget(card)
             card.deleteLater()
         self._cards.clear()
+        self._ordered_ids.clear()
 
         # Insert cards before the stretch
         insert_idx = 0
@@ -268,25 +286,42 @@ class StackSelectionPage(QWidget):
         logger.info("Loaded %d stack cards", len(self._cards))
 
     def get_stack_selections(self) -> list[StackSelection]:
-        """Return a list of StackSelection from currently selected stacks."""
-        return [
-            card.to_stack_selection()
-            for card in self._cards.values()
-            if card.is_selected
-        ]
+        """Return a list of StackSelection from currently selected stacks, ordered."""
+        selections: list[StackSelection] = []
+
+        # First add ordered (explicitly ordered) stacks
+        for idx, sid in enumerate(self._ordered_ids):
+            if sid in self._cards and self._cards[sid].is_selected:
+                selections.append(self._cards[sid].to_stack_selection(order=idx))
+
+        # Then add any selected stacks not yet in the ordered list
+        next_order = len(selections)
+        for sid, card in self._cards.items():
+            if card.is_selected and sid not in self._ordered_ids:
+                selections.append(card.to_stack_selection(order=next_order))
+                next_order += 1
+
+        return selections
 
     def set_stack_selections(self, selections: list[StackSelection]) -> None:
-        """Restore selections from a list of StackSelection."""
-        selected_ids = {s.id for s in selections}
-        selection_map = {s.id: s for s in selections}
+        """Restore selections from a list of StackSelection (e.g. when navigating back)."""
+        # Sort by order to restore ordering
+        sorted_sels = sorted(selections, key=lambda s: s.order)
 
-        for sid, card in self._cards.items():
-            if sid in selected_ids:
-                card.load_from_selection(selection_map[sid])
-            else:
-                card.is_selected = False
+        # Reset all cards
+        for card in self._cards.values():
+            card.is_selected = False
+
+        # Restore ordered list
+        self._ordered_ids = [s.id for s in sorted_sels if s.id in self._cards]
+
+        # Restore card states
+        for sel in sorted_sels:
+            if sel.id in self._cards:
+                self._cards[sel.id].load_from_selection(sel)
 
         self._update_warning()
+        self._update_order_buttons()
 
     def selected_count(self) -> int:
         """Return the number of currently selected stacks."""
@@ -301,13 +336,71 @@ class StackSelectionPage(QWidget):
         """Access cards by stack id (for testing)."""
         return dict(self._cards)
 
+    @property
+    def ordered_ids(self) -> list[str]:
+        """Access the current ordering (for testing)."""
+        return list(self._ordered_ids)
+
+    def move_stack_up(self, stack_id: str) -> None:
+        """Move a stack up in the ordering (lower index = higher priority)."""
+        if stack_id not in self._ordered_ids:
+            return
+        idx = self._ordered_ids.index(stack_id)
+        if idx <= 0:
+            return
+        self._ordered_ids[idx], self._ordered_ids[idx - 1] = (
+            self._ordered_ids[idx - 1],
+            self._ordered_ids[idx],
+        )
+        self._update_order_buttons()
+        self.selection_changed.emit()
+
+    def move_stack_down(self, stack_id: str) -> None:
+        """Move a stack down in the ordering (higher index = lower priority)."""
+        if stack_id not in self._ordered_ids:
+            return
+        idx = self._ordered_ids.index(stack_id)
+        if idx >= len(self._ordered_ids) - 1:
+            return
+        self._ordered_ids[idx], self._ordered_ids[idx + 1] = (
+            self._ordered_ids[idx + 1],
+            self._ordered_ids[idx],
+        )
+        self._update_order_buttons()
+        self.selection_changed.emit()
+
     # -- Slots --------------------------------------------------------------
 
     def _on_card_toggled(self, stack_id: str, checked: bool) -> None:
         logger.debug("Stack %s toggled: %s", stack_id, checked)
+        if checked:
+            if stack_id not in self._ordered_ids:
+                self._ordered_ids.append(stack_id)
+        else:
+            if stack_id in self._ordered_ids:
+                self._ordered_ids.remove(stack_id)
+
         self._update_warning()
+        self._update_order_buttons()
         self.selection_changed.emit()
 
     def _update_warning(self) -> None:
         if self._warning_label is not None:
             self._warning_label.setVisible(not self.is_valid())
+
+    def _update_order_buttons(self) -> None:
+        has_ordered = len(self._ordered_ids) > 1
+        self._move_up_btn.setEnabled(has_ordered)
+        self._move_down_btn.setEnabled(has_ordered)
+
+    def _on_move_up(self) -> None:
+        """Move the last selected stack up one position."""
+        if len(self._ordered_ids) >= 2:
+            # Move the last item up
+            self.move_stack_up(self._ordered_ids[-1])
+
+    def _on_move_down(self) -> None:
+        """Move the first selected stack down one position."""
+        if len(self._ordered_ids) >= 2:
+            # Move the first item down
+            self.move_stack_down(self._ordered_ids[0])
