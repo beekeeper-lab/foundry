@@ -3,7 +3,11 @@
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from foundry_app.core.models import LibraryIndex, StackInfo, StackSelection
+from foundry_app.core.models import (
+    LibraryIndex,
+    StackInfo,
+    StackSelection,
+)
 from foundry_app.ui.screens.builder.wizard_pages.stack_page import (
     STACK_DESCRIPTIONS,
     StackCard,
@@ -34,15 +38,13 @@ def _make_library(*stack_ids: str) -> LibraryIndex:
     )
 
 
-ALL_STACK_IDS = [
-    "clean-code", "devops", "dotnet", "java", "node", "python",
-    "python-qt-pyside6", "react", "security", "sql-dba", "typescript",
-]
-
-
 def _make_full_library() -> LibraryIndex:
     """Create a LibraryIndex matching the real 11-stack library."""
-    return _make_library(*ALL_STACK_IDS)
+    return _make_library(
+        "clean-code", "devops", "dotnet", "java", "node",
+        "python", "python-qt-pyside6", "react", "security",
+        "sql-dba", "typescript",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -51,7 +53,7 @@ def _make_full_library() -> LibraryIndex:
 
 @pytest.fixture()
 def card():
-    stack = _make_stack("python", ["conventions.md", "packaging.md", "testing.md"])
+    stack = _make_stack("python", ["conventions.md", "testing.md"])
     c = StackCard(stack)
     yield c
     c.close()
@@ -113,19 +115,14 @@ class TestStackCardToSelection:
         assert sel.order == 0
 
     def test_custom_order(self, card):
-        card._order_spin.setValue(42)
+        card._order_spin.setValue(5)
         sel = card.to_stack_selection()
-        assert sel.order == 42
+        assert sel.order == 5
 
-    def test_order_max_range(self, card):
-        card._order_spin.setValue(999)
+    def test_max_order(self, card):
+        card._order_spin.setValue(99)
         sel = card.to_stack_selection()
-        assert sel.order == 999
-
-    def test_order_min_range(self, card):
-        card._order_spin.setValue(0)
-        sel = card.to_stack_selection()
-        assert sel.order == 0
+        assert sel.order == 99
 
 
 # ---------------------------------------------------------------------------
@@ -133,15 +130,11 @@ class TestStackCardToSelection:
 # ---------------------------------------------------------------------------
 
 class TestStackCardLoadFromSelection:
-    def test_load_restores_checked(self, card):
+    def test_load_restores_checked_and_order(self, card):
         sel = StackSelection(id="python", order=10)
         card.load_from_selection(sel)
         assert card.is_selected is True
-
-    def test_load_restores_order(self, card):
-        sel = StackSelection(id="python", order=25)
-        card.load_from_selection(sel)
-        assert card._order_spin.value() == 25
+        assert card._order_spin.value() == 10
 
     def test_load_with_zero_order(self, card):
         sel = StackSelection(id="python", order=0)
@@ -149,7 +142,7 @@ class TestStackCardLoadFromSelection:
         assert card._order_spin.value() == 0
 
     def test_roundtrip_selection(self, card):
-        original = StackSelection(id="python", order=55)
+        original = StackSelection(id="python", order=7)
         card.load_from_selection(original)
         result = card.to_stack_selection()
         assert result.id == original.id
@@ -162,15 +155,9 @@ class TestStackCardLoadFromSelection:
 
 class TestStackCardUnknownStack:
     def test_unknown_stack_uses_titlecased_id(self):
-        stack = _make_stack("custom-lang")
+        stack = _make_stack("my-custom-stack")
         card = StackCard(stack)
-        assert card.stack_id == "custom-lang"
-        card.close()
-
-    def test_unknown_stack_creates_without_error(self):
-        stack = _make_stack("my-new-stack", ["one.md"])
-        card = StackCard(stack)
-        assert card is not None
+        assert card.stack_id == "my-custom-stack"
         card.close()
 
 
@@ -200,8 +187,8 @@ class TestPageConstruction:
     def test_no_cards_initially(self, page):
         assert len(page.stack_cards) == 0
 
-    def test_initially_valid(self, page):
-        assert page.is_valid() is True
+    def test_initially_invalid(self, page):
+        assert page.is_valid() is False
 
     def test_selected_count_zero(self, page):
         assert page.selected_count() == 0
@@ -249,6 +236,7 @@ class TestPageSelection:
     def test_select_one_stack(self, loaded_page):
         loaded_page.stack_cards["python"].is_selected = True
         assert loaded_page.selected_count() == 1
+        assert loaded_page.is_valid() is True
 
     def test_select_multiple_stacks(self, loaded_page):
         loaded_page.stack_cards["python"].is_selected = True
@@ -256,10 +244,10 @@ class TestPageSelection:
         loaded_page.stack_cards["typescript"].is_selected = True
         assert loaded_page.selected_count() == 3
 
-    def test_deselect_all_still_valid(self, loaded_page):
+    def test_deselect_all_makes_invalid(self, loaded_page):
         loaded_page.stack_cards["python"].is_selected = True
         loaded_page.stack_cards["python"].is_selected = False
-        assert loaded_page.is_valid() is True
+        assert loaded_page.is_valid() is False
 
     def test_selection_changed_signal_emitted(self, loaded_page):
         received = []
@@ -267,7 +255,7 @@ class TestPageSelection:
         loaded_page.stack_cards["python"].is_selected = True
         assert len(received) >= 1
 
-    def test_warning_shown_when_none_selected(self, loaded_page):
+    def test_warning_shown_after_deselect_all(self, loaded_page):
         loaded_page.stack_cards["python"].is_selected = True
         loaded_page.stack_cards["python"].is_selected = False
         assert loaded_page._warning_label.isHidden() is False
@@ -294,14 +282,14 @@ class TestGetStackSelections:
         ids = {s.id for s in selections}
         assert ids == {"python", "react"}
 
-    def test_respects_per_stack_order(self, loaded_page):
+    def test_respects_order_config(self, loaded_page):
         card = loaded_page.stack_cards["python"]
         card.is_selected = True
-        card._order_spin.setValue(30)
+        card._order_spin.setValue(3)
         selections = loaded_page.get_stack_selections()
-        sel = selections[0]
-        assert sel.id == "python"
-        assert sel.order == 30
+        assert len(selections) == 1
+        assert selections[0].id == "python"
+        assert selections[0].order == 3
 
     def test_unselected_stacks_excluded(self, loaded_page):
         loaded_page.stack_cards["python"].is_selected = True
@@ -316,26 +304,25 @@ class TestGetStackSelections:
 
 class TestSetStackSelections:
     def test_restores_selections(self, loaded_page):
-        stacks = [
-            StackSelection(id="python", order=10),
-            StackSelection(id="react", order=20),
+        selections = [
+            StackSelection(id="python", order=1),
+            StackSelection(id="react", order=2),
         ]
-        loaded_page.set_stack_selections(stacks)
+        loaded_page.set_stack_selections(selections)
         assert loaded_page.stack_cards["python"].is_selected is True
         assert loaded_page.stack_cards["react"].is_selected is True
-        assert loaded_page.stack_cards["typescript"].is_selected is False
+        assert loaded_page.stack_cards["java"].is_selected is False
 
     def test_restores_order(self, loaded_page):
-        stacks = [StackSelection(id="python", order=50)]
-        loaded_page.set_stack_selections(stacks)
+        selections = [StackSelection(id="python", order=5)]
+        loaded_page.set_stack_selections(selections)
         card = loaded_page.stack_cards["python"]
-        assert card._order_spin.value() == 50
+        assert card._order_spin.value() == 5
 
     def test_roundtrip_get_set_get(self, loaded_page):
         loaded_page.stack_cards["python"].is_selected = True
         loaded_page.stack_cards["react"].is_selected = True
-        loaded_page.stack_cards["python"]._order_spin.setValue(10)
-        loaded_page.stack_cards["react"]._order_spin.setValue(20)
+        loaded_page.stack_cards["python"]._order_spin.setValue(3)
         original = loaded_page.get_stack_selections()
 
         # Reset all
@@ -354,32 +341,32 @@ class TestSetStackSelections:
         loaded_page.stack_cards["python"].is_selected = True
         loaded_page.stack_cards["react"].is_selected = True
 
-        stacks = [StackSelection(id="typescript", order=5)]
-        loaded_page.set_stack_selections(stacks)
+        selections = [StackSelection(id="java")]
+        loaded_page.set_stack_selections(selections)
         assert loaded_page.stack_cards["python"].is_selected is False
         assert loaded_page.stack_cards["react"].is_selected is False
-        assert loaded_page.stack_cards["typescript"].is_selected is True
+        assert loaded_page.stack_cards["java"].is_selected is True
 
     def test_set_selections_updates_warning(self, loaded_page):
-        # Set a valid selection
-        stacks = [StackSelection(id="python")]
-        loaded_page.set_stack_selections(stacks)
+        # Set a valid config
+        selections = [StackSelection(id="python")]
+        loaded_page.set_stack_selections(selections)
         assert loaded_page._warning_label.isHidden() is True
 
-        # Set empty selections
+        # Set an empty config
         loaded_page.set_stack_selections([])
         assert loaded_page._warning_label.isHidden() is False
 
 
 # ---------------------------------------------------------------------------
-# StackSelectionPage — file count badge display
+# StackSelectionPage — file badge display
 # ---------------------------------------------------------------------------
 
 class TestFileBadge:
     def test_stack_with_files_shows_badge(self):
         lib = LibraryIndex(
             library_root="/fake",
-            stacks=[_make_stack("python", ["a.md", "b.md", "c.md"])],
+            stacks=[_make_stack("python", ["conventions.md", "testing.md", "security.md"])],
         )
         page = StackSelectionPage(library_index=lib)
         assert len(page.stack_cards) == 1
@@ -388,16 +375,7 @@ class TestFileBadge:
     def test_stack_with_one_file_singular(self):
         lib = LibraryIndex(
             library_root="/fake",
-            stacks=[_make_stack("python", ["a.md"])],
-        )
-        page = StackSelectionPage(library_index=lib)
-        assert len(page.stack_cards) == 1
-        page.close()
-
-    def test_stack_with_no_files(self):
-        lib = LibraryIndex(
-            library_root="/fake",
-            stacks=[_make_stack("empty-stack")],
+            stacks=[_make_stack("python", ["conventions.md"])],
         )
         page = StackSelectionPage(library_index=lib)
         assert len(page.stack_cards) == 1

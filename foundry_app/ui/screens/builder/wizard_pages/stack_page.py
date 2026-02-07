@@ -1,8 +1,8 @@
 """Wizard page 3 — Technology Stack Selection.
 
-Displays all technology stacks from the library index with checkboxes for multi-select.
-Each stack row shows name/description and a file count badge. Per-stack config includes
-a compilation order spinbox.
+Displays all stacks from the library index with checkboxes for multi-select.
+Each stack row shows name/description and a file-count badge.
+Selected stacks include an order spin box for controlling prompt compilation order.
 """
 
 from __future__ import annotations
@@ -21,7 +21,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from foundry_app.core.models import LibraryIndex, StackInfo, StackSelection
+from foundry_app.core.models import (
+    LibraryIndex,
+    StackInfo,
+    StackSelection,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,19 +34,17 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 STACK_DESCRIPTIONS: dict[str, tuple[str, str]] = {
-    "clean-code": ("Clean Code", "Design patterns, anti-patterns, principles, refactoring"),
-    "devops": ("DevOps", "Pipelines, environments, observability, secrets, release runbook"),
-    "dotnet": (".NET", "API design, architecture, conventions, performance, security, testing"),
-    "java": ("Java", "Conventions, performance, security, testing"),
-    "node": ("Node.js", "API design, conventions, performance, security, testing"),
-    "python": ("Python", "Conventions, packaging, performance, security, testing"),
-    "python-qt-pyside6": (
-        "Python Qt / PySide6", "Accessibility, architecture, conventions, packaging, testing"
-    ),
-    "react": ("React", "Accessibility, conventions, performance, security, state, testing"),
-    "security": ("Security", "Hardening, secure design, security testing, threat modeling"),
-    "sql-dba": ("SQL / DBA", "Indexing, operations, query performance, schema design, security"),
-    "typescript": ("TypeScript", "Conventions, performance, security, testing, types & patterns"),
+    "clean-code": ("Clean Code", "Code quality principles and refactoring conventions"),
+    "devops": ("DevOps", "CI/CD, infrastructure, and deployment conventions"),
+    "dotnet": (".NET", "C# / .NET development conventions and patterns"),
+    "java": ("Java", "Java development conventions and patterns"),
+    "node": ("Node.js", "Node.js runtime and npm ecosystem conventions"),
+    "python": ("Python", "Python development conventions and tooling"),
+    "python-qt-pyside6": ("Python Qt / PySide6", "PySide6 desktop application conventions"),
+    "react": ("React", "React front-end development conventions"),
+    "security": ("Security", "Application security practices and guidelines"),
+    "sql-dba": ("SQL / DBA", "Database administration and SQL conventions"),
+    "typescript": ("TypeScript", "TypeScript language conventions and patterns"),
 }
 
 # ---------------------------------------------------------------------------
@@ -61,7 +63,7 @@ QFrame#stack-card:hover {
 }
 """
 
-CARD_SELECTED_BORDER = "border-color: #cba6f7;"
+CARD_SELECTED_BORDER = "border-color: #89b4fa;"
 
 LABEL_STYLE = "color: #cdd6f4; font-size: 14px; font-weight: bold;"
 DESC_STYLE = "color: #6c7086; font-size: 12px;"
@@ -77,7 +79,7 @@ FILES_STYLE = "color: #a6adc8; font-size: 11px; font-style: italic;"
 # ---------------------------------------------------------------------------
 
 class StackCard(QFrame):
-    """A card representing a single technology stack with checkbox and config options."""
+    """A card representing a single technology stack with checkbox and order control."""
 
     toggled = Signal(str, bool)  # stack_id, checked
 
@@ -124,17 +126,17 @@ class StackCard(QFrame):
 
         layout.addLayout(top_row)
 
-        # --- Config row (compilation order) ---
+        # --- Config row (order) ---
         config_row = QHBoxLayout()
         config_row.setSpacing(16)
         config_row.setContentsMargins(28, 0, 0, 0)  # indent under checkbox
 
-        order_label = QLabel("Compilation order:")
+        order_label = QLabel("Order:")
         order_label.setStyleSheet(CONFIG_LABEL_STYLE)
         self._order_spin = QSpinBox()
-        self._order_spin.setRange(0, 999)
+        self._order_spin.setRange(0, 99)
         self._order_spin.setValue(0)
-        self._order_spin.setFixedWidth(80)
+        self._order_spin.setFixedWidth(60)
         config_row.addWidget(order_label)
         config_row.addWidget(self._order_spin)
 
@@ -216,15 +218,15 @@ class StackSelectionPage(QWidget):
         outer.addWidget(heading)
 
         subtitle = QLabel(
-            "Choose which technology stack convention packs to include. "
-            "Each stack provides coding standards, testing, and security guidelines."
+            "Choose which technology stack conventions to include. "
+            "Each stack adds coding standards and best-practice documents."
         )
         subtitle.setStyleSheet(SUBHEADING_STYLE)
         subtitle.setWordWrap(True)
         outer.addWidget(subtitle)
 
-        # Info label (no stacks is valid, so this is advisory not a warning)
-        self._warning_label = QLabel("No stacks selected. You can proceed without any.")
+        # Warning label (hidden by default)
+        self._warning_label = QLabel("At least one stack must be selected.")
         self._warning_label.setStyleSheet(WARNING_STYLE)
         self._warning_label.setVisible(False)
         outer.addWidget(self._warning_label)
@@ -273,10 +275,10 @@ class StackSelectionPage(QWidget):
             if card.is_selected
         ]
 
-    def set_stack_selections(self, stacks: list[StackSelection]) -> None:
+    def set_stack_selections(self, selections: list[StackSelection]) -> None:
         """Restore selections from a list of StackSelection."""
-        selected_ids = {s.id for s in stacks}
-        selection_map = {s.id: s for s in stacks}
+        selected_ids = {s.id for s in selections}
+        selection_map = {s.id: s for s in selections}
 
         for sid, card in self._cards.items():
             if sid in selected_ids:
@@ -291,8 +293,8 @@ class StackSelectionPage(QWidget):
         return sum(1 for c in self._cards.values() if c.is_selected)
 
     def is_valid(self) -> bool:
-        """Return True always — selecting zero stacks is valid."""
-        return True
+        """Return True if at least one stack is selected."""
+        return self.selected_count() > 0
 
     @property
     def stack_cards(self) -> dict[str, StackCard]:
@@ -308,4 +310,4 @@ class StackSelectionPage(QWidget):
 
     def _update_warning(self) -> None:
         if self._warning_label is not None:
-            self._warning_label.setVisible(self.selected_count() == 0)
+            self._warning_label.setVisible(not self.is_valid())
