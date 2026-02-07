@@ -45,7 +45,7 @@
 | BEAN-021 | Wizard: Technology Stack Page | App | High | Done | team-lead |
 | BEAN-022 | Wizard: Architecture & Cloud Page | App | Medium | New | (unassigned) |
 | BEAN-023 | Wizard: Hook & Safety Config Page | App | Medium | New | (unassigned) |
-| BEAN-024 | Wizard: Review & Generate Page | App | High | New | (unassigned) |
+| BEAN-024 | Wizard: Review & Generate Page | App | High | Done | team-lead |
 | BEAN-025 | Validator Service | App | High | Done | team-lead |
 | BEAN-026 | Scaffold Service | App | High | New | (unassigned) |
 | BEAN-027 | Compiler Service | App | High | New | (unassigned) |
