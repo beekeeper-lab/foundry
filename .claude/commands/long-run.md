@@ -37,9 +37,10 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 8. **Verify acceptance criteria** — Check every criterion in the bean's AC list. Run tests and lint if applicable.
 9. **Close the bean** — Update status to `Done` in both `bean.md` and `_index.md`.
 10. **Commit on feature branch** — Stage all changed files and commit with message: `BEAN-NNN: <title>`. The commit goes on the `bean/BEAN-NNN-<slug>` branch.
-11. **Return to main** — Checkout the main branch: `git checkout main`. The feature branch is left ready for merge (see Merge Captain workflow).
-12. **Report progress** — Summarize what was completed: bean title, tasks executed, branch name, files changed.
-13. **Loop** — Go back to step 1. Continue until no actionable beans remain.
+11. **Merge to test** — Execute `/merge-bean` to merge the feature branch into `test`: checkout test, pull latest, merge with `--no-ff`, push. If merge conflicts occur, report and stop.
+12. **Return to main** — Checkout the main branch: `git checkout main`.
+13. **Report progress** — Summarize what was completed: bean title, tasks executed, branch name, merge commit, files changed.
+14. **Loop** — Go back to step 1. Continue until no actionable beans remain.
 
 ## Output
 

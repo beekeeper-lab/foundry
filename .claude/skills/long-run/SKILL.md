@@ -70,12 +70,19 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 13. **Verify acceptance criteria** — Check every criterion in the bean's Acceptance Criteria section. For code beans: run tests (`uv run pytest`) and lint (`uv run ruff check`).
 14. **Close the bean** — Update status to `Done` in both `bean.md` and `_index.md`.
 15. **Commit on feature branch** — Stage all files changed during this bean's execution. Commit with message: `BEAN-NNN: <bean title>`. The commit goes on the `bean/BEAN-NNN-<slug>` branch.
-16. **Return to main** — Checkout the main branch: `git checkout main`. The feature branch is left ready for merge (see Merge Captain workflow).
-17. **Report progress** — Output a summary: bean title, tasks completed, branch name, files changed, remaining backlog status.
+
+### Phase 5.5: Merge Captain
+
+16. **Merge to test branch** — Execute the `/merge-bean` skill to merge the feature branch into `test`:
+    - Checkout `test`, pull latest, merge `bean/BEAN-NNN-<slug>` with `--no-ff`, push.
+    - If merge conflicts occur: report the conflicts, abort the merge, leave the bean on its feature branch, and stop the loop.
+    - If merge succeeds: continue.
+17. **Return to main** — Checkout the main branch: `git checkout main`.
+18. **Report progress** — Output a summary: bean title, tasks completed, feature branch, merge commit on `test`, files changed, remaining backlog status.
 
 ### Phase 6: Loop
 
-18. **Return to Phase 1** — Read the backlog again. If actionable beans remain, process the next one. If not, report final summary and exit.
+19. **Return to Phase 1** — Read the backlog again. If actionable beans remain, process the next one. If not, report final summary and exit.
 
 ---
 
@@ -109,6 +116,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    4. Verify acceptance criteria
    5. Commit on the feature branch
    6. Update bean status to Done
+   7. Merge feature branch into test (Merge Captain)
    '"
    ```
 8. **Record worker assignments** — Track which window is processing which bean.
@@ -168,6 +176,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 | `TaskFailure` | A task cannot be completed | Report failure details, leave bean `In Progress`, stop loop |
 | `TestFailure` | Tests or lint fail | Attempt to fix; if unresolvable, report and stop |
 | `CommitFailure` | Git error during commit | Report error and stop for manual resolution |
+| `MergeConflict` | Merge to test branch fails due to conflicts | Report conflicting files, abort merge, stop loop |
 | `NotInTmux` | `--fast` used but `$TMUX` is not set | Instruct user to restart in tmux |
 | `WorkerFailure` | A parallel worker fails on its bean | Report which worker/bean failed; other workers continue |
 

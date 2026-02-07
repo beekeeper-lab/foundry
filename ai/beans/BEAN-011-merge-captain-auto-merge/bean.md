@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-011 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 
 ## Problem Statement
 
@@ -49,10 +49,10 @@ Add a Merge Captain stage as the final step of each bean's execution. The Merge 
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| | | | | |
+| 01 | Wire Merge Captain into Bean Execution Wave | developer | — | Done |
+| 02 | Merge Captain Verification | tech-qa | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> BA and Architect skipped — architecture sketch is already in the bean, and this wires an existing persona into the workflow.
 
 ## Notes
 
