@@ -6,15 +6,19 @@ from pathlib import Path
 
 from foundry_app.core.models import (
     CompositionSpec,
+    DestructiveOpsPolicy,
+    GitPolicy,
     HooksConfig,
     PersonaSelection,
     ProjectIdentity,
+    SafetyConfig,
     StackSelection,
     TeamConfig,
 )
 from foundry_app.services.validator import (
     run_pre_generation_validation,
     validate_composition,
+    validate_safety_config,
 )
 
 LIBRARY_ROOT = Path(__file__).parent.parent / "ai-team-library"
@@ -154,3 +158,62 @@ def test_strictness_propagates_through_full_validation():
     # Light: no stacks is silent
     result = run_pre_generation_validation(spec, LIBRARY_ROOT, strictness="light")
     assert result.is_valid
+
+
+# -- Safety config validation --------------------------------------------------
+
+
+def test_safety_permissive_warns():
+    """validate_safety_config should warn when preset is permissive."""
+    spec = _make_spec()
+    spec.safety = SafetyConfig(preset="permissive")
+    result = validate_safety_config(spec)
+    assert result.is_valid  # warnings only, no errors
+    assert any("permissive" in w.lower() for w in result.warnings)
+
+
+def test_safety_contradictory_git_errors():
+    """validate_safety_config should error if force-push allowed but push denied."""
+    spec = _make_spec()
+    spec.safety = SafetyConfig(
+        git=GitPolicy(allow_push=False, allow_force_push=True)
+    )
+    result = validate_safety_config(spec)
+    assert not result.is_valid
+    assert any("contradictory" in e.lower() for e in result.errors)
+
+
+def test_safety_all_destructive_warns():
+    """validate_safety_config should warn when all destructive ops are allowed."""
+    spec = _make_spec()
+    spec.safety = SafetyConfig(
+        destructive=DestructiveOpsPolicy(
+            allow_rm_rf=True,
+            allow_reset_hard=True,
+            allow_clean=True,
+        )
+    )
+    result = validate_safety_config(spec)
+    assert result.is_valid  # warnings only
+    assert any("destructive" in w.lower() for w in result.warnings)
+
+
+def test_safety_baseline_no_warnings():
+    """validate_safety_config should not warn for a baseline config."""
+    from foundry_app.services.safety import baseline_safety
+
+    spec = _make_spec()
+    spec.safety = baseline_safety()
+    result = validate_safety_config(spec)
+    assert result.is_valid
+    assert len(result.warnings) == 0
+
+
+def test_safety_validation_in_pre_generation():
+    """run_pre_generation_validation should include safety validation results."""
+    spec = _make_spec(personas=["team-lead"], stacks=["python"])
+    spec.safety = SafetyConfig(preset="permissive")
+    result = run_pre_generation_validation(spec, LIBRARY_ROOT)
+    # Should still pass (safety issues are warnings)
+    assert result.is_valid
+    assert any("permissive" in w.lower() for w in result.warnings)

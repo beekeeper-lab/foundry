@@ -204,6 +204,18 @@ def _create_valid_project(root: Path) -> None:
     members_dir.mkdir(parents=True)
     (members_dir / "lead.md").write_text("# Lead member prompt\n")
 
+    # Safety / asset files expected by validate_generated_project
+    settings_path = root / ".claude" / "settings.local.json"
+    settings_path.write_text('{"permissions": {}}\n')
+
+    skills_dir = root / ".claude" / "skills" / "example"
+    skills_dir.mkdir(parents=True)
+    (skills_dir / "SKILL.md").write_text("# Example skill\n")
+
+    commands_dir = root / ".claude" / "commands"
+    commands_dir.mkdir(parents=True, exist_ok=True)
+    (commands_dir / "example.md").write_text("# Example command\n")
+
 
 def test_validate_generated_project_valid(tmp_path: Path) -> None:
     """A complete project structure should pass validation with no errors or warnings."""

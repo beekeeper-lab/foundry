@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 class ProjectIdentity(BaseModel):
     name: str
     slug: str
+    subtitle: str = ""
     output_root: str = "./generated-projects"
     output_folder: str = ""
     created_utc: str = Field(
@@ -53,8 +54,46 @@ class HooksConfig(BaseModel):
 
 class GenerationOptions(BaseModel):
     seed_tasks: bool = True
+    seed_mode: str = "detailed"  # detailed | kickoff
     write_manifest: bool = True
     write_diff_report: bool = False
+
+
+class GitPolicy(BaseModel):
+    allow_push: bool = True
+    allow_force_push: bool = False
+    allow_branch_delete: bool = False
+
+class ShellPolicy(BaseModel):
+    allow_sudo: bool = False
+    allow_install: bool = True
+    deny_patterns: list[str] = Field(default_factory=list)
+
+class FileSystemPolicy(BaseModel):
+    allow_outside_project: bool = False
+    deny_patterns: list[str] = Field(default_factory=list)
+
+class NetworkPolicy(BaseModel):
+    allow_network: bool = True
+    allow_external_apis: bool = True
+
+class SecretPolicy(BaseModel):
+    block_env_files: bool = True
+    block_credentials: bool = True
+
+class DestructiveOpsPolicy(BaseModel):
+    allow_rm_rf: bool = False
+    allow_reset_hard: bool = False
+    allow_clean: bool = False
+
+class SafetyConfig(BaseModel):
+    preset: str = "baseline"  # permissive | baseline | hardened | custom
+    git: GitPolicy = Field(default_factory=GitPolicy)
+    shell: ShellPolicy = Field(default_factory=ShellPolicy)
+    filesystem: FileSystemPolicy = Field(default_factory=FileSystemPolicy)
+    network: NetworkPolicy = Field(default_factory=NetworkPolicy)
+    secrets: SecretPolicy = Field(default_factory=SecretPolicy)
+    destructive: DestructiveOpsPolicy = Field(default_factory=DestructiveOpsPolicy)
 
 
 class CompositionSpec(BaseModel):
@@ -66,6 +105,7 @@ class CompositionSpec(BaseModel):
     stack_overrides: StackOverrides = Field(default_factory=StackOverrides)
     team: TeamConfig = Field(default_factory=TeamConfig)
     hooks: HooksConfig = Field(default_factory=HooksConfig)
+    safety: SafetyConfig = Field(default_factory=SafetyConfig)
     generation: GenerationOptions = Field(default_factory=GenerationOptions)
 
 
@@ -112,6 +152,17 @@ class HookIndexEntry(BaseModel):
     mode: str = "enforcing"
 
 
+class SkillIndexEntry(BaseModel):
+    id: str
+    path: str
+    files: list[str] = Field(default_factory=list)
+
+
+class CommandIndexEntry(BaseModel):
+    id: str
+    path: str
+
+
 class LibraryIndex(BaseModel):
     """Computed index created on app load from the library root."""
 
@@ -119,6 +170,8 @@ class LibraryIndex(BaseModel):
     personas: list[PersonaIndexEntry] = Field(default_factory=list)
     stacks: list[StackIndexEntry] = Field(default_factory=list)
     hooks: list[HookIndexEntry] = Field(default_factory=list)
+    skills: list[SkillIndexEntry] = Field(default_factory=list)
+    commands: list[CommandIndexEntry] = Field(default_factory=list)
 
     @classmethod
     def from_library_path(cls, library_root: Path) -> LibraryIndex:
@@ -127,6 +180,8 @@ class LibraryIndex(BaseModel):
         personas: list[PersonaIndexEntry] = []
         stacks: list[StackIndexEntry] = []
         hooks: list[HookIndexEntry] = []
+        skills: list[SkillIndexEntry] = []
+        commands: list[CommandIndexEntry] = []
 
         # Scan personas
         personas_dir = root / "personas"
@@ -186,9 +241,42 @@ class LibraryIndex(BaseModel):
                         )
                     )
 
+        # Scan skills
+        skills_dir = root / "claude" / "skills"
+        if skills_dir.is_dir():
+            for skill_dir in sorted(skills_dir.iterdir()):
+                if not skill_dir.is_dir():
+                    continue
+                skill_files = [
+                    f.name
+                    for f in sorted(skill_dir.iterdir())
+                    if f.is_file()
+                ]
+                skills.append(
+                    SkillIndexEntry(
+                        id=skill_dir.name,
+                        path=str(skill_dir.relative_to(root)),
+                        files=skill_files,
+                    )
+                )
+
+        # Scan commands
+        commands_dir = root / "claude" / "commands"
+        if commands_dir.is_dir():
+            for cmd_file in sorted(commands_dir.iterdir()):
+                if cmd_file.is_file() and cmd_file.suffix == ".md":
+                    commands.append(
+                        CommandIndexEntry(
+                            id=cmd_file.stem,
+                            path=str(cmd_file.relative_to(root)),
+                        )
+                    )
+
         return cls(
             root=str(root),
             personas=personas,
             stacks=stacks,
             hooks=hooks,
+            skills=skills,
+            commands=commands,
         )

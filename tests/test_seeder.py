@@ -172,3 +172,39 @@ def test_task_content_has_required_sections(tmp_path: Path):
     assert "**Definition of Done:**" in content
     # DoD should contain checklist items
     assert "- [ ]" in content
+
+
+# ---- Test 9: Kickoff mode creates single team-lead task ----
+
+
+def test_kickoff_mode_creates_kickoff_task(tmp_path: Path):
+    """seed_tasks with mode='kickoff' should create a single kickoff task."""
+    spec = _make_spec(personas=["developer", "architect"], stacks=["python"])
+    tasks_dir = tmp_path / "tasks"
+
+    result = seed_tasks(spec, tasks_dir, mode="kickoff")
+
+    assert isinstance(result, StageResult)
+    assert "seeded-tasks.md" in result.wrote
+    content = (tasks_dir / "seeded-tasks.md").read_text()
+    assert "kickoff" in content.lower()
+    assert "team-lead" in content
+    assert "developer, architect" in content
+    assert "python" in content
+    assert "- [ ]" in content
+
+
+# ---- Test 10: Kickoff mode has no per-role tasks ----
+
+
+def test_kickoff_mode_no_per_role_tasks(tmp_path: Path):
+    """seed_tasks with mode='kickoff' should not contain per-role Owner lines."""
+    spec = _make_spec(personas=["ba", "developer"])
+    tasks_dir = tmp_path / "tasks"
+
+    seed_tasks(spec, tasks_dir, mode="kickoff")
+
+    content = (tasks_dir / "seeded-tasks.md").read_text()
+    assert "**Owner:** ba" not in content
+    assert "**Owner:** developer" not in content
+    assert "**Owner:** team-lead" in content

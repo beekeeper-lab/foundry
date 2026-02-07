@@ -337,3 +337,78 @@ def test_scaffold_wrote_uses_relative_paths(tmp_path: Path):
         assert not path_str.startswith("/"), (
             f"Path should be relative but got absolute: {path_str}"
         )
+
+
+# ---- Test 14: scaffold creates settings.local.json ----
+
+
+def test_scaffold_creates_settings_local_json(tmp_path: Path):
+    """scaffold_project should create .claude/settings.local.json."""
+    spec = _make_spec(
+        personas=[PersonaSelection(id="developer")],
+        stacks=["python"],
+    )
+    project_dir = tmp_path / "project"
+
+    result = scaffold_project(spec, project_dir)
+
+    settings_path = project_dir / ".claude" / "settings.local.json"
+    assert settings_path.is_file()
+    assert ".claude/settings.local.json" in result.wrote
+
+
+# ---- Test 15: scaffold creates safety policy docs ----
+
+
+def test_scaffold_creates_safety_policy_docs(tmp_path: Path):
+    """scaffold_project should create safety-policy.md, git-policy.md, shell-policy.md."""
+    spec = _make_spec(
+        personas=[PersonaSelection(id="developer")],
+        stacks=["python"],
+    )
+    project_dir = tmp_path / "project"
+
+    scaffold_project(spec, project_dir)
+
+    assert (project_dir / "ai" / "context" / "safety-policy.md").is_file()
+    assert (project_dir / "ai" / "context" / "git-policy.md").is_file()
+    assert (project_dir / "ai" / "context" / "shell-policy.md").is_file()
+
+
+# ---- Test 16: subtitle appears in CLAUDE.md when set ----
+
+
+def test_scaffold_subtitle_in_claude_md(tmp_path: Path):
+    """scaffold_project should include subtitle in CLAUDE.md when provided."""
+    spec = CompositionSpec(
+        project=ProjectIdentity(
+            name="Sub Test",
+            slug="sub-test",
+            subtitle="A test project with a subtitle",
+        ),
+        stacks=[StackSelection(id="python")],
+        team=TeamConfig(personas=[PersonaSelection(id="developer")]),
+    )
+    project_dir = tmp_path / "project"
+
+    scaffold_project(spec, project_dir)
+
+    claude_md = (project_dir / "CLAUDE.md").read_text()
+    assert "A test project with a subtitle" in claude_md
+
+
+# ---- Test 17: CLAUDE.md works without subtitle ----
+
+
+def test_scaffold_no_subtitle_in_claude_md(tmp_path: Path):
+    """scaffold_project should work fine when subtitle is empty."""
+    spec = _make_spec(
+        personas=[PersonaSelection(id="developer")],
+        project_name="No Sub",
+    )
+    project_dir = tmp_path / "project"
+
+    scaffold_project(spec, project_dir)
+
+    claude_md = (project_dir / "CLAUDE.md").read_text()
+    assert "No Sub" in claude_md

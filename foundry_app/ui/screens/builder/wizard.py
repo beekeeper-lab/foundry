@@ -1,25 +1,17 @@
-"""Project Builder wizard: five-step flow to configure and generate a project."""
+"""Project Builder wizard: four-step flow to configure and generate a project."""
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QComboBox,
-    QFileDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
-    QListWidget,
-    QListWidgetItem,
     QMessageBox,
-    QPlainTextEdit,
     QPushButton,
     QStackedWidget,
-    QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
@@ -29,11 +21,15 @@ from foundry_app.core.models import (
     GenerationOptions,
     HooksConfig,
     LibraryIndex,
-    PersonaSelection,
     ProjectIdentity,
     StackOverrides,
-    StackSelection,
     TeamConfig,
+)
+from foundry_app.ui.screens.builder.wizard_pages import (
+    ProjectPage,
+    ReviewPage,
+    SafetyPage,
+    TeamStackPage,
 )
 
 # ---------------------------------------------------------------------------
@@ -41,333 +37,11 @@ from foundry_app.core.models import (
 # ---------------------------------------------------------------------------
 
 _PAGE_TITLES = [
-    "Step 1 of 5 — Project Identity",
-    "Step 2 of 5 — Tech Stack",
-    "Step 3 of 5 — Team Personas",
-    "Step 4 of 5 — Hooks & Policies",
-    "Step 5 of 5 — Review & Generate",
+    "Step 1 of 4 — Project",
+    "Step 2 of 4 — Team & Stack",
+    "Step 3 of 4 — Safety",
+    "Step 4 of 4 — Review & Generate",
 ]
-
-_STRICTNESS_OPTIONS = ["light", "standard", "strict"]
-_POSTURE_OPTIONS = ["baseline", "hardened", "regulated"]
-
-
-# ---------------------------------------------------------------------------
-# Helper: slugify a project name
-# ---------------------------------------------------------------------------
-
-def _slugify(name: str) -> str:
-    """Convert a human project name to a filesystem-safe slug."""
-    slug = name.lower().strip()
-    slug = re.sub(r"[^a-z0-9]+", "-", slug)
-    slug = slug.strip("-")
-    return slug
-
-
-# ---------------------------------------------------------------------------
-# Page 1: Identity
-# ---------------------------------------------------------------------------
-
-class _IdentityPage(QWidget):
-    """Collect project name, slug, output root, and output folder."""
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        layout = QVBoxLayout(self)
-
-        layout.addWidget(QLabel("Project Name"))
-        self.name_edit = QLineEdit()
-        self.name_edit.setPlaceholderText("My Awesome Project")
-        self.name_edit.textChanged.connect(self._on_name_changed)
-        layout.addWidget(self.name_edit)
-
-        layout.addWidget(QLabel("Project Slug"))
-        self.slug_edit = QLineEdit()
-        self.slug_edit.setPlaceholderText("my-awesome-project")
-        layout.addWidget(self.slug_edit)
-
-        layout.addWidget(QLabel("Output Root Directory"))
-        output_row = QHBoxLayout()
-        self.output_root_edit = QLineEdit()
-        self.output_root_edit.setPlaceholderText("./generated-projects")
-        # Load workspace_root from settings as default
-        from foundry_app.core.settings import load_settings as _load_settings
-        _ws_root = _load_settings().workspace_root or "./generated-projects"
-        self.output_root_edit.setText(_ws_root)
-        output_row.addWidget(self.output_root_edit)
-        self.browse_btn = QPushButton("Browse...")
-        self.browse_btn.clicked.connect(self._on_browse)
-        output_row.addWidget(self.browse_btn)
-        layout.addLayout(output_row)
-
-        layout.addWidget(QLabel("Output Folder Name"))
-        self.output_folder_edit = QLineEdit()
-        self.output_folder_edit.setPlaceholderText("(defaults to slug)")
-        layout.addWidget(self.output_folder_edit)
-
-        layout.addStretch()
-
-    # -- internal slots --
-
-    def _on_name_changed(self, text: str) -> None:
-        self.slug_edit.setText(_slugify(text))
-
-    def _on_browse(self) -> None:
-        path = QFileDialog.getExistingDirectory(
-            self, "Select Output Root Directory", str(Path.home())
-        )
-        if path:
-            self.output_root_edit.setText(path)
-
-
-# ---------------------------------------------------------------------------
-# Page 2: Tech Stack
-# ---------------------------------------------------------------------------
-
-class _StackPage(QWidget):
-    """Select and order tech stacks from the library index."""
-
-    def __init__(self, stack_ids: list[str], parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        layout = QVBoxLayout(self)
-
-        layout.addWidget(QLabel("Available Stacks (check to include, drag to reorder)"))
-
-        row = QHBoxLayout()
-
-        self.stack_list = QListWidget()
-        for sid in stack_ids:
-            item = QListWidgetItem(sid)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setCheckState(Qt.CheckState.Unchecked)
-            self.stack_list.addItem(item)
-        row.addWidget(self.stack_list)
-
-        btn_col = QVBoxLayout()
-        self.up_btn = QPushButton("Up")
-        self.up_btn.clicked.connect(self._move_up)
-        btn_col.addWidget(self.up_btn)
-        self.down_btn = QPushButton("Down")
-        self.down_btn.clicked.connect(self._move_down)
-        btn_col.addWidget(self.down_btn)
-        btn_col.addStretch()
-        row.addLayout(btn_col)
-
-        layout.addLayout(row)
-
-        layout.addWidget(QLabel("Stack Overrides / Notes"))
-        self.overrides_edit = QPlainTextEdit()
-        self.overrides_edit.setPlaceholderText(
-            "Optional markdown notes on stack customization..."
-        )
-        self.overrides_edit.setMaximumHeight(120)
-        layout.addWidget(self.overrides_edit)
-
-        layout.addStretch()
-
-    # -- ordering helpers --
-
-    def _move_up(self) -> None:
-        row = self.stack_list.currentRow()
-        if row <= 0:
-            return
-        item = self.stack_list.takeItem(row)
-        self.stack_list.insertItem(row - 1, item)
-        self.stack_list.setCurrentRow(row - 1)
-
-    def _move_down(self) -> None:
-        row = self.stack_list.currentRow()
-        if row < 0 or row >= self.stack_list.count() - 1:
-            return
-        item = self.stack_list.takeItem(row)
-        self.stack_list.insertItem(row + 1, item)
-        self.stack_list.setCurrentRow(row + 1)
-
-    def selected_stacks(self) -> list[StackSelection]:
-        """Return checked stacks in display order."""
-        result: list[StackSelection] = []
-        order = 0
-        for i in range(self.stack_list.count()):
-            item = self.stack_list.item(i)
-            if item is not None and item.checkState() == Qt.CheckState.Checked:
-                result.append(StackSelection(id=item.text(), order=order))
-                order += 1
-        return result
-
-
-# ---------------------------------------------------------------------------
-# Page 3: Team Personas
-# ---------------------------------------------------------------------------
-
-class _PersonaRow(QWidget):
-    """Inline config for a single persona: agent/templates checkboxes + strictness."""
-
-    def __init__(self, persona_id: str, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.persona_id = persona_id
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(4, 2, 4, 2)
-
-        from PySide6.QtWidgets import QCheckBox
-
-        self.agent_cb = QCheckBox("Agent")
-        self.agent_cb.setChecked(True)
-        layout.addWidget(self.agent_cb)
-
-        self.templates_cb = QCheckBox("Templates")
-        self.templates_cb.setChecked(True)
-        layout.addWidget(self.templates_cb)
-
-        layout.addWidget(QLabel("Strictness:"))
-        self.strictness_combo = QComboBox()
-        self.strictness_combo.addItems(_STRICTNESS_OPTIONS)
-        self.strictness_combo.setCurrentText("standard")
-        layout.addWidget(self.strictness_combo)
-
-        layout.addStretch()
-
-
-class _PersonaPage(QWidget):
-    """Select personas and configure per-persona options."""
-
-    def __init__(self, persona_ids: list[str], parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._persona_ids = persona_ids
-        self._config_widgets: dict[str, _PersonaRow] = {}
-
-        layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("Available Personas (check to include)"))
-
-        self.persona_list = QListWidget()
-        for pid in persona_ids:
-            item = QListWidgetItem(pid)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setCheckState(Qt.CheckState.Unchecked)
-            self.persona_list.addItem(item)
-        self.persona_list.itemChanged.connect(self._on_item_changed)
-        layout.addWidget(self.persona_list)
-
-        # Config area that appears when a persona is checked
-        self._config_area = QVBoxLayout()
-        config_label = QLabel("Persona Options")
-        config_label.setStyleSheet("font-weight: bold; margin-top: 8px;")
-        layout.addWidget(config_label)
-
-        self._config_container = QWidget()
-        self._config_container.setLayout(self._config_area)
-        layout.addWidget(self._config_container)
-
-        layout.addStretch()
-
-    def _on_item_changed(self, item: QListWidgetItem) -> None:
-        pid = item.text()
-        if item.checkState() == Qt.CheckState.Checked:
-            if pid not in self._config_widgets:
-                row = _PersonaRow(pid)
-                self._config_widgets[pid] = row
-                self._config_area.addWidget(row)
-            self._config_widgets[pid].setVisible(True)
-        else:
-            if pid in self._config_widgets:
-                self._config_widgets[pid].setVisible(False)
-
-    def selected_personas(self) -> list[PersonaSelection]:
-        """Return checked personas with their configuration."""
-        result: list[PersonaSelection] = []
-        for i in range(self.persona_list.count()):
-            item = self.persona_list.item(i)
-            if item is not None and item.checkState() == Qt.CheckState.Checked:
-                pid = item.text()
-                cfg = self._config_widgets.get(pid)
-                if cfg is not None:
-                    result.append(
-                        PersonaSelection(
-                            id=pid,
-                            include_agent=cfg.agent_cb.isChecked(),
-                            include_templates=cfg.templates_cb.isChecked(),
-                            strictness=cfg.strictness_combo.currentText(),
-                        )
-                    )
-                else:
-                    result.append(PersonaSelection(id=pid))
-        return result
-
-
-# ---------------------------------------------------------------------------
-# Page 4: Hooks & Policies
-# ---------------------------------------------------------------------------
-
-class _HooksPage(QWidget):
-    """Configure hooks posture and generation options."""
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        layout = QVBoxLayout(self)
-
-        layout.addWidget(QLabel("Security Posture Preset"))
-        self.posture_combo = QComboBox()
-        self.posture_combo.addItems(_POSTURE_OPTIONS)
-        self.posture_combo.setCurrentText("baseline")
-        layout.addWidget(self.posture_combo)
-
-        note = QLabel(
-            "baseline — sensible defaults for most projects\n"
-            "hardened — stricter policies, more guardrails\n"
-            "regulated — full audit trail, compliance-oriented"
-        )
-        note.setWordWrap(True)
-        note.setStyleSheet("color: #666; margin-top: 8px;")
-        layout.addWidget(note)
-
-        # -- Generation Options ------------------------------------------------
-        from PySide6.QtWidgets import QCheckBox, QGroupBox
-
-        gen_group = QGroupBox("Generation Options")
-        gen_layout = QVBoxLayout(gen_group)
-
-        self.chk_seed_tasks = QCheckBox("Seed initial tasks")
-        self.chk_seed_tasks.setChecked(True)
-        gen_layout.addWidget(self.chk_seed_tasks)
-
-        self.chk_write_manifest = QCheckBox("Write manifest.json")
-        self.chk_write_manifest.setChecked(True)
-        gen_layout.addWidget(self.chk_write_manifest)
-
-        self.chk_write_diff_report = QCheckBox("Write diff report")
-        self.chk_write_diff_report.setChecked(False)
-        gen_layout.addWidget(self.chk_write_diff_report)
-
-        layout.addWidget(gen_group)
-
-        layout.addStretch()
-
-
-# ---------------------------------------------------------------------------
-# Page 5: Review & Generate
-# ---------------------------------------------------------------------------
-
-class _ReviewPage(QWidget):
-    """Display summary, run validation, and trigger generation."""
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        layout = QVBoxLayout(self)
-
-        layout.addWidget(QLabel("Composition Summary"))
-
-        self.summary_browser = QTextBrowser()
-        self.summary_browser.setOpenExternalLinks(False)
-        layout.addWidget(self.summary_browser)
-
-        self.validation_browser = QTextBrowser()
-        self.validation_browser.setMaximumHeight(160)
-        layout.addWidget(self.validation_browser)
-
-    def set_summary(self, html: str) -> None:
-        self.summary_browser.setHtml(html)
-
-    def set_validation(self, html: str) -> None:
-        self.validation_browser.setHtml(html)
 
 
 # ---------------------------------------------------------------------------
@@ -375,7 +49,7 @@ class _ReviewPage(QWidget):
 # ---------------------------------------------------------------------------
 
 class ProjectWizard(QWidget):
-    """Five-step project builder wizard.
+    """Four-step project builder wizard.
 
     Parameters
     ----------
@@ -437,20 +111,17 @@ class ProjectWizard(QWidget):
 
         # Pages
         self._pages = QStackedWidget()
-        self._page_identity = _IdentityPage()
-        self._page_stacks = _StackPage(
-            [s.id for s in self._library_index.stacks]
+        self._page_project = ProjectPage()
+        self._page_team_stack = TeamStackPage(
+            persona_ids=[p.id for p in self._library_index.personas],
+            stack_ids=[s.id for s in self._library_index.stacks],
         )
-        self._page_personas = _PersonaPage(
-            [p.id for p in self._library_index.personas]
-        )
-        self._page_hooks = _HooksPage()
-        self._page_review = _ReviewPage()
+        self._page_safety = SafetyPage()
+        self._page_review = ReviewPage()
 
-        self._pages.addWidget(self._page_identity)
-        self._pages.addWidget(self._page_stacks)
-        self._pages.addWidget(self._page_personas)
-        self._pages.addWidget(self._page_hooks)
+        self._pages.addWidget(self._page_project)
+        self._pages.addWidget(self._page_team_stack)
+        self._pages.addWidget(self._page_safety)
         self._pages.addWidget(self._page_review)
 
         outer.addWidget(self._pages, stretch=1)
@@ -530,32 +201,35 @@ class ProjectWizard(QWidget):
 
     def _build_composition(self) -> CompositionSpec:
         """Assemble a CompositionSpec from all wizard pages."""
-        slug = self._page_identity.slug_edit.text().strip()
-        output_folder = self._page_identity.output_folder_edit.text().strip() or slug
+        name = self._page_project.name_edit.text().strip()
+        slug = self._page_project.slug_edit.text().strip()
+        subtitle = self._page_project.subtitle_edit.text().strip()
+
+        # Load output root from settings
+        from foundry_app.core.settings import load_settings as _load_settings
+        ws_root = _load_settings().workspace_root or "./generated-projects"
 
         identity = ProjectIdentity(
-            name=self._page_identity.name_edit.text().strip(),
+            name=name,
             slug=slug,
-            output_root=self._page_identity.output_root_edit.text().strip()
-            or "./generated-projects",
-            output_folder=output_folder,
+            subtitle=subtitle,
+            output_root=ws_root,
+            output_folder=slug,
         )
 
-        stacks = self._page_stacks.selected_stacks()
+        stacks = self._page_team_stack.selected_stacks()
         overrides = StackOverrides(
-            notes_md=self._page_stacks.overrides_edit.toPlainText()
+            notes_md=self._page_team_stack.overrides_edit.toPlainText()
         )
+        team = TeamConfig(personas=self._page_team_stack.selected_personas())
+        safety = self._page_safety.build_safety_config()
 
-        team = TeamConfig(personas=self._page_personas.selected_personas())
-
-        hooks = HooksConfig(
-            posture=self._page_hooks.posture_combo.currentText(),
-        )
-
+        # Build generation options from review page
         generation = GenerationOptions(
-            seed_tasks=self._page_hooks.chk_seed_tasks.isChecked(),
-            write_manifest=self._page_hooks.chk_write_manifest.isChecked(),
-            write_diff_report=self._page_hooks.chk_write_diff_report.isChecked(),
+            seed_tasks=self._page_review.chk_seed_tasks.isChecked(),
+            seed_mode=self._page_review.seed_mode,
+            write_manifest=self._page_review.chk_write_manifest.isChecked(),
+            write_diff_report=self._page_review.chk_write_diff_report.isChecked(),
         )
 
         return CompositionSpec(
@@ -563,7 +237,8 @@ class ProjectWizard(QWidget):
             stacks=stacks,
             stack_overrides=overrides,
             team=team,
-            hooks=hooks,
+            hooks=HooksConfig(),
+            safety=safety,
             generation=generation,
         )
 
@@ -580,6 +255,8 @@ class ProjectWizard(QWidget):
         lines.append("<h3>Project</h3>")
         lines.append(f"<b>Name:</b> {_esc(composition.project.name)}<br>")
         lines.append(f"<b>Slug:</b> {_esc(composition.project.slug)}<br>")
+        if composition.project.subtitle:
+            lines.append(f"<b>Subtitle:</b> {_esc(composition.project.subtitle)}<br>")
         lines.append(
             f"<b>Output:</b> {_esc(composition.project.output_root)}"
             f"/{_esc(composition.project.output_folder)}<br>"
@@ -593,11 +270,6 @@ class ProjectWizard(QWidget):
             lines.append("</ol>")
         else:
             lines.append("<i>None selected</i><br>")
-
-        if composition.stack_overrides.notes_md.strip():
-            lines.append(
-                f"<b>Overrides notes:</b> <pre>{_esc(composition.stack_overrides.notes_md)}</pre>"
-            )
 
         lines.append("<h3>Team Personas</h3>")
         if composition.team.personas:
@@ -614,12 +286,13 @@ class ProjectWizard(QWidget):
         else:
             lines.append("<i>None selected</i><br>")
 
-        lines.append("<h3>Hooks &amp; Policies</h3>")
-        lines.append(f"<b>Posture:</b> {_esc(composition.hooks.posture)}<br>")
+        lines.append("<h3>Safety</h3>")
+        lines.append(f"<b>Preset:</b> {_esc(composition.safety.preset)}<br>")
 
         lines.append("<h3>Generation Options</h3>")
         gen = composition.generation
         lines.append(f"<b>Seed tasks:</b> {'Yes' if gen.seed_tasks else 'No'}<br>")
+        lines.append(f"<b>Seed mode:</b> {_esc(gen.seed_mode)}<br>")
         lines.append(f"<b>Write manifest:</b> {'Yes' if gen.write_manifest else 'No'}<br>")
         lines.append(f"<b>Write diff report:</b> {'Yes' if gen.write_diff_report else 'No'}<br>")
 

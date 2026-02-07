@@ -169,6 +169,38 @@ def validate_template_references(
     return result
 
 
+def validate_safety_config(composition: CompositionSpec) -> ValidationResult:
+    """Validate safety configuration for contradictions and risky settings."""
+    result = ValidationResult()
+    safety = composition.safety
+
+    # Warn if fully permissive
+    if safety.preset == "permissive":
+        result.warnings.append(
+            "Safety preset is 'permissive' — all operations are allowed. "
+            "Consider using 'baseline' for production projects."
+        )
+
+    # Error if contradictory: force-push allowed but push denied
+    if safety.git.allow_force_push and not safety.git.allow_push:
+        result.errors.append(
+            "Contradictory git policy: force-push is allowed but push is denied."
+        )
+
+    # Warn if destructive ops are all allowed
+    if (
+        safety.destructive.allow_rm_rf
+        and safety.destructive.allow_reset_hard
+        and safety.destructive.allow_clean
+    ):
+        result.warnings.append(
+            "All destructive operations are allowed. "
+            "Consider restricting rm -rf, reset --hard, or clean."
+        )
+
+    return result
+
+
 def validate_generated_project(project_dir: Path) -> ValidationResult:
     """Validate a generated project has required entry points."""
     result = ValidationResult()
@@ -192,6 +224,27 @@ def validate_generated_project(project_dir: Path) -> ValidationResult:
             "No compiled member prompts in ai/generated/members/ — run compile first."
         )
 
+    # Check for settings.local.json
+    settings_file = project_dir / ".claude" / "settings.local.json"
+    if not settings_file.is_file():
+        result.warnings.append(
+            "No .claude/settings.local.json found — safety guardrails not configured."
+        )
+
+    # Check for populated skills directory
+    skills_dir = project_dir / ".claude" / "skills"
+    if not skills_dir.is_dir() or not any(skills_dir.iterdir()):
+        result.warnings.append(
+            "No skills found in .claude/skills/ — project may lack automation."
+        )
+
+    # Check for populated commands directory
+    commands_dir = project_dir / ".claude" / "commands"
+    if not commands_dir.is_dir() or not any(commands_dir.iterdir()):
+        result.warnings.append(
+            "No commands found in .claude/commands/ — project may lack shortcuts."
+        )
+
     return result
 
 
@@ -212,4 +265,5 @@ def run_pre_generation_validation(
     result.merge(validate_library_personas(composition, library_root, strictness))
     result.merge(validate_library_stacks(composition, library_root, strictness))
     result.merge(validate_template_references(composition, library_root, strictness))
+    result.merge(validate_safety_config(composition))
     return result

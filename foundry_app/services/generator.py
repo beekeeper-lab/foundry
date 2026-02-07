@@ -13,6 +13,7 @@ from foundry_app.core.models import (
     GenerationManifest,
 )
 from foundry_app.io.composition_io import save_manifest
+from foundry_app.services.asset_copier import copy_commands, copy_skills, write_hooks_config
 from foundry_app.services.compiler import compile_team
 from foundry_app.services.diff_reporter import (
     backup_previous_manifest,
@@ -104,14 +105,33 @@ def generate_project(
     manifest.stages["compile"] = compile_result
     logger.info("Compile: %d file(s)", len(compile_result.wrote))
 
-    # Step 4: Seed (optional)
+    # Step 4: Copy Assets (skills, commands, hooks from library)
+    persona_ids = [p.id for p in composition.team.personas]
+
+    logger.info("Copying skills from library")
+    skills_result = copy_skills(library_root, project_dir, persona_ids)
+    manifest.stages["copy_skills"] = skills_result
+    logger.info("Skills: %d file(s)", len(skills_result.wrote))
+
+    logger.info("Copying commands from library")
+    commands_result = copy_commands(library_root, project_dir, persona_ids)
+    manifest.stages["copy_commands"] = commands_result
+    logger.info("Commands: %d file(s)", len(commands_result.wrote))
+
+    logger.info("Copying hook docs from library")
+    hooks_result = write_hooks_config(library_root, project_dir, composition.hooks)
+    manifest.stages["copy_hooks"] = hooks_result
+    logger.info("Hooks: %d file(s)", len(hooks_result.wrote))
+
+    # Step 5: Seed (optional)
     if not composition.generation.seed_tasks:
         logger.debug("Task seeding skipped (disabled)")
     if composition.generation.seed_tasks:
         tasks_dir = project_dir / "ai" / "tasks"
-        seed_result = seed_tasks(composition, tasks_dir)
+        seed_mode = composition.generation.seed_mode
+        seed_result = seed_tasks(composition, tasks_dir, mode=seed_mode)
         manifest.stages["seed"] = seed_result
-        logger.info("Seed: %d task(s)", len(seed_result.wrote))
+        logger.info("Seed: %d task(s) (mode=%s)", len(seed_result.wrote), seed_mode)
 
     # Step 5: Write manifest
     if composition.generation.write_manifest:

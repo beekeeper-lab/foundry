@@ -1,0 +1,78 @@
+project:
+  name: Foundry
+  slug: foundry
+  subtitle: ''
+  output_root: .
+  output_folder: ''
+  created_utc: '2026-02-07T05:22:05.314114+00:00'
+stacks:
+- id: python
+  order: 10
+- id: python-qt-pyside6
+  order: 20
+- id: clean-code
+  order: 30
+stack_overrides:
+  notes_md: ''
+team:
+  personas:
+  - id: team-lead
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: ba
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: architect
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: developer
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: tech-qa
+    include_agent: true
+    include_templates: true
+    strictness: standard
+hooks:
+  posture: baseline
+  packs:
+  - id: hook-policy
+    enabled: true
+    mode: enforcing
+  - id: pre-commit-lint
+    enabled: true
+    mode: enforcing
+  - id: post-task-qa
+    enabled: true
+    mode: enforcing
+safety:
+  preset: baseline
+  git:
+    allow_push: true
+    allow_force_push: false
+    allow_branch_delete: false
+  shell:
+    allow_sudo: false
+    allow_install: true
+    deny_patterns: []
+  filesystem:
+    allow_outside_project: false
+    deny_patterns: []
+  network:
+    allow_network: true
+    allow_external_apis: true
+  secrets:
+    block_env_files: true
+    block_credentials: true
+  destructive:
+    allow_rm_rf: false
+    allow_reset_hard: false
+    allow_clean: false
+generation:
+  seed_tasks: true
+  seed_mode: kickoff
+  write_manifest: true
+  write_diff_report: true

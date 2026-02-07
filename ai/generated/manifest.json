@@ -1,0 +1,208 @@
+{
+  "run_id": "2026-02-07T05-22-05Z",
+  "library_version": "61d76916dda78b60c46639ef1d33c45668d9f2ff",
+  "composition_snapshot": {
+    "project": {
+      "name": "Foundry",
+      "slug": "foundry",
+      "subtitle": "",
+      "output_root": ".",
+      "output_folder": "",
+      "created_utc": "2026-02-07T05:22:05.314114+00:00"
+    },
+    "stacks": [
+      {
+        "id": "python",
+        "order": 10
+      },
+      {
+        "id": "python-qt-pyside6",
+        "order": 20
+      },
+      {
+        "id": "clean-code",
+        "order": 30
+      }
+    ],
+    "stack_overrides": {
+      "notes_md": ""
+    },
+    "team": {
+      "personas": [
+        {
+          "id": "team-lead",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard"
+        },
+        {
+          "id": "ba",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard"
+        },
+        {
+          "id": "architect",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard"
+        },
+        {
+          "id": "developer",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard"
+        },
+        {
+          "id": "tech-qa",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard"
+        }
+      ]
+    },
+    "hooks": {
+      "posture": "baseline",
+      "packs": [
+        {
+          "id": "hook-policy",
+          "enabled": true,
+          "mode": "enforcing"
+        },
+        {
+          "id": "pre-commit-lint",
+          "enabled": true,
+          "mode": "enforcing"
+        },
+        {
+          "id": "post-task-qa",
+          "enabled": true,
+          "mode": "enforcing"
+        }
+      ]
+    },
+    "safety": {
+      "preset": "baseline",
+      "git": {
+        "allow_push": true,
+        "allow_force_push": false,
+        "allow_branch_delete": false
+      },
+      "shell": {
+        "allow_sudo": false,
+        "allow_install": true,
+        "deny_patterns": []
+      },
+      "filesystem": {
+        "allow_outside_project": false,
+        "deny_patterns": []
+      },
+      "network": {
+        "allow_network": true,
+        "allow_external_apis": true
+      },
+      "secrets": {
+        "block_env_files": true,
+        "block_credentials": true
+      },
+      "destructive": {
+        "allow_rm_rf": false,
+        "allow_reset_hard": false,
+        "allow_clean": false
+      }
+    },
+    "generation": {
+      "seed_tasks": true,
+      "seed_mode": "kickoff",
+      "write_manifest": true,
+      "write_diff_report": true
+    }
+  },
+  "stages": {
+    "scaffold": {
+      "wrote": [
+        "CLAUDE.md",
+        "README.md",
+        ".claude/agents/team-lead.md",
+        ".claude/agents/ba.md",
+        ".claude/agents/architect.md",
+        ".claude/agents/developer.md",
+        ".claude/agents/tech-qa.md",
+        "ai/context/project.md",
+        "ai/context/stack.md",
+        "ai/context/decisions.md",
+        "ai/team/composition.yml",
+        ".claude/settings.local.json",
+        "ai/context/safety-policy.md",
+        "ai/context/git-policy.md",
+        "ai/context/shell-policy.md",
+        "ai/outputs/team-lead/README.md",
+        "ai/outputs/ba/README.md",
+        "ai/outputs/architect/README.md",
+        "ai/outputs/developer/README.md",
+        "ai/outputs/tech-qa/README.md"
+      ],
+      "warnings": []
+    },
+    "compile": {
+      "wrote": [
+        "team-lead.md",
+        "ba.md",
+        "architect.md",
+        "developer.md",
+        "tech-qa.md"
+      ],
+      "warnings": []
+    },
+    "copy_skills": {
+      "wrote": [
+        ".claude/skills/build-traceability/SKILL.md",
+        ".claude/skills/close-loop/SKILL.md",
+        ".claude/skills/compile-team/SKILL.md",
+        ".claude/skills/handoff/SKILL.md",
+        ".claude/skills/new-adr/SKILL.md",
+        ".claude/skills/new-dev-decision/SKILL.md",
+        ".claude/skills/new-work/SKILL.md",
+        ".claude/skills/notes-to-stories/SKILL.md",
+        ".claude/skills/review-pr/SKILL.md",
+        ".claude/skills/scaffold-project/SKILL.md",
+        ".claude/skills/seed-tasks/SKILL.md",
+        ".claude/skills/validate-config/SKILL.md",
+        ".claude/skills/validate-repo/SKILL.md"
+      ],
+      "warnings": []
+    },
+    "copy_commands": {
+      "wrote": [
+        ".claude/commands/build-traceability.md",
+        ".claude/commands/compile-team.md",
+        ".claude/commands/handoff.md",
+        ".claude/commands/new-adr.md",
+        ".claude/commands/new-dev-decision.md",
+        ".claude/commands/new-work.md",
+        ".claude/commands/notes-to-stories.md",
+        ".claude/commands/review-pr.md",
+        ".claude/commands/scaffold-project.md",
+        ".claude/commands/seed-tasks.md",
+        ".claude/commands/status-report.md",
+        ".claude/commands/validate-config.md",
+        ".claude/commands/validate-repo.md"
+      ],
+      "warnings": []
+    },
+    "copy_hooks": {
+      "wrote": [
+        ".claude/hooks/hook-policy.md",
+        ".claude/hooks/pre-commit-lint.md",
+        ".claude/hooks/post-task-qa.md"
+      ],
+      "warnings": []
+    },
+    "seed": {
+      "wrote": [
+        "seeded-tasks.md"
+      ],
+      "warnings": []
+    }
+  }
+}

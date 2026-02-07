@@ -190,3 +190,73 @@ def test_write_diff_report_true_creates_report(tmp_path: Path):
     # On first run (no previous manifest), it should note this is the first generation
     content = diff_report.read_text()
     assert "Diff Report" in content
+
+
+# -- New pipeline stages (copy_skills, copy_commands, copy_hooks) ---------------
+
+
+def test_generate_creates_skills_and_commands(tmp_path: Path):
+    """Full pipeline should copy skills and commands from library."""
+    spec = _make_spec(personas=["team-lead", "developer"], stacks=["python"])
+    output = tmp_path / "project"
+
+    manifest, validation = generate_project(spec, LIBRARY_ROOT, output_root=output)
+
+    assert validation.is_valid
+    # New stages should appear in the manifest
+    assert "copy_skills" in manifest.stages
+    assert "copy_commands" in manifest.stages
+    assert "copy_hooks" in manifest.stages
+    # Skills directory should have content
+    skills_dir = output / ".claude" / "skills"
+    assert skills_dir.is_dir()
+    assert any(skills_dir.iterdir()), "Expected at least one skill directory"
+    # Commands directory should have content
+    commands_dir = output / ".claude" / "commands"
+    assert commands_dir.is_dir()
+    assert any(commands_dir.glob("*.md")), "Expected at least one command file"
+
+
+def test_generate_creates_settings_local_json(tmp_path: Path):
+    """Full pipeline should create .claude/settings.local.json."""
+    spec = _make_spec(personas=["team-lead", "developer"], stacks=["python"])
+    output = tmp_path / "project"
+
+    manifest, validation = generate_project(spec, LIBRARY_ROOT, output_root=output)
+
+    assert validation.is_valid
+    settings_path = output / ".claude" / "settings.local.json"
+    assert settings_path.is_file()
+
+
+def test_generate_creates_safety_policy_docs(tmp_path: Path):
+    """Full pipeline should create safety policy docs in ai/context/."""
+    spec = _make_spec(personas=["team-lead", "developer"], stacks=["python"])
+    output = tmp_path / "project"
+
+    manifest, validation = generate_project(spec, LIBRARY_ROOT, output_root=output)
+
+    assert validation.is_valid
+    assert (output / "ai" / "context" / "safety-policy.md").is_file()
+    assert (output / "ai" / "context" / "git-policy.md").is_file()
+    assert (output / "ai" / "context" / "shell-policy.md").is_file()
+
+
+def test_generate_kickoff_mode(tmp_path: Path):
+    """Pipeline with seed_mode='kickoff' should create kickoff-style tasks."""
+    spec = _make_spec(
+        personas=["team-lead", "developer"],
+        seed_tasks=True,
+    )
+    spec.generation.seed_mode = "kickoff"
+    output = tmp_path / "project"
+
+    manifest, validation = generate_project(spec, LIBRARY_ROOT, output_root=output)
+
+    assert validation.is_valid
+    assert "seed" in manifest.stages
+    tasks_file = output / "ai" / "tasks" / "seeded-tasks.md"
+    assert tasks_file.is_file()
+    content = tasks_file.read_text()
+    assert "kickoff" in content.lower()
+    assert "team-lead" in content
