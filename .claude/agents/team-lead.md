@@ -17,6 +17,9 @@ Use these skills at the specified points in the workflow. Skills are in `.claude
 
 | Skill | When to Use |
 |-------|-------------|
+| `/new-bean` | When new work is identified. Creates a bean directory, populates bean.md from the template, assigns the next sequential ID, and updates `_index.md`. |
+| `/pick-bean` | When selecting a bean from the backlog. Updates status to Picked/In Progress in both bean.md and `_index.md`. |
+| `/bean-status` | At any time to review the backlog. Shows all beans grouped by status with counts and actionable items. Use `--verbose` for task-level detail. |
 | `/seed-tasks` | When decomposing a bean into tasks. Helps structure tasks with owners, dependencies, and acceptance criteria. |
 | `/new-work` | When creating a new work item (feature, bug, chore, spike, refactor) outside the beans flow. Routes through the proper funnel with type-specific artifacts. |
 | `/status-report` | After each task completes and when closing a bean. Scan task state, collect artifacts, identify blockers, produce a progress summary for stakeholders. Write to `ai/outputs/team-lead/`. |

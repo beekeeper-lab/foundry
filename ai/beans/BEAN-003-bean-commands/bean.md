@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-003 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 
 ## Problem Statement
 
@@ -30,21 +30,21 @@ Add Claude Code commands and skills to the library that automate bean creation, 
 
 ## Acceptance Criteria
 
-- [ ] `/new-bean` creates `ai/beans/BEAN-NNN-<slug>/bean.md` with correct ID
-- [ ] `/new-bean` updates `ai/beans/_index.md` with the new entry
-- [ ] `/pick-bean` updates bean status to `Picked` in both bean.md and index
-- [ ] `/bean-status` outputs a readable summary of the backlog
-- [ ] Commands are documented in the library's `claude/commands/` directory
-- [ ] Skills are documented in the library's `claude/skills/` directory
+- [x] `/new-bean` creates `ai/beans/BEAN-NNN-<slug>/bean.md` with correct ID
+- [x] `/new-bean` updates `ai/beans/_index.md` with the new entry
+- [x] `/pick-bean` updates bean status to `Picked` in both bean.md and index
+- [x] `/bean-status` outputs a readable summary of the backlog
+- [x] Commands documented in `.claude/commands/` (3 files)
+- [x] Skills documented in `.claude/skills/` (3 directories with SKILL.md)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| | | | | |
+| 01 | Create Bean Commands & Skills | developer | — | Done |
+| 02 | Bean Commands Verification | tech-qa | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> BA and Architect skipped — no requirements ambiguity or architectural decisions. This bean creates markdown command/skill files, not Python code.
 
 ## Notes
 

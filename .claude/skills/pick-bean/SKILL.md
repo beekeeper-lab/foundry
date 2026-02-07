@@ -1,0 +1,77 @@
+# Skill: Pick Bean
+
+## Description
+
+Updates a bean's status from `New` to `Picked` (or `In Progress`), assigning ownership to the Team Lead. This is the formal act of selecting a bean from the backlog for decomposition and execution. Updates both the bean's own file and the backlog index to keep them in sync.
+
+## Trigger
+
+- Invoked by the `/pick-bean` slash command.
+- Called by the Team Lead during sprint planning or backlog grooming.
+- Should only be used by the Team Lead persona.
+
+## Inputs
+
+| Input | Type | Required | Description |
+|-------|------|----------|-------------|
+| bean_id | Text | Yes | Bean ID to pick (e.g., `BEAN-006`, `006`, or `6`) |
+| start | Boolean | No | If true, set status to `In Progress` instead of `Picked`. Defaults to false. |
+
+## Process
+
+1. **Parse bean ID** -- Accept flexible formats:
+   - `BEAN-006` → `BEAN-006`
+   - `006` → `BEAN-006`
+   - `6` → `BEAN-006`
+   Zero-pad to three digits.
+
+2. **Locate bean directory** -- Scan `ai/beans/` for a directory starting with `BEAN-{NNN}-`. If not found, error with `BeanNotFound`.
+
+3. **Read current state** -- Open the bean's `bean.md`. Parse the metadata table to get current Status.
+
+4. **Validate transition** -- Check the current status:
+   - `New` or `Deferred` → allowed, proceed
+   - `Picked` or `In Progress` → warn "already active", proceed anyway (idempotent)
+   - `Done` → error with `BeanDone`, cannot re-pick a completed bean
+
+5. **Determine new status** -- If `start` is true: `In Progress`. Otherwise: `Picked`.
+
+6. **Update bean.md** -- In the metadata table:
+   - Set `Status` to the new status
+   - Set `Owner` to `team-lead`
+
+7. **Update backlog index** -- In `ai/beans/_index.md`, find the row matching `BEAN-{NNN}` and update:
+   - Status column to the new status
+   - Owner column to `team-lead`
+
+8. **Confirm** -- Report: bean ID, title, new status, and next step:
+   - If `Picked`: "Ready for review. Use `/pick-bean {id} --start` when ready to decompose."
+   - If `In Progress`: "Ready for decomposition. Create task files in `tasks/` subdirectory."
+
+## Outputs
+
+| Output | Type | Description |
+|--------|------|-------------|
+| updated_bean | Markdown file | `bean.md` with Status and Owner updated |
+| updated_index | Markdown file | `_index.md` with matching row updated |
+| confirmation | Text | Bean ID, title, new status, and next step |
+
+## Quality Criteria
+
+- Both `bean.md` and `_index.md` are updated atomically (both or neither).
+- Status transitions are valid: only `New` or `Deferred` beans can be picked.
+- Owner is always set to `team-lead` when picking.
+- The operation is idempotent: picking an already-picked bean is a no-op with a warning.
+
+## Error Conditions
+
+| Error | Cause | Resolution |
+|-------|-------|------------|
+| `BeanNotFound` | No bean directory matches the ID | Check `_index.md` for valid IDs |
+| `AlreadyActive` | Bean is already `Picked` or `In Progress` | Warning only — no action needed |
+| `BeanDone` | Bean status is `Done` | Cannot re-pick; create a follow-up bean with `/new-bean` |
+
+## Dependencies
+
+- Backlog index at `ai/beans/_index.md`
+- Bean file at `ai/beans/BEAN-{NNN}-{slug}/bean.md`
