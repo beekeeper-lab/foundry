@@ -85,6 +85,38 @@ class StackOverrides(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Architecture & cloud
+# ---------------------------------------------------------------------------
+
+class ArchitecturePattern(str, Enum):
+    MONOLITH = "monolith"
+    MODULAR_MONOLITH = "modular-monolith"
+    MICROSERVICES = "microservices"
+    SERVERLESS = "serverless"
+    EVENT_DRIVEN = "event-driven"
+
+
+class CloudProvider(str, Enum):
+    AWS = "aws"
+    AZURE = "azure"
+    GCP = "gcp"
+    SELF_HOSTED = "self-hosted"
+
+
+class ArchitectureConfig(BaseModel):
+    """Architecture patterns and cloud providers selected for the project."""
+
+    patterns: list[ArchitecturePattern] = Field(
+        default_factory=list,
+        description="Selected architecture patterns",
+    )
+    cloud_providers: list[CloudProvider] = Field(
+        default_factory=list,
+        description="Selected cloud deployment targets",
+    )
+
+
+# ---------------------------------------------------------------------------
 # Persona / team
 # ---------------------------------------------------------------------------
 
@@ -280,6 +312,7 @@ class CompositionSpec(BaseModel):
     project: ProjectIdentity
     stacks: list[StackSelection] = Field(default_factory=list)
     team: TeamConfig = Field(default_factory=TeamConfig)
+    architecture: ArchitectureConfig = Field(default_factory=ArchitectureConfig)
     hooks: HooksConfig = Field(default_factory=HooksConfig)
     generation: GenerationOptions = Field(default_factory=GenerationOptions)
     safety: SafetyConfig | None = Field(

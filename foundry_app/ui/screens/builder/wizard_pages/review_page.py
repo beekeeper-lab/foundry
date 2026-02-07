@@ -212,6 +212,7 @@ class ReviewPage(QWidget):
         self._build_project_section(spec)
         self._build_team_section(spec)
         self._build_stacks_section(spec)
+        self._build_architecture_section(spec)
         self._build_hooks_section(spec)
         self._build_generation_section(spec)
         if spec.safety is not None:
@@ -266,6 +267,19 @@ class ReviewPage(QWidget):
             return
         for idx, s in enumerate(stacks):
             section.add_item(f"{idx + 1}. {s.id}")
+
+    def _build_architecture_section(self, spec: CompositionSpec) -> None:
+        section = self._add_section("architecture", "Architecture & Cloud")
+        arch = spec.architecture
+        if not arch.patterns and not arch.cloud_providers:
+            section.add_empty_message("No architecture or cloud selections")
+            return
+        if arch.patterns:
+            names = ", ".join(p.value for p in arch.patterns)
+            section.add_field("Patterns", names)
+        if arch.cloud_providers:
+            names = ", ".join(c.value for c in arch.cloud_providers)
+            section.add_field("Cloud Providers", names)
 
     def _build_hooks_section(self, spec: CompositionSpec) -> None:
         section = self._add_section("hooks", "Hooks & Safety Posture")
