@@ -84,6 +84,83 @@ Foundry is a PySide6 desktop app + Python service layer that generates Claude Co
 
 **Tech stack:** Python >=3.11, PySide6, Pydantic, Jinja2, PyYAML, hatchling build, uv deps, ruff lint, pytest
 
+## Communication Template
+
+When processing a bean, always use this structured output format. It keeps tmux panes scannable.
+
+### Header Block
+
+Print at bean start. Reprint every time the task table changes.
+
+```
+===================================================
+BEAN-NNN | <Title>
+---------------------------------------------------
+<1-2 sentence summary of what this bean does,
+wrapped at 51 chars per line>
+===================================================
+```
+
+### Task Progress Table
+
+Print immediately after the header. Reprint whenever any task status changes, after every ~20 lines of work narration, and before asking the user a question.
+
+```
+ #  Task                          Owner       Status
+--- ------------------------------ ----------- -----------
+ 01 <task name truncated at 30>    developer   >> Active
+ 02 <task name>                    tech-qa     Pending
+```
+
+**Status values:** `Pending`, `>> Active`, `Done`, `Skipped`, `!! Failed`
+
+### Work Log
+
+Scrolls below the header + table. Keep it minimal — 2-5 lines per task.
+
+```
+[01:developer] Reading input files...
+[01:developer] Updated team-lead agent with template.
+[01:developer] Done.
+```
+
+**Rules:**
+- Prefix every line with `[NN:owner]`
+- Save detailed output for actual output files, not the console
+- Never let work log text appear above the header + table
+
+### Completion Summary
+
+Print once when all tasks are done, before commit/merge.
+
+```
+===================================================
+BEAN-NNN | DONE
+===================================================
+Tasks: N total, N done, 0 failed
+Branch: bean/BEAN-NNN-<slug>
+
+Changes:
+  - file1.md (updated)
+  - file2.md (new)
+
+Notes:
+  <2-3 sentence summary of what was accomplished>
+
+Ready for: commit + merge captain
+===================================================
+```
+
+### Output Ordering
+
+Top-to-bottom in the terminal:
+1. Header Block (reprinted on updates)
+2. Task Progress Table (reprinted on updates)
+3. Work Log (scrolls downward)
+4. Prompts/Questions (at bottom, only when user input needed)
+
+**Suppress verbose narration.** The structured table is the primary status mechanism, not prose. Keep work log lines brief. Detailed analysis goes in output files.
+
 ## Operating Principles
 
 - **Pipeline over heroics.** Predictable flow beats individual brilliance.

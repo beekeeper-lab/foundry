@@ -25,3 +25,6 @@
 | BEAN-009 | Push Hook Refinement | High | Done | team-lead |
 | BEAN-010 | Parallel Long Run (tmux) | Medium | Done | team-lead |
 | BEAN-011 | Merge Captain Auto-Merge | Medium | Done | team-lead |
+| BEAN-012 | Enforce Feature Branch Workflow | Low | New | (unassigned) |
+| BEAN-013 | Deploy Command | Low | New | (unassigned) |
+| BEAN-014 | Team Lead Progress Dashboard | High | Done | team-lead |

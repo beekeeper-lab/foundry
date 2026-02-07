@@ -40,7 +40,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
    - **Dependencies second:** If Bean A depends on Bean B (stated in Notes or Scope), select B first.
    - **Logical order third:** Infrastructure and foundational work before features. Data models before UI. Shared utilities before consumers.
    - **ID order last:** Lower bean IDs first as a tiebreaker.
-6. **Announce selection** — Report which bean was selected and why.
+6. **Announce selection** — Print the **Header Block** and **Task Progress Table** from the Team Lead Communication Template (see `.claude/agents/team-lead.md`). This is the first thing visible in the tmux pane.
 
 ### Phase 3: Bean Execution
 
@@ -63,6 +63,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
     - Perform the work as the assigned persona.
     - Write outputs to `ai/outputs/<persona>/`.
     - Update the task status to `Done` in the task file and the bean's task table.
+    - Reprint the **Header Block + Task Progress Table** after each status change.
 12. **Skip inapplicable roles** — If a role has no meaningful contribution for a bean (e.g., Architect for a documentation-only bean), skip it. Document the skip reason in the bean's Notes section.
 
 ### Phase 5: Verification & Closure
@@ -78,7 +79,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
     - If merge conflicts occur: report the conflicts, abort the merge, leave the bean on its feature branch, and stop the loop.
     - If merge succeeds: continue.
 17. **Return to main** — Checkout the main branch: `git checkout main`.
-18. **Report progress** — Output a summary: bean title, tasks completed, feature branch, merge commit on `test`, files changed, remaining backlog status.
+18. **Report progress** — Print the **Completion Summary** from the Team Lead Communication Template: bean title, task counts, branch name, files changed, notes, and remaining backlog status.
 
 ### Phase 6: Loop
 
