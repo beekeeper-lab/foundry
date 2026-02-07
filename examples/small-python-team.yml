@@ -1,0 +1,44 @@
+# Small Python Team — a lightweight composition for utility libraries or scripts.
+# Usage: foundry-cli generate examples/small-python-team.yml --library ai-team-library
+
+project:
+  name: "Small Python Team"
+  slug: small-python-team
+  output_root: "./generated-projects"
+
+stacks:
+  - id: python
+    order: 10
+  - id: clean-code
+    order: 20
+
+team:
+  personas:
+    - id: team-lead
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: developer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: tech-qa
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: code-quality-reviewer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+
+hooks:
+  posture: baseline
+  packs:
+    - id: hook-policy
+      enabled: true
+      mode: enforcing
+
+generation:
+  seed_tasks: true
+  write_manifest: true
+  write_diff_report: false

@@ -1,0 +1,74 @@
+# Full-Stack Web Application — production web app with a complete team.
+# Usage: foundry-cli generate examples/full-stack-web.yml --library ai-team-library
+
+project:
+  name: "Full-Stack Web Application"
+  slug: full-stack-web
+  output_root: "./generated-projects"
+
+stacks:
+  - id: react
+    order: 10
+  - id: typescript
+    order: 20
+  - id: node
+    order: 30
+  - id: clean-code
+    order: 40
+
+team:
+  personas:
+    - id: team-lead
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: ba
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: architect
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: developer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: tech-qa
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: code-quality-reviewer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: devops-release
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: security-engineer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: technical-writer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+
+hooks:
+  posture: hardened
+  packs:
+    - id: hook-policy
+      enabled: true
+      mode: enforcing
+    - id: pre-commit-lint
+      enabled: true
+      mode: enforcing
+    - id: security-scan
+      enabled: true
+      mode: enforcing
+
+generation:
+  seed_tasks: true
+  write_manifest: true
+  write_diff_report: true

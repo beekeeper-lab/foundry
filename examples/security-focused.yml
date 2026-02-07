@@ -1,0 +1,70 @@
+# Security-Focused Service — for services handling sensitive data with compliance requirements.
+# Usage: foundry-cli generate examples/security-focused.yml --library ai-team-library
+
+project:
+  name: "Security-Focused Service"
+  slug: security-focused
+  output_root: "./generated-projects"
+
+stacks:
+  - id: python
+    order: 10
+  - id: security
+    order: 20
+  - id: devops
+    order: 30
+
+team:
+  personas:
+    - id: team-lead
+      include_agent: true
+      include_templates: true
+      strictness: strict
+    - id: architect
+      include_agent: true
+      include_templates: true
+      strictness: strict
+    - id: developer
+      include_agent: true
+      include_templates: true
+      strictness: strict
+    - id: tech-qa
+      include_agent: true
+      include_templates: true
+      strictness: strict
+    - id: security-engineer
+      include_agent: true
+      include_templates: true
+      strictness: strict
+    - id: compliance-risk
+      include_agent: true
+      include_templates: true
+      strictness: strict
+    - id: devops-release
+      include_agent: true
+      include_templates: true
+      strictness: strict
+
+hooks:
+  posture: regulated
+  packs:
+    - id: hook-policy
+      enabled: true
+      mode: enforcing
+    - id: pre-commit-lint
+      enabled: true
+      mode: enforcing
+    - id: post-task-qa
+      enabled: true
+      mode: enforcing
+    - id: security-scan
+      enabled: true
+      mode: enforcing
+    - id: compliance-gate
+      enabled: true
+      mode: enforcing
+
+generation:
+  seed_tasks: true
+  write_manifest: true
+  write_diff_report: true

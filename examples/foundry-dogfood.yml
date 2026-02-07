@@ -1,0 +1,64 @@
+# Foundry Development — Foundry building itself (dogfooding).
+# Usage: foundry-cli generate examples/foundry-dogfood.yml --library ai-team-library
+
+project:
+  name: "Foundry Development"
+  slug: foundry-dogfood
+  output_root: "./generated-projects"
+
+stacks:
+  - id: python
+    order: 10
+  - id: python-qt-pyside6
+    order: 20
+  - id: clean-code
+    order: 30
+
+team:
+  personas:
+    - id: team-lead
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: architect
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: developer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: tech-qa
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: code-quality-reviewer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: technical-writer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: ux-ui-designer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+
+hooks:
+  posture: hardened
+  packs:
+    - id: hook-policy
+      enabled: true
+      mode: enforcing
+    - id: pre-commit-lint
+      enabled: true
+      mode: enforcing
+    - id: post-task-qa
+      enabled: true
+      mode: enforcing
+
+generation:
+  seed_tasks: true
+  write_manifest: true
+  write_diff_report: true
