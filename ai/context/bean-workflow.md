@@ -14,16 +14,28 @@ ai/beans/
       01-<owner>-<slug>.md     # Individual task assigned to a persona
 ```
 
+## Multi-Agent Environment
+
+Multiple Claude Code agents may be working in this codebase simultaneously. Each agent typically operates in a different functional area (e.g., one on Process beans, another on App beans), but overlap can occur.
+
+**Rules for concurrent work:**
+- **Always re-read `_index.md` before creating a new bean** — another agent may have added beans since your last read. Use the highest existing ID + 1.
+- **Always re-read `_index.md` before picking a bean** — another agent may have already picked it.
+- **Expect external changes** — files you read earlier may have been modified by another agent. Re-read before editing if significant time has passed.
+- **Bean ID collisions** — if you create a bean and find the ID already taken, increment and retry.
+- **Don't modify another agent's in-progress bean** — if a bean is `In Progress` with a different owner context, leave it alone.
+
 ## Bean Lifecycle
 
 ### 1. Creation
 
 Anyone can create a bean:
 
-1. Copy `ai/beans/_bean-template.md` to `ai/beans/BEAN-NNN-<slug>/bean.md`
-2. Fill in all fields: Problem Statement, Goal, Scope, Acceptance Criteria
-3. Set Status to `New` and assign a Priority
-4. Add the bean to `ai/beans/_index.md`
+1. **Re-read `ai/beans/_index.md`** to get the current highest bean ID (another agent may have added beans)
+2. Copy `ai/beans/_bean-template.md` to `ai/beans/BEAN-NNN-<slug>/bean.md`
+3. Fill in all fields: Problem Statement, Goal, Scope, Acceptance Criteria
+4. Set Status to `New` and assign a Priority
+5. Add the bean to `ai/beans/_index.md`
 
 Bean IDs are sequential: BEAN-001, BEAN-002, etc.
 

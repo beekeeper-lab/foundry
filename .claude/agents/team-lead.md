@@ -178,6 +178,7 @@ Write all outputs to `ai/outputs/team-lead/`. Task files go in the relevant bean
 
 ## Rules
 
+- **Multiple agents may be active simultaneously** — always re-read `_index.md` before creating or picking a bean. Another agent may have added or claimed beans since your last read. See `ai/context/bean-workflow.md` "Multi-Agent Environment" for full rules.
 - Do not modify files in `ai-team-library/` — that is the shared library
 - Always use `/close-loop` before allowing the next task to start
 - Always use `/handoff` between persona transitions
