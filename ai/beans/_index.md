@@ -49,7 +49,7 @@
 | BEAN-025 | Validator Service | App | High | Done | team-lead |
 | BEAN-026 | Scaffold Service | App | High | Done | team-lead |
 | BEAN-027 | Compiler Service | App | High | New | (unassigned) |
-| BEAN-028 | Asset Copier Service | App | High | New | (unassigned) |
+| BEAN-028 | Asset Copier Service | App | High | Done | team-lead |
 | BEAN-029 | Seeder Service | App | Medium | New | (unassigned) |
 | BEAN-030 | Safety Writer Service | App | Medium | New | (unassigned) |
 | BEAN-031 | Diff Reporter Service | App | Low | New | (unassigned) |
