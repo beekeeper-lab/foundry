@@ -22,6 +22,7 @@ from foundry_app.core.models import (
 )
 from foundry_app.services.library_indexer import build_library_index
 from foundry_app.services.scaffold import scaffold_project
+from foundry_app.services.seeder import seed_tasks
 from foundry_app.services.validator import run_pre_generation_validation
 
 logger = logging.getLogger(__name__)
@@ -47,9 +48,8 @@ def _stub_copy_assets(
 
 
 def _stub_seed_tasks(spec: CompositionSpec, output_dir: Path) -> StageResult:
-    """Stub for the seeder service (BEAN-029)."""
-    logger.info("Seed tasks stage: stub (BEAN-029 not yet implemented)")
-    return StageResult()
+    """Stub for the seeder service (BEAN-029) — replaced by real implementation."""
+    return seed_tasks(spec, output_dir)
 
 
 def _stub_write_safety(spec: CompositionSpec, output_dir: Path) -> StageResult:
