@@ -21,6 +21,7 @@ from foundry_app.core.models import (
     ValidationResult,
 )
 from foundry_app.services.library_indexer import build_library_index
+from foundry_app.services.safety_writer import write_safety
 from foundry_app.services.scaffold import scaffold_project
 from foundry_app.services.seeder import seed_tasks
 from foundry_app.services.validator import run_pre_generation_validation
@@ -53,9 +54,8 @@ def _stub_seed_tasks(spec: CompositionSpec, output_dir: Path) -> StageResult:
 
 
 def _stub_write_safety(spec: CompositionSpec, output_dir: Path) -> StageResult:
-    """Stub for the safety writer service (BEAN-030)."""
-    logger.info("Write safety stage: stub (BEAN-030 not yet implemented)")
-    return StageResult()
+    """Stub for the safety writer service (BEAN-030) — replaced by real implementation."""
+    return write_safety(spec, output_dir)
 
 
 def _stub_diff_report(spec: CompositionSpec, output_dir: Path) -> StageResult:
