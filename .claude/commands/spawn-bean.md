@@ -1,0 +1,292 @@
+# /spawn-bean Command
+
+Spawns one or more tmux workers, each running a Team Lead Claude Code agent that picks and executes a bean autonomously. Workers report progress via status files. The main window displays a live dashboard. Workers auto-submit their prompt and auto-close when done.
+
+## Usage
+
+```
+/spawn-bean              # Spawn 1 window — team lead picks the best bean
+/spawn-bean 16           # Spawn 1 window — team lead runs BEAN-016
+/spawn-bean --count 3    # Spawn 3 windows — each team lead picks its own bean
+/spawn-bean 16 17 18     # Spawn 3 windows — one per specified bean
+/spawn-bean 16 17 18 --wide   # Same, but all in one window as tiled panes
+/spawn-bean --count 4 --wide  # 4 auto-pick workers in a tiled grid
+```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<bean-ids...>` | Optional. One or more bean IDs (e.g., `16`, `BEAN-016`). Each gets its own worker. |
+| `--count N` or `-n N` | Spawn N workers. Each team lead auto-picks the highest-priority available bean. |
+| `--wide` | Put all workers in a single window as tiled panes (for wide monitors). Without this flag, each worker gets its own window. |
+| *(no args)* | Spawn 1 worker. Team lead auto-picks the best available bean. |
+
+## Status File Protocol
+
+Workers communicate progress back to the main window via status files in `/tmp/`. This enables the main window to display a live dashboard without polling the workers directly.
+
+### File Location
+
+Each worker writes to: `/tmp/foundry-worker-BEAN-NNN.status`
+
+For auto-pick workers (no bean ID known at spawn time), use: `/tmp/foundry-worker-auto-N.status` initially — the worker renames it to the real bean ID once it picks one.
+
+### File Format
+
+```
+bean: BEAN-018
+title: Library Indexer Service
+tasks_total: 4
+tasks_done: 2
+current_task: 03-developer-implement
+status: running
+message:
+updated: 2026-02-07T14:32:01
+```
+
+### Status Values
+
+| Status | Meaning | Dashboard Color |
+|--------|---------|-----------------|
+| `starting` | Worker launched, claude initializing | ⚪ White/dim |
+| `decomposing` | Breaking bean into tasks | 🔵 Blue |
+| `running` | Executing tasks normally | 🟢 Green |
+| `blocked` | Needs human input — see `message` field | 🔴 Red |
+| `error` | Hit an unrecoverable error — see `message` | 🟠 Orange |
+| `done` | Bean completed successfully | ✅ Done |
+
+### When Workers Update the Status File
+
+Workers must update their status file at each of these transitions:
+
+1. **After picking a bean** — Set `status: decomposing`, fill in `bean`, `title`
+2. **After decomposing into tasks** — Set `status: running`, fill in `tasks_total`, `tasks_done: 0`, `current_task`
+3. **After completing each task** — Increment `tasks_done`, update `current_task` to the next task
+4. **On blocker** — Set `status: blocked`, write explanation in `message`
+5. **On error** — Set `status: error`, write error details in `message`
+6. **On completion** — Set `status: done`, `tasks_done` equals `tasks_total`, clear `current_task`
+
+Always update the `updated` timestamp when writing.
+
+## Process
+
+### Step 1: Determine what to spawn
+
+- **Specific beans given** — Read `ai/beans/_index.md`. For each bean ID, verify it exists and has status `New` or `Deferred`. Resolve short IDs (e.g., `16` → `BEAN-016`). Extract the slug from the directory name.
+- **`--count N`** — Read the index. Identify the top N beans by priority (High before Medium before Low) that have status `New`. You will NOT pre-assign beans — each child team lead will pick its own to avoid race conditions.
+- **No args** — Same as `--count 1`.
+
+### Step 2: Create launcher scripts
+
+For **each** worker, create a launcher script. The launcher script avoids shell quoting issues with long prompts.
+
+```bash
+# Variables — replace with actual values
+BEAN_LABEL="BEAN-NNN"   # or "auto" if team lead is picking
+WINDOW_NAME="bean-NNN"  # or "team-lead-1", "team-lead-2" for auto-pick
+STATUS_FILE="/tmp/foundry-worker-BEAN-NNN.status"
+PROMPT="<prompt text from Step 3>"
+
+# Write initial status file so dashboard picks it up immediately
+cat > "$STATUS_FILE" << EOF
+bean: ${BEAN_LABEL}
+title: (starting)
+tasks_total: 0
+tasks_done: 0
+current_task:
+status: starting
+message:
+updated: $(date -Iseconds)
+EOF
+
+# Create a temp launcher script
+LAUNCHER=$(mktemp /tmp/foundry-bean-XXXXXX.sh)
+cat > "$LAUNCHER" << SCRIPT_EOF
+#!/bin/bash
+cd /home/gregg/Nextcloud/workspace/foundry
+claude --dangerously-skip-permissions --agent team-lead \
+  "$PROMPT"
+SCRIPT_EOF
+chmod +x "$LAUNCHER"
+```
+
+### Step 2a: Spawn workers (default — separate windows)
+
+When `--wide` is **not** set, each worker gets its own tmux window:
+
+```bash
+tmux new-window -n "${WINDOW_NAME}" "bash $LAUNCHER; rm -f $LAUNCHER"
+```
+
+Each worker appears as a separate dot in the status bar. Switch between them with `Alt-N` or `` ` e ``.
+
+### Step 2b: Spawn workers (`--wide` — tiled panes in one window)
+
+When `--wide` is set, all workers share a single window as panes:
+
+```bash
+# First worker creates the window
+tmux new-window -n "workers" "bash $LAUNCHER_1; rm -f $LAUNCHER_1"
+
+# Additional workers split into panes within that window
+tmux split-window -t "workers" "bash $LAUNCHER_2; rm -f $LAUNCHER_2"
+tmux split-window -t "workers" "bash $LAUNCHER_3; rm -f $LAUNCHER_3"
+
+# Auto-arrange into an even grid
+tmux select-layout -t "workers" tiled
+```
+
+The `tiled` layout automatically arranges panes into a grid: 2 = side-by-side, 4 = 2x2, 6 = 2x3, etc. Each pane auto-closes when its claude exits. When the last pane closes, the window closes.
+
+**Why this works (both modes):**
+- **Auto-submit**: Passing the prompt as a positional argument to `claude` makes it start interactive mode and immediately process the prompt — no `send-keys` or sleep needed.
+- **Auto-close**: When tmux runs a command (vs opening a bare shell), the window/pane automatically closes when the command exits.
+- **Clean temp files**: Each launcher deletes itself after claude exits.
+
+When spawning multiple workers, stagger by ~15 seconds so each team lead has time to claim a bean before the next one reads the index.
+
+### Step 3: Craft the prompt
+
+The prompt must include status file instructions so the worker reports progress.
+
+**When a specific bean is given**, the prompt should be:
+
+```
+Pick BEAN-NNN (slug) using /pick-bean NNN --start, then execute the full bean lifecycle autonomously.
+
+STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition:
+- Write the file using: cat > /tmp/foundry-worker-BEAN-NNN.status << 'SF_EOF'
+  bean: BEAN-NNN
+  title: <bean title>
+  tasks_total: <N>
+  tasks_done: <N>
+  current_task: <current task filename or empty>
+  status: <starting|decomposing|running|blocked|error|done>
+  message: <empty or explanation for blocked/error>
+  updated: <ISO timestamp>
+  SF_EOF
+- Update after: picking the bean (decomposing), decomposing tasks (running, set tasks_total), completing each task (increment tasks_done), hitting a blocker (blocked + message), errors (error + message), and completion (done).
+- CRITICAL: If you encounter a blocker requiring human input, set status to "blocked" with a clear message explaining what you need, then STOP and wait.
+
+Bean lifecycle:
+1. Decompose into tasks using /seed-tasks
+2. Execute each task through the appropriate team persona
+3. Use /close-loop after each task to verify acceptance criteria
+4. Use /handoff between persona transitions
+5. Run tests (uv run pytest) and lint (uv run ruff check foundry_app/) before closing
+6. Commit all changes on the feature branch
+7. Use /merge-bean to merge into test
+8. Use /status-report to produce final summary
+Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
+```
+
+**When auto-picking** (no bean ID specified), the prompt should be:
+
+```
+You are a Team Lead. Read ai/beans/_index.md and pick the highest-priority bean with status New that is not owned by another agent. Use /pick-bean <id> --start to claim it, then execute the full bean lifecycle autonomously.
+
+STATUS FILE PROTOCOL — You MUST update your status file at every transition:
+- Your initial status file is at /tmp/foundry-worker-auto-N.status
+- Once you pick a bean, RENAME the file: mv /tmp/foundry-worker-auto-N.status /tmp/foundry-worker-BEAN-NNN.status
+- Then continue updating the renamed file.
+- Write the file using: cat > /tmp/foundry-worker-BEAN-NNN.status << 'SF_EOF'
+  bean: BEAN-NNN
+  title: <bean title>
+  tasks_total: <N>
+  tasks_done: <N>
+  current_task: <current task filename or empty>
+  status: <starting|decomposing|running|blocked|error|done>
+  message: <empty or explanation for blocked/error>
+  updated: <ISO timestamp>
+  SF_EOF
+- Update after: picking the bean (decomposing), decomposing tasks (running, set tasks_total), completing each task (increment tasks_done), hitting a blocker (blocked + message), errors (error + message), and completion (done).
+- CRITICAL: If you encounter a blocker requiring human input, set status to "blocked" with a clear message explaining what you need, then STOP and wait.
+
+Bean lifecycle:
+1. Decompose into tasks using /seed-tasks
+2. Execute each task through the appropriate team persona
+3. Use /close-loop after each task to verify acceptance criteria
+4. Use /handoff between persona transitions
+5. Run tests (uv run pytest) and lint (uv run ruff check foundry_app/) before closing
+6. Commit all changes on the feature branch
+7. Use /merge-bean to merge into test
+8. Use /status-report to produce final summary
+Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
+```
+
+### Step 4: Dashboard — monitor workers from the main window
+
+After all workers are spawned, the main window enters a **dashboard monitoring loop**. This runs in the orchestrator's Claude session (the one that ran `/spawn-bean`).
+
+**Dashboard loop:**
+
+1. Read all `/tmp/foundry-worker-*.status` files.
+2. For each file, parse the key-value pairs.
+3. Compute progress percentage: `tasks_done / tasks_total * 100` (show 0% if `tasks_total` is 0).
+4. Check for stale workers: if `updated` timestamp is older than 5 minutes and status is `running`, mark as `🟡 Stale` in the display.
+5. Render the dashboard table (see format below).
+6. If any worker has `status: blocked`, display an alert with the message and which window to switch to.
+7. If all workers show `status: done` or their status files are gone (window closed), report completion and exit the loop.
+8. Wait ~30 seconds, then repeat from step 1.
+
+**Dashboard display format:**
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  Bean Workers — 3 active                          14:32:01     ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                 ║
+║  BEAN-018  Library Indexer Service     ████████░░  50% (2/4)    ║
+║  🟢 Running — 03-developer-implement                           ║
+║                                                                 ║
+║  BEAN-019  Wizard Project Identity     ██████████░ 75% (3/4)    ║
+║  🟢 Running — 04-tech-qa-tests                                 ║
+║                                                                 ║
+║  BEAN-020  Wizard Persona Selection    ███░░░░░░░  25% (1/4)    ║
+║  🔴 FEEDBACK NEEDED — Need clarification on persona filter UX   ║
+║     → Switch to worker: Alt-3                                   ║
+║                                                                 ║
+╚══════════════════════════════════════════════════════════════════╝
+
+⚠  1 worker needs attention — see 🔴 above
+```
+
+**How to render this:** Use simple `print()` output with Unicode box-drawing characters. The progress bar uses `█` (filled) and `░` (empty) with 10 segments. Color indicators use emoji since they render in all terminals.
+
+**Alerting on blocked workers:**
+
+When a worker has `status: blocked`:
+- The dashboard highlights that row with 🔴 and shows the `message` text
+- Below the table, print a prominent alert: `⚠  N worker(s) need attention`
+- Include the window switch shortcut so the user can jump there immediately
+
+**Dashboard exit conditions:**
+- All status files show `done` → print completion summary, clean up status files, exit
+- All worker windows/panes have closed → print completion summary, clean up any remaining status files, exit
+- User interrupts → exit cleanly (status files remain for inspection)
+
+### Step 5: Cleanup
+
+Workers clean up automatically:
+- When claude exits (bean done or error), the window/pane closes automatically.
+- The temp launcher script deletes itself after use.
+- Status files persist in `/tmp/` until the dashboard exits and cleans them up, or until the OS cleans `/tmp/`.
+- The dashboard cleans up status files when all workers complete: `rm -f /tmp/foundry-worker-*.status`
+- To force-kill a stuck worker:
+  - **Windows mode**: `tmux kill-window -t "bean-NNN"`
+  - **Wide mode**: switch to the "workers" window, select the pane, and `` ` x `` to kill it
+
+## Important Notes
+
+- Each spawned Claude runs with `--dangerously-skip-permissions` and `--agent team-lead`
+- **Windows mode** (default): each worker is a separate window (dot in status bar). Navigate with `Alt-N` or `` ` e ``
+- **Wide mode** (`--wide`): all workers share one window as tiled panes — ideal for large monitors where you can see all workers at once
+- When spawning multiple auto-pick workers, stagger by ~15 seconds so each team lead has time to claim a bean before the next one reads the index — this prevents two agents from picking the same bean
+- The bean locking protocol in `_index.md` provides a safety net, but staggering is still recommended
+- Child agents work fully autonomously — no user input needed for normal flow
+- Workers auto-close when done — no manual cleanup needed (both windows and panes)
+- **Status files** in `/tmp/foundry-worker-*.status` are the communication channel — the dashboard reads these, workers write them
+- The dashboard refreshes every ~30 seconds and alerts on blocked/stale workers
+- To check all bean status from this (coordinator) window: `/bean-status`
+- Max recommended parallel workers: 3-5 (depends on system resources and API rate limits)
