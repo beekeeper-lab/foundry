@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-025 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-07 |
 | **Owner** | team-lead |
@@ -34,21 +34,21 @@ Rebuild the validator service that checks a CompositionSpec against the library 
 
 ## Acceptance Criteria
 
-- [ ] Validator catches missing persona references
-- [ ] Validator catches invalid stack IDs
-- [ ] Validator catches missing required fields
-- [ ] Strictness levels work: light allows warnings, strict promotes them to errors
-- [ ] ValidationResult contains categorized messages (error/warning/info)
-- [ ] Unit tests cover all validation checks
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Validator catches missing persona references
+- [x] Validator catches invalid stack IDs
+- [x] Validator catches missing required fields
+- [x] Strictness levels work: light allows warnings, strict promotes them to errors
+- [x] ValidationResult contains categorized messages (error/warning/info)
+- [x] Unit tests cover all validation checks
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Implement validator service | developer | — | Pending |
-| 2 | Write unit tests | tech-qa | 1 | Pending |
+| 1 | Implement validator service | developer | — | Done |
+| 2 | Write unit tests | tech-qa | 1 | Done |
 
 ## Notes
 
