@@ -1,0 +1,615 @@
+"""Wizard page 5 — Hook & Safety Configuration.
+
+Allows users to configure hook packs (posture + per-pack enable/mode) and
+safety policies (git, shell, filesystem, network, secrets, destructive ops).
+Provides preset buttons for quick safety configuration.
+"""
+
+from __future__ import annotations
+
+import logging
+
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
+
+from foundry_app.core.models import (
+    DestructiveOpsPolicy,
+    FileSystemPolicy,
+    GitPolicy,
+    HookMode,
+    HookPackInfo,
+    HookPackSelection,
+    HooksConfig,
+    LibraryIndex,
+    NetworkPolicy,
+    Posture,
+    SafetyConfig,
+    SecretPolicy,
+    ShellPolicy,
+)
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Human-readable hook pack descriptions (keyed by pack id)
+# ---------------------------------------------------------------------------
+
+HOOK_PACK_DESCRIPTIONS: dict[str, tuple[str, str]] = {
+    "pre-commit-lint": ("Pre-Commit Lint", "Linting and formatting checks before code commit"),
+    "post-task-qa": ("Post-Task QA", "Output validation after task completion"),
+    "security-scan": ("Security Scan", "Security and secret scanning"),
+    "compliance-gate": ("Compliance Gate", "Compliance verification"),
+    "hook-policy": ("Hook Policy", "Hook policy documentation"),
+}
+
+# ---------------------------------------------------------------------------
+# Stylesheet constants (Catppuccin Mocha theme)
+# ---------------------------------------------------------------------------
+
+CARD_STYLE = """
+QFrame#hook-card {
+    background-color: #1e1e2e;
+    border: 1px solid #313244;
+    border-radius: 8px;
+    padding: 12px;
+}
+QFrame#hook-card:hover {
+    border-color: #585b70;
+}
+"""
+
+CARD_SELECTED_BORDER = "border-color: #a6e3a1;"
+
+SECTION_STYLE = """
+QFrame#safety-section {
+    background-color: #1e1e2e;
+    border: 1px solid #313244;
+    border-radius: 8px;
+    padding: 12px;
+}
+"""
+
+LABEL_STYLE = "color: #cdd6f4; font-size: 14px; font-weight: bold;"
+DESC_STYLE = "color: #6c7086; font-size: 12px;"
+CONFIG_LABEL_STYLE = "color: #a6adc8; font-size: 12px;"
+HEADING_STYLE = "color: #cdd6f4; font-size: 18px; font-weight: bold;"
+SUBHEADING_STYLE = "color: #6c7086; font-size: 13px;"
+SECTION_HEADING_STYLE = "color: #cdd6f4; font-size: 15px; font-weight: bold;"
+FILES_STYLE = "color: #a6adc8; font-size: 11px; font-style: italic;"
+PRESET_BTN_STYLE = """
+QPushButton {
+    background-color: #313244;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+QPushButton:hover {
+    background-color: #45475a;
+}
+"""
+
+COMBO_STYLE = """
+QComboBox {
+    background-color: #313244;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+}
+"""
+
+
+# ---------------------------------------------------------------------------
+# HookPackCard — single hook pack row widget
+# ---------------------------------------------------------------------------
+
+class HookPackCard(QFrame):
+    """A card representing a single hook pack with enable checkbox and mode selector."""
+
+    toggled = Signal(str, bool)  # pack_id, checked
+
+    def __init__(self, pack: HookPackInfo, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._pack = pack
+        self.setObjectName("hook-card")
+        self.setStyleSheet(CARD_STYLE)
+        self.setFrameShape(QFrame.Shape.StyledPanel)
+
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(10)
+
+        # Checkbox
+        self._checkbox = QCheckBox()
+        self._checkbox.setChecked(True)  # enabled by default
+        self._checkbox.stateChanged.connect(self._on_toggled)
+        layout.addWidget(self._checkbox)
+
+        # Name and description
+        display_name, desc = HOOK_PACK_DESCRIPTIONS.get(
+            self._pack.id, (self._pack.id.replace("-", " ").title(), "")
+        )
+
+        name_label = QLabel(display_name)
+        name_label.setStyleSheet(LABEL_STYLE)
+        layout.addWidget(name_label)
+
+        desc_label = QLabel(f"— {desc}" if desc else "")
+        desc_label.setStyleSheet(DESC_STYLE)
+        layout.addWidget(desc_label, stretch=1)
+
+        # File count badge
+        file_count = len(self._pack.files)
+        if file_count > 0:
+            badge = QLabel(f"{file_count} file{'s' if file_count != 1 else ''}")
+            badge.setStyleSheet(FILES_STYLE)
+            layout.addWidget(badge)
+
+        # Mode selector
+        mode_label = QLabel("Mode:")
+        mode_label.setStyleSheet(CONFIG_LABEL_STYLE)
+        layout.addWidget(mode_label)
+
+        self._mode_combo = QComboBox()
+        self._mode_combo.setStyleSheet(COMBO_STYLE)
+        self._mode_combo.addItems(["enforcing", "permissive", "disabled"])
+        self._mode_combo.setCurrentText("enforcing")
+        self._mode_combo.setFixedWidth(100)
+        self._mode_combo.currentTextChanged.connect(self._on_mode_changed)
+        layout.addWidget(self._mode_combo)
+
+    # -- State access -------------------------------------------------------
+
+    @property
+    def pack_id(self) -> str:
+        return self._pack.id
+
+    @property
+    def is_enabled(self) -> bool:
+        return self._checkbox.isChecked()
+
+    @is_enabled.setter
+    def is_enabled(self, value: bool) -> None:
+        self._checkbox.setChecked(value)
+
+    @property
+    def mode(self) -> HookMode:
+        return HookMode(self._mode_combo.currentText())
+
+    @mode.setter
+    def mode(self, value: HookMode) -> None:
+        self._mode_combo.setCurrentText(value.value)
+
+    @property
+    def file_count(self) -> int:
+        return len(self._pack.files)
+
+    def to_hook_pack_selection(self) -> HookPackSelection:
+        """Build a HookPackSelection from the current card state."""
+        return HookPackSelection(
+            id=self._pack.id,
+            enabled=self._checkbox.isChecked(),
+            mode=self.mode,
+        )
+
+    def load_from_selection(self, sel: HookPackSelection) -> None:
+        """Restore card state from a HookPackSelection."""
+        self._checkbox.setChecked(sel.enabled)
+        self._mode_combo.setCurrentText(sel.mode.value)
+
+    # -- Slots --------------------------------------------------------------
+
+    def _on_toggled(self, state: int) -> None:
+        checked = state == Qt.CheckState.Checked.value
+        self.toggled.emit(self._pack.id, checked)
+        if checked:
+            self.setStyleSheet(CARD_STYLE + f"QFrame#hook-card {{ {CARD_SELECTED_BORDER} }}")
+        else:
+            self.setStyleSheet(CARD_STYLE)
+
+    def _on_mode_changed(self, _text: str) -> None:
+        self.toggled.emit(self._pack.id, self.is_enabled)
+
+
+# ---------------------------------------------------------------------------
+# SafetyPolicySection — toggle group for one safety domain
+# ---------------------------------------------------------------------------
+
+class SafetyPolicySection(QFrame):
+    """A collapsible section showing toggles for one safety policy domain."""
+
+    changed = Signal()
+
+    def __init__(self, title: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._title = title
+        self._toggles: dict[str, QCheckBox] = {}
+        self.setObjectName("safety-section")
+        self.setStyleSheet(SECTION_STYLE)
+        self.setFrameShape(QFrame.Shape.StyledPanel)
+
+        self._layout = QVBoxLayout(self)
+        self._layout.setContentsMargins(12, 10, 12, 10)
+        self._layout.setSpacing(6)
+
+        heading = QLabel(title)
+        heading.setStyleSheet(SECTION_HEADING_STYLE)
+        self._layout.addWidget(heading)
+
+    def add_toggle(self, key: str, label: str, default: bool = True) -> QCheckBox:
+        """Add a boolean toggle to this section."""
+        row = QHBoxLayout()
+        row.setSpacing(10)
+
+        cb = QCheckBox()
+        cb.setChecked(default)
+        cb.stateChanged.connect(lambda _: self.changed.emit())
+        row.addWidget(cb)
+
+        lbl = QLabel(label)
+        lbl.setStyleSheet(CONFIG_LABEL_STYLE)
+        row.addWidget(lbl, stretch=1)
+
+        self._layout.addLayout(row)
+        self._toggles[key] = cb
+        return cb
+
+    def get_toggle(self, key: str) -> bool:
+        """Get the current value of a toggle."""
+        if key in self._toggles:
+            return self._toggles[key].isChecked()
+        return False
+
+    def set_toggle(self, key: str, value: bool) -> None:
+        """Set the value of a toggle."""
+        if key in self._toggles:
+            self._toggles[key].setChecked(value)
+
+    @property
+    def toggles(self) -> dict[str, QCheckBox]:
+        return dict(self._toggles)
+
+    @property
+    def title(self) -> str:
+        return self._title
+
+
+# ---------------------------------------------------------------------------
+# HookSafetyPage — wizard page widget
+# ---------------------------------------------------------------------------
+
+class HookSafetyPage(QWidget):
+    """Wizard page for configuring hook packs and safety policies.
+
+    Emits ``selection_changed`` whenever any configuration changes.
+    Call ``get_hooks_config()`` and ``get_safety_config()`` for current state.
+    """
+
+    selection_changed = Signal()
+
+    def __init__(
+        self,
+        library_index: LibraryIndex | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._cards: dict[str, HookPackCard] = {}
+        self._safety_sections: dict[str, SafetyPolicySection] = {}
+        self._build_ui()
+        if library_index is not None:
+            self.load_hook_packs(library_index)
+
+    # -- UI construction ----------------------------------------------------
+
+    def _build_ui(self) -> None:
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(24, 20, 24, 20)
+        outer.setSpacing(12)
+
+        heading = QLabel("Hook & Safety Configuration")
+        heading.setStyleSheet(HEADING_STYLE)
+        outer.addWidget(heading)
+
+        subtitle = QLabel(
+            "Configure hook packs and safety policies for your project. "
+            "Hook packs define automated checks, while safety policies control "
+            "what operations are allowed during development."
+        )
+        subtitle.setStyleSheet(SUBHEADING_STYLE)
+        subtitle.setWordWrap(True)
+        outer.addWidget(subtitle)
+
+        # Scrollable content area
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
+
+        self._content = QWidget()
+        self._content_layout = QVBoxLayout(self._content)
+        self._content_layout.setContentsMargins(0, 0, 0, 0)
+        self._content_layout.setSpacing(16)
+
+        # --- Hooks section ---
+        self._build_hooks_section()
+
+        # --- Safety section ---
+        self._build_safety_section()
+
+        self._content_layout.addStretch(1)
+        scroll.setWidget(self._content)
+        outer.addWidget(scroll, stretch=1)
+
+    def _build_hooks_section(self) -> None:
+        """Build the hooks configuration section."""
+        hooks_heading = QLabel("Hook Packs")
+        hooks_heading.setStyleSheet(SECTION_HEADING_STYLE)
+        self._content_layout.addWidget(hooks_heading)
+
+        # Posture selector row
+        posture_row = QHBoxLayout()
+        posture_row.setSpacing(10)
+
+        posture_label = QLabel("Safety Posture:")
+        posture_label.setStyleSheet(CONFIG_LABEL_STYLE)
+        posture_row.addWidget(posture_label)
+
+        self._posture_combo = QComboBox()
+        self._posture_combo.setStyleSheet(COMBO_STYLE)
+        self._posture_combo.addItems(["baseline", "hardened", "regulated"])
+        self._posture_combo.setCurrentText("baseline")
+        self._posture_combo.setFixedWidth(130)
+        self._posture_combo.currentTextChanged.connect(self._on_posture_changed)
+        posture_row.addWidget(self._posture_combo)
+
+        posture_row.addStretch(1)
+        self._content_layout.addLayout(posture_row)
+
+        # Hook card container
+        self._hook_card_container = QWidget()
+        self._hook_card_layout = QVBoxLayout(self._hook_card_container)
+        self._hook_card_layout.setContentsMargins(0, 0, 0, 0)
+        self._hook_card_layout.setSpacing(8)
+        self._content_layout.addWidget(self._hook_card_container)
+
+    def _build_safety_section(self) -> None:
+        """Build the safety policies section with preset buttons and toggles."""
+        safety_heading = QLabel("Safety Policies")
+        safety_heading.setStyleSheet(SECTION_HEADING_STYLE)
+        self._content_layout.addWidget(safety_heading)
+
+        # Preset buttons
+        preset_row = QHBoxLayout()
+        preset_row.setSpacing(8)
+
+        self._permissive_btn = QPushButton("Permissive")
+        self._permissive_btn.setStyleSheet(PRESET_BTN_STYLE)
+        self._permissive_btn.clicked.connect(self._apply_permissive)
+        preset_row.addWidget(self._permissive_btn)
+
+        self._baseline_btn = QPushButton("Baseline")
+        self._baseline_btn.setStyleSheet(PRESET_BTN_STYLE)
+        self._baseline_btn.clicked.connect(self._apply_baseline)
+        preset_row.addWidget(self._baseline_btn)
+
+        self._hardened_btn = QPushButton("Hardened")
+        self._hardened_btn.setStyleSheet(PRESET_BTN_STYLE)
+        self._hardened_btn.clicked.connect(self._apply_hardened)
+        preset_row.addWidget(self._hardened_btn)
+
+        preset_row.addStretch(1)
+        self._content_layout.addLayout(preset_row)
+
+        # Git policy
+        git_section = SafetyPolicySection("Git Policy")
+        git_section.add_toggle("allow_push", "Allow push", default=True)
+        git_section.add_toggle("allow_force_push", "Allow force push", default=False)
+        git_section.add_toggle("allow_branch_delete", "Allow branch delete", default=False)
+        git_section.changed.connect(self._on_safety_changed)
+        self._safety_sections["git"] = git_section
+        self._content_layout.addWidget(git_section)
+
+        # Shell policy
+        shell_section = SafetyPolicySection("Shell Policy")
+        shell_section.add_toggle("allow_shell", "Allow shell commands", default=True)
+        shell_section.changed.connect(self._on_safety_changed)
+        self._safety_sections["shell"] = shell_section
+        self._content_layout.addWidget(shell_section)
+
+        # Filesystem policy
+        fs_section = SafetyPolicySection("Filesystem Policy")
+        fs_section.add_toggle("allow_write", "Allow file writes", default=True)
+        fs_section.add_toggle("allow_delete", "Allow file deletes", default=False)
+        fs_section.changed.connect(self._on_safety_changed)
+        self._safety_sections["filesystem"] = fs_section
+        self._content_layout.addWidget(fs_section)
+
+        # Network policy
+        net_section = SafetyPolicySection("Network Policy")
+        net_section.add_toggle("allow_network", "Allow network access", default=True)
+        net_section.changed.connect(self._on_safety_changed)
+        self._safety_sections["network"] = net_section
+        self._content_layout.addWidget(net_section)
+
+        # Secrets policy
+        secrets_section = SafetyPolicySection("Secrets Policy")
+        secrets_section.add_toggle("scan_for_secrets", "Scan for secrets", default=True)
+        secrets_section.add_toggle("block_on_secret", "Block on secret found", default=True)
+        secrets_section.changed.connect(self._on_safety_changed)
+        self._safety_sections["secrets"] = secrets_section
+        self._content_layout.addWidget(secrets_section)
+
+        # Destructive ops policy
+        destruct_section = SafetyPolicySection("Destructive Operations Policy")
+        destruct_section.add_toggle(
+            "allow_destructive", "Allow destructive operations", default=False
+        )
+        destruct_section.add_toggle(
+            "require_confirmation", "Require confirmation", default=True
+        )
+        destruct_section.changed.connect(self._on_safety_changed)
+        self._safety_sections["destructive_ops"] = destruct_section
+        self._content_layout.addWidget(destruct_section)
+
+    # -- Public API ---------------------------------------------------------
+
+    def load_hook_packs(self, library_index: LibraryIndex) -> None:
+        """Populate the hook pack section with packs from a LibraryIndex."""
+        # Clear existing cards
+        for card in self._cards.values():
+            self._hook_card_layout.removeWidget(card)
+            card.deleteLater()
+        self._cards.clear()
+
+        for pack in library_index.hook_packs:
+            card = HookPackCard(pack)
+            card.toggled.connect(self._on_card_toggled)
+            self._hook_card_layout.addWidget(card)
+            self._cards[pack.id] = card
+
+        logger.info("Loaded %d hook pack cards", len(self._cards))
+
+    def get_hooks_config(self) -> HooksConfig:
+        """Return the current hook configuration."""
+        packs = [card.to_hook_pack_selection() for card in self._cards.values()]
+        return HooksConfig(
+            posture=Posture(self._posture_combo.currentText()),
+            packs=packs,
+        )
+
+    def set_hooks_config(self, config: HooksConfig) -> None:
+        """Restore hook configuration state."""
+        self._posture_combo.setCurrentText(config.posture.value)
+        pack_map = {p.id: p for p in config.packs}
+        for pid, card in self._cards.items():
+            if pid in pack_map:
+                card.load_from_selection(pack_map[pid])
+            else:
+                card.is_enabled = True
+                card.mode = HookMode.ENFORCING
+
+    def get_safety_config(self) -> SafetyConfig:
+        """Return the current safety configuration."""
+        git_sec = self._safety_sections["git"]
+        shell_sec = self._safety_sections["shell"]
+        fs_sec = self._safety_sections["filesystem"]
+        net_sec = self._safety_sections["network"]
+        secrets_sec = self._safety_sections["secrets"]
+        destruct_sec = self._safety_sections["destructive_ops"]
+
+        return SafetyConfig(
+            git=GitPolicy(
+                allow_push=git_sec.get_toggle("allow_push"),
+                allow_force_push=git_sec.get_toggle("allow_force_push"),
+                allow_branch_delete=git_sec.get_toggle("allow_branch_delete"),
+            ),
+            shell=ShellPolicy(
+                allow_shell=shell_sec.get_toggle("allow_shell"),
+            ),
+            filesystem=FileSystemPolicy(
+                allow_write=fs_sec.get_toggle("allow_write"),
+                allow_delete=fs_sec.get_toggle("allow_delete"),
+            ),
+            network=NetworkPolicy(
+                allow_network=net_sec.get_toggle("allow_network"),
+            ),
+            secrets=SecretPolicy(
+                scan_for_secrets=secrets_sec.get_toggle("scan_for_secrets"),
+                block_on_secret=secrets_sec.get_toggle("block_on_secret"),
+            ),
+            destructive_ops=DestructiveOpsPolicy(
+                allow_destructive=destruct_sec.get_toggle("allow_destructive"),
+                require_confirmation=destruct_sec.get_toggle("require_confirmation"),
+            ),
+        )
+
+    def set_safety_config(self, config: SafetyConfig) -> None:
+        """Restore safety configuration state."""
+        git_sec = self._safety_sections["git"]
+        git_sec.set_toggle("allow_push", config.git.allow_push)
+        git_sec.set_toggle("allow_force_push", config.git.allow_force_push)
+        git_sec.set_toggle("allow_branch_delete", config.git.allow_branch_delete)
+
+        shell_sec = self._safety_sections["shell"]
+        shell_sec.set_toggle("allow_shell", config.shell.allow_shell)
+
+        fs_sec = self._safety_sections["filesystem"]
+        fs_sec.set_toggle("allow_write", config.filesystem.allow_write)
+        fs_sec.set_toggle("allow_delete", config.filesystem.allow_delete)
+
+        net_sec = self._safety_sections["network"]
+        net_sec.set_toggle("allow_network", config.network.allow_network)
+
+        secrets_sec = self._safety_sections["secrets"]
+        secrets_sec.set_toggle("scan_for_secrets", config.secrets.scan_for_secrets)
+        secrets_sec.set_toggle("block_on_secret", config.secrets.block_on_secret)
+
+        destruct_sec = self._safety_sections["destructive_ops"]
+        destruct_sec.set_toggle("allow_destructive", config.destructive_ops.allow_destructive)
+        destruct_sec.set_toggle(
+            "require_confirmation", config.destructive_ops.require_confirmation
+        )
+
+    @property
+    def posture(self) -> Posture:
+        """Get the current posture selection."""
+        return Posture(self._posture_combo.currentText())
+
+    @posture.setter
+    def posture(self, value: Posture) -> None:
+        """Set the posture selection."""
+        self._posture_combo.setCurrentText(value.value)
+
+    def is_valid(self) -> bool:
+        """Hook & safety page is always valid (sensible defaults exist)."""
+        return True
+
+    @property
+    def hook_cards(self) -> dict[str, HookPackCard]:
+        """Access cards by pack id (for testing)."""
+        return dict(self._cards)
+
+    @property
+    def safety_sections(self) -> dict[str, SafetyPolicySection]:
+        """Access safety sections by domain key (for testing)."""
+        return dict(self._safety_sections)
+
+    # -- Slots --------------------------------------------------------------
+
+    def _on_card_toggled(self, pack_id: str, checked: bool) -> None:
+        logger.debug("Hook pack %s toggled: %s", pack_id, checked)
+        self.selection_changed.emit()
+
+    def _on_posture_changed(self, _text: str) -> None:
+        self.selection_changed.emit()
+
+    def _on_safety_changed(self) -> None:
+        self.selection_changed.emit()
+
+    def _apply_permissive(self) -> None:
+        """Apply permissive safety preset."""
+        self.set_safety_config(SafetyConfig.permissive_safety())
+
+    def _apply_baseline(self) -> None:
+        """Apply baseline safety preset."""
+        self.set_safety_config(SafetyConfig.baseline_safety())
+
+    def _apply_hardened(self) -> None:
+        """Apply hardened safety preset."""
+        self.set_safety_config(SafetyConfig.hardened_safety())

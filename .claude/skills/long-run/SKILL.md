@@ -110,10 +110,15 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
 5. **Select independent beans** — From the actionable set, select up to N beans that have no unmet inter-bean dependencies. Beans that depend on other pending or in-progress beans are queued, not parallelized.
 6. **Update bean statuses** — Mark each selected bean as `In Progress` in both `bean.md` and `_index.md`. Set owner to `team-lead`.
-7. **Spawn workers** — For each selected bean, open a tmux child window:
-   ```
-   tmux new-window -n "bean-NNN" "claude --print '
-   Process BEAN-NNN-<slug> through the full team wave:
+7. **Write initial status files** — For each selected bean, create a status file at `/tmp/foundry-worker-BEAN-NNN.status` with `status: starting`. This allows the dashboard to track the worker immediately. See the Status File Protocol in `/spawn-bean` for the full file format and status values (`starting`, `decomposing`, `running`, `blocked`, `error`, `done`).
+8. **Spawn workers** — For each selected bean, create a launcher script and open a tmux child window:
+   ```bash
+   LAUNCHER=$(mktemp /tmp/foundry-bean-XXXXXX.sh)
+   cat > "$LAUNCHER" << 'SCRIPT_EOF'
+   #!/bin/bash
+   cd /home/gregg/Nextcloud/workspace/foundry
+   claude --dangerously-skip-permissions --agent team-lead \
+     "Process BEAN-NNN-<slug> through the full team wave:
    1. Create feature branch bean/BEAN-NNN-<slug>
    2. Decompose into tasks
    3. Execute the wave (BA → Architect → Developer → Tech-QA)
@@ -121,23 +126,35 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    5. Commit on the feature branch
    6. Update bean status to Done
    7. Merge feature branch into test (Merge Captain)
-   '"
+
+   STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition.
+   See /spawn-bean command for full status file format and update rules."
+   SCRIPT_EOF
+   chmod +x "$LAUNCHER"
+   tmux new-window -n "bean-NNN" "bash $LAUNCHER; rm -f $LAUNCHER"
    ```
-8. **Record worker assignments** — Track which window is processing which bean.
+   The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits (no bare shell left behind). The launcher script self-deletes after use. Stagger spawns by ~15 seconds.
+9. **Record worker assignments** — Track which window name maps to which bean and status file.
 
-### Parallel Phase 4: Progress Monitoring
+### Parallel Phase 4: Dashboard Monitoring
 
-9. **Monitor workers** — Periodically read `_index.md` to detect status changes as workers complete beans.
-10. **Report completions** — As each worker finishes (bean moves to `Done`), report in the main window.
-11. **Assign next bean** — When a worker becomes idle:
+10. **Enter dashboard loop** — The main window displays a live dashboard by reading worker status files. See `/spawn-bean` Step 4 for the full dashboard specification. The loop runs every ~30 seconds:
+    - Read all `/tmp/foundry-worker-*.status` files and parse key-value pairs.
+    - Render a dashboard table with progress bars (█/░), percentage (tasks_done/tasks_total), and color-coded status emoji.
+    - Alert on `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no status file update for 5+ minutes).
+    - Cross-reference with `tmux list-windows` to detect closed windows (worker exited).
+11. **Report completions** — As each worker finishes (status file shows `done` or window disappears), report in the dashboard.
+12. **Assign next bean** — When a worker completes:
     - Re-read the backlog for newly unblocked beans.
-    - If an independent actionable bean exists, assign it to the idle worker by spawning a new tmux window.
-    - If no more beans, let the worker stay idle.
+    - If an independent actionable bean exists, write its status file and spawn a new worker window using the same launcher script pattern.
+    - If no more beans, do not spawn.
+    - To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`
 
 ### Parallel Phase 5: Completion
 
-12. **Check termination** — When all workers are idle and no actionable beans remain, report final summary and exit.
-13. **Final report** — Output: total beans processed, parallel vs sequential breakdown, all branch names created, remaining backlog status.
+13. **Check termination** — When all workers are done (status files show `done` or all windows closed) and no actionable beans remain, exit the dashboard loop.
+14. **Final report** — Output: total beans processed, parallel vs sequential breakdown, all branch names created, remaining backlog status.
+15. **Cleanup** — Remove status files: `rm -f /tmp/foundry-worker-*.status`
 
 ### Bean Assignment Rules
 

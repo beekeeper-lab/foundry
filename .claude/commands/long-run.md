@@ -80,29 +80,50 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
 
 **Worker spawning:**
 1. Select up to N independent beans from the backlog (beans with no unmet inter-bean dependencies).
-2. For each selected bean, spawn a tmux child window:
+2. For each selected bean, write an initial status file and spawn a tmux worker using a launcher script:
+   ```bash
+   STATUS_FILE="/tmp/foundry-worker-BEAN-NNN.status"
+   cat > "$STATUS_FILE" << EOF
+   bean: BEAN-NNN
+   title: (starting)
+   tasks_total: 0
+   tasks_done: 0
+   current_task:
+   status: starting
+   message:
+   updated: $(date -Iseconds)
+   EOF
+
+   LAUNCHER=$(mktemp /tmp/foundry-bean-XXXXXX.sh)
+   cat > "$LAUNCHER" << 'SCRIPT_EOF'
+   #!/bin/bash
+   cd /home/gregg/Nextcloud/workspace/foundry
+   claude --dangerously-skip-permissions --agent team-lead \
+     "Process BEAN-NNN-<slug> through the full team wave. ...
+   STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition.
+   See /spawn-bean command for full status file format and update rules."
+   SCRIPT_EOF
+   chmod +x "$LAUNCHER"
+   tmux new-window -n "bean-NNN" "bash $LAUNCHER; rm -f $LAUNCHER"
    ```
-   tmux new-window -n "bean-NNN" "claude --print '
-   Process BEAN-NNN-<slug> through the full team wave:
-   1. Create feature branch bean/BEAN-NNN-<slug>
-   2. Decompose into tasks
-   3. Execute the wave (BA → Architect → Developer → Tech-QA)
-   4. Verify acceptance criteria
-   5. Commit on the feature branch
-   6. Update bean status to Done
-   '"
-   ```
+   The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits. Stagger spawns by ~15 seconds. Worker prompts include the status file protocol from `/spawn-bean` (status values: starting, decomposing, running, blocked, error, done).
 3. The main window remains the orchestrator — it does not process beans itself.
 
 **Bean assignment rules:**
 - Only assign beans that have no unmet dependencies on other in-progress or pending beans.
 - If fewer than N independent beans are available, spawn only as many workers as there are beans.
-- As a worker completes its bean, check for newly-unblocked beans and assign the next one.
+- As a worker completes its bean (its window disappears or status file shows `done`), check for newly-unblocked beans and spawn a new worker for the next one.
 
-**Progress monitoring:**
-- Periodically read `_index.md` to check for status changes (workers update it as they complete).
-- Report progress in the main window as beans move to `Done`.
-- When all workers are idle and no actionable beans remain, report completion and exit.
+**Progress monitoring — dashboard loop:**
+
+The main window enters a dashboard loop after spawning workers. See `/spawn-bean` Step 4 for the full dashboard specification. Summary:
+
+- Read all `/tmp/foundry-worker-*.status` files every ~30 seconds.
+- Render a dashboard table showing each bean's progress bar, percentage (tasks_done/tasks_total), and color-coded status.
+- Alert on `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no update for 5+ minutes).
+- When a worker finishes and beans remain, spawn a replacement worker for the next unblocked bean.
+- When all workers are done and no actionable beans remain, report completion, clean up status files (`rm -f /tmp/foundry-worker-*.status`), and exit.
+- To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`
 
 | Flag | Default | Description |
 |------|---------|-------------|

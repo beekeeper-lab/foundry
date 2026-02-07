@@ -37,3 +37,23 @@
 | BEAN-013 | Deploy Command | Infra | Low | Done | team-lead |
 | BEAN-014 | Team Lead Progress Dashboard | Process | High | Done | team-lead |
 | BEAN-015 | Long Run Category Filter | Process | High | Done | team-lead |
+| BEAN-016 | Core Data Models & IO Layer | App | High | Done | team-lead |
+| BEAN-017 | App Shell & Main Window | App | High | Done | team-lead |
+| BEAN-018 | Library Indexer Service | App | High | Done | team-lead |
+| BEAN-019 | Wizard: Project Identity Page | App | High | Done | team-lead |
+| BEAN-020 | Wizard: Persona Selection Page | App | High | Done | team-lead |
+| BEAN-021 | Wizard: Technology Stack Page | App | High | Done | team-lead |
+| BEAN-022 | Wizard: Architecture & Cloud Page | App | Medium | Done | team-lead |
+| BEAN-023 | Wizard: Hook & Safety Config Page | App | Medium | Done | team-lead |
+| BEAN-024 | Wizard: Review & Generate Page | App | High | Done | team-lead |
+| BEAN-025 | Validator Service | App | High | Done | team-lead |
+| BEAN-026 | Scaffold Service | App | High | Done | team-lead |
+| BEAN-027 | Compiler Service | App | High | Done | team-lead |
+| BEAN-028 | Asset Copier Service | App | High | Done | team-lead |
+| BEAN-029 | Seeder Service | App | Medium | New | (unassigned) |
+| BEAN-030 | Safety Writer Service | App | Medium | New | (unassigned) |
+| BEAN-031 | Diff Reporter Service | App | Low | New | (unassigned) |
+| BEAN-032 | Generator Orchestrator & Overlay | App | High | Done | team-lead |
+| BEAN-033 | Generation Progress Screen | App | Medium | New | (unassigned) |
+| BEAN-034 | CLI Interface | App | Medium | New | (unassigned) |
+| BEAN-035 | Export & History Screens | App | Low | New | (unassigned) |
