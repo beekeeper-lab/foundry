@@ -240,7 +240,7 @@ class TestMinimalSpec:
 
 class TestFullSpec:
     def test_all_sections_created(self, full_page):
-        expected = {"project", "team", "stacks", "hooks", "generation", "safety"}
+        expected = {"project", "team", "stacks", "architecture", "hooks", "generation", "safety"}
         assert set(full_page.sections.keys()) == expected
 
     def test_project_section_present(self, full_page):
@@ -503,12 +503,12 @@ class TestSpecReplacement:
         assert "safety" not in page.sections
 
     def test_section_count_minimal(self, minimal_page):
-        # project, team, stacks, hooks, generation = 5 (no safety)
-        assert len(minimal_page.sections) == 5
+        # project, team, stacks, architecture, hooks, generation = 6 (no safety)
+        assert len(minimal_page.sections) == 6
 
     def test_section_count_full(self, full_page):
-        # project, team, stacks, hooks, generation, safety = 6
-        assert len(full_page.sections) == 6
+        # project, team, stacks, architecture, hooks, generation, safety = 7
+        assert len(full_page.sections) == 7
 
 
 # ---------------------------------------------------------------------------
