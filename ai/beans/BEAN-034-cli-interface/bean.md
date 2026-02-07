@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-034 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -37,23 +37,22 @@ Implement a `foundry-cli` command-line interface that supports non-interactive p
 
 ## Acceptance Criteria
 
-- [ ] `foundry-cli generate` command works end-to-end
-- [ ] Loads composition YAML and validates it
-- [ ] Supports overlay mode, dry-run, and force flags
-- [ ] Reports progress and results to stdout
-- [ ] Exit codes follow conventions
-- [ ] Entry point registered in `pyproject.toml`
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `foundry-cli generate` command works end-to-end
+- [x] Loads composition YAML and validates it
+- [x] Supports overlay mode, dry-run, and force flags
+- [x] Reports progress and results to stdout
+- [x] Exit codes follow conventions
+- [x] Entry point registered in `pyproject.toml` (was already registered)
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Implement CLI module | Developer | — | Done |
+| 2 | Register entry point | Developer | 1 | Done (already registered) |
+| 3 | Write tests (19 tests) | Tech-QA | 1 | Done |
 
 ## Notes
 
