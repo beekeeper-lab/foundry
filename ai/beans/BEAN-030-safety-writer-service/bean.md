@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-030 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -36,22 +36,21 @@ Implement a `SafetyWriterService` that generates `.claude/settings.json` in gene
 
 ## Acceptance Criteria
 
-- [ ] `foundry_app/services/safety_writer.py` exists with `write_safety()` function
-- [ ] Supports BASELINE, HARDENED, and REGULATED postures
-- [ ] Merges inline safety overrides correctly
-- [ ] Generates valid JSON settings file
-- [ ] Generator stub replaced with real service call
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `foundry_app/services/safety_writer.py` exists with `write_safety()` function
+- [x] Supports BASELINE, HARDENED, and REGULATED postures
+- [x] Merges inline safety overrides correctly
+- [x] Generates valid JSON settings file
+- [x] Generator stub replaced with real service call
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Implement safety writer service | Developer | — | Done |
+| 2 | Integrate with generator | Developer | 1 | Done |
+| 3 | Write tests (22 tests) | Tech-QA | 1 | Done |
 
 ## Notes
 
