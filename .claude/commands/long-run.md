@@ -25,16 +25,18 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 2. **Check for actionable beans** — If no beans are actionable (all `Done`, `Deferred`, or blocked by dependencies), report "Backlog clear — no actionable beans" and stop.
 3. **Select best bean** — Apply selection heuristics (see Options below) to choose the single best bean to work on next.
 4. **Pick the bean** — Update status to `In Progress` in both `bean.md` and `_index.md`. Set owner to `team-lead`.
-5. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in the bean's `tasks/` directory. Assign owners and dependencies following the wave: BA → Architect → Developer → Tech-QA (skip roles not needed).
-6. **Execute the wave** — Process each task in dependency order:
+5. **Create feature branch** — Create and checkout `bean/BEAN-NNN-<slug>` from current HEAD. All work for this bean happens on this branch.
+6. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in the bean's `tasks/` directory. Assign owners and dependencies following the wave: BA → Architect → Developer → Tech-QA (skip roles not needed).
+7. **Execute the wave** — Process each task in dependency order:
    - Read the task file and all referenced inputs
    - Produce the required outputs in `ai/outputs/<persona>/`
    - Update the task status to `Done`
-7. **Verify acceptance criteria** — Check every criterion in the bean's AC list. Run tests and lint if applicable.
-8. **Close the bean** — Update status to `Done` in both `bean.md` and `_index.md`.
-9. **Commit** — Stage all changed files and commit with message: `BEAN-NNN: <title>`.
-10. **Report progress** — Summarize what was completed: bean title, tasks executed, files changed.
-11. **Loop** — Go back to step 1. Continue until no actionable beans remain.
+8. **Verify acceptance criteria** — Check every criterion in the bean's AC list. Run tests and lint if applicable.
+9. **Close the bean** — Update status to `Done` in both `bean.md` and `_index.md`.
+10. **Commit on feature branch** — Stage all changed files and commit with message: `BEAN-NNN: <title>`. The commit goes on the `bean/BEAN-NNN-<slug>` branch.
+11. **Return to main** — Checkout the main branch: `git checkout main`. The feature branch is left ready for merge (see Merge Captain workflow).
+12. **Report progress** — Summarize what was completed: bean title, tasks executed, branch name, files changed.
+13. **Loop** — Go back to step 1. Continue until no actionable beans remain.
 
 ## Output
 

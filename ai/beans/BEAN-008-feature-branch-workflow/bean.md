@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-008 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-07 |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 
 ## Problem Statement
 
@@ -45,10 +45,10 @@ When a bean is picked for execution (whether manually or via `/long-run`), the w
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| | | | | |
+| 01 | Update Commands, Skills, and Workflow for Feature Branches | developer | — | Done |
+| 02 | Feature Branch Workflow Verification | tech-qa | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> BA and Architect skipped — this bean updates existing markdown docs with a well-defined branching convention. No ambiguity or architectural decisions.
 
 ## Notes
 

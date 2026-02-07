@@ -79,6 +79,38 @@ Once all acceptance criteria are met:
 2. Update `ai/beans/_index.md`
 3. Note any follow-up beans spawned during execution
 
+## Branch Strategy
+
+Each bean executes on its own feature branch to isolate work and enable parallel execution.
+
+### Naming Convention
+
+```
+bean/BEAN-NNN-<slug>
+```
+
+Examples: `bean/BEAN-006-backlog-refinement`, `bean/BEAN-012-user-auth`
+
+### Lifecycle
+
+1. **Branch creation** — When a bean moves to `In Progress`, create the feature branch from the current HEAD:
+   ```
+   git checkout -b bean/BEAN-NNN-<slug>
+   ```
+2. **Work on the branch** — All task commits for this bean happen on the feature branch.
+3. **Merge** — After the bean is verified and closed, the feature branch is merged into an integration branch (e.g., `test`). See the Merge Captain workflow for details.
+4. **Cleanup** — After a successful merge, the feature branch can be deleted.
+
+### When to Branch
+
+- `/pick-bean --start` creates the feature branch automatically.
+- `/long-run` creates a feature branch for each bean it processes.
+- Manual bean work should create the branch when moving to `In Progress`.
+
+### When NOT to Branch
+
+- Beans that only modify `ai/` files (documentation, workflow updates) may optionally stay on the current branch if they are the only active work. The Team Lead decides.
+
 ## Status Values
 
 | Status | Meaning |

@@ -9,7 +9,7 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`) in both the be
 ## Usage
 
 ```
-/pick-bean <bean-id> [--start]
+/pick-bean <bean-id> [--start] [--no-branch]
 ```
 
 - `bean-id` -- The bean ID to pick (e.g., `BEAN-006` or just `6`).
@@ -27,7 +27,8 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`) in both the be
 2. **Validate state** -- Confirm the bean's current status is `New` or `Deferred`. Warn if already `Picked` or `In Progress`.
 3. **Update bean.md** -- Set Status to `Picked` (or `In Progress` if `--start` is used). Set Owner to `team-lead`.
 4. **Update index** -- Update the matching row in `ai/beans/_index.md` with the new status and owner.
-5. **Confirm** -- Display the bean ID, title, new status, and a reminder to decompose into tasks if starting.
+5. **Create feature branch** -- If `--start` is used (and `--no-branch` is not), create and checkout a feature branch: `git checkout -b bean/BEAN-NNN-<slug>`.
+6. **Confirm** -- Display the bean ID, title, new status, branch name (if created), and a reminder to decompose into tasks if starting.
 
 ## Output
 
@@ -35,12 +36,14 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`) in both the be
 |----------|------|-------------|
 | Updated bean | `ai/beans/BEAN-{NNN}-{slug}/bean.md` | Status and Owner fields updated |
 | Updated index | `ai/beans/_index.md` | Matching row updated |
+| Feature branch | `bean/BEAN-NNN-<slug>` | Created and checked out (when `--start` is used) |
 
 ## Options
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--start` | `false` | Set status directly to `In Progress` instead of `Picked` |
+| `--no-branch` | `false` | Skip feature branch creation (even with `--start`). Use for doc-only beans. |
 
 ## Error Handling
 
@@ -58,11 +61,17 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`) in both the be
 ```
 Sets BEAN-006 to `Picked` status with `team-lead` as owner.
 
-**Pick and immediately start:**
+**Pick and immediately start (with feature branch):**
 ```
 /pick-bean 6 --start
 ```
-Sets BEAN-006 to `In Progress` and assigns to `team-lead`. Ready for task decomposition.
+Sets BEAN-006 to `In Progress`, assigns to `team-lead`, and creates branch `bean/BEAN-006-backlog-refinement`. Ready for task decomposition.
+
+**Start without branching (doc-only bean):**
+```
+/pick-bean 8 --start --no-branch
+```
+Sets BEAN-008 to `In Progress` without creating a feature branch.
 
 **Pick by short ID:**
 ```

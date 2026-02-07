@@ -39,32 +39,37 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 ### Phase 3: Bean Execution
 
 7. **Pick the bean** — Update status to `In Progress` in both `bean.md` and `_index.md`. Set owner to `team-lead`.
-8. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in `ai/beans/BEAN-NNN-<slug>/tasks/`:
+8. **Create feature branch** — Create and checkout the feature branch:
+   - Branch name: `bean/BEAN-NNN-<slug>` (derived from the bean directory name)
+   - Command: `git checkout -b bean/BEAN-NNN-<slug>`
+   - If the branch already exists (e.g., resuming after an error), check it out instead.
+9. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in `ai/beans/BEAN-NNN-<slug>/tasks/`:
    - Name: `01-<owner>-<slug>.md`, `02-<owner>-<slug>.md`, etc.
    - Follow the wave: BA → Architect → Developer → Tech-QA.
    - Skip roles when not needed (e.g., skip BA/Architect for markdown-only beans).
    - Each task file includes: Owner, Depends On, Goal, Inputs, Acceptance Criteria, Definition of Done.
-9. **Update bean task table** — Fill in the Tasks table in `bean.md` with the created tasks.
+10. **Update bean task table** — Fill in the Tasks table in `bean.md` with the created tasks.
 
 ### Phase 4: Wave Execution
 
-10. **Execute tasks in dependency order** — For each task:
+11. **Execute tasks in dependency order** — For each task:
     - Read the task file and all referenced inputs.
     - Perform the work as the assigned persona.
     - Write outputs to `ai/outputs/<persona>/`.
     - Update the task status to `Done` in the task file and the bean's task table.
-11. **Skip inapplicable roles** — If a role has no meaningful contribution for a bean (e.g., Architect for a documentation-only bean), skip it. Document the skip reason in the bean's Notes section.
+12. **Skip inapplicable roles** — If a role has no meaningful contribution for a bean (e.g., Architect for a documentation-only bean), skip it. Document the skip reason in the bean's Notes section.
 
 ### Phase 5: Verification & Closure
 
-12. **Verify acceptance criteria** — Check every criterion in the bean's Acceptance Criteria section. For code beans: run tests (`uv run pytest`) and lint (`uv run ruff check`).
-13. **Close the bean** — Update status to `Done` in both `bean.md` and `_index.md`.
-14. **Commit changes** — Stage all files changed during this bean's execution. Commit with message: `BEAN-NNN: <bean title>`.
-15. **Report progress** — Output a summary: bean title, tasks completed, files changed, remaining backlog status.
+13. **Verify acceptance criteria** — Check every criterion in the bean's Acceptance Criteria section. For code beans: run tests (`uv run pytest`) and lint (`uv run ruff check`).
+14. **Close the bean** — Update status to `Done` in both `bean.md` and `_index.md`.
+15. **Commit on feature branch** — Stage all files changed during this bean's execution. Commit with message: `BEAN-NNN: <bean title>`. The commit goes on the `bean/BEAN-NNN-<slug>` branch.
+16. **Return to main** — Checkout the main branch: `git checkout main`. The feature branch is left ready for merge (see Merge Captain workflow).
+17. **Report progress** — Output a summary: bean title, tasks completed, branch name, files changed, remaining backlog status.
 
 ### Phase 6: Loop
 
-16. **Return to Phase 1** — Read the backlog again. If actionable beans remain, process the next one. If not, report final summary and exit.
+18. **Return to Phase 1** — Read the backlog again. If actionable beans remain, process the next one. If not, report final summary and exit.
 
 ## Outputs
 
