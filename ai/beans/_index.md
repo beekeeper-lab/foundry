@@ -36,4 +36,4 @@
 | BEAN-012 | Enforce Feature Branch Workflow | Infra | Low | Done | team-lead |
 | BEAN-013 | Deploy Command | Infra | Low | Done | team-lead |
 | BEAN-014 | Team Lead Progress Dashboard | Process | High | Done | team-lead |
-| BEAN-015 | Long Run Category Filter | Process | High | New | (unassigned) |
+| BEAN-015 | Long Run Category Filter | Process | High | Done | team-lead |

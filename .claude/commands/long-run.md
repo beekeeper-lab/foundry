@@ -9,10 +9,11 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 ## Usage
 
 ```
-/long-run [--fast N]
+/long-run [--fast N] [--category <cat>]
 ```
 
 - `--fast N` -- Run N beans in parallel using tmux child windows (optional).
+- `--category <cat>` -- Only process beans matching this category: `App`, `Process`, or `Infra` (case-insensitive, optional).
 
 ## Inputs
 
@@ -106,6 +107,7 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--fast N` | Off (sequential) | Run up to N beans in parallel using tmux child windows |
+| `--category <cat>` | Off (all beans) | Only process beans matching this category: `App`, `Process`, or `Infra` (case-insensitive) |
 
 ## Error Handling
 
@@ -165,3 +167,15 @@ Team Lead detects tmux, selects 3 independent beans, spawns 3 child windows. Eac
   Beans processed: 5 (3 parallel + 2 sequential)
   Backlog status: 0 actionable
 ```
+
+**Filter by category:**
+```
+/long-run --category Process
+```
+Only processes beans with Category = Process. Skips App and Infra beans.
+
+**Parallel + category:**
+```
+/long-run --fast 3 --category Infra
+```
+Runs up to 3 Infra beans in parallel, ignoring App and Process beans.

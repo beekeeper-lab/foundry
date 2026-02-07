@@ -18,6 +18,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 | bean_workflow | Markdown file | Yes | `ai/context/bean-workflow.md` — lifecycle reference |
 | bean_files | Markdown files | Yes | Individual `bean.md` files in `ai/beans/BEAN-NNN-<slug>/` |
 | fast | Integer | No | Number of parallel workers. When provided, enables parallel mode via tmux. |
+| category | String | No | Filter beans by category: `App`, `Process`, or `Infra`. Case-insensitive. When provided, only beans matching this category are processed. |
 | tmux_session | Environment | No | `$TMUX` — required only when `fast` is provided |
 
 ## Process
@@ -29,8 +30,8 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 ### Phase 1: Backlog Assessment
 
 1. **Read the backlog index** — Parse `ai/beans/_index.md` to get all beans and their statuses.
-2. **Filter actionable beans** — Select beans with status `New` or `Picked`. Exclude `Done`, `Deferred`, and beans blocked by unfinished dependencies.
-3. **Check stop condition** — If no actionable beans exist, report final summary and exit.
+2. **Filter actionable beans** — Select beans with status `New` or `Picked`. Exclude `Done`, `Deferred`, and beans blocked by unfinished dependencies. If `category` is provided, further filter to only beans whose Category column matches (case-insensitive).
+3. **Check stop condition** — If no actionable beans exist (or none match the category filter), report final summary and exit. If category is active, mention it: "No actionable beans matching category: Process."
 
 ### Phase 2: Bean Selection
 
@@ -40,7 +41,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
    - **Dependencies second:** If Bean A depends on Bean B (stated in Notes or Scope), select B first.
    - **Logical order third:** Infrastructure and foundational work before features. Data models before UI. Shared utilities before consumers.
    - **ID order last:** Lower bean IDs first as a tiebreaker.
-6. **Announce selection** — Print the **Header Block** and **Task Progress Table** from the Team Lead Communication Template (see `.claude/agents/team-lead.md`). This is the first thing visible in the tmux pane.
+6. **Announce selection** — Print the **Header Block** and **Task Progress Table** from the Team Lead Communication Template (see `.claude/agents/team-lead.md`). If a category filter is active, include it in the header: `[Category: Process]`. This is the first thing visible in the tmux pane.
 
 ### Phase 3: Bean Execution
 
@@ -101,8 +102,8 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
 ### Parallel Phase 2: Backlog Assessment
 
-2. **Read the backlog index** — Same as sequential Phase 1: parse `_index.md`, filter actionable beans.
-3. **Check stop condition** — If no actionable beans, report and exit.
+2. **Read the backlog index** — Same as sequential Phase 1: parse `_index.md`, filter actionable beans. Apply `category` filter if provided.
+3. **Check stop condition** — If no actionable beans (or none matching category), report and exit.
 4. **Read candidate beans** — Read each actionable bean's `bean.md` to understand dependencies.
 
 ### Parallel Phase 3: Worker Spawning
