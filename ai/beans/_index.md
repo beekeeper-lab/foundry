@@ -37,7 +37,7 @@
 | BEAN-013 | Deploy Command | Infra | Low | Done | team-lead |
 | BEAN-014 | Team Lead Progress Dashboard | Process | High | Done | team-lead |
 | BEAN-015 | Long Run Category Filter | Process | High | Done | team-lead |
-| BEAN-016 | Core Data Models & IO Layer | App | High | In Progress | team-lead |
+| BEAN-016 | Core Data Models & IO Layer | App | High | Done | team-lead |
 | BEAN-017 | App Shell & Main Window | App | High | New | (unassigned) |
 | BEAN-018 | Library Indexer Service | App | High | New | (unassigned) |
 | BEAN-019 | Wizard: Project Identity Page | App | High | New | (unassigned) |

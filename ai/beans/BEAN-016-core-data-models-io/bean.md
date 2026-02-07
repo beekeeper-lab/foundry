@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-016 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-07 |
 | **Owner** | team-lead |
@@ -38,23 +38,23 @@ Rebuild all Pydantic model classes and the YAML/JSON IO layer so that the rest o
 
 ## Acceptance Criteria
 
-- [ ] All 15+ Pydantic model classes defined in `foundry_app/core/models.py`
-- [ ] Models use strict validation (Pydantic v2 style)
-- [ ] CompositionSpec can round-trip through YAML (load → save → load produces identical object)
-- [ ] SafetyConfig preset factories work: permissive_safety(), baseline_safety(), hardened_safety()
-- [ ] GenerationManifest can serialize to/from JSON
-- [ ] composition_io.py provides load_composition() and save_composition()
-- [ ] Unit tests cover model validation, serialization, and edge cases
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] All 15+ Pydantic model classes defined in `foundry_app/core/models.py`
+- [x] Models use strict validation (Pydantic v2 style)
+- [x] CompositionSpec can round-trip through YAML (load → save → load produces identical object)
+- [x] SafetyConfig preset factories work: permissive_safety(), baseline_safety(), hardened_safety()
+- [x] GenerationManifest can serialize to/from JSON
+- [x] composition_io.py provides load_composition() and save_composition()
+- [x] Unit tests cover model validation, serialization, and edge cases
+- [x] All tests pass (`uv run pytest`) — 83 tests
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Define all Pydantic models | developer | — | Pending |
-| 2 | Implement IO layer (YAML/JSON) | developer | 1 | Pending |
-| 3 | Write unit tests | tech-qa | 1, 2 | Pending |
+| 1 | Define all Pydantic models | developer | — | Done |
+| 2 | Implement IO layer (YAML/JSON) | developer | 1 | Done |
+| 3 | Write unit tests | tech-qa | 1, 2 | Done |
 
 ## Notes
 
