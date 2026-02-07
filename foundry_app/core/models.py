@@ -72,6 +72,9 @@ class ShellPolicy(BaseModel):
 class FileSystemPolicy(BaseModel):
     allow_outside_project: bool = False
     deny_patterns: list[str] = Field(default_factory=list)
+    editable_dirs: list[str] = Field(
+        default_factory=lambda: ["src/**", "tests/**", "ai/**"]
+    )
 
 class NetworkPolicy(BaseModel):
     allow_network: bool = True

@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-004 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Low |
 | **Created** | 2026-02-07 |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 
 ## Problem Statement
 
@@ -30,22 +30,22 @@ Allow the composition spec to define which directories are editable, so that `se
 
 ## Acceptance Criteria
 
-- [ ] Composition spec supports a `source_dirs` field (or similar)
-- [ ] Generated `settings.local.json` uses configured directories in `Edit()` rules
-- [ ] Default behavior (`src/**`) is unchanged when field is omitted
-- [ ] Wizard Safety page includes an input for source directories
-- [ ] Tests cover custom source dirs, default fallback, and multiple dirs
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Composition spec supports `editable_dirs` field on `FileSystemPolicy`
+- [x] Generated `settings.local.json` uses configured directories in `Edit()` rules
+- [x] Default behavior (`src/**`, `tests/**`, `ai/**`) unchanged when field is omitted
+- [x] Wizard Safety page includes an input for source directories
+- [x] Tests cover custom source dirs, default fallback, and multiple dirs (13 new tests)
+- [x] All tests pass (`uv run pytest`) — 313 total
+- [x] Lint clean (`uv run ruff check foundry_app/`) — 0 new issues
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| | | | | |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 01 | Source Dirs Requirements | ba | — | Done |
+| 02 | Source Dirs Design Spec | architect | 01 | Done |
+| 03 | Source Dirs Implementation | developer | 02 | Done |
+| 04 | Source Dirs Verification | tech-qa | 03 | Done |
 
 ## Notes
 

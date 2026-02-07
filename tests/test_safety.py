@@ -6,6 +6,7 @@ from pathlib import Path
 
 from foundry_app.core.models import (
     DestructiveOpsPolicy,
+    FileSystemPolicy,
     GitPolicy,
     NetworkPolicy,
     SafetyConfig,
@@ -260,3 +261,159 @@ def test_write_safety_files_settings_json_is_valid_json(tmp_path: Path):
     assert "permissions" in data
     assert "deny" in data["permissions"]
     assert "allow" in data["permissions"]
+
+
+# -- editable_dirs -------------------------------------------------------------
+
+
+def test_default_editable_dirs_produces_standard_rules():
+    """Default editable_dirs should produce Edit(src/**), Edit(tests/**), Edit(ai/**)."""
+    config = SafetyConfig()
+    result = safety_to_settings_json(config)
+
+    allow = result["permissions"]["allow"]
+    assert "Edit(src/**)" in allow
+    assert "Edit(tests/**)" in allow
+    assert "Edit(ai/**)" in allow
+
+
+def test_custom_editable_dirs_single():
+    """A single custom editable dir should produce one Edit() rule."""
+    config = SafetyConfig(
+        filesystem=FileSystemPolicy(editable_dirs=["foundry_app/**"])
+    )
+    result = safety_to_settings_json(config)
+
+    allow = result["permissions"]["allow"]
+    assert "Edit(foundry_app/**)" in allow
+    assert "Edit(src/**)" not in allow
+    assert "Edit(tests/**)" not in allow
+
+
+def test_custom_editable_dirs_multiple():
+    """Multiple custom dirs should each produce an Edit() rule."""
+    config = SafetyConfig(
+        filesystem=FileSystemPolicy(
+            editable_dirs=["app/**", "lib/**", "scripts/**"]
+        )
+    )
+    result = safety_to_settings_json(config)
+
+    allow = result["permissions"]["allow"]
+    assert "Edit(app/**)" in allow
+    assert "Edit(lib/**)" in allow
+    assert "Edit(scripts/**)" in allow
+    assert len([r for r in allow if r.startswith("Edit(")]) == 3
+
+
+def test_empty_editable_dirs_no_edit_rules():
+    """Empty editable_dirs list should produce no Edit() rules."""
+    config = SafetyConfig(
+        filesystem=FileSystemPolicy(editable_dirs=[])
+    )
+    result = safety_to_settings_json(config)
+
+    allow = result["permissions"]["allow"]
+    edit_rules = [r for r in allow if r.startswith("Edit(")]
+    assert edit_rules == []
+    # Read(**) should still be present
+    assert "Read(**)" in allow
+
+
+def test_editable_dirs_strips_whitespace():
+    """Entries with whitespace should be stripped."""
+    config = SafetyConfig(
+        filesystem=FileSystemPolicy(editable_dirs=["  src/**  ", " tests/** "])
+    )
+    result = safety_to_settings_json(config)
+
+    allow = result["permissions"]["allow"]
+    assert "Edit(src/**)" in allow
+    assert "Edit(tests/**)" in allow
+
+
+def test_editable_dirs_skips_empty_entries():
+    """Empty strings in the list should be skipped."""
+    config = SafetyConfig(
+        filesystem=FileSystemPolicy(editable_dirs=["src/**", "", "  ", "tests/**"])
+    )
+    result = safety_to_settings_json(config)
+
+    allow = result["permissions"]["allow"]
+    edit_rules = [r for r in allow if r.startswith("Edit(")]
+    assert len(edit_rules) == 2
+    assert "Edit(src/**)" in allow
+    assert "Edit(tests/**)" in allow
+
+
+def test_preset_functions_get_default_editable_dirs():
+    """Preset functions should produce default editable_dirs."""
+    for preset_fn in (baseline_safety, hardened_safety, permissive_safety):
+        config = preset_fn()
+        assert config.filesystem.editable_dirs == ["src/**", "tests/**", "ai/**"]
+
+
+def test_filesystem_policy_default_editable_dirs():
+    """FileSystemPolicy default should be ['src/**', 'tests/**', 'ai/**']."""
+    policy = FileSystemPolicy()
+    assert policy.editable_dirs == ["src/**", "tests/**", "ai/**"]
+
+
+def test_editable_dirs_yaml_round_trip():
+    """editable_dirs should survive YAML serialization round-trip."""
+    import yaml
+
+    config = SafetyConfig(
+        filesystem=FileSystemPolicy(editable_dirs=["foundry_app/**", "tests/**"])
+    )
+    yaml_str = yaml.dump(config.model_dump(), default_flow_style=False)
+    loaded = yaml.safe_load(yaml_str)
+    restored = SafetyConfig(**loaded)
+    assert restored.filesystem.editable_dirs == ["foundry_app/**", "tests/**"]
+
+
+def test_old_config_without_editable_dirs_gets_default():
+    """A SafetyConfig dict missing editable_dirs should get the default."""
+    old_data = {
+        "preset": "baseline",
+        "filesystem": {"allow_outside_project": False, "deny_patterns": []},
+    }
+    config = SafetyConfig(**old_data)
+    assert config.filesystem.editable_dirs == ["src/**", "tests/**", "ai/**"]
+
+
+def test_editable_dirs_without_glob_accepted():
+    """A bare directory name without glob pattern is accepted as-is."""
+    config = SafetyConfig(
+        filesystem=FileSystemPolicy(editable_dirs=["src"])
+    )
+    result = safety_to_settings_json(config)
+
+    allow = result["permissions"]["allow"]
+    assert "Edit(src)" in allow
+
+
+def test_editable_dirs_read_rule_always_present():
+    """Read(**) is always present regardless of editable_dirs."""
+    config = SafetyConfig(
+        filesystem=FileSystemPolicy(editable_dirs=[])
+    )
+    result = safety_to_settings_json(config)
+    assert "Read(**)" in result["permissions"]["allow"]
+
+
+def test_write_safety_files_custom_dirs_in_json(tmp_path: Path):
+    """Custom editable_dirs should appear in the written settings.local.json."""
+    import json
+
+    config = SafetyConfig(
+        filesystem=FileSystemPolicy(editable_dirs=["foundry_app/**", "tests/**"])
+    )
+    write_safety_files(config, "Foundry", tmp_path)
+
+    settings_path = tmp_path / ".claude" / "settings.local.json"
+    data = json.loads(settings_path.read_text())
+    allow = data["permissions"]["allow"]
+    assert "Edit(foundry_app/**)" in allow
+    assert "Edit(tests/**)" in allow
+    assert "Edit(src/**)" not in allow

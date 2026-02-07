@@ -54,9 +54,10 @@ def safety_to_settings_json(safety: SafetyConfig) -> dict:
 
     # --- Filesystem policy ---
     allow.append("Read(**)")
-    allow.append("Edit(src/**)")
-    allow.append("Edit(tests/**)")
-    allow.append("Edit(ai/**)")
+    for d in safety.filesystem.editable_dirs:
+        stripped = d.strip()
+        if stripped:
+            allow.append(f"Edit({stripped})")
 
     if not safety.filesystem.allow_outside_project:
         deny.append("Read(/etc/**)")

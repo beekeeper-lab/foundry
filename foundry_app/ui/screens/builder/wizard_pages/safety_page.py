@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -100,6 +101,14 @@ class SafetyPage(QWidget):
         fs_layout = QVBoxLayout(fs_group)
         self.chk_allow_outside = QCheckBox("Allow outside project")
         fs_layout.addWidget(self.chk_allow_outside)
+        fs_layout.addWidget(QLabel("Editable directories:"))
+        self.txt_editable_dirs = QLineEdit()
+        self.txt_editable_dirs.setText("src/**, tests/**, ai/**")
+        self.txt_editable_dirs.setPlaceholderText("src/**, tests/**, ai/**")
+        self.txt_editable_dirs.setToolTip(
+            "Comma-separated glob patterns for directories agents can edit."
+        )
+        fs_layout.addWidget(self.txt_editable_dirs)
         extras_row.addWidget(fs_group)
 
         net_group = QGroupBox("Network")
@@ -163,10 +172,18 @@ class SafetyPage(QWidget):
         self.chk_allow_reset_hard.setChecked(config.destructive.allow_reset_hard)
         self.chk_allow_clean.setChecked(config.destructive.allow_clean)
         self.chk_allow_outside.setChecked(config.filesystem.allow_outside_project)
+        self.txt_editable_dirs.setText(", ".join(config.filesystem.editable_dirs))
         self.chk_allow_network.setChecked(config.network.allow_network)
         self.chk_allow_external_apis.setChecked(config.network.allow_external_apis)
         self.chk_block_env.setChecked(config.secrets.block_env_files)
         self.chk_block_creds.setChecked(config.secrets.block_credentials)
+
+    def _parse_editable_dirs(self) -> list[str]:
+        """Parse the editable dirs text field into a list of patterns."""
+        raw = self.txt_editable_dirs.text().strip()
+        if not raw:
+            return []
+        return [d.strip() for d in raw.split(",") if d.strip()]
 
     def build_safety_config(self) -> SafetyConfig:
         """Build a SafetyConfig from the current checkbox state."""
@@ -184,6 +201,7 @@ class SafetyPage(QWidget):
             ),
             filesystem=FileSystemPolicy(
                 allow_outside_project=self.chk_allow_outside.isChecked(),
+                editable_dirs=self._parse_editable_dirs(),
             ),
             network=NetworkPolicy(
                 allow_network=self.chk_allow_network.isChecked(),
