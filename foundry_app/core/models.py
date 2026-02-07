@@ -54,7 +54,7 @@ class HooksConfig(BaseModel):
 
 class GenerationOptions(BaseModel):
     seed_tasks: bool = True
-    seed_mode: str = "detailed"  # detailed | kickoff
+    seed_mode: str = "detailed"  # detailed | kickoff | beans
     write_manifest: bool = True
     write_diff_report: bool = False
     inject_project_context: bool = True

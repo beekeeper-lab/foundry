@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-001 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 
 ## Problem Statement
 
@@ -40,10 +40,10 @@ Extend the seeder service to support a `beans` seed mode that creates `ai/beans/
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| | | | | |
+| 01 | Implement Beans Seed Mode | developer | — | Done |
+| 02 | Beans Seed Mode Verification | tech-qa | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> BA and Architect skipped — requirements are clear in the bean, and implementation follows the existing seeder pattern (new dispatch branch like `kickoff`).
 
 ## Notes
 

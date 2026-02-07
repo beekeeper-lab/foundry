@@ -202,8 +202,11 @@ def _run_pipeline(
     if not composition.generation.seed_tasks:
         logger.debug("Task seeding skipped (disabled)")
     if composition.generation.seed_tasks:
-        tasks_dir = project_dir / "ai" / "tasks"
         seed_mode = composition.generation.seed_mode
+        if seed_mode == "beans":
+            tasks_dir = project_dir / "ai" / "beans"
+        else:
+            tasks_dir = project_dir / "ai" / "tasks"
         seed_result = seed_tasks(composition, tasks_dir, mode=seed_mode)
         manifest.stages["seed"] = seed_result
         logger.info(

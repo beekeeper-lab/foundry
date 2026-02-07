@@ -208,3 +208,162 @@ def test_kickoff_mode_no_per_role_tasks(tmp_path: Path):
     assert "**Owner:** ba" not in content
     assert "**Owner:** developer" not in content
     assert "**Owner:** team-lead" in content
+
+
+# ---- Test 11: Beans mode creates _index.md ----
+
+
+def test_beans_mode_creates_index_file(tmp_path: Path):
+    """seed_tasks with mode='beans' should create _index.md."""
+    spec = _make_spec(project_name="My Project")
+    beans_dir = tmp_path / "beans"
+
+    result = seed_tasks(spec, beans_dir, mode="beans")
+
+    assert isinstance(result, StageResult)
+    assert "_index.md" in result.wrote
+    assert (beans_dir / "_index.md").is_file()
+
+
+# ---- Test 12: Beans mode creates _bean-template.md ----
+
+
+def test_beans_mode_creates_template_file(tmp_path: Path):
+    """seed_tasks with mode='beans' should create _bean-template.md."""
+    spec = _make_spec()
+    beans_dir = tmp_path / "beans"
+
+    result = seed_tasks(spec, beans_dir, mode="beans")
+
+    assert "_bean-template.md" in result.wrote
+    assert (beans_dir / "_bean-template.md").is_file()
+
+
+# ---- Test 13: Beans mode index has status key ----
+
+
+def test_beans_mode_index_has_status_key(tmp_path: Path):
+    """Beans _index.md should contain the status key table."""
+    spec = _make_spec()
+    beans_dir = tmp_path / "beans"
+
+    seed_tasks(spec, beans_dir, mode="beans")
+
+    content = (beans_dir / "_index.md").read_text()
+    assert "## Status Key" in content
+    assert "| New |" in content
+    assert "| Picked |" in content
+    assert "| In Progress |" in content
+    assert "| Done |" in content
+    assert "| Deferred |" in content
+
+
+# ---- Test 14: Beans mode index has backlog table ----
+
+
+def test_beans_mode_index_has_backlog_table(tmp_path: Path):
+    """Beans _index.md should contain the backlog table header."""
+    spec = _make_spec()
+    beans_dir = tmp_path / "beans"
+
+    seed_tasks(spec, beans_dir, mode="beans")
+
+    content = (beans_dir / "_index.md").read_text()
+    assert "## Backlog" in content
+    assert "| Bean ID | Title | Priority | Status | Owner |" in content
+
+
+# ---- Test 15: Beans mode index includes project name ----
+
+
+def test_beans_mode_index_includes_project_name(tmp_path: Path):
+    """Beans _index.md header should include the project name."""
+    spec = _make_spec(project_name="Acme Widget")
+    beans_dir = tmp_path / "beans"
+
+    seed_tasks(spec, beans_dir, mode="beans")
+
+    content = (beans_dir / "_index.md").read_text()
+    assert "# Bean Backlog: Acme Widget" in content
+
+
+# ---- Test 16: Beans mode template has required sections ----
+
+
+def test_beans_mode_template_has_required_sections(tmp_path: Path):
+    """Beans _bean-template.md should have Problem Statement, Goal, Scope, AC, Tasks."""
+    spec = _make_spec()
+    beans_dir = tmp_path / "beans"
+
+    seed_tasks(spec, beans_dir, mode="beans")
+
+    content = (beans_dir / "_bean-template.md").read_text()
+    assert "## Problem Statement" in content
+    assert "## Goal" in content
+    assert "## Scope" in content
+    assert "### In Scope" in content
+    assert "### Out of Scope" in content
+    assert "## Acceptance Criteria" in content
+    assert "## Tasks" in content
+    assert "## Notes" in content
+
+
+# ---- Test 17: Beans mode returns both files in StageResult ----
+
+
+def test_beans_mode_returns_stage_result_with_both_files(tmp_path: Path):
+    """seed_tasks with mode='beans' should list both files in StageResult.wrote."""
+    spec = _make_spec()
+    beans_dir = tmp_path / "beans"
+
+    result = seed_tasks(spec, beans_dir, mode="beans")
+
+    assert len(result.wrote) == 2
+    assert "_index.md" in result.wrote
+    assert "_bean-template.md" in result.wrote
+
+
+# ---- Test 18: Beans mode does not create seeded-tasks.md ----
+
+
+def test_beans_mode_does_not_create_seeded_tasks(tmp_path: Path):
+    """seed_tasks with mode='beans' should not create seeded-tasks.md."""
+    spec = _make_spec(personas=["developer"])
+    beans_dir = tmp_path / "beans"
+
+    seed_tasks(spec, beans_dir, mode="beans")
+
+    assert not (beans_dir / "seeded-tasks.md").exists()
+
+
+# ---- Test 19: Detailed mode unaffected by beans addition ----
+
+
+def test_detailed_mode_still_works(tmp_path: Path):
+    """Adding beans mode should not break existing detailed mode."""
+    spec = _make_spec(personas=["ba", "developer"])
+    tasks_dir = tmp_path / "tasks"
+
+    result = seed_tasks(spec, tasks_dir, mode="detailed")
+
+    assert "seeded-tasks.md" in result.wrote
+    content = (tasks_dir / "seeded-tasks.md").read_text()
+    assert "**Owner:** ba" in content
+    assert "**Owner:** developer" in content
+    assert "_index.md" not in result.wrote
+
+
+# ---- Test 20: Kickoff mode unaffected by beans addition ----
+
+
+def test_kickoff_mode_still_works(tmp_path: Path):
+    """Adding beans mode should not break existing kickoff mode."""
+    spec = _make_spec(personas=["developer"], stacks=["python"])
+    tasks_dir = tmp_path / "tasks"
+
+    result = seed_tasks(spec, tasks_dir, mode="kickoff")
+
+    assert "seeded-tasks.md" in result.wrote
+    content = (tasks_dir / "seeded-tasks.md").read_text()
+    assert "team-lead" in content
+    assert "_index.md" not in result.wrote
