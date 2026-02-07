@@ -27,11 +27,14 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`), assigning own
 
 2. **Locate bean directory** -- Scan `ai/beans/` for a directory starting with `BEAN-{NNN}-`. If not found, error with `BeanNotFound`.
 
-3. **Read current state** -- Open the bean's `bean.md`. Parse the metadata table to get current Status.
+3. **Re-read `_index.md`** -- Check the bean's current status and owner in the index. Another agent may have claimed it since you last read the backlog.
 
-4. **Validate transition** -- Check the current status:
-   - `New` or `Deferred` → allowed, proceed
-   - `Picked` or `In Progress` → warn "already active", proceed anyway (idempotent)
+4. **Read current state** -- Open the bean's `bean.md`. Parse the metadata table to get current Status and Owner.
+
+5. **Check lock** -- Validate the bean is available:
+   - `New` or `Deferred` (no Owner) → available, proceed
+   - `Picked` or `In Progress` with **your** Owner → already yours, proceed (idempotent)
+   - `Picked` or `In Progress` with **a different** Owner → error with `BeanLocked`: "Bean is claimed by another agent. Pick a different bean."
    - `Done` → error with `BeanDone`, cannot re-pick a completed bean
 
 5. **Determine new status** -- If `start` is true: `In Progress`. Otherwise: `Picked`.
@@ -80,7 +83,8 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`), assigning own
 | Error | Cause | Resolution |
 |-------|-------|------------|
 | `BeanNotFound` | No bean directory matches the ID | Check `_index.md` for valid IDs |
-| `AlreadyActive` | Bean is already `Picked` or `In Progress` | Warning only — no action needed |
+| `AlreadyActive` | Bean is already `Picked` or `In Progress` by you | Warning only — no action needed |
+| `BeanLocked` | Bean is `Picked` or `In Progress` with a different Owner | Pick a different bean — this one is claimed by another agent |
 | `BeanDone` | Bean status is `Done` | Cannot re-pick; create a follow-up bean with `/new-bean` |
 
 ## Dependencies

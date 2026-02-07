@@ -50,7 +50,8 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`) in both the be
 | Error | Cause | Resolution |
 |-------|-------|------------|
 | `BeanNotFound` | No bean directory matches the given ID | Check `ai/beans/_index.md` for valid IDs |
-| `AlreadyActive` | Bean is already `Picked` or `In Progress` | No action needed — bean is already active |
+| `AlreadyActive` | Bean is already `Picked` or `In Progress` by you | No action needed — bean is already active |
+| `BeanLocked` | Bean is `Picked` or `In Progress` with a different Owner | Pick a different bean — claimed by another agent |
 | `BeanDone` | Bean status is `Done` | Cannot pick a completed bean — create a follow-up bean instead |
 
 ## Examples

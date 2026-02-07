@@ -7,6 +7,7 @@
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
 | **Owner** | team-lead |
+| **Category** | App |
 
 ## Problem Statement
 

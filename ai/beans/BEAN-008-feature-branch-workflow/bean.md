@@ -7,6 +7,7 @@
 | **Priority** | High |
 | **Created** | 2026-02-07 |
 | **Owner** | team-lead |
+| **Category** | Infra |
 
 ## Problem Statement
 

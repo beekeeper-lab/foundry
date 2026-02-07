@@ -25,6 +25,19 @@ Multiple Claude Code agents may be working in this codebase simultaneously. Each
 - **Bean ID collisions** — if you create a bean and find the ID already taken, increment and retry.
 - **Don't modify another agent's in-progress bean** — if a bean is `In Progress` with a different owner context, leave it alone.
 
+**Bean locking (claim protocol):**
+
+Beans are locked by their Status + Owner fields in both `_index.md` and `bean.md`. These two fields together act as a lock.
+
+1. **Before picking a bean**, re-read `_index.md`. If the bean's Status is `Picked`, `In Progress`, or `Done`, it is locked — skip it.
+2. **To claim a bean**, atomically update both `_index.md` and `bean.md`:
+   - Set Status to `In Progress`
+   - Set Owner to a unique identifier (e.g., `team-lead`, `agent-2`, or the session context)
+3. **A bean is locked when** Status is `Picked` or `In Progress` AND Owner is set. No other agent should pick, modify, or work on a locked bean.
+4. **A bean is unlocked when** Status is `New` or `Deferred` with no Owner, or Status is `Done`.
+5. **If you find a conflict** (you tried to pick a bean but it's already claimed when you go to write), abandon the pick and select a different bean.
+6. **Stale locks** — if a bean has been `In Progress` for an unusually long time with no file changes, it may indicate a crashed agent. Do NOT auto-unlock it. Report it to the user and let them decide.
+
 ## Bean Lifecycle
 
 ### 1. Creation
@@ -43,9 +56,11 @@ Bean IDs are sequential: BEAN-001, BEAN-002, etc.
 
 The Team Lead reviews the backlog (`ai/beans/_index.md`) and picks 1-3 beans to work on:
 
-1. Assess priority and dependencies between beans
-2. Update bean status from `New` to `Picked`
-3. Update the index table
+1. **Re-read `_index.md`** — check for beans claimed by other agents since your last read
+2. Assess priority and dependencies between beans
+3. **Skip locked beans** — any bean with Status `Picked`/`In Progress` and an Owner is claimed by another agent
+4. **Claim the bean** — update Status to `Picked` (or `In Progress`) and set Owner in both `bean.md` and `_index.md`. This is the lock.
+5. Update the index table
 
 ### 3. Decomposition
 
