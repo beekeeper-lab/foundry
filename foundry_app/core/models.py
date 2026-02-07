@@ -289,6 +289,46 @@ class CompositionSpec(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Validation
+# ---------------------------------------------------------------------------
+
+class Severity(str, Enum):
+    ERROR = "error"
+    WARNING = "warning"
+    INFO = "info"
+
+
+class ValidationMessage(BaseModel):
+    """A single validation finding."""
+
+    severity: Severity
+    code: str = Field(..., description="Machine-readable code, e.g. 'missing-persona'")
+    message: str = Field(..., description="Human-readable description")
+
+
+class ValidationResult(BaseModel):
+    """Aggregated validation output from pre-generation checks."""
+
+    messages: list[ValidationMessage] = Field(default_factory=list)
+
+    @property
+    def errors(self) -> list[ValidationMessage]:
+        return [m for m in self.messages if m.severity == Severity.ERROR]
+
+    @property
+    def warnings(self) -> list[ValidationMessage]:
+        return [m for m in self.messages if m.severity == Severity.WARNING]
+
+    @property
+    def infos(self) -> list[ValidationMessage]:
+        return [m for m in self.messages if m.severity == Severity.INFO]
+
+    @property
+    def is_valid(self) -> bool:
+        return len(self.errors) == 0
+
+
+# ---------------------------------------------------------------------------
 # Pipeline results
 # ---------------------------------------------------------------------------
 

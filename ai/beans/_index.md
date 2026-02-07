@@ -40,13 +40,13 @@
 | BEAN-016 | Core Data Models & IO Layer | App | High | Done | team-lead |
 | BEAN-017 | App Shell & Main Window | App | High | Done | team-lead |
 | BEAN-018 | Library Indexer Service | App | High | Done | team-lead |
-| BEAN-019 | Wizard: Project Identity Page | App | High | New | (unassigned) |
-| BEAN-020 | Wizard: Persona Selection Page | App | High | New | (unassigned) |
+| BEAN-019 | Wizard: Project Identity Page | App | High | In Progress | team-lead |
+| BEAN-020 | Wizard: Persona Selection Page | App | High | In Progress | team-lead |
 | BEAN-021 | Wizard: Technology Stack Page | App | High | New | (unassigned) |
 | BEAN-022 | Wizard: Architecture & Cloud Page | App | Medium | New | (unassigned) |
 | BEAN-023 | Wizard: Hook & Safety Config Page | App | Medium | New | (unassigned) |
 | BEAN-024 | Wizard: Review & Generate Page | App | High | New | (unassigned) |
-| BEAN-025 | Validator Service | App | High | New | (unassigned) |
+| BEAN-025 | Validator Service | App | High | In Progress | team-lead |
 | BEAN-026 | Scaffold Service | App | High | New | (unassigned) |
 | BEAN-027 | Compiler Service | App | High | New | (unassigned) |
 | BEAN-028 | Asset Copier Service | App | High | New | (unassigned) |
