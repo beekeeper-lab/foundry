@@ -65,7 +65,7 @@
 | BEAN-041 | Library Manager — Template Editor | App | Medium | New | (unassigned) |
 | BEAN-042 | Library Manager — Claude Assets & Workflows Editor | App | Low | Done | team-lead |
 | BEAN-043 | Add Application Logo | App | Medium | Done | team-lead |
-| BEAN-044 | Splash Screen & Branded Backgrounds | App | Medium | New | (unassigned) |
+| BEAN-044 | Splash Screen & Branded Backgrounds | App | Medium | Done | team-lead |
 | BEAN-045 | Theme Foundation & Style Constants | App | High | Done | team-lead |
 | BEAN-046 | Main Window & Sidebar Restyle | App | High | Done | team-lead |
 | BEAN-047 | Icon Set for Industrial Theme | App | Medium | Done | team-lead |
@@ -73,4 +73,4 @@
 | BEAN-049 | Form & Input Styling | App | Medium | Done | Developer |
 | BEAN-050 | Progress & Status Screens Restyle | App | Medium | New | (unassigned) |
 | BEAN-051 | Review Page & Typography System | App | Medium | New | (unassigned) |
-| BEAN-052 | Accessibility & Visual Polish | App | Medium | New | (unassigned) |
+| BEAN-052 | Accessibility & Visual Polish | App | Medium | Done | team-lead |
