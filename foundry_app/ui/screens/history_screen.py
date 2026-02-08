@@ -9,6 +9,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QFrame,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -23,9 +24,27 @@ from PySide6.QtWidgets import (
 from foundry_app.ui.theme import (
     ACCENT_PRIMARY,
     ACCENT_PRIMARY_HOVER,
+    ACCENT_PRIMARY_MUTED,
+    ACCENT_SECONDARY,
     BG_BASE,
+    BG_INSET,
+    BG_OVERLAY,
     BG_SURFACE,
     BORDER_DEFAULT,
+    BORDER_SUBTLE,
+    FONT_SIZE_MD,
+    FONT_SIZE_SM,
+    FONT_SIZE_XL,
+    FONT_WEIGHT_BOLD,
+    RADIUS_MD,
+    RADIUS_SM,
+    SPACE_LG,
+    SPACE_MD,
+    SPACE_SM,
+    SPACE_XL,
+    SPACE_XS,
+    SPACE_XXL,
+    TEXT_ON_ACCENT,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
@@ -61,26 +80,32 @@ class HistoryScreen(QWidget):
 
         content_page = QWidget()
         layout = QVBoxLayout(content_page)
-        layout.setContentsMargins(32, 24, 32, 24)
-        layout.setSpacing(16)
+        layout.setContentsMargins(SPACE_XXL, SPACE_XL, SPACE_XXL, SPACE_XL)
+        layout.setSpacing(SPACE_LG)
 
         # Title
         title = QLabel("Generation History")
-        title.setFont(QFont("", 20, QFont.Weight.Bold))
+        title.setFont(QFont("", FONT_SIZE_XL, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {TEXT_PRIMARY};")
         layout.addWidget(title)
 
         subtitle = QLabel("Browse past generation runs and view their manifests.")
-        subtitle.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 14px;")
+        subtitle.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_MD}px;"
+        )
         layout.addWidget(subtitle)
 
         # Split view: run list (left) + manifest details (right)
         content = QHBoxLayout()
+        content.setSpacing(0)
 
         # Run list
         left = QVBoxLayout()
+        left.setSpacing(SPACE_SM)
         list_label = QLabel("Past Runs")
-        list_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
+        list_label.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
         left.addWidget(list_label)
 
         self._run_list = QListWidget()
@@ -89,45 +114,62 @@ class HistoryScreen(QWidget):
                 background-color: {BG_SURFACE};
                 color: {TEXT_PRIMARY};
                 border: 1px solid {BORDER_DEFAULT};
-                border-radius: 4px;
-                font-size: 13px;
-                padding: 4px;
+                border-radius: {RADIUS_SM}px;
+                font-size: {FONT_SIZE_MD}px;
+                padding: {SPACE_XS}px;
             }}
             QListWidget::item {{
-                padding: 8px 12px;
+                padding: {SPACE_SM}px {SPACE_MD}px;
+                border-bottom: 1px solid {BORDER_SUBTLE};
             }}
             QListWidget::item:selected {{
-                background-color: {BG_BASE};
+                background-color: {BG_OVERLAY};
                 color: {ACCENT_PRIMARY};
+                border-left: 2px solid {ACCENT_PRIMARY};
+            }}
+            QListWidget::item:hover {{
+                background-color: {BG_OVERLAY};
             }}
         """)
         self._run_list.currentRowChanged.connect(self._on_run_selected)
         left.addWidget(self._run_list, stretch=1)
 
+        # Vertical separator
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.VLine)
+        separator.setStyleSheet(
+            f"color: {BORDER_DEFAULT}; margin: 0 {SPACE_MD}px;"
+        )
+
         # Manifest details
         right = QVBoxLayout()
+        right.setSpacing(SPACE_SM)
         details_label = QLabel("Manifest Details")
-        details_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
+        details_label.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
         right.addWidget(details_label)
 
         self._details = QTextEdit()
         self._details.setReadOnly(True)
         self._details.setStyleSheet(f"""
             QTextEdit {{
-                background-color: {BG_SURFACE};
-                color: {TEXT_PRIMARY};
+                background-color: {BG_INSET};
+                color: {ACCENT_SECONDARY};
                 border: 1px solid {BORDER_DEFAULT};
-                border-radius: 4px;
+                border-radius: {RADIUS_SM}px;
                 font-family: monospace;
-                font-size: 12px;
-                padding: 8px;
+                font-size: {FONT_SIZE_SM}px;
+                padding: {SPACE_SM}px;
             }}
         """)
         right.addWidget(self._details, stretch=1)
 
         # Metadata summary
         self._meta_label = QLabel("")
-        self._meta_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
+        self._meta_label.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
         right.addWidget(self._meta_label)
 
         # Regenerate button
@@ -136,18 +178,18 @@ class HistoryScreen(QWidget):
         self._regen_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ACCENT_PRIMARY};
-                color: {BG_BASE};
+                color: {TEXT_ON_ACCENT};
                 border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: bold;
+                border-radius: {RADIUS_MD}px;
+                padding: {SPACE_MD}px {SPACE_XL}px;
+                font-size: {FONT_SIZE_MD}px;
+                font-weight: {FONT_WEIGHT_BOLD};
             }}
             QPushButton:hover {{
                 background-color: {ACCENT_PRIMARY_HOVER};
             }}
             QPushButton:disabled {{
-                background-color: {BG_SURFACE};
+                background-color: {ACCENT_PRIMARY_MUTED};
                 color: {TEXT_SECONDARY};
             }}
         """)
@@ -156,6 +198,7 @@ class HistoryScreen(QWidget):
         right.addWidget(self._regen_btn)
 
         content.addLayout(left, stretch=1)
+        content.addWidget(separator)
         content.addLayout(right, stretch=2)
         layout.addLayout(content)
 

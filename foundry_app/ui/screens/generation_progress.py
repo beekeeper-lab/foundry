@@ -24,7 +24,6 @@ from foundry_app.ui.theme import (
     ACCENT_SECONDARY,
     BG_BASE,
     BG_INSET,
-    BG_OVERLAY,
     BG_SURFACE,
     BORDER_DEFAULT,
     BORDER_SUBTLE,
@@ -35,12 +34,12 @@ from foundry_app.ui.theme import (
     FONT_WEIGHT_BOLD,
     RADIUS_MD,
     RADIUS_SM,
-    SPACE_SM,
-    SPACE_MD,
     SPACE_LG,
+    SPACE_MD,
+    SPACE_SM,
     SPACE_XL,
-    SPACE_XXL,
     SPACE_XS,
+    SPACE_XXL,
     STATUS_ERROR,
     STATUS_SUCCESS,
     TEXT_ON_ACCENT,
@@ -317,7 +316,7 @@ class GenerationProgressScreen(QWidget):
         widget = self._stage_widgets.get(stage_key)
         if widget:
             widget.set_running()
-            self.append_log(f"Stage: {stage_key} — running")
+            self.append_log(f"Stage: {stage_key} \u2014 running")
 
     def mark_stage_done(self, stage_key: str, file_count: int = 0) -> None:
         """Mark a stage as completed."""
@@ -325,14 +324,14 @@ class GenerationProgressScreen(QWidget):
         if widget:
             widget.set_done(file_count)
         self._update_progress()
-        self.append_log(f"Stage: {stage_key} — done ({file_count} files)")
+        self.append_log(f"Stage: {stage_key} \u2014 done ({file_count} files)")
 
     def mark_stage_error(self, stage_key: str, message: str = "Error") -> None:
         """Mark a stage as failed."""
         widget = self._stage_widgets.get(stage_key)
         if widget:
             widget.set_error(message)
-        self.append_log(f"Stage: {stage_key} — ERROR: {message}")
+        self.append_log(f"Stage: {stage_key} \u2014 ERROR: {message}")
 
     def mark_stage_skipped(self, stage_key: str) -> None:
         """Mark a stage as skipped."""
@@ -355,7 +354,9 @@ class GenerationProgressScreen(QWidget):
         self._summary_label.setVisible(True)
         self._open_btn.setVisible(True)
         self._progress_bar.setValue(self._progress_bar.maximum())
-        self.append_log(f"Finished: {total_files} files, {warnings} warnings, {elapsed:.1f}s")
+        self.append_log(
+            f"Finished: {total_files} files, {warnings} warnings, {elapsed:.1f}s"
+        )
         self.generation_complete.emit()
 
     def finish_with_error(self, message: str) -> None:
