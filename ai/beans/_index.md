@@ -71,6 +71,6 @@
 | BEAN-047 | Icon Set for Industrial Theme | App | Medium | Done | team-lead |
 | BEAN-048 | Wizard Card Components Restyle | App | High | Done | team-lead |
 | BEAN-049 | Form & Input Styling | App | Medium | Done | Developer |
-| BEAN-050 | Progress & Status Screens Restyle | App | Medium | New | (unassigned) |
+| BEAN-050 | Progress & Status Screens Restyle | App | Medium | Done | Developer |
 | BEAN-051 | Review Page & Typography System | App | Medium | New | (unassigned) |
 | BEAN-052 | Accessibility & Visual Polish | App | Medium | Done | team-lead |
