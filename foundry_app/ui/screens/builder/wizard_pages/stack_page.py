@@ -26,12 +26,27 @@ from foundry_app.core.models import (
     StackInfo,
     StackSelection,
 )
+from foundry_app.ui.theme import (
+    ACCENT_PRIMARY,
+    ACCENT_SECONDARY_MUTED,
+    BG_INSET,
+    BG_SURFACE,
+    BORDER_DEFAULT,
+    FONT_SIZE_MD,
+    FONT_SIZE_SM,
+    FONT_SIZE_XL,
+    FONT_SIZE_XS,
+    FONT_WEIGHT_BOLD,
+    RADIUS_MD,
+    RADIUS_SM,
+    SPACE_MD,
+    STATUS_ERROR,
+    TEXT_DISABLED,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+)
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Human-readable stack descriptions (keyed by directory id)
-# ---------------------------------------------------------------------------
 
 STACK_DESCRIPTIONS: dict[str, tuple[str, str]] = {
     "clean-code": ("Clean Code", "Code quality standards, naming conventions, SOLID principles"),
@@ -47,58 +62,54 @@ STACK_DESCRIPTIONS: dict[str, tuple[str, str]] = {
     "typescript": ("TypeScript", "Type safety, module patterns, build tooling"),
 }
 
-# ---------------------------------------------------------------------------
-# Stylesheet constants (Catppuccin Mocha theme)
-# ---------------------------------------------------------------------------
-
-CARD_STYLE = """
-QFrame#stack-card {
-    background-color: #1e1e2e;
-    border: 1px solid #313244;
-    border-radius: 8px;
-    padding: 12px;
-}
-QFrame#stack-card:hover {
-    border-color: #585b70;
-}
+CARD_STYLE = f"""
+QFrame#stack-card {{
+    background-color: {BG_SURFACE};
+    border: 1px solid {BORDER_DEFAULT};
+    border-radius: {RADIUS_MD}px;
+    padding: {SPACE_MD}px;
+}}
+QFrame#stack-card:hover {{
+    border-color: {ACCENT_SECONDARY_MUTED};
+}}
 """
 
-CARD_SELECTED_BORDER = "border-color: #89b4fa;"
+CARD_SELECTED_BORDER = f"border-color: {ACCENT_PRIMARY};"
 
-LABEL_STYLE = "color: #cdd6f4; font-size: 14px; font-weight: bold;"
-DESC_STYLE = "color: #6c7086; font-size: 12px;"
-HEADING_STYLE = "color: #cdd6f4; font-size: 18px; font-weight: bold;"
-SUBHEADING_STYLE = "color: #6c7086; font-size: 13px;"
-WARNING_STYLE = "color: #f38ba8; font-size: 12px;"
-FILES_STYLE = "color: #a6adc8; font-size: 11px; font-style: italic;"
-ORDER_BTN_STYLE = """
-QPushButton {
-    background-color: #313244;
-    color: #cdd6f4;
-    border: 1px solid #45475a;
-    border-radius: 4px;
+LABEL_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px; font-weight: {FONT_WEIGHT_BOLD};"
+)
+DESC_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+HEADING_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_XL}px; font-weight: {FONT_WEIGHT_BOLD};"
+)
+SUBHEADING_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+WARNING_STYLE = f"color: {STATUS_ERROR}; font-size: {FONT_SIZE_SM}px;"
+FILES_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_XS}px; font-style: italic;"
+ORDER_BTN_STYLE = f"""
+QPushButton {{
+    background-color: {BG_SURFACE};
+    color: {TEXT_PRIMARY};
+    border: 1px solid {BORDER_DEFAULT};
+    border-radius: {RADIUS_SM}px;
     padding: 2px 8px;
-    font-size: 12px;
-}
-QPushButton:hover {
-    background-color: #45475a;
-}
-QPushButton:disabled {
-    color: #585b70;
-    background-color: #1e1e2e;
-    border-color: #313244;
-}
+    font-size: {FONT_SIZE_SM}px;
+}}
+QPushButton:hover {{
+    background-color: {BG_INSET};
+}}
+QPushButton:disabled {{
+    color: {TEXT_DISABLED};
+    background-color: {BG_INSET};
+    border-color: {BORDER_DEFAULT};
+}}
 """
 
-
-# ---------------------------------------------------------------------------
-# StackCard — single stack row widget
-# ---------------------------------------------------------------------------
 
 class StackCard(QFrame):
     """A card representing a single technology stack with checkbox."""
 
-    toggled = Signal(str, bool)  # stack_id, checked
+    toggled = Signal(str, bool)
 
     def __init__(self, stack: StackInfo, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -106,7 +117,6 @@ class StackCard(QFrame):
         self.setObjectName("stack-card")
         self.setStyleSheet(CARD_STYLE)
         self.setFrameShape(QFrame.Shape.StyledPanel)
-
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -114,12 +124,10 @@ class StackCard(QFrame):
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(10)
 
-        # Checkbox
         self._checkbox = QCheckBox()
         self._checkbox.stateChanged.connect(self._on_toggled)
         layout.addWidget(self._checkbox)
 
-        # Name and description
         display_name, desc = STACK_DESCRIPTIONS.get(
             self._stack.id, (self._stack.id.replace("-", " ").title(), "")
         )
@@ -132,14 +140,11 @@ class StackCard(QFrame):
         desc_label.setStyleSheet(DESC_STYLE)
         layout.addWidget(desc_label, stretch=1)
 
-        # File count badge
         file_count = len(self._stack.files)
         if file_count > 0:
             badge = QLabel(f"{file_count} file{'s' if file_count != 1 else ''}")
             badge.setStyleSheet(FILES_STYLE)
             layout.addWidget(badge)
-
-    # -- State access -------------------------------------------------------
 
     @property
     def stack_id(self) -> str:
@@ -158,35 +163,22 @@ class StackCard(QFrame):
         return len(self._stack.files)
 
     def to_stack_selection(self, order: int = 0) -> StackSelection:
-        """Build a StackSelection from the current card state."""
         return StackSelection(id=self._stack.id, order=order)
 
     def load_from_selection(self, sel: StackSelection) -> None:
-        """Restore card state from a StackSelection."""
         self._checkbox.setChecked(True)
-
-    # -- Slots --------------------------------------------------------------
 
     def _on_toggled(self, state: int) -> None:
         checked = state == Qt.CheckState.Checked.value
         self.toggled.emit(self._stack.id, checked)
-        # Visual feedback — highlight border when selected
         if checked:
             self.setStyleSheet(CARD_STYLE + f"QFrame#stack-card {{ {CARD_SELECTED_BORDER} }}")
         else:
             self.setStyleSheet(CARD_STYLE)
 
 
-# ---------------------------------------------------------------------------
-# StackSelectionPage — wizard page widget
-# ---------------------------------------------------------------------------
-
 class StackSelectionPage(QWidget):
-    """Wizard page for selecting technology stacks from the library.
-
-    Emits ``selection_changed`` whenever the set of selected stacks changes.
-    Call ``get_stack_selections()`` to retrieve the current selections.
-    """
+    """Wizard page for selecting technology stacks from the library."""
 
     selection_changed = Signal()
 
@@ -197,13 +189,11 @@ class StackSelectionPage(QWidget):
     ) -> None:
         super().__init__(parent)
         self._cards: dict[str, StackCard] = {}
-        self._ordered_ids: list[str] = []  # tracks selection order
+        self._ordered_ids: list[str] = []
         self._warning_label: QLabel | None = None
         self._build_ui()
         if library_index is not None:
             self.load_stacks(library_index)
-
-    # -- UI construction ----------------------------------------------------
 
     def _build_ui(self) -> None:
         outer = QVBoxLayout(self)
@@ -223,13 +213,11 @@ class StackSelectionPage(QWidget):
         subtitle.setWordWrap(True)
         outer.addWidget(subtitle)
 
-        # Warning label (hidden by default)
         self._warning_label = QLabel("At least one stack must be selected.")
         self._warning_label.setStyleSheet(WARNING_STYLE)
         self._warning_label.setVisible(False)
         outer.addWidget(self._warning_label)
 
-        # Order controls
         order_row = QHBoxLayout()
         order_row.setSpacing(8)
 
@@ -248,7 +236,6 @@ class StackSelectionPage(QWidget):
         order_row.addStretch(1)
         outer.addLayout(order_row)
 
-        # Scrollable area for stack cards
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -263,18 +250,13 @@ class StackSelectionPage(QWidget):
         scroll.setWidget(self._card_container)
         outer.addWidget(scroll, stretch=1)
 
-    # -- Public API ---------------------------------------------------------
-
     def load_stacks(self, library_index: LibraryIndex) -> None:
-        """Populate the page with stacks from a LibraryIndex."""
-        # Clear existing cards
         for card in self._cards.values():
             self._card_layout.removeWidget(card)
             card.deleteLater()
         self._cards.clear()
         self._ordered_ids.clear()
 
-        # Insert cards before the stretch
         insert_idx = 0
         for stack in library_index.stacks:
             card = StackCard(stack)
@@ -286,63 +268,43 @@ class StackSelectionPage(QWidget):
         logger.info("Loaded %d stack cards", len(self._cards))
 
     def get_stack_selections(self) -> list[StackSelection]:
-        """Return a list of StackSelection from currently selected stacks, ordered."""
         selections: list[StackSelection] = []
-
-        # First add ordered (explicitly ordered) stacks
         for idx, sid in enumerate(self._ordered_ids):
             if sid in self._cards and self._cards[sid].is_selected:
                 selections.append(self._cards[sid].to_stack_selection(order=idx))
-
-        # Then add any selected stacks not yet in the ordered list
         next_order = len(selections)
         for sid, card in self._cards.items():
             if card.is_selected and sid not in self._ordered_ids:
                 selections.append(card.to_stack_selection(order=next_order))
                 next_order += 1
-
         return selections
 
     def set_stack_selections(self, selections: list[StackSelection]) -> None:
-        """Restore selections from a list of StackSelection (e.g. when navigating back)."""
-        # Sort by order to restore ordering
         sorted_sels = sorted(selections, key=lambda s: s.order)
-
-        # Reset all cards
         for card in self._cards.values():
             card.is_selected = False
-
-        # Restore ordered list
         self._ordered_ids = [s.id for s in sorted_sels if s.id in self._cards]
-
-        # Restore card states
         for sel in sorted_sels:
             if sel.id in self._cards:
                 self._cards[sel.id].load_from_selection(sel)
-
         self._update_warning()
         self._update_order_buttons()
 
     def selected_count(self) -> int:
-        """Return the number of currently selected stacks."""
         return sum(1 for c in self._cards.values() if c.is_selected)
 
     def is_valid(self) -> bool:
-        """Return True if at least one stack is selected."""
         return self.selected_count() > 0
 
     @property
     def stack_cards(self) -> dict[str, StackCard]:
-        """Access cards by stack id (for testing)."""
         return dict(self._cards)
 
     @property
     def ordered_ids(self) -> list[str]:
-        """Access the current ordering (for testing)."""
         return list(self._ordered_ids)
 
     def move_stack_up(self, stack_id: str) -> None:
-        """Move a stack up in the ordering (lower index = higher priority)."""
         if stack_id not in self._ordered_ids:
             return
         idx = self._ordered_ids.index(stack_id)
@@ -356,7 +318,6 @@ class StackSelectionPage(QWidget):
         self.selection_changed.emit()
 
     def move_stack_down(self, stack_id: str) -> None:
-        """Move a stack down in the ordering (higher index = lower priority)."""
         if stack_id not in self._ordered_ids:
             return
         idx = self._ordered_ids.index(stack_id)
@@ -369,8 +330,6 @@ class StackSelectionPage(QWidget):
         self._update_order_buttons()
         self.selection_changed.emit()
 
-    # -- Slots --------------------------------------------------------------
-
     def _on_card_toggled(self, stack_id: str, checked: bool) -> None:
         logger.debug("Stack %s toggled: %s", stack_id, checked)
         if checked:
@@ -379,7 +338,6 @@ class StackSelectionPage(QWidget):
         else:
             if stack_id in self._ordered_ids:
                 self._ordered_ids.remove(stack_id)
-
         self._update_warning()
         self._update_order_buttons()
         self.selection_changed.emit()
@@ -394,13 +352,9 @@ class StackSelectionPage(QWidget):
         self._move_down_btn.setEnabled(has_ordered)
 
     def _on_move_up(self) -> None:
-        """Move the last selected stack up one position."""
         if len(self._ordered_ids) >= 2:
-            # Move the last item up
             self.move_stack_up(self._ordered_ids[-1])
 
     def _on_move_down(self) -> None:
-        """Move the first selected stack down one position."""
         if len(self._ordered_ids) >= 2:
-            # Move the first item down
             self.move_stack_down(self._ordered_ids[0])

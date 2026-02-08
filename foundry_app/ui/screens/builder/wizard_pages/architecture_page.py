@@ -24,96 +24,74 @@ from foundry_app.core.models import (
     ArchitecturePattern,
     CloudProvider,
 )
+from foundry_app.ui.theme import (
+    ACCENT_PRIMARY,
+    ACCENT_SECONDARY,
+    ACCENT_SECONDARY_MUTED,
+    BG_SURFACE,
+    BORDER_DEFAULT,
+    FONT_SIZE_LG,
+    FONT_SIZE_MD,
+    FONT_SIZE_SM,
+    FONT_SIZE_XL,
+    FONT_WEIGHT_BOLD,
+    RADIUS_MD,
+    SPACE_MD,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+)
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Human-readable descriptions
-# ---------------------------------------------------------------------------
-
 PATTERN_DESCRIPTIONS: dict[str, tuple[str, str]] = {
-    "monolith": (
-        "Monolith",
-        "Single deployable unit; simple to develop, test, and deploy",
-    ),
-    "modular-monolith": (
-        "Modular Monolith",
-        "Single deployment with clear module boundaries and internal APIs",
-    ),
-    "microservices": (
-        "Microservices",
-        "Independently deployable services communicating over the network",
-    ),
-    "serverless": (
-        "Serverless",
-        "Function-as-a-service with managed infrastructure and event triggers",
-    ),
-    "event-driven": (
-        "Event-Driven",
-        "Asynchronous messaging, event sourcing, and reactive architectures",
-    ),
+    "monolith": ("Monolith", "Single deployable unit; simple to develop, test, and deploy"),
+    "modular-monolith": ("Modular Monolith", "Single deployment with clear module boundaries and internal APIs"),
+    "microservices": ("Microservices", "Independently deployable services communicating over the network"),
+    "serverless": ("Serverless", "Function-as-a-service with managed infrastructure and event triggers"),
+    "event-driven": ("Event-Driven", "Asynchronous messaging, event sourcing, and reactive architectures"),
 }
 
 CLOUD_DESCRIPTIONS: dict[str, tuple[str, str]] = {
-    "aws": (
-        "Amazon Web Services",
-        "EC2, Lambda, S3, RDS, DynamoDB, and the broader AWS ecosystem",
-    ),
-    "azure": (
-        "Microsoft Azure",
-        "App Service, Functions, Blob Storage, Cosmos DB, and Azure DevOps",
-    ),
-    "gcp": (
-        "Google Cloud Platform",
-        "Cloud Run, Cloud Functions, GCS, Firestore, and BigQuery",
-    ),
-    "self-hosted": (
-        "Self-Hosted / On-Prem",
-        "Docker, Kubernetes, bare-metal, or private cloud deployments",
-    ),
+    "aws": ("Amazon Web Services", "EC2, Lambda, S3, RDS, DynamoDB, and the broader AWS ecosystem"),
+    "azure": ("Microsoft Azure", "App Service, Functions, Blob Storage, Cosmos DB, and Azure DevOps"),
+    "gcp": ("Google Cloud Platform", "Cloud Run, Cloud Functions, GCS, Firestore, and BigQuery"),
+    "self-hosted": ("Self-Hosted / On-Prem", "Docker, Kubernetes, bare-metal, or private cloud deployments"),
 }
 
-# ---------------------------------------------------------------------------
-# Stylesheet constants (Catppuccin Mocha theme)
-# ---------------------------------------------------------------------------
-
-CARD_STYLE = """
-QFrame#arch-card {
-    background-color: #1e1e2e;
-    border: 1px solid #313244;
-    border-radius: 8px;
-    padding: 12px;
-}
-QFrame#arch-card:hover {
-    border-color: #585b70;
-}
+CARD_STYLE = f"""
+QFrame#arch-card {{
+    background-color: {BG_SURFACE};
+    border: 1px solid {BORDER_DEFAULT};
+    border-radius: {RADIUS_MD}px;
+    padding: {SPACE_MD}px;
+}}
+QFrame#arch-card:hover {{
+    border-color: {ACCENT_SECONDARY_MUTED};
+}}
 """
 
-CARD_SELECTED_BORDER = "border-color: #a6e3a1;"
+CARD_SELECTED_BORDER = f"border-color: {ACCENT_PRIMARY};"
 
-LABEL_STYLE = "color: #cdd6f4; font-size: 14px; font-weight: bold;"
-DESC_STYLE = "color: #6c7086; font-size: 12px;"
-HEADING_STYLE = "color: #cdd6f4; font-size: 18px; font-weight: bold;"
-SUBHEADING_STYLE = "color: #6c7086; font-size: 13px;"
-SECTION_LABEL_STYLE = "color: #89b4fa; font-size: 15px; font-weight: bold;"
+LABEL_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px; font-weight: {FONT_WEIGHT_BOLD};"
+)
+DESC_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+HEADING_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_XL}px; font-weight: {FONT_WEIGHT_BOLD};"
+)
+SUBHEADING_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+SECTION_LABEL_STYLE = (
+    f"color: {ACCENT_SECONDARY}; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD};"
+)
 
-
-# ---------------------------------------------------------------------------
-# ArchitectureCard — single item row widget
-# ---------------------------------------------------------------------------
 
 class ArchitectureCard(QFrame):
     """A card representing a single architecture pattern or cloud provider."""
 
-    toggled = Signal(str, bool)  # item_id, checked
+    toggled = Signal(str, bool)
 
-    def __init__(
-        self,
-        item_id: str,
-        display_name: str,
-        description: str,
-        parent: QWidget | None = None,
-    ) -> None:
+    def __init__(self, item_id: str, display_name: str, description: str,
+                 parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._item_id = item_id
         self._display_name = display_name
@@ -121,7 +99,6 @@ class ArchitectureCard(QFrame):
         self.setObjectName("arch-card")
         self.setStyleSheet(CARD_STYLE)
         self.setFrameShape(QFrame.Shape.StyledPanel)
-
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -142,8 +119,6 @@ class ArchitectureCard(QFrame):
         desc_label.setWordWrap(True)
         layout.addWidget(desc_label, stretch=1)
 
-    # -- State access -------------------------------------------------------
-
     @property
     def item_id(self) -> str:
         return self._item_id
@@ -160,8 +135,6 @@ class ArchitectureCard(QFrame):
     def is_selected(self, value: bool) -> None:
         self._checkbox.setChecked(value)
 
-    # -- Slots --------------------------------------------------------------
-
     def _on_toggled(self, state: int) -> None:
         checked = state == Qt.CheckState.Checked.value
         self.toggled.emit(self._item_id, checked)
@@ -171,18 +144,8 @@ class ArchitectureCard(QFrame):
             self.setStyleSheet(CARD_STYLE)
 
 
-# ---------------------------------------------------------------------------
-# ArchitectureCloudPage — wizard page widget
-# ---------------------------------------------------------------------------
-
 class ArchitectureCloudPage(QWidget):
-    """Wizard page for selecting architecture patterns and cloud providers.
-
-    This page is optional — ``is_valid()`` always returns True because
-    users may skip architecture/cloud configuration entirely.
-
-    Emits ``selection_changed`` whenever selections change.
-    """
+    """Wizard page for selecting architecture patterns and cloud providers."""
 
     selection_changed = Signal()
 
@@ -191,8 +154,6 @@ class ArchitectureCloudPage(QWidget):
         self._pattern_cards: dict[str, ArchitectureCard] = {}
         self._cloud_cards: dict[str, ArchitectureCard] = {}
         self._build_ui()
-
-    # -- UI construction ----------------------------------------------------
 
     def _build_ui(self) -> None:
         outer = QVBoxLayout(self)
@@ -212,7 +173,6 @@ class ArchitectureCloudPage(QWidget):
         subtitle.setWordWrap(True)
         outer.addWidget(subtitle)
 
-        # Scrollable area
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -223,7 +183,6 @@ class ArchitectureCloudPage(QWidget):
         self._scroll_layout.setContentsMargins(0, 0, 0, 0)
         self._scroll_layout.setSpacing(12)
 
-        # Architecture patterns section
         pattern_label = QLabel("Architecture Patterns")
         pattern_label.setStyleSheet(SECTION_LABEL_STYLE)
         self._scroll_layout.addWidget(pattern_label)
@@ -241,7 +200,6 @@ class ArchitectureCloudPage(QWidget):
             self._pattern_container.addWidget(card)
             self._pattern_cards[pattern.value] = card
 
-        # Cloud providers section
         cloud_label = QLabel("Cloud Providers")
         cloud_label.setStyleSheet(SECTION_LABEL_STYLE)
         self._scroll_layout.addWidget(cloud_label)
@@ -263,55 +221,41 @@ class ArchitectureCloudPage(QWidget):
         scroll.setWidget(self._scroll_container)
         outer.addWidget(scroll, stretch=1)
 
-    # -- Public API ---------------------------------------------------------
-
     def get_architecture_config(self) -> ArchitectureConfig:
-        """Return an ArchitectureConfig from current selections."""
         patterns = [
-            ArchitecturePattern(pid)
-            for pid, card in self._pattern_cards.items()
+            ArchitecturePattern(pid) for pid, card in self._pattern_cards.items()
             if card.is_selected
         ]
         providers = [
-            CloudProvider(cid)
-            for cid, card in self._cloud_cards.items()
+            CloudProvider(cid) for cid, card in self._cloud_cards.items()
             if card.is_selected
         ]
         return ArchitectureConfig(patterns=patterns, cloud_providers=providers)
 
     def set_architecture_config(self, config: ArchitectureConfig) -> None:
-        """Restore selections from an ArchitectureConfig (e.g. when navigating back)."""
         pattern_values = {p.value for p in config.patterns}
         for pid, card in self._pattern_cards.items():
             card.is_selected = pid in pattern_values
-
         provider_values = {c.value for c in config.cloud_providers}
         for cid, card in self._cloud_cards.items():
             card.is_selected = cid in provider_values
 
     def selected_pattern_count(self) -> int:
-        """Return the number of selected architecture patterns."""
         return sum(1 for c in self._pattern_cards.values() if c.is_selected)
 
     def selected_cloud_count(self) -> int:
-        """Return the number of selected cloud providers."""
         return sum(1 for c in self._cloud_cards.values() if c.is_selected)
 
     def is_valid(self) -> bool:
-        """Always returns True — this page is optional."""
         return True
 
     @property
     def pattern_cards(self) -> dict[str, ArchitectureCard]:
-        """Access pattern cards by id (for testing)."""
         return dict(self._pattern_cards)
 
     @property
     def cloud_cards(self) -> dict[str, ArchitectureCard]:
-        """Access cloud cards by id (for testing)."""
         return dict(self._cloud_cards)
-
-    # -- Slots --------------------------------------------------------------
 
     def _on_card_toggled(self, item_id: str, checked: bool) -> None:
         logger.debug("Architecture/cloud item %s toggled: %s", item_id, checked)

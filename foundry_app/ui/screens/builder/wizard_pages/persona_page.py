@@ -28,6 +28,22 @@ from foundry_app.core.models import (
     Strictness,
     TeamConfig,
 )
+from foundry_app.ui.theme import (
+    ACCENT_PRIMARY,
+    ACCENT_SECONDARY_MUTED,
+    BG_SURFACE,
+    BORDER_DEFAULT,
+    FONT_SIZE_MD,
+    FONT_SIZE_SM,
+    FONT_SIZE_XL,
+    FONT_SIZE_XS,
+    FONT_WEIGHT_BOLD,
+    RADIUS_MD,
+    SPACE_MD,
+    STATUS_ERROR,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,30 +70,34 @@ PERSONA_DESCRIPTIONS: dict[str, tuple[str, str]] = {
 }
 
 # ---------------------------------------------------------------------------
-# Stylesheet constants
+# Stylesheet constants (theme-based)
 # ---------------------------------------------------------------------------
 
-CARD_STYLE = """
-QFrame#persona-card {
-    background-color: #1e1e2e;
-    border: 1px solid #313244;
-    border-radius: 8px;
-    padding: 12px;
-}
-QFrame#persona-card:hover {
-    border-color: #585b70;
-}
+CARD_STYLE = f"""
+QFrame#persona-card {{
+    background-color: {BG_SURFACE};
+    border: 1px solid {BORDER_DEFAULT};
+    border-radius: {RADIUS_MD}px;
+    padding: {SPACE_MD}px;
+}}
+QFrame#persona-card:hover {{
+    border-color: {ACCENT_SECONDARY_MUTED};
+}}
 """
 
-CARD_SELECTED_BORDER = "border-color: #cba6f7;"
+CARD_SELECTED_BORDER = f"border-color: {ACCENT_PRIMARY};"
 
-LABEL_STYLE = "color: #cdd6f4; font-size: 14px; font-weight: bold;"
-DESC_STYLE = "color: #6c7086; font-size: 12px;"
-CONFIG_LABEL_STYLE = "color: #a6adc8; font-size: 12px;"
-HEADING_STYLE = "color: #cdd6f4; font-size: 18px; font-weight: bold;"
-SUBHEADING_STYLE = "color: #6c7086; font-size: 13px;"
-WARNING_STYLE = "color: #f38ba8; font-size: 12px;"
-TEMPLATES_STYLE = "color: #a6adc8; font-size: 11px; font-style: italic;"
+LABEL_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px; font-weight: {FONT_WEIGHT_BOLD};"
+)
+DESC_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+CONFIG_LABEL_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+HEADING_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_XL}px; font-weight: {FONT_WEIGHT_BOLD};"
+)
+SUBHEADING_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+WARNING_STYLE = f"color: {STATUS_ERROR}; font-size: {FONT_SIZE_SM}px;"
+TEMPLATES_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_XS}px; font-style: italic;"
 
 
 # ---------------------------------------------------------------------------
