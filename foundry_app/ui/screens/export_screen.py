@@ -24,11 +24,29 @@ from PySide6.QtWidgets import (
 from foundry_app.ui.theme import (
     ACCENT_PRIMARY,
     ACCENT_PRIMARY_HOVER,
+    ACCENT_PRIMARY_MUTED,
+    ACCENT_SECONDARY,
     BG_BASE,
+    BG_INSET,
+    BG_OVERLAY,
     BG_SURFACE,
     BORDER_DEFAULT,
+    BORDER_SUBTLE,
+    FONT_SIZE_MD,
+    FONT_SIZE_SM,
+    FONT_SIZE_XL,
+    FONT_WEIGHT_BOLD,
+    RADIUS_MD,
+    RADIUS_SM,
+    SPACE_LG,
+    SPACE_MD,
+    SPACE_SM,
+    SPACE_XL,
+    SPACE_XS,
+    SPACE_XXL,
     STATUS_ERROR,
     STATUS_SUCCESS,
+    TEXT_ON_ACCENT,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
@@ -70,22 +88,27 @@ class ExportScreen(QWidget):
 
         content_page = QWidget()
         layout = QVBoxLayout(content_page)
-        layout.setContentsMargins(32, 24, 32, 24)
-        layout.setSpacing(16)
+        layout.setContentsMargins(SPACE_XXL, SPACE_XL, SPACE_XXL, SPACE_XL)
+        layout.setSpacing(SPACE_LG)
 
         # Title
         title = QLabel("Export Project")
-        title.setFont(QFont("", 20, QFont.Weight.Bold))
+        title.setFont(QFont("", FONT_SIZE_XL, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {TEXT_PRIMARY};")
         layout.addWidget(title)
 
         subtitle = QLabel("Select a generated project and export it as an archive.")
-        subtitle.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 14px;")
+        subtitle.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_MD}px;"
+        )
         layout.addWidget(subtitle)
 
         # Project list
         list_label = QLabel("Generated Projects")
-        list_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px; margin-top: 8px;")
+        list_label.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+            f" margin-top: {SPACE_SM}px;"
+        )
         layout.addWidget(list_label)
 
         self._project_list = QListWidget()
@@ -94,16 +117,21 @@ class ExportScreen(QWidget):
                 background-color: {BG_SURFACE};
                 color: {TEXT_PRIMARY};
                 border: 1px solid {BORDER_DEFAULT};
-                border-radius: 4px;
-                font-size: 14px;
-                padding: 4px;
+                border-radius: {RADIUS_SM}px;
+                font-size: {FONT_SIZE_MD}px;
+                padding: {SPACE_XS}px;
             }}
             QListWidget::item {{
-                padding: 8px 12px;
+                padding: {SPACE_SM}px {SPACE_MD}px;
+                border-bottom: 1px solid {BORDER_SUBTLE};
             }}
             QListWidget::item:selected {{
-                background-color: {BG_BASE};
+                background-color: {BG_OVERLAY};
                 color: {ACCENT_PRIMARY};
+                border-left: 2px solid {ACCENT_PRIMARY};
+            }}
+            QListWidget::item:hover {{
+                background-color: {BG_OVERLAY};
             }}
         """)
         layout.addWidget(self._project_list, stretch=1)
@@ -112,7 +140,9 @@ class ExportScreen(QWidget):
         controls = QHBoxLayout()
 
         fmt_label = QLabel("Format:")
-        fmt_label.setStyleSheet(f"color: {TEXT_PRIMARY}; font-size: 14px;")
+        fmt_label.setStyleSheet(
+            f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
+        )
         controls.addWidget(fmt_label)
 
         self._format_combo = QComboBox()
@@ -120,11 +150,19 @@ class ExportScreen(QWidget):
             self._format_combo.addItem(fmt_label_text, fmt_id)
         self._format_combo.setStyleSheet(f"""
             QComboBox {{
-                background-color: {BG_SURFACE};
+                background-color: {BG_INSET};
                 color: {TEXT_PRIMARY};
                 border: 1px solid {BORDER_DEFAULT};
-                border-radius: 4px;
-                padding: 6px 12px;
+                border-radius: {RADIUS_SM}px;
+                padding: {SPACE_SM}px {SPACE_MD}px;
+                font-size: {FONT_SIZE_MD}px;
+            }}
+            QComboBox:hover {{
+                border-color: {ACCENT_SECONDARY};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                padding-right: {SPACE_SM}px;
             }}
         """)
         controls.addWidget(self._format_combo)
@@ -135,18 +173,18 @@ class ExportScreen(QWidget):
         self._export_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ACCENT_PRIMARY};
-                color: {BG_BASE};
+                color: {TEXT_ON_ACCENT};
                 border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: bold;
+                border-radius: {RADIUS_MD}px;
+                padding: {SPACE_MD}px {SPACE_XL}px;
+                font-size: {FONT_SIZE_MD}px;
+                font-weight: {FONT_WEIGHT_BOLD};
             }}
             QPushButton:hover {{
                 background-color: {ACCENT_PRIMARY_HOVER};
             }}
             QPushButton:disabled {{
-                background-color: {BG_SURFACE};
+                background-color: {ACCENT_PRIMARY_MUTED};
                 color: {TEXT_SECONDARY};
             }}
         """)
@@ -158,7 +196,9 @@ class ExportScreen(QWidget):
 
         # Status
         self._status_label = QLabel("")
-        self._status_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
+        self._status_label.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
         layout.addWidget(self._status_label)
 
         # Wire selection
@@ -254,10 +294,14 @@ class ExportScreen(QWidget):
                 base_name, shutil_fmt, root_dir=str(project_path),
             )
             self._status_label.setText(f"Exported: {result_path}")
-            self._status_label.setStyleSheet(f"color: {STATUS_SUCCESS}; font-size: 12px;")
+            self._status_label.setStyleSheet(
+                f"color: {STATUS_SUCCESS}; font-size: {FONT_SIZE_SM}px;"
+            )
             self.export_complete.emit(result_path)
             logger.info("Exported project %s to %s", project_path.name, result_path)
         except Exception as exc:
             self._status_label.setText(f"Export failed: {exc}")
-            self._status_label.setStyleSheet(f"color: {STATUS_ERROR}; font-size: 12px;")
+            self._status_label.setStyleSheet(
+                f"color: {STATUS_ERROR}; font-size: {FONT_SIZE_SM}px;"
+            )
             logger.error("Export failed: %s", exc)

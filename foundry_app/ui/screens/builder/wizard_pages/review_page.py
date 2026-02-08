@@ -24,20 +24,26 @@ from foundry_app.core.models import (
     Strictness,
 )
 from foundry_app.ui.theme import (
+    ACCENT_PRIMARY,
+    ACCENT_PRIMARY_HOVER,
     ACCENT_PRIMARY_MUTED,
     ACCENT_SECONDARY,
-    ACCENT_SECONDARY_HOVER,
     BG_BASE,
     BORDER_DEFAULT,
     FONT_SIZE_LG,
+    FONT_SIZE_MD,
     FONT_SIZE_SM,
     FONT_SIZE_XL,
     FONT_SIZE_XS,
     FONT_WEIGHT_BOLD,
+    FONT_WEIGHT_MEDIUM,
+    FONT_WEIGHT_NORMAL,
     RADIUS_LG,
     SPACE_LG,
     SPACE_MD,
+    SPACE_SM,
     SPACE_XL,
+    SPACE_XS,
     TEXT_DISABLED,
     TEXT_ON_ACCENT,
     TEXT_PRIMARY,
@@ -45,6 +51,12 @@ from foundry_app.ui.theme import (
 )
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Monospace font family for code-like content (paths, identifiers)
+# ---------------------------------------------------------------------------
+
+FONT_MONO = "Consolas, Monaco, Courier New, monospace"
 
 # ---------------------------------------------------------------------------
 # Stylesheet constants (built from centralised theme)
@@ -66,43 +78,83 @@ QFrame#review-section {{
 """
 
 SECTION_TITLE_STYLE = (
-    f"color: {ACCENT_SECONDARY}; font-size: {FONT_SIZE_LG - 1}px;"
-    f" font-weight: {FONT_WEIGHT_BOLD};"
+    f"color: {ACCENT_SECONDARY}; font-size: {FONT_SIZE_LG}px;"
+    f" font-weight: {FONT_WEIGHT_BOLD}; letter-spacing: 0.5px;"
 )
+
 HEADING_STYLE = (
     f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_XL + 2}px;"
-    f" font-weight: {FONT_WEIGHT_BOLD};"
+    f" font-weight: {FONT_WEIGHT_BOLD}; letter-spacing: 0.5px;"
 )
-SUBHEADING_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM + 1}px;"
-LABEL_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM + 1}px;"
+
+SUBHEADING_STYLE = (
+    f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM + 1}px;"
+)
+
+LABEL_STYLE = (
+    f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+    f" font-weight: {FONT_WEIGHT_MEDIUM}; text-transform: uppercase;"
+    f" letter-spacing: 0.5px;"
+)
+
 VALUE_STYLE = (
-    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_SM + 1}px;"
-    f" font-weight: {FONT_WEIGHT_BOLD};"
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
+    f" font-weight: {FONT_WEIGHT_NORMAL};"
 )
-ITEM_STYLE = f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_SM + 1}px;"
-BADGE_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_XS}px; font-style: italic;"
-EMPTY_STYLE = f"color: {TEXT_DISABLED}; font-size: {FONT_SIZE_SM + 1}px; font-style: italic;"
+
+MONO_VALUE_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_SM}px;"
+    f" font-weight: {FONT_WEIGHT_NORMAL};"
+    f" font-family: {FONT_MONO};"
+)
+
+ITEM_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
+    f" font-weight: {FONT_WEIGHT_NORMAL};"
+)
+
+MONO_ITEM_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_SM}px;"
+    f" font-weight: {FONT_WEIGHT_NORMAL};"
+    f" font-family: {FONT_MONO};"
+)
+
+BADGE_STYLE = (
+    f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_XS}px;"
+    " font-style: italic;"
+)
+
+EMPTY_STYLE = (
+    f"color: {TEXT_DISABLED}; font-size: {FONT_SIZE_SM + 1}px;"
+    " font-style: italic;"
+)
+
 GENERATE_BTN_STYLE = f"""
 QPushButton#generate-btn {{
-    background-color: {ACCENT_SECONDARY};
+    background-color: {ACCENT_PRIMARY};
     color: {TEXT_ON_ACCENT};
     border: none;
     border-radius: {RADIUS_LG}px;
-    padding: {SPACE_MD}px {SPACE_XL + 8}px;
+    padding: {SPACE_MD}px {SPACE_XL + SPACE_SM}px;
     font-size: {FONT_SIZE_LG}px;
     font-weight: {FONT_WEIGHT_BOLD};
+    letter-spacing: 1px;
 }}
 QPushButton#generate-btn:hover {{
-    background-color: {ACCENT_SECONDARY_HOVER};
+    background-color: {ACCENT_PRIMARY_HOVER};
 }}
 QPushButton#generate-btn:pressed {{
     background-color: {ACCENT_PRIMARY_MUTED};
+}}
+QPushButton#generate-btn:disabled {{
+    background-color: {ACCENT_PRIMARY_MUTED};
+    color: {TEXT_DISABLED};
 }}
 """
 
 
 # ---------------------------------------------------------------------------
-# ReviewSection — a collapsible section with a title and content area
+# ReviewSection — a titled section card for review items
 # ---------------------------------------------------------------------------
 
 class ReviewSection(QFrame):
@@ -115,16 +167,16 @@ class ReviewSection(QFrame):
         self.setFrameShape(QFrame.Shape.StyledPanel)
 
         self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(16, 12, 16, 12)
-        self._layout.setSpacing(8)
+        self._layout.setContentsMargins(SPACE_LG, SPACE_MD, SPACE_LG, SPACE_MD)
+        self._layout.setSpacing(SPACE_SM)
 
         title_label = QLabel(title)
         title_label.setStyleSheet(SECTION_TITLE_STYLE)
         self._layout.addWidget(title_label)
 
         self._content_layout = QVBoxLayout()
-        self._content_layout.setContentsMargins(0, 4, 0, 0)
-        self._content_layout.setSpacing(4)
+        self._content_layout.setContentsMargins(0, SPACE_XS, 0, 0)
+        self._content_layout.setSpacing(SPACE_XS)
         self._layout.addLayout(self._content_layout)
 
     @property
@@ -132,10 +184,20 @@ class ReviewSection(QFrame):
         """Access the content area layout for adding widgets."""
         return self._content_layout
 
-    def add_field(self, label: str, value: str) -> QLabel:
-        """Add a label: value pair to the section."""
+    def add_field(self, label: str, value: str, *, mono: bool = False) -> QLabel:
+        """Add a label: value pair to the section.
+
+        Parameters
+        ----------
+        label:
+            The field label text.
+        value:
+            The field value text.
+        mono:
+            If True, render the value in monospace (for paths, identifiers).
+        """
         row = QHBoxLayout()
-        row.setSpacing(8)
+        row.setSpacing(SPACE_SM)
 
         lbl = QLabel(f"{label}:")
         lbl.setStyleSheet(LABEL_STYLE)
@@ -143,7 +205,7 @@ class ReviewSection(QFrame):
         row.addWidget(lbl)
 
         val = QLabel(value)
-        val.setStyleSheet(VALUE_STYLE)
+        val.setStyleSheet(MONO_VALUE_STYLE if mono else VALUE_STYLE)
         val.setWordWrap(True)
         val.setObjectName(f"value-{label.lower().replace(' ', '-')}")
         row.addWidget(val, stretch=1)
@@ -151,10 +213,10 @@ class ReviewSection(QFrame):
         self._content_layout.addLayout(row)
         return val
 
-    def add_item(self, text: str) -> QLabel:
+    def add_item(self, text: str, *, mono: bool = False) -> QLabel:
         """Add a single text item to the section."""
         item = QLabel(text)
-        item.setStyleSheet(ITEM_STYLE)
+        item.setStyleSheet(MONO_ITEM_STYLE if mono else ITEM_STYLE)
         item.setWordWrap(True)
         self._content_layout.addWidget(item)
         return item
@@ -192,8 +254,8 @@ class ReviewPage(QWidget):
 
     def _build_ui(self) -> None:
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(24, 20, 24, 20)
-        outer.setSpacing(12)
+        outer.setContentsMargins(SPACE_XL, SPACE_XL - SPACE_XS, SPACE_XL, SPACE_XL - SPACE_XS)
+        outer.setSpacing(SPACE_MD)
 
         heading = QLabel("Review & Generate")
         heading.setStyleSheet(HEADING_STYLE)
@@ -218,13 +280,13 @@ class ReviewPage(QWidget):
         self._scroll_container = QWidget()
         self._scroll_layout = QVBoxLayout(self._scroll_container)
         self._scroll_layout.setContentsMargins(0, 0, 0, 0)
-        self._scroll_layout.setSpacing(12)
+        self._scroll_layout.setSpacing(SPACE_MD)
         self._scroll_layout.addStretch(1)
 
         scroll.setWidget(self._scroll_container)
         outer.addWidget(scroll, stretch=1)
 
-        # Generate button
+        # Generate button — brass/gold primary action
         self._generate_btn = QPushButton("Generate Project")
         self._generate_btn.setObjectName("generate-btn")
         self._generate_btn.setToolTip("Generate the project from current configuration")
@@ -267,8 +329,8 @@ class ReviewPage(QWidget):
     def _build_project_section(self, spec: CompositionSpec) -> None:
         section = self._add_section("project", "Project Identity")
         section.add_field("Name", spec.project.name)
-        section.add_field("Slug", spec.project.slug)
-        section.add_field("Output Path", spec.project.resolved_output_folder)
+        section.add_field("Slug", spec.project.slug, mono=True)
+        section.add_field("Output Path", spec.project.resolved_output_folder, mono=True)
 
     def _build_team_section(self, spec: CompositionSpec) -> None:
         section = self._add_section("team", "Team Composition")
@@ -287,7 +349,7 @@ class ReviewPage(QWidget):
             text = parts[0]
             if len(parts) > 1:
                 text += f"  ({', '.join(parts[1:])})"
-            section.add_item(f"\u2022 {text}")
+            section.add_item(f"\u2022 {text}", mono=True)
 
     def _build_stacks_section(self, spec: CompositionSpec) -> None:
         section = self._add_section("stacks", "Technology Stacks")
@@ -296,7 +358,7 @@ class ReviewPage(QWidget):
             section.add_empty_message("No stacks selected")
             return
         for idx, s in enumerate(stacks):
-            section.add_item(f"{idx + 1}. {s.id}")
+            section.add_item(f"{idx + 1}. {s.id}", mono=True)
 
     def _build_architecture_section(self, spec: CompositionSpec) -> None:
         section = self._add_section("architecture", "Architecture & Cloud")
@@ -320,10 +382,10 @@ class ReviewPage(QWidget):
             disabled = [p for p in packs if not p.enabled]
             if enabled:
                 ids = ", ".join(p.id for p in enabled)
-                section.add_field("Enabled Packs", ids)
+                section.add_field("Enabled Packs", ids, mono=True)
             if disabled:
                 ids = ", ".join(p.id for p in disabled)
-                section.add_field("Disabled Packs", ids)
+                section.add_field("Disabled Packs", ids, mono=True)
         else:
             section.add_field("Hook Packs", "None")
 

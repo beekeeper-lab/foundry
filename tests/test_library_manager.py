@@ -6,8 +6,10 @@ from unittest.mock import patch
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from foundry_app.ui.screens.library_manager import (
+    STARTER_TEMPLATE,
     LibraryManagerScreen,
     _build_file_tree,
+    persona_starter_files,
     starter_content,
     validate_asset_name,
 )
@@ -42,6 +44,8 @@ def _create_library(root: Path) -> Path:
     tpl_dir = lib / "templates"
     tpl_dir.mkdir(parents=True)
     (tpl_dir / "CLAUDE.md.j2").write_text("# Claude template", encoding="utf-8")
+    (tpl_dir / "shared" / "adr.md").parent.mkdir(parents=True, exist_ok=True)
+    (tpl_dir / "shared" / "adr.md").write_text("# ADR template", encoding="utf-8")
 
     # Workflows
     wf_dir = lib / "workflows"
@@ -536,12 +540,12 @@ class TestButtonState:
                 break
         assert screen.new_button.isEnabled()
 
-    def test_new_disabled_for_non_editable_category(self, tmp_path: Path):
+    def test_new_disabled_when_no_selection(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        # Select "Personas" — not editable
-        screen.tree.setCurrentItem(screen.tree.topLevelItem(0))
+        # No item selected — button should be disabled
+        screen.tree.setCurrentItem(None)
         assert not screen.new_button.isEnabled()
 
     def test_delete_enabled_for_file_in_editable_category(self, tmp_path: Path):
@@ -828,5 +832,792 @@ class TestDeleteAsset:
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
             if item.text(0) == "Claude Commands":
+                assert item.childCount() == 0
+                break
+
+
+
+# ---------------------------------------------------------------------------
+# Persona starter templates (pure logic, no Qt)
+# ---------------------------------------------------------------------------
+
+
+class TestPersonaStarterFiles:
+
+    def test_returns_three_files(self):
+        files = persona_starter_files("my-agent")
+        assert set(files.keys()) == {"persona.md", "outputs.md", "prompts.md"}
+
+    def test_persona_md_has_sections(self):
+        files = persona_starter_files("data-engineer")
+        content = files["persona.md"]
+        assert "# Persona: Data Engineer" in content
+        assert "## Mission" in content
+        assert "## Scope" in content
+        assert "## Operating Principles" in content
+        assert "## Definition of Done" in content
+
+    def test_outputs_md_has_sections(self):
+        files = persona_starter_files("data-engineer")
+        content = files["outputs.md"]
+        assert "Data Engineer -- Outputs" in content
+        assert "## 1. Primary Deliverable" in content
+
+    def test_prompts_md_has_sections(self):
+        files = persona_starter_files("data-engineer")
+        content = files["prompts.md"]
+        assert "Data Engineer -- Prompts" in content
+        assert "## Activation Prompt" in content
+        assert "## Task Prompts" in content
+        assert "## Handoff Prompts" in content
+
+
+# ---------------------------------------------------------------------------
+# Persona CRUD -- create operations
+# ---------------------------------------------------------------------------
+
+_INPUT_DIALOG2 = "foundry_app.ui.screens.library_manager.QInputDialog.getText"
+_MSG_WARNING2 = "foundry_app.ui.screens.library_manager.QMessageBox.warning"
+_MSG_QUESTION2 = "foundry_app.ui.screens.library_manager.QMessageBox.question"
+
+
+class TestCreatePersona:
+
+    def test_create_persona_creates_directory_structure(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        screen.tree.setCurrentItem(screen.tree.topLevelItem(0))
+        with patch(_INPUT_DIALOG2, return_value=("my-agent", True)):
+            screen._on_new_asset()
+        persona_dir = lib / "personas" / "my-agent"
+        assert persona_dir.is_dir()
+        assert (persona_dir / "persona.md").is_file()
+        assert (persona_dir / "outputs.md").is_file()
+        assert (persona_dir / "prompts.md").is_file()
+        assert (persona_dir / "templates").is_dir()
+
+    def test_create_persona_starter_content(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        screen.tree.setCurrentItem(screen.tree.topLevelItem(0))
+        with patch(_INPUT_DIALOG2, return_value=("my-agent", True)):
+            screen._on_new_asset()
+        persona_md = (lib / "personas" / "my-agent" / "persona.md").read_text(
+            encoding="utf-8"
+        )
+        assert "# Persona: My Agent" in persona_md
+        assert "## Mission" in persona_md
+
+    def test_create_duplicate_persona_shows_warning(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        screen.tree.setCurrentItem(screen.tree.topLevelItem(0))
+        with (
+            patch(_INPUT_DIALOG2, return_value=("developer", True)),
+            patch(_MSG_WARNING2) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+
+    def test_create_persona_invalid_name_shows_warning(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        screen.tree.setCurrentItem(screen.tree.topLevelItem(0))
+        with (
+            patch(_INPUT_DIALOG2, return_value=("Bad Name!", True)),
+            patch(_MSG_WARNING2) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+        assert not (lib / "personas" / "Bad Name!").exists()
+
+    def test_tree_refreshes_after_persona_create(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        personas_item = screen.tree.topLevelItem(0)
+        assert personas_item.text(0) == "Personas"
+        before = personas_item.childCount()
+        screen.tree.setCurrentItem(personas_item)
+        with patch(_INPUT_DIALOG2, return_value=("new-agent", True)):
+            screen._on_new_asset()
+        personas_item = screen.tree.topLevelItem(0)
+        assert personas_item.childCount() == before + 1
+
+
+# ---------------------------------------------------------------------------
+# Persona CRUD -- delete operations
+# ---------------------------------------------------------------------------
+
+
+class TestDeletePersona:
+
+    def test_delete_persona_directory(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "personas" / "developer"
+        assert target.is_dir()
+        personas_item = screen.tree.topLevelItem(0)
+        screen.tree.setCurrentItem(personas_item.child(0))
+        with patch(_MSG_QUESTION2, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_persona_cancelled_keeps_directory(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "personas" / "developer"
+        personas_item = screen.tree.topLevelItem(0)
+        screen.tree.setCurrentItem(personas_item.child(0))
+        with patch(_MSG_QUESTION2, return_value=QMessageBox.StandardButton.No):
+            screen._on_delete_asset()
+        assert target.is_dir()
+
+    def test_delete_persona_confirmation_message(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        personas_item = screen.tree.topLevelItem(0)
+        screen.tree.setCurrentItem(personas_item.child(0))
+        with patch(
+            _MSG_QUESTION2, return_value=QMessageBox.StandardButton.No
+        ) as mock_q:
+            screen._on_delete_asset()
+        call_args = mock_q.call_args
+        msg = call_args[0][2]
+        assert "developer" in msg
+        assert "all its files" in msg
+
+    def test_tree_refreshes_after_persona_delete(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        personas_item = screen.tree.topLevelItem(0)
+        assert personas_item.childCount() == 1
+        screen.tree.setCurrentItem(personas_item.child(0))
+        with patch(_MSG_QUESTION2, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        personas_item = screen.tree.topLevelItem(0)
+        assert personas_item.childCount() == 0
+
+
+# ---------------------------------------------------------------------------
+# Persona button state
+# ---------------------------------------------------------------------------
+
+
+class TestPersonaButtonState:
+
+    def test_new_enabled_for_personas_category(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        screen.tree.setCurrentItem(screen.tree.topLevelItem(0))
+        assert screen.new_button.isEnabled()
+
+    def test_delete_enabled_for_persona_directory(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        personas_item = screen.tree.topLevelItem(0)
+        screen.tree.setCurrentItem(personas_item.child(0))
+        assert screen.delete_button.isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# Persona file editing
+# ---------------------------------------------------------------------------
+
+
+class TestPersonaFileEditing:
+
+    def test_clicking_persona_md_opens_in_editor(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "persona.md":
+                screen.tree.setCurrentItem(child)
+                break
+        assert "Developer persona" in screen.editor_widget.editor.toPlainText()
+
+    def test_clicking_outputs_md_opens_in_editor(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "outputs.md":
+                screen.tree.setCurrentItem(child)
+                break
+        assert "Outputs" in screen.editor_widget.editor.toPlainText()
+
+
+# ---------------------------------------------------------------------------
+# Template starter content (pure logic, no Qt)
+# ---------------------------------------------------------------------------
+
+
+class TestTemplateStarterContent:
+
+    def test_shared_template_content(self):
+        content = starter_content("Shared Templates", "risk-log")
+        assert "# Risk Log" in content
+        assert "## Purpose" in content
+        assert "## Checklist" in content
+        assert "## Definition of Done" in content
+
+    def test_persona_template_content(self):
+        content = starter_content("_persona_template", "code-review")
+        assert "# Code Review" in content
+        assert "## Purpose" in content
+
+    def test_starter_template_has_metadata_table(self):
+        content = starter_content("Shared Templates", "test-plan")
+        assert "| **Category** |" in content
+        assert "| **Version** |" in content
+
+    def test_starter_template_constant(self):
+        assert "## Purpose" in STARTER_TEMPLATE
+        assert "## Checklist" in STARTER_TEMPLATE
+        assert "## Definition of Done" in STARTER_TEMPLATE
+
+
+# ---------------------------------------------------------------------------
+# Template button state
+# ---------------------------------------------------------------------------
+
+
+class TestTemplateButtonState:
+
+    def test_new_enabled_for_shared_templates_category(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        assert screen.new_button.isEnabled()
+
+    def test_new_enabled_for_shared_template_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                if item.childCount() > 0:
+                    screen.tree.setCurrentItem(item.child(0))
+                break
+        assert screen.new_button.isEnabled()
+
+    def test_delete_enabled_for_shared_template_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                # Find a file child (CLAUDE.md.j2)
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    if child.data(0, 0x0100) is not None:  # Qt.ItemDataRole.UserRole
+                        screen.tree.setCurrentItem(child)
+                        break
+                break
+        assert screen.delete_button.isEnabled()
+
+    def test_new_enabled_for_persona_templates_dir(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Navigate to Personas > developer > templates
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                screen.tree.setCurrentItem(child)
+                break
+        assert screen.new_button.isEnabled()
+
+    def test_delete_enabled_for_persona_template_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Navigate to Personas > developer > templates > impl.md.j2
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                if child.childCount() > 0:
+                    screen.tree.setCurrentItem(child.child(0))
+                break
+        assert screen.delete_button.isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# Template CRUD — create operations
+# ---------------------------------------------------------------------------
+
+
+class TestCreateTemplate:
+
+    def test_create_shared_template(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("risk-log", True)):
+            screen._on_new_asset()
+        created = lib / "templates" / "risk-log.md"
+        assert created.is_file()
+        content = created.read_text(encoding="utf-8")
+        assert "# Risk Log" in content
+        assert "## Purpose" in content
+
+    def test_create_persona_template(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Navigate to Personas > developer > templates
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                screen.tree.setCurrentItem(child)
+                break
+        with patch(_INPUT_DIALOG, return_value=("pr-review", True)):
+            screen._on_new_asset()
+        created = lib / "personas" / "developer" / "templates" / "pr-review.md"
+        assert created.is_file()
+        content = created.read_text(encoding="utf-8")
+        assert "# Pr Review" in content
+
+    def test_create_template_duplicate_shows_warning(self, tmp_path):
+        lib = _create_library(tmp_path)
+        # Create a template first
+        (lib / "templates" / "existing.md").write_text("existing", encoding="utf-8")
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("existing", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+
+    def test_create_template_invalid_name_shows_warning(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("Bad Name!", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+
+    def test_create_template_cancelled_does_nothing(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        before_count = len(list((lib / "templates").iterdir()))
+        with patch(_INPUT_DIALOG, return_value=("", False)):
+            screen._on_new_asset()
+        assert len(list((lib / "templates").iterdir())) == before_count
+
+    def test_tree_refreshes_after_template_create(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                before = item.childCount()
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("new-template", True)):
+            screen._on_new_asset()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                assert item.childCount() == before + 1
+                break
+
+
+# ---------------------------------------------------------------------------
+# Template CRUD — delete operations
+# ---------------------------------------------------------------------------
+
+
+class TestDeleteTemplate:
+
+    def test_delete_shared_template_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "templates" / "CLAUDE.md.j2"
+        assert target.is_file()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                # Find CLAUDE.md.j2 file
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    if child.text(0) == "CLAUDE.md.j2":
+                        screen.tree.setCurrentItem(child)
+                        break
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_persona_template_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "personas" / "developer" / "templates" / "impl.md.j2"
+        assert target.is_file()
+        # Navigate to Personas > developer > templates > impl.md.j2
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                for j in range(child.childCount()):
+                    tpl = child.child(j)
+                    if tpl.text(0) == "impl.md.j2":
+                        screen.tree.setCurrentItem(tpl)
+                        break
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_template_cancelled_keeps_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "templates" / "CLAUDE.md.j2"
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    if child.text(0) == "CLAUDE.md.j2":
+                        screen.tree.setCurrentItem(child)
+                        break
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.No):
+            screen._on_delete_asset()
+        assert target.is_file()
+
+    def test_tree_refreshes_after_template_delete(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                before = item.childCount()
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    if child.text(0) == "CLAUDE.md.j2":
+                        screen.tree.setCurrentItem(child)
+                        break
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                assert item.childCount() == before - 1
+                break
+
+
+# ---------------------------------------------------------------------------
+# Template visual distinction
+# ---------------------------------------------------------------------------
+
+
+class TestTemplateVisualDistinction:
+
+    def test_shared_template_items_are_italic(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    if child.data(0, 0x0100) is not None:  # file node
+                        assert child.font(0).italic(), (
+                            f"Shared template file '{child.text(0)}' should be italic"
+                        )
+                break
+
+    def test_persona_template_items_are_not_italic(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                for j in range(child.childCount()):
+                    tpl = child.child(j)
+                    assert not tpl.font(0).italic(), (
+                        f"Persona template '{tpl.text(0)}' should not be italic"
+                    )
+                break
+
+
+# ---------------------------------------------------------------------------
+# Stack CRUD — create operations
+# ---------------------------------------------------------------------------
+
+
+class TestStackCreate:
+
+    def test_create_stack_at_category_level(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("rust-actix", True)):
+            screen._on_new_asset()
+        stack_dir = lib / "stacks" / "rust-actix"
+        assert stack_dir.is_dir()
+        conv = stack_dir / "conventions.md"
+        assert conv.is_file()
+        content = conv.read_text(encoding="utf-8")
+        assert "Rust Actix Stack Conventions" in content
+
+    def test_create_new_file_from_stack_dir(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item.child(0))  # python-fastapi dir
+                break
+        with patch(_INPUT_DIALOG, return_value=("security", True)):
+            screen._on_new_asset()
+        created = lib / "stacks" / "python-fastapi" / "security.md"
+        assert created.is_file()
+        content = created.read_text(encoding="utf-8")
+        assert "# Security" in content
+        assert "## Guidelines" in content
+
+    def test_create_new_file_from_file_inside_stack(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                stack_dir = item.child(0)  # python-fastapi
+                screen.tree.setCurrentItem(stack_dir.child(0))  # conventions.md
+                break
+        with patch(_INPUT_DIALOG, return_value=("performance", True)):
+            screen._on_new_asset()
+        created = lib / "stacks" / "python-fastapi" / "performance.md"
+        assert created.is_file()
+
+    def test_create_duplicate_stack_shows_warning(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item)
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("python-fastapi", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+
+    def test_create_duplicate_stack_file_shows_warning(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item.child(0))  # python-fastapi dir
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("conventions", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+
+    def test_create_stack_invalid_name_shows_warning(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item)
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("Bad Name!", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+        assert not (lib / "stacks" / "Bad Name!").exists()
+
+    def test_create_stack_cancelled_does_nothing(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item)
+                break
+        before_count = len(list((lib / "stacks").iterdir()))
+        with patch(_INPUT_DIALOG, return_value=("", False)):
+            screen._on_new_asset()
+        assert len(list((lib / "stacks").iterdir())) == before_count
+
+    def test_tree_refreshes_after_stack_create(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                before = item.childCount()
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("new-stack", True)):
+            screen._on_new_asset()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                assert item.childCount() == before + 1
+                break
+
+
+# ---------------------------------------------------------------------------
+# Stack CRUD — delete operations
+# ---------------------------------------------------------------------------
+
+
+class TestStackDelete:
+
+    def test_delete_stack_directory(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "stacks" / "python-fastapi"
+        assert target.is_dir()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item.child(0))  # python-fastapi dir
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_stack_file(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "stacks" / "python-fastapi" / "testing.md"
+        assert target.is_file()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                stack_dir = item.child(0)
+                for j in range(stack_dir.childCount()):
+                    child = stack_dir.child(j)
+                    if child.text(0) == "testing.md":
+                        screen.tree.setCurrentItem(child)
+                        break
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_stack_cancelled_keeps_dir(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "stacks" / "python-fastapi"
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.No):
+            screen._on_delete_asset()
+        assert target.is_dir()
+
+    def test_tree_refreshes_after_stack_delete(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                assert item.childCount() == 1
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
                 assert item.childCount() == 0
                 break

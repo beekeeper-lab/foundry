@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-051 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
 | **Owner** | (unassigned) |
