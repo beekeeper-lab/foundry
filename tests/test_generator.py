@@ -798,7 +798,8 @@ class TestPipelineExecution:
         assert stages["compile"].wrote == []
         assert stages["compile"].warnings == []
         assert stages["copy_assets"].wrote == []
-        assert stages["safety"].wrote == []
+        # Safety writer now delegates to real implementation (BEAN-030)
+        assert ".claude/settings.json" in stages["safety"].wrote
 
 
 # ---------------------------------------------------------------------------

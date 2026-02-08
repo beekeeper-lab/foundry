@@ -50,10 +50,27 @@
 | BEAN-026 | Scaffold Service | App | High | Done | team-lead |
 | BEAN-027 | Compiler Service | App | High | Done | team-lead |
 | BEAN-028 | Asset Copier Service | App | High | Done | team-lead |
-| BEAN-029 | Seeder Service | App | Medium | New | (unassigned) |
-| BEAN-030 | Safety Writer Service | App | Medium | New | (unassigned) |
-| BEAN-031 | Diff Reporter Service | App | Low | New | (unassigned) |
+| BEAN-029 | Seeder Service | App | Medium | Done | team-lead |
+| BEAN-030 | Safety Writer Service | App | Medium | Done | team-lead |
+| BEAN-031 | Diff Reporter Service | App | Low | Done | team-lead |
 | BEAN-032 | Generator Orchestrator & Overlay | App | High | Done | team-lead |
-| BEAN-033 | Generation Progress Screen | App | Medium | New | (unassigned) |
-| BEAN-034 | CLI Interface | App | Medium | New | (unassigned) |
-| BEAN-035 | Export & History Screens | App | Low | New | (unassigned) |
+| BEAN-033 | Generation Progress Screen | App | Medium | Done | team-lead |
+| BEAN-034 | CLI Interface | App | Medium | Done | team-lead |
+| BEAN-035 | Export & History Screens | App | Low | Done | team-lead |
+| BEAN-036 | Update About Dialog Text | App | Low | New | (unassigned) |
+| BEAN-037 | Library Manager — Screen Shell & Tree Browser | App | High | New | (unassigned) |
+| BEAN-038 | Library Manager — Markdown Editor Widget | App | High | New | (unassigned) |
+| BEAN-039 | Library Manager — Persona Editor | App | High | New | (unassigned) |
+| BEAN-040 | Library Manager — Stack Editor | App | Medium | New | (unassigned) |
+| BEAN-041 | Library Manager — Template Editor | App | Medium | New | (unassigned) |
+| BEAN-042 | Library Manager — Claude Assets & Workflows Editor | App | Low | New | (unassigned) |
+| BEAN-043 | Add Application Logo | App | Medium | New | (unassigned) |
+| BEAN-044 | Splash Screen & Branded Backgrounds | App | Medium | New | (unassigned) |
+| BEAN-045 | Theme Foundation & Style Constants | App | High | New | (unassigned) |
+| BEAN-046 | Main Window & Sidebar Restyle | App | High | New | (unassigned) |
+| BEAN-047 | Icon Set for Industrial Theme | App | Medium | New | (unassigned) |
+| BEAN-048 | Wizard Card Components Restyle | App | High | New | (unassigned) |
+| BEAN-049 | Form & Input Styling | App | Medium | New | (unassigned) |
+| BEAN-050 | Progress & Status Screens Restyle | App | Medium | New | (unassigned) |
+| BEAN-051 | Review Page & Typography System | App | Medium | New | (unassigned) |
+| BEAN-052 | Accessibility & Visual Polish | App | Medium | New | (unassigned) |
