@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-047 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
 | **Owner** | (unassigned) |
@@ -41,15 +41,15 @@ Create a small, focused SVG icon set for Foundry and integrate it into the app's
 
 ## Acceptance Criteria
 
-- [ ] SVG icon files exist in a dedicated directory under `foundry_app/ui/`
-- [ ] At least 15 icons covering navigation, actions, and status indicators
-- [ ] Icons are monochrome SVG, tintable at runtime
-- [ ] Icon loader function returns QIcon from icon name
-- [ ] Icons are visually consistent — same stroke weight, same grid size
-- [ ] Style matches industrial-modern: geometric, clean, not playful
-- [ ] Unit tests verify icon loading and tinting
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] SVG icon files exist in a dedicated directory under `foundry_app/ui/`
+- [x] At least 15 icons covering navigation, actions, and status indicators
+- [x] Icons are monochrome SVG, tintable at runtime
+- [x] Icon loader function returns QIcon from icon name
+- [x] Icons are visually consistent — same stroke weight, same grid size
+- [x] Style matches industrial-modern: geometric, clean, not playful
+- [x] Unit tests verify icon loading and tinting
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 

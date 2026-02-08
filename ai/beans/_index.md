@@ -68,7 +68,7 @@
 | BEAN-044 | Splash Screen & Branded Backgrounds | App | Medium | New | (unassigned) |
 | BEAN-045 | Theme Foundation & Style Constants | App | High | Done | team-lead |
 | BEAN-046 | Main Window & Sidebar Restyle | App | High | Done | team-lead |
-| BEAN-047 | Icon Set for Industrial Theme | App | Medium | New | (unassigned) |
+| BEAN-047 | Icon Set for Industrial Theme | App | Medium | Done | team-lead |
 | BEAN-048 | Wizard Card Components Restyle | App | High | Done | team-lead |
 | BEAN-049 | Form & Input Styling | App | Medium | Done | Developer |
 | BEAN-050 | Progress & Status Screens Restyle | App | Medium | New | (unassigned) |
