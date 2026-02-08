@@ -19,85 +19,89 @@ from PySide6.QtWidgets import (
 )
 
 from foundry_app.core.settings import FoundrySettings
+from foundry_app.ui import theme
 from foundry_app.ui.widgets.branded_empty_state import BrandedEmptyState
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Stylesheet
+# Stylesheet — built from centralised theme constants
 # ---------------------------------------------------------------------------
 
-STYLESHEET = """
-QMainWindow {
-    background-color: #1e1e2e;
-}
+STYLESHEET = f"""
+QMainWindow {{{{
+    background-color: {theme.BG_BASE};
+}}}}
 
-/* Sidebar */
-#sidebar {
-    background-color: #181825;
-    border-right: 1px solid #313244;
-}
-#sidebar QListWidget {
+/* Sidebar — darker recessed panel, control-room feel */
+#sidebar {{{{
+    background-color: {theme.BG_INSET};
+    border-right: 1px solid {theme.BORDER_DEFAULT};
+}}}}
+#sidebar QListWidget {{{{
     background-color: transparent;
     border: none;
     outline: none;
-    font-size: 14px;
-    color: #cdd6f4;
-    padding: 8px 0;
-}
-#sidebar QListWidget::item {
-    padding: 12px 20px;
+    font-size: {theme.FONT_SIZE_MD}px;
+    color: {theme.TEXT_PRIMARY};
+    padding: {theme.SPACE_SM}px 0;
+}}}}
+#sidebar QListWidget::item {{{{
+    padding: {theme.SPACE_MD}px {theme.SPACE_XL}px;
     border-radius: 0;
-}
-#sidebar QListWidget::item:selected {
-    background-color: #313244;
-    color: #cba6f7;
-    font-weight: bold;
-}
-#sidebar QListWidget::item:hover:!selected {
-    background-color: #1e1e2e;
-}
+}}}}
+#sidebar QListWidget::item:selected {{{{
+    background-color: {theme.BG_SURFACE};
+    color: {theme.ACCENT_PRIMARY};
+    font-weight: {theme.FONT_WEIGHT_BOLD};
+    border-left: 3px solid {theme.ACCENT_PRIMARY};
+}}}}
+#sidebar QListWidget::item:hover:!selected {{{{
+    background-color: {theme.BG_BASE};
+    color: {theme.ACCENT_PRIMARY_HOVER};
+}}}}
 
-/* Brand label */
-#brand-label {
-    color: #cba6f7;
-    font-size: 20px;
-    font-weight: bold;
-    padding: 20px 20px 12px 20px;
-}
+/* Brand label — brass accent header */
+#brand-label {{{{
+    color: {theme.ACCENT_PRIMARY};
+    font-size: {theme.FONT_SIZE_XL}px;
+    font-weight: {theme.FONT_WEIGHT_BOLD};
+    padding: {theme.SPACE_XL}px {theme.SPACE_XL}px {theme.SPACE_MD}px {theme.SPACE_XL}px;
+    border-bottom: 1px solid {theme.BORDER_SUBTLE};
+}}}}
 
 /* Content area */
-#content-stack {
-    background-color: #1e1e2e;
-}
+#content-stack {{{{
+    background-color: {theme.BG_BASE};
+}}}}
 
 /* Placeholder screens */
-.placeholder-screen {
-    background-color: #1e1e2e;
-}
-.placeholder-screen QLabel {
-    color: #6c7086;
-    font-size: 16px;
-}
+.placeholder-screen {{{{
+    background-color: {theme.BG_BASE};
+}}}}
+.placeholder-screen QLabel {{{{
+    color: {theme.TEXT_DISABLED};
+    font-size: {theme.FONT_SIZE_LG}px;
+}}}}
 
 /* Menu bar */
-QMenuBar {
-    background-color: #181825;
-    color: #cdd6f4;
-    border-bottom: 1px solid #313244;
+QMenuBar {{{{
+    background-color: {theme.BG_INSET};
+    color: {theme.TEXT_PRIMARY};
+    border-bottom: 1px solid {theme.BORDER_DEFAULT};
     padding: 2px;
-}
-QMenuBar::item:selected {
-    background-color: #313244;
-}
-QMenu {
-    background-color: #1e1e2e;
-    color: #cdd6f4;
-    border: 1px solid #313244;
-}
-QMenu::item:selected {
-    background-color: #313244;
-}
+}}}}
+QMenuBar::item:selected {{{{
+    background-color: {theme.BG_SURFACE};
+}}}}
+QMenu {{{{
+    background-color: {theme.BG_SURFACE};
+    color: {theme.TEXT_PRIMARY};
+    border: 1px solid {theme.BORDER_DEFAULT};
+}}}}
+QMenu::item:selected {{{{
+    background-color: {theme.BG_OVERLAY};
+}}}}
 """
 
 
@@ -115,11 +119,13 @@ def _placeholder(title: str, description: str) -> QWidget:
     heading = QLabel(title)
     heading.setFont(QFont("", 22, QFont.Weight.Bold))
     heading.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    heading.setStyleSheet("color: #cdd6f4;")
+    heading.setStyleSheet(f"color: {theme.TEXT_PRIMARY};")
 
     subtitle = QLabel(description)
     subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    subtitle.setStyleSheet("color: #6c7086; font-size: 14px;")
+    subtitle.setStyleSheet(
+        f"color: {theme.TEXT_SECONDARY}; font-size: {theme.FONT_SIZE_MD}px;"
+    )
 
     layout.addWidget(heading)
     layout.addWidget(subtitle)
@@ -266,6 +272,7 @@ class MainWindow(QMainWindow):
         QMessageBox.about(
             self,
             "About Foundry",
-            f"<h3>Foundry v{__version__}</h3>"
-            "<p>Generate Claude Code project folders from reusable building blocks.</p>",
+            f"<h3 style='color: {theme.ACCENT_PRIMARY};'>Foundry v{__version__}</h3>"
+            f"<p style='color: {theme.TEXT_PRIMARY};'>"
+            "Generate Claude Code project folders from reusable building blocks.</p>",
         )
