@@ -48,6 +48,8 @@ LIBRARY_CATEGORIES: list[tuple[str, str]] = [
 
 # Categories that support create/delete operations, mapped to their rel_path.
 _EDITABLE_CATEGORIES: dict[str, str] = {
+    "Personas": "personas",
+    "Stacks": "stacks",
     "Workflows": "workflows",
     "Claude Commands": "claude/commands",
     "Claude Skills": "claude/skills",
@@ -157,6 +159,52 @@ Describe the workflow or reference document.
 Add content here.
 """
 
+STARTER_STACK_CONVENTIONS = """\
+# {name} Stack Conventions
+
+Conventions for {name} projects. Deviations require an ADR with justification.
+
+---
+
+## Defaults
+
+| Concern | Default Tool / Approach |
+|---------|------------------------|
+| | |
+
+---
+
+## Do / Don't
+
+| Do | Don't |
+|----|-------|
+| | |
+
+---
+
+## Common Pitfalls
+
+- Describe common pitfalls here.
+
+## Checklist
+
+- [ ] Item one
+- [ ] Item two
+"""
+
+STARTER_STACK_FILE = """\
+# {name}
+
+## Overview
+
+Describe the topic covered by this file.
+
+## Guidelines
+
+- Guideline one
+- Guideline two
+"""
+
 _FILENAME_RE = re.compile(r"^[a-z0-9][a-z0-9\-]*$")
 
 
@@ -186,6 +234,10 @@ def starter_content(category: str, name: str) -> str:
         return STARTER_SKILL.format(name=title, slug=name)
     if category == "Claude Hooks":
         return STARTER_HOOK.format(name=title)
+    if category == "Stacks":
+        return STARTER_STACK_CONVENTIONS.format(name=title)
+    if category == "Stacks:file":
+        return STARTER_STACK_FILE.format(name=title)
     return STARTER_WORKFLOW.format(name=title)
 
 
@@ -496,15 +548,15 @@ class LibraryManagerScreen(QWidget):
             item is not None
             and item.data(0, Qt.ItemDataRole.UserRole) is not None
         )
-        # For skills, also allow deleting the skill directory node
-        is_skill_dir = (
-            cat == "Claude Skills"
+        # For skills/stacks, also allow deleting the directory node
+        is_asset_dir = (
+            cat in ("Claude Skills", "Stacks")
             and item is not None
             and item.parent() is not None
             and item.data(0, Qt.ItemDataRole.UserRole) is None
             and item.parent().parent() is None  # direct child of top-level
         )
-        self._delete_btn.setEnabled(editable and (has_file or is_skill_dir))
+        self._delete_btn.setEnabled(editable and (has_file or is_asset_dir))
 
     # -- Create / Delete operations ----------------------------------------
 
