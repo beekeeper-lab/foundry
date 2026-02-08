@@ -1,4 +1,4 @@
-"""Library Manager screen \u2014 tree-based browser with CRUD for library assets."""
+"""Library Manager screen — tree-based browser with CRUD for library assets."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import shutil
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QInputDialog,
@@ -35,7 +35,7 @@ from foundry_app.ui.widgets.markdown_editor import MarkdownEditor
 logger = logging.getLogger(__name__)
 
 # Top-level categories mapped to their directory paths relative to library root.
-# Order matters \u2014 this is the display order in the tree.
+# Order matters — this is the display order in the tree.
 LIBRARY_CATEGORIES: list[tuple[str, str]] = [
     ("Personas", "personas"),
     ("Stacks", "stacks"),
@@ -49,6 +49,7 @@ LIBRARY_CATEGORIES: list[tuple[str, str]] = [
 # Categories that support create/delete operations, mapped to their rel_path.
 _EDITABLE_CATEGORIES: dict[str, str] = {
     "Personas": "personas",
+    "Stacks": "stacks",
     "Workflows": "workflows",
     "Claude Commands": "claude/commands",
     "Claude Skills": "claude/skills",
@@ -143,7 +144,7 @@ Describe what this hook pack enforces.
 |---------|----------|--------------|
 | strict | Yes | enforcing |
 | standard | Yes | enforcing |
-| relaxed | No | \u2014 |
+| relaxed | No | — |
 """
 
 STARTER_WORKFLOW = """\
@@ -156,6 +157,81 @@ Describe the workflow or reference document.
 ## Details
 
 Add content here.
+"""
+
+STARTER_STACK_CONVENTIONS = """\
+# {name} Stack Conventions
+
+Conventions for {name} projects. Deviations require an ADR with justification.
+
+---
+
+## Defaults
+
+| Concern | Default Tool / Approach |
+|---------|------------------------|
+| | |
+
+---
+
+## Do / Don't
+
+| Do | Don't |
+|----|-------|
+| | |
+
+---
+
+## Common Pitfalls
+
+- Describe common pitfalls here.
+
+## Checklist
+
+- [ ] Item one
+- [ ] Item two
+"""
+
+STARTER_STACK_FILE = """\
+# {name}
+
+## Overview
+
+Describe the topic covered by this file.
+
+## Guidelines
+
+- Guideline one
+- Guideline two
+"""
+
+STARTER_TEMPLATE = """\
+# {name}
+
+| Field | Value |
+|-------|-------|
+| **Category** | |
+| **Version** | 1.0 |
+
+## Purpose
+
+Describe what this template is used for.
+
+## Content
+
+[Add template content here]
+
+## Checklist
+
+- [ ] Item one
+- [ ] Item two
+- [ ] Item three
+
+## Definition of Done
+
+- [ ] Template reviewed
+- [ ] Fields populated
+- [ ] Checklist completed
 """
 
 STARTER_PERSONA = """\
@@ -309,11 +385,19 @@ def starter_content(category: str, name: str) -> str:
         return STARTER_SKILL.format(name=title, slug=name)
     if category == "Claude Hooks":
         return STARTER_HOOK.format(name=title)
+    if category == "Stacks":
+        return STARTER_STACK_CONVENTIONS.format(name=title)
+    if category == "Stacks:file":
+        return STARTER_STACK_FILE.format(name=title)
     return STARTER_WORKFLOW.format(name=title)
 
 
 def persona_starter_files(name: str) -> dict[str, str]:
-    """Return a mapping of relative file paths to starter content for a persona."""
+    """Return a mapping of filename to starter content for a new persona.
+
+    Creates persona.md, outputs.md, and prompts.md with meaningful placeholder
+    content based on the persona name.
+    """
     title = name.replace("-", " ").title()
     return {
         "persona.md": STARTER_PERSONA.format(name=title),
@@ -568,7 +652,10 @@ class LibraryManagerScreen(QWidget):
             cat_item = QTreeWidgetItem([cat["name"]])
             cat_item.setData(0, Qt.ItemDataRole.UserRole, None)
             self._tree.addTopLevelItem(cat_item)
-            self._add_children(cat_item, cat.get("children", []))
+            style = "shared" if cat["name"] == "Shared Templates" else None
+            self._add_children(
+                cat_item, cat.get("children", []), template_style=style
+            )
 
     def showEvent(self, event) -> None:  # noqa: N802
         """Auto-refresh the tree when the screen becomes visible."""
@@ -577,13 +664,42 @@ class LibraryManagerScreen(QWidget):
 
     # -- Internal ----------------------------------------------------------
 
-    def _add_children(self, parent: QTreeWidgetItem, children: list[dict]) -> None:
-        """Recursively add child items to a tree node."""
+    def _add_children(
+        self,
+        parent: QTreeWidgetItem,
+        children: list[dict],
+        template_style: str | None = None,
+    ) -> None:
+        """Recursively add child items to a tree node.
+
+        *template_style* applies visual distinction: "shared" renders
+        items in accent colour with italic font.
+        """
         for child in children:
             item = QTreeWidgetItem([child["name"]])
             item.setData(0, Qt.ItemDataRole.UserRole, child.get("path"))
+
+            # Visual distinction for shared templates (italic + accent colour)
+            if template_style == "shared":
+                item.setForeground(0, QColor(ACCENT_PRIMARY))
+                font = item.font(0)
+                font.setItalic(True)
+                item.setFont(0, font)
+
             parent.addChild(item)
-            self._add_children(item, child.get("children", []))
+
+            # Auto-detect persona template subtrees
+            child_style = template_style
+            if (
+                template_style is None
+                and child["name"] == "templates"
+                and child.get("path") is None
+            ):
+                child_style = "persona"
+
+            self._add_children(
+                item, child.get("children", []), template_style=child_style
+            )
 
     def _on_item_selected(self, current: QTreeWidgetItem | None, _prev) -> None:
         """Load the file into the editor when a file node is selected."""
@@ -618,30 +734,81 @@ class LibraryManagerScreen(QWidget):
             node = node.parent()
         return node.text(0)
 
+
+    def _is_template_context(self, item: QTreeWidgetItem | None) -> bool:
+        """Return True if *item* sits inside a template-editable subtree."""
+        if item is None:
+            return False
+        cat = self._get_category_for_item(item)
+        if cat == "Shared Templates":
+            return True
+        if cat == "Personas":
+            node = item
+            while node is not None:
+                if (
+                    node.text(0) == "templates"
+                    and node.data(0, Qt.ItemDataRole.UserRole) is None
+                    and node.parent() is not None
+                ):
+                    return True
+                node = node.parent()
+        return False
+
+    def _reconstruct_item_path(self, item: QTreeWidgetItem) -> Path | None:
+        """Reconstruct the filesystem path for a directory tree item."""
+        if self._library_root is None:
+            return None
+        parts: list[str] = []
+        node = item
+        while node.parent() is not None:
+            parts.append(node.text(0))
+            node = node.parent()
+        cat_name = node.text(0)
+        if not parts:
+            for display_name, rel_path in LIBRARY_CATEGORIES:
+                if display_name == cat_name:
+                    return self._library_root / rel_path
+            return None
+        parts.reverse()
+        for display_name, rel_path in LIBRARY_CATEGORIES:
+            if display_name == cat_name:
+                return self._library_root / rel_path / Path(*parts)
+        return None
+
+    def _resolve_template_dir(self, item: QTreeWidgetItem | None) -> Path | None:
+        """Return the target directory for a template create/delete, or None."""
+        if not self._is_template_context(item) or self._library_root is None:
+            return None
+        file_path = item.data(0, Qt.ItemDataRole.UserRole)
+        if file_path:
+            return Path(file_path).parent
+        return self._reconstruct_item_path(item)
+
     def _update_button_state(self, item: QTreeWidgetItem | None) -> None:
         """Enable/disable New and Delete based on the selected item."""
         cat = self._get_category_for_item(item)
         editable = cat in _EDITABLE_CATEGORIES
         self._new_btn.setEnabled(editable)
 
+        # Delete is enabled only when a file leaf in an editable category is selected
         has_file = (
             item is not None
             and item.data(0, Qt.ItemDataRole.UserRole) is not None
         )
-        # For skills/personas, also allow deleting the directory node
+        # For skills/stacks/personas, also allow deleting the directory node
         is_asset_dir = (
-            cat in ("Claude Skills", "Personas")
+            cat in ("Claude Skills", "Stacks", "Personas")
             and item is not None
             and item.parent() is not None
             and item.data(0, Qt.ItemDataRole.UserRole) is None
-            and item.parent().parent() is None
+            and item.parent().parent() is None  # direct child of top-level
         )
         self._delete_btn.setEnabled(editable and (has_file or is_asset_dir))
 
     # -- Create / Delete operations ----------------------------------------
 
     def _on_new_asset(self) -> None:
-        """Prompt user for a name and create a new asset file."""
+        """Prompt user for a name and create a new asset file or directory."""
         item = self._tree.currentItem()
         cat = self._get_category_for_item(item)
         if cat not in _EDITABLE_CATEGORIES or self._library_root is None:
@@ -672,6 +839,7 @@ class LibraryManagerScreen(QWidget):
         rel_path = _EDITABLE_CATEGORIES[cat]
         target_dir = self._library_root / rel_path
 
+        # Personas: create directory with starter files
         if cat == "Personas":
             persona_dir = target_dir / name
             if persona_dir.exists():
@@ -687,6 +855,7 @@ class LibraryManagerScreen(QWidget):
             self.refresh_tree()
             return
 
+        # Skills: create directory with SKILL.md
         if cat == "Claude Skills":
             dest = target_dir / name / "SKILL.md"
             if dest.parent.exists():
@@ -709,6 +878,31 @@ class LibraryManagerScreen(QWidget):
         logger.info("Created %s", dest)
         self.refresh_tree()
 
+
+    def _create_template(self, target_dir: Path) -> None:
+        """Prompt user and create a new template file in *target_dir*."""
+        name, ok = QInputDialog.getText(
+            self, "New Template", "Enter template name (lowercase, hyphens):"
+        )
+        if not ok or not name:
+            return
+        name = name.strip()
+        error = validate_asset_name(name)
+        if error:
+            QMessageBox.warning(self, "Invalid Name", error)
+            return
+        dest = target_dir / f"{name}.md"
+        if dest.exists():
+            QMessageBox.warning(
+                self, "Duplicate", f"Template '{name}.md' already exists."
+            )
+            return
+        target_dir.mkdir(parents=True, exist_ok=True)
+        content = starter_content("_persona_template", name)
+        dest.write_text(content, encoding="utf-8")
+        logger.info("Created template %s", dest)
+        self.refresh_tree()
+
     def _on_delete_asset(self) -> None:
         """Delete the selected file (or asset directory) after confirmation."""
         item = self._tree.currentItem()
@@ -716,13 +910,15 @@ class LibraryManagerScreen(QWidget):
             return
 
         cat = self._get_category_for_item(item)
-        if cat not in _EDITABLE_CATEGORIES:
+        in_template = self._is_template_context(item)
+        if cat not in _EDITABLE_CATEGORIES and not in_template:
             return
 
         file_path = item.data(0, Qt.ItemDataRole.UserRole)
 
+        # Asset directory node (no path, direct child of category)
         is_asset_dir = (
-            cat in ("Claude Skills", "Personas")
+            cat in ("Claude Skills", "Stacks", "Personas")
             and file_path is None
             and item.parent() is not None
             and item.parent().parent() is None

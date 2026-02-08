@@ -6,6 +6,7 @@ from unittest.mock import patch
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from foundry_app.ui.screens.library_manager import (
+    STARTER_TEMPLATE,
     LibraryManagerScreen,
     _build_file_tree,
     persona_starter_files,
@@ -43,6 +44,8 @@ def _create_library(root: Path) -> Path:
     tpl_dir = lib / "templates"
     tpl_dir.mkdir(parents=True)
     (tpl_dir / "CLAUDE.md.j2").write_text("# Claude template", encoding="utf-8")
+    (tpl_dir / "shared" / "adr.md").parent.mkdir(parents=True, exist_ok=True)
+    (tpl_dir / "shared" / "adr.md").write_text("# ADR template", encoding="utf-8")
 
     # Workflows
     wf_dir = lib / "workflows"
@@ -1063,3 +1066,348 @@ class TestPersonaFileEditing:
                 screen.tree.setCurrentItem(child)
                 break
         assert "Outputs" in screen.editor_widget.editor.toPlainText()
+
+
+# ---------------------------------------------------------------------------
+# Template starter content (pure logic, no Qt)
+# ---------------------------------------------------------------------------
+
+
+class TestTemplateStarterContent:
+
+    def test_shared_template_content(self):
+        content = starter_content("Shared Templates", "risk-log")
+        assert "# Risk Log" in content
+        assert "## Purpose" in content
+        assert "## Checklist" in content
+        assert "## Definition of Done" in content
+
+    def test_persona_template_content(self):
+        content = starter_content("_persona_template", "code-review")
+        assert "# Code Review" in content
+        assert "## Purpose" in content
+
+    def test_starter_template_has_metadata_table(self):
+        content = starter_content("Shared Templates", "test-plan")
+        assert "| **Category** |" in content
+        assert "| **Version** |" in content
+
+    def test_starter_template_constant(self):
+        assert "## Purpose" in STARTER_TEMPLATE
+        assert "## Checklist" in STARTER_TEMPLATE
+        assert "## Definition of Done" in STARTER_TEMPLATE
+
+
+# ---------------------------------------------------------------------------
+# Template button state
+# ---------------------------------------------------------------------------
+
+
+class TestTemplateButtonState:
+
+    def test_new_enabled_for_shared_templates_category(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        assert screen.new_button.isEnabled()
+
+    def test_new_enabled_for_shared_template_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                if item.childCount() > 0:
+                    screen.tree.setCurrentItem(item.child(0))
+                break
+        assert screen.new_button.isEnabled()
+
+    def test_delete_enabled_for_shared_template_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                # Find a file child (CLAUDE.md.j2)
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    if child.data(0, 0x0100) is not None:  # Qt.ItemDataRole.UserRole
+                        screen.tree.setCurrentItem(child)
+                        break
+                break
+        assert screen.delete_button.isEnabled()
+
+    def test_new_enabled_for_persona_templates_dir(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Navigate to Personas > developer > templates
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                screen.tree.setCurrentItem(child)
+                break
+        assert screen.new_button.isEnabled()
+
+    def test_delete_enabled_for_persona_template_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Navigate to Personas > developer > templates > impl.md.j2
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                if child.childCount() > 0:
+                    screen.tree.setCurrentItem(child.child(0))
+                break
+        assert screen.delete_button.isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# Template CRUD — create operations
+# ---------------------------------------------------------------------------
+
+
+class TestCreateTemplate:
+
+    def test_create_shared_template(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("risk-log", True)):
+            screen._on_new_asset()
+        created = lib / "templates" / "risk-log.md"
+        assert created.is_file()
+        content = created.read_text(encoding="utf-8")
+        assert "# Risk Log" in content
+        assert "## Purpose" in content
+
+    def test_create_persona_template(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Navigate to Personas > developer > templates
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                screen.tree.setCurrentItem(child)
+                break
+        with patch(_INPUT_DIALOG, return_value=("pr-review", True)):
+            screen._on_new_asset()
+        created = lib / "personas" / "developer" / "templates" / "pr-review.md"
+        assert created.is_file()
+        content = created.read_text(encoding="utf-8")
+        assert "# Pr Review" in content
+
+    def test_create_template_duplicate_shows_warning(self, tmp_path):
+        lib = _create_library(tmp_path)
+        # Create a template first
+        (lib / "templates" / "existing.md").write_text("existing", encoding="utf-8")
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("existing", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+
+    def test_create_template_invalid_name_shows_warning(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("Bad Name!", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+
+    def test_create_template_cancelled_does_nothing(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        before_count = len(list((lib / "templates").iterdir()))
+        with patch(_INPUT_DIALOG, return_value=("", False)):
+            screen._on_new_asset()
+        assert len(list((lib / "templates").iterdir())) == before_count
+
+    def test_tree_refreshes_after_template_create(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                before = item.childCount()
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("new-template", True)):
+            screen._on_new_asset()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                assert item.childCount() == before + 1
+                break
+
+
+# ---------------------------------------------------------------------------
+# Template CRUD — delete operations
+# ---------------------------------------------------------------------------
+
+
+class TestDeleteTemplate:
+
+    def test_delete_shared_template_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "templates" / "CLAUDE.md.j2"
+        assert target.is_file()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                # Find CLAUDE.md.j2 file
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    if child.text(0) == "CLAUDE.md.j2":
+                        screen.tree.setCurrentItem(child)
+                        break
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_persona_template_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "personas" / "developer" / "templates" / "impl.md.j2"
+        assert target.is_file()
+        # Navigate to Personas > developer > templates > impl.md.j2
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                for j in range(child.childCount()):
+                    tpl = child.child(j)
+                    if tpl.text(0) == "impl.md.j2":
+                        screen.tree.setCurrentItem(tpl)
+                        break
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_template_cancelled_keeps_file(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "templates" / "CLAUDE.md.j2"
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    if child.text(0) == "CLAUDE.md.j2":
+                        screen.tree.setCurrentItem(child)
+                        break
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.No):
+            screen._on_delete_asset()
+        assert target.is_file()
+
+    def test_tree_refreshes_after_template_delete(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                before = item.childCount()
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    if child.text(0) == "CLAUDE.md.j2":
+                        screen.tree.setCurrentItem(child)
+                        break
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                assert item.childCount() == before - 1
+                break
+
+
+# ---------------------------------------------------------------------------
+# Template visual distinction
+# ---------------------------------------------------------------------------
+
+
+class TestTemplateVisualDistinction:
+
+    def test_shared_template_items_are_italic(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    if child.data(0, 0x0100) is not None:  # file node
+                        assert child.font(0).italic(), (
+                            f"Shared template file '{child.text(0)}' should be italic"
+                        )
+                break
+
+    def test_persona_template_items_are_not_italic(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                for j in range(child.childCount()):
+                    tpl = child.child(j)
+                    assert not tpl.font(0).italic(), (
+                        f"Persona template '{tpl.text(0)}' should not be italic"
+                    )
+                break
