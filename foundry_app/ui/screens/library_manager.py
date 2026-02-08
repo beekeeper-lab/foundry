@@ -1,4 +1,4 @@
-"""Library Manager screen — tree-based browser with CRUD for library assets."""
+"""Library Manager screen \u2014 tree-based browser with CRUD for library assets."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ from foundry_app.ui.widgets.markdown_editor import MarkdownEditor
 logger = logging.getLogger(__name__)
 
 # Top-level categories mapped to their directory paths relative to library root.
-# Order matters — this is the display order in the tree.
+# Order matters \u2014 this is the display order in the tree.
 LIBRARY_CATEGORIES: list[tuple[str, str]] = [
     ("Personas", "personas"),
     ("Stacks", "stacks"),
@@ -49,7 +49,6 @@ LIBRARY_CATEGORIES: list[tuple[str, str]] = [
 # Categories that support create/delete operations, mapped to their rel_path.
 _EDITABLE_CATEGORIES: dict[str, str] = {
     "Personas": "personas",
-    "Stacks": "stacks",
     "Workflows": "workflows",
     "Claude Commands": "claude/commands",
     "Claude Skills": "claude/skills",
@@ -144,7 +143,7 @@ Describe what this hook pack enforces.
 |---------|----------|--------------|
 | strict | Yes | enforcing |
 | standard | Yes | enforcing |
-| relaxed | No | — |
+| relaxed | No | \u2014 |
 """
 
 STARTER_WORKFLOW = """\
@@ -159,50 +158,126 @@ Describe the workflow or reference document.
 Add content here.
 """
 
-STARTER_STACK_CONVENTIONS = """\
-# {name} Stack Conventions
+STARTER_PERSONA = """\
+# Persona: {name}
 
-Conventions for {name} projects. Deviations require an ADR with justification.
+## Mission
 
----
+Define the core mission and purpose for this persona. What is this team member
+responsible for delivering? What is their primary area of expertise?
 
-## Defaults
+## Scope
 
-| Concern | Default Tool / Approach |
-|---------|------------------------|
-| | |
+**Does:**
+- List the responsibilities this persona owns
+- Define the tasks they are expected to perform
+- Clarify the boundaries of their authority
 
----
+**Does not:**
+- List responsibilities that belong to other personas
+- Define what this persona should defer or escalate
 
-## Do / Don't
+## Operating Principles
 
-| Do | Don't |
-|----|-------|
-| | |
+- **Principle one.** Describe a key operating principle for this persona.
+- **Principle two.** Describe another guiding behavior.
 
----
+## Inputs I Expect
 
-## Common Pitfalls
+- Task assignments with clear objectives and acceptance criteria
+- Relevant context documents and specifications
 
-- Describe common pitfalls here.
+## Outputs I Produce
 
-## Checklist
+- Primary deliverables this persona creates
+- Supporting artifacts and documentation
 
-- [ ] Item one
-- [ ] Item two
+## Definition of Done
+
+- All acceptance criteria are met
+- Outputs conform to the project's quality standards
+- Work has been reviewed and handed off to the next consumer
+
+## Quality Bar
+
+- Outputs are clear, complete, and actionable
+- Work follows established conventions and patterns
 """
 
-STARTER_STACK_FILE = """\
-# {name}
+STARTER_OUTPUTS = """\
+# {name} -- Outputs
 
-## Overview
+This document enumerates every artifact this persona is responsible for
+producing, including quality standards and who consumes each deliverable.
 
-Describe the topic covered by this file.
+---
 
-## Guidelines
+## 1. Primary Deliverable
 
-- Guideline one
-- Guideline two
+| Field              | Value                                              |
+|--------------------|----------------------------------------------------|
+| **Deliverable**    | Describe the main output                           |
+| **Cadence**        | How often is this produced                         |
+| **Template**       | Reference template if applicable                   |
+| **Format**         | Output format (Markdown, code, etc.)               |
+
+**Description.** Describe what this deliverable is and why it matters.
+
+**Quality Bar:**
+- Define quality criteria for this deliverable
+- List specific standards that must be met
+
+**Downstream Consumers:** List who uses this output.
+
+---
+
+## Output Format Guidelines
+
+- Define formatting standards for all outputs from this persona.
+- Specify any templates or conventions to follow.
+"""
+
+STARTER_PROMPTS = """\
+# {name} -- Prompts
+
+Curated prompt fragments for instructing or activating this persona.
+Each prompt is a self-contained instruction block that can be injected into a
+conversation to set context, assign a task, or trigger a specific workflow.
+
+---
+
+## Activation Prompt
+
+> You are the {name} for **{{{{ project_name }}}}**. Your mission is to
+> [describe the persona's core mission]. You deliver [key outputs] following
+> the project's conventions and quality standards.
+
+---
+
+## Task Prompts
+
+### Produce Primary Deliverable
+
+> Describe the instructions for producing the persona's main output.
+> Include quality criteria, conventions to follow, and expected format.
+
+---
+
+## Handoff Prompts
+
+### Hand off to Next Consumer
+
+> Package the deliverable for the next team member. Include: what was
+> produced, quality checks performed, and any context the consumer needs.
+
+---
+
+## Quality Check Prompts
+
+### Self-Review
+
+> Before handing off, verify: (1) all acceptance criteria are met;
+> (2) outputs follow project conventions; (3) work has been self-reviewed.
 """
 
 _FILENAME_RE = re.compile(r"^[a-z0-9][a-z0-9\-]*$")
@@ -234,11 +309,17 @@ def starter_content(category: str, name: str) -> str:
         return STARTER_SKILL.format(name=title, slug=name)
     if category == "Claude Hooks":
         return STARTER_HOOK.format(name=title)
-    if category == "Stacks":
-        return STARTER_STACK_CONVENTIONS.format(name=title)
-    if category == "Stacks:file":
-        return STARTER_STACK_FILE.format(name=title)
     return STARTER_WORKFLOW.format(name=title)
+
+
+def persona_starter_files(name: str) -> dict[str, str]:
+    """Return a mapping of relative file paths to starter content for a persona."""
+    title = name.replace("-", " ").title()
+    return {
+        "persona.md": STARTER_PERSONA.format(name=title),
+        "outputs.md": STARTER_OUTPUTS.format(name=title),
+        "prompts.md": STARTER_PROMPTS.format(name=title),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -543,18 +624,17 @@ class LibraryManagerScreen(QWidget):
         editable = cat in _EDITABLE_CATEGORIES
         self._new_btn.setEnabled(editable)
 
-        # Delete is enabled only when a file leaf in an editable category is selected
         has_file = (
             item is not None
             and item.data(0, Qt.ItemDataRole.UserRole) is not None
         )
-        # For skills/stacks, also allow deleting the directory node
+        # For skills/personas, also allow deleting the directory node
         is_asset_dir = (
-            cat in ("Claude Skills", "Stacks")
+            cat in ("Claude Skills", "Personas")
             and item is not None
             and item.parent() is not None
             and item.data(0, Qt.ItemDataRole.UserRole) is None
-            and item.parent().parent() is None  # direct child of top-level
+            and item.parent().parent() is None
         )
         self._delete_btn.setEnabled(editable and (has_file or is_asset_dir))
 
@@ -568,6 +648,7 @@ class LibraryManagerScreen(QWidget):
             return
 
         label = {
+            "Personas": "persona",
             "Workflows": "workflow",
             "Claude Commands": "command",
             "Claude Skills": "skill",
@@ -590,6 +671,21 @@ class LibraryManagerScreen(QWidget):
 
         rel_path = _EDITABLE_CATEGORIES[cat]
         target_dir = self._library_root / rel_path
+
+        if cat == "Personas":
+            persona_dir = target_dir / name
+            if persona_dir.exists():
+                QMessageBox.warning(
+                    self, "Duplicate", f"Persona '{name}' already exists."
+                )
+                return
+            persona_dir.mkdir(parents=True, exist_ok=True)
+            (persona_dir / "templates").mkdir(exist_ok=True)
+            for filename, content in persona_starter_files(name).items():
+                (persona_dir / filename).write_text(content, encoding="utf-8")
+            logger.info("Created persona %s", persona_dir)
+            self.refresh_tree()
+            return
 
         if cat == "Claude Skills":
             dest = target_dir / name / "SKILL.md"
@@ -614,7 +710,7 @@ class LibraryManagerScreen(QWidget):
         self.refresh_tree()
 
     def _on_delete_asset(self) -> None:
-        """Delete the selected file (or skill directory) after confirmation."""
+        """Delete the selected file (or asset directory) after confirmation."""
         item = self._tree.currentItem()
         if item is None:
             return
@@ -625,9 +721,8 @@ class LibraryManagerScreen(QWidget):
 
         file_path = item.data(0, Qt.ItemDataRole.UserRole)
 
-        # Skill directory node (no path, direct child of category)
-        is_skill_dir = (
-            cat == "Claude Skills"
+        is_asset_dir = (
+            cat in ("Claude Skills", "Personas")
             and file_path is None
             and item.parent() is not None
             and item.parent().parent() is None
@@ -636,17 +731,25 @@ class LibraryManagerScreen(QWidget):
         if file_path:
             path = Path(file_path)
             display = path.name
-        elif is_skill_dir:
+        elif is_asset_dir:
             rel_path = _EDITABLE_CATEGORIES[cat]
             path = self._library_root / rel_path / item.text(0)
             display = item.text(0)
         else:
             return
 
+        if cat == "Personas" and is_asset_dir:
+            msg = (
+                f"Delete persona '{display}' and all its files? "
+                "This cannot be undone."
+            )
+        else:
+            msg = f"Delete '{display}'? This cannot be undone."
+
         answer = QMessageBox.question(
             self,
             "Confirm Delete",
-            f"Delete '{display}'? This cannot be undone.",
+            msg,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
