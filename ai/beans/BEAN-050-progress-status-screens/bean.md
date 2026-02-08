@@ -6,7 +6,7 @@
 | **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
-| **Owner** | (unassigned) |
+| **Owner** | Developer |
 | **Category** | App |
 
 ## Problem Statement
@@ -39,16 +39,16 @@ Restyle the three operational screens (generation progress, export, history) to 
 
 ## Acceptance Criteria
 
-- [ ] All 3 screens use `theme.py` constants — no inline hex values
-- [ ] Progress bar uses brass/gold fill color
-- [ ] Stage status indicators are clear and calm (no flashy animations)
-- [ ] Log area uses monospace font with dark industrial styling
-- [ ] List selections use brass/gold highlight consistently
-- [ ] Buttons match theme primary/secondary styles
-- [ ] History split-pane has clean visual separation
-- [ ] Overall feel is "monitoring a build pipeline" — deterministic, trustworthy
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] All 3 screens use `theme.py` constants — no inline hex values
+- [x] Progress bar uses brass/gold fill color
+- [x] Stage status indicators are clear and calm (no flashy animations)
+- [x] Log area uses monospace font with dark industrial styling
+- [x] List selections use brass/gold highlight consistently
+- [x] Buttons match theme primary/secondary styles
+- [x] History split-pane has clean visual separation
+- [x] Overall feel is "monitoring a build pipeline" — deterministic, trustworthy
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
