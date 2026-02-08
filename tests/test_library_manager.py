@@ -1,12 +1,15 @@
 """Tests for foundry_app.ui.screens.library_manager — tree browser and editor."""
 
 from pathlib import Path
+from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from foundry_app.ui.screens.library_manager import (
     LibraryManagerScreen,
     _build_file_tree,
+    starter_content,
+    validate_asset_name,
 )
 from foundry_app.ui.widgets.markdown_editor import MarkdownEditor
 
@@ -439,3 +442,391 @@ class TestMarkdownEditorWidget:
         fp = tmp_path / "test.md"
         editor.load_content("content", file_path=fp)
         assert editor.file_path == fp
+
+
+# ---------------------------------------------------------------------------
+# Pure validation and starter content (no Qt needed)
+# ---------------------------------------------------------------------------
+
+
+class TestValidateAssetName:
+
+    def test_valid_names(self):
+        assert validate_asset_name("my-command") is None
+        assert validate_asset_name("review-pr") is None
+        assert validate_asset_name("a") is None
+        assert validate_asset_name("123") is None
+        assert validate_asset_name("my-hook-2") is None
+
+    def test_empty_name(self):
+        assert validate_asset_name("") is not None
+
+    def test_uppercase_rejected(self):
+        assert validate_asset_name("MyCommand") is not None
+
+    def test_spaces_rejected(self):
+        assert validate_asset_name("my command") is not None
+
+    def test_underscore_rejected(self):
+        assert validate_asset_name("my_command") is not None
+
+    def test_leading_hyphen_rejected(self):
+        assert validate_asset_name("-bad") is not None
+
+    def test_special_chars_rejected(self):
+        assert validate_asset_name("cmd@1") is not None
+
+    def test_too_long(self):
+        assert validate_asset_name("a" * 61) is not None
+        assert validate_asset_name("a" * 60) is None
+
+
+class TestStarterContent:
+
+    def test_command_template(self):
+        content = starter_content("Claude Commands", "deploy-app")
+        assert "/deploy-app" in content
+        assert "## Purpose" in content
+        assert "## Usage" in content
+
+    def test_skill_template(self):
+        content = starter_content("Claude Skills", "code-review")
+        assert "Skill: Code Review" in content
+        assert "/code-review" in content
+        assert "## Trigger" in content
+
+    def test_hook_template(self):
+        content = starter_content("Claude Hooks", "security-scan")
+        assert "Hook Pack: Security Scan" in content
+        assert "## Hooks" in content
+        assert "## Posture Compatibility" in content
+
+    def test_workflow_template(self):
+        content = starter_content("Workflows", "release-process")
+        assert "Release Process" in content
+        assert "## Overview" in content
+
+
+# ---------------------------------------------------------------------------
+# Screen CRUD — button state
+# ---------------------------------------------------------------------------
+
+
+class TestButtonState:
+
+    def test_buttons_exist(self):
+        screen = LibraryManagerScreen()
+        assert screen.new_button is not None
+        assert screen.delete_button is not None
+
+    def test_buttons_disabled_initially(self):
+        screen = LibraryManagerScreen()
+        assert not screen.new_button.isEnabled()
+        assert not screen.delete_button.isEnabled()
+
+    def test_new_enabled_for_editable_category(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Select the "Workflows" category node
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        assert screen.new_button.isEnabled()
+
+    def test_new_disabled_for_non_editable_category(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Select "Personas" — not editable
+        screen.tree.setCurrentItem(screen.tree.topLevelItem(0))
+        assert not screen.new_button.isEnabled()
+
+    def test_delete_enabled_for_file_in_editable_category(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Select a hook file
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Hooks":
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        assert screen.delete_button.isEnabled()
+
+    def test_delete_disabled_for_category_node(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        assert not screen.delete_button.isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# Screen CRUD — create operations
+# ---------------------------------------------------------------------------
+
+_INPUT_DIALOG = "foundry_app.ui.screens.library_manager.QInputDialog.getText"
+_MSG_WARNING = "foundry_app.ui.screens.library_manager.QMessageBox.warning"
+
+
+class TestCreateAsset:
+
+    def test_create_command(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Select Claude Commands category
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Commands":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("my-new-cmd", True)):
+            screen._on_new_asset()
+        created = lib / "claude" / "commands" / "my-new-cmd.md"
+        assert created.is_file()
+        content = created.read_text(encoding="utf-8")
+        assert "/my-new-cmd" in content
+
+    def test_create_skill(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Skills":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("my-skill", True)):
+            screen._on_new_asset()
+        created = lib / "claude" / "skills" / "my-skill" / "SKILL.md"
+        assert created.is_file()
+        assert "Skill: My Skill" in created.read_text(encoding="utf-8")
+
+    def test_create_hook(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Hooks":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("my-hook", True)):
+            screen._on_new_asset()
+        created = lib / "claude" / "hooks" / "my-hook.md"
+        assert created.is_file()
+        assert "Hook Pack:" in created.read_text(encoding="utf-8")
+
+    def test_create_workflow(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("release-notes", True)):
+            screen._on_new_asset()
+        created = lib / "workflows" / "release-notes.md"
+        assert created.is_file()
+        assert "Release Notes" in created.read_text(encoding="utf-8")
+
+    def test_create_duplicate_command_shows_warning(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Commands":
+                screen.tree.setCurrentItem(item)
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("review-pr", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+
+    def test_create_duplicate_skill_shows_warning(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Skills":
+                screen.tree.setCurrentItem(item)
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("handoff", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+
+    def test_create_invalid_name_shows_warning(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("Bad Name!", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+        # No file created
+        assert not (lib / "workflows" / "Bad Name!.md").exists()
+
+    def test_create_cancelled_does_nothing(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        before_count = len(list((lib / "workflows").iterdir()))
+        with patch(_INPUT_DIALOG, return_value=("", False)):
+            screen._on_new_asset()
+        assert len(list((lib / "workflows").iterdir())) == before_count
+
+    def test_tree_refreshes_after_create(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Count hooks before
+        hooks_item = None
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Hooks":
+                hooks_item = item
+                break
+        before = hooks_item.childCount()
+        screen.tree.setCurrentItem(hooks_item)
+        with patch(_INPUT_DIALOG, return_value=("new-hook", True)):
+            screen._on_new_asset()
+        # Re-find after refresh
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Hooks":
+                hooks_item = item
+                break
+        assert hooks_item.childCount() == before + 1
+
+
+# ---------------------------------------------------------------------------
+# Screen CRUD — delete operations
+# ---------------------------------------------------------------------------
+
+_MSG_QUESTION = "foundry_app.ui.screens.library_manager.QMessageBox.question"
+
+
+class TestDeleteAsset:
+
+    def test_delete_command_file(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "claude" / "commands" / "review-pr.md"
+        assert target.is_file()
+        # Select the file in the tree
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Commands":
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_hook_file(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "claude" / "hooks" / "pre-commit-lint.md"
+        assert target.is_file()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Hooks":
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_workflow_file(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "workflows" / "default.md"
+        assert target.is_file()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_skill_directory(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "claude" / "skills" / "handoff"
+        assert target.is_dir()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Skills":
+                # Select skill dir node (first child = "handoff" dir)
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        assert not target.exists()
+
+    def test_delete_cancelled_keeps_file(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "claude" / "commands" / "review-pr.md"
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Commands":
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.No):
+            screen._on_delete_asset()
+        assert target.is_file()
+
+    def test_tree_refreshes_after_delete(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Commands":
+                assert item.childCount() == 1
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Commands":
+                assert item.childCount() == 0
+                break
