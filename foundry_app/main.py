@@ -8,12 +8,12 @@ import sys
 def main() -> None:
     """Bootstrap the QApplication and show the main window."""
     from PySide6.QtCore import Qt
-    from PySide6.QtGui import QColor, QFont, QPixmap
+    from PySide6.QtGui import QColor, QFont, QIcon, QPixmap
     from PySide6.QtWidgets import QApplication, QSplashScreen
 
     from foundry_app import __version__
     from foundry_app.core.logging_config import setup_logging
-    from foundry_app.core.resources import splash_image_path
+    from foundry_app.core.resources import logo_icon_path, splash_image_path
     from foundry_app.core.settings import FoundrySettings
     from foundry_app.ui.main_window import MainWindow
 
@@ -22,6 +22,11 @@ def main() -> None:
     app = QApplication(sys.argv)
     app.setApplicationName("Foundry")
     app.setOrganizationName("Foundry")
+
+    # -- Application icon ------------------------------------------------------
+    icon_file = logo_icon_path()
+    if icon_file.is_file():
+        app.setWindowIcon(QIcon(str(icon_file)))
 
     # -- Splash screen -----------------------------------------------------
     splash: QSplashScreen | None = None

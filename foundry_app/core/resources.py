@@ -25,3 +25,8 @@ def get_resource_path(relative: str) -> Path:
 def splash_image_path() -> Path:
     """Return the path to the splash / branded-background image."""
     return get_resource_path("resources/images/foundry-splash.png")
+
+
+def logo_icon_path() -> Path:
+    """Return the path to the application logo icon."""
+    return get_resource_path("resources/icons/foundry-logo.png")
