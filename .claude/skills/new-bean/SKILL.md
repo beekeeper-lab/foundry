@@ -20,9 +20,9 @@ Creates a new bean in the project's beans backlog. Assigns the next sequential I
 
 ## Process
 
-1. **Read the backlog index** -- Open `ai/beans/_index.md`. Parse the Backlog table to find all existing bean IDs. Extract the highest BEAN-NNN number.
+1. **Read the backlog index (fresh)** -- Open `ai/beans/_index.md` **right now**, even if you read it recently. In a multi-agent environment, another agent may have added beans since your last read. Parse the Backlog table to find all existing bean IDs. Extract the highest BEAN-NNN number.
 
-2. **Compute next ID** -- New ID = highest existing number + 1. Format as three-digit zero-padded: `BEAN-006`, `BEAN-007`, etc.
+2. **Compute next ID** -- New ID = highest existing number + 1. Format as three-digit zero-padded: `BEAN-006`, `BEAN-007`, etc. **Never pre-assign IDs** — always derive the ID from the current state of `_index.md` at creation time.
 
 3. **Generate slug** -- Convert the title to kebab-case:
    - Lowercase all characters

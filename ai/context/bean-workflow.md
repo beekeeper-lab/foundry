@@ -19,7 +19,9 @@ ai/beans/
 Multiple Claude Code agents may be working in this codebase simultaneously. Each agent typically operates in a different functional area (e.g., one on Process beans, another on App beans), but overlap can occur.
 
 **Rules for concurrent work:**
-- **Always re-read `_index.md` before creating a new bean** — another agent may have added beans since your last read. Use the highest existing ID + 1.
+- **Always re-read `_index.md` immediately before creating a new bean** — another agent may have added beans since your last read. Use the highest existing ID + 1.
+- **Never pre-assign bean IDs** — during planning, use working titles only. Assign IDs at creation time by reading the current max from `_index.md`.
+- **Create beans sequentially, not in parallel** — write each bean's directory + bean.md + index entry before starting the next one. This ensures each bean sees the latest max ID.
 - **Always re-read `_index.md` before picking a bean** — another agent may have already picked it.
 - **Expect external changes** — files you read earlier may have been modified by another agent. Re-read before editing if significant time has passed.
 - **Bean ID collisions** — if you create a bean and find the ID already taken, increment and retry.
@@ -44,13 +46,25 @@ Beans are locked by their Status + Owner fields in both `_index.md` and `bean.md
 
 Anyone can create a bean:
 
-1. **Re-read `ai/beans/_index.md`** to get the current highest bean ID (another agent may have added beans)
-2. Copy `ai/beans/_bean-template.md` to `ai/beans/BEAN-NNN-<slug>/bean.md`
-3. Fill in all fields: Problem Statement, Goal, Scope, Acceptance Criteria
-4. Set Status to `New` and assign a Priority
-5. Add the bean to `ai/beans/_index.md`
+1. **Re-read `ai/beans/_index.md`** immediately before creation to get the current highest bean ID (another agent may have added beans since your last read)
+2. Compute next ID = highest existing + 1
+3. Create directory `ai/beans/BEAN-NNN-<slug>/` and copy `_bean-template.md` to `bean.md`
+4. Fill in all fields: Problem Statement, Goal, Scope, Acceptance Criteria
+5. Set Status to `New` and assign a Priority
+6. Append the bean to `ai/beans/_index.md`
 
 Bean IDs are sequential: BEAN-001, BEAN-002, etc.
+
+**Deferred ID assignment (for batch creation):**
+
+When creating multiple beans at once (e.g., from `/backlog-refinement`), **do not pre-assign IDs during planning**. Use working titles only. Assign IDs one at a time during creation:
+
+1. Plan beans using titles and slugs only (no BEAN-NNN IDs)
+2. When ready to create, process beans **sequentially** (not in parallel)
+3. For each bean: re-read `_index.md` → assign next ID → write bean.md → append to `_index.md`
+4. After all beans are created, update cross-references with the actual IDs
+
+This prevents ID collisions when multiple agents create beans concurrently.
 
 ### 2. Picking
 

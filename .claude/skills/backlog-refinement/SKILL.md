@@ -36,14 +36,15 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
    - Independent deliverables that could be verified separately
 
 4. **Draft bean proposals** -- For each identified work unit, draft:
-   - A working title
+   - A working title and slug (e.g., "theme-foundation")
    - A one-line description
    - An initial priority guess (based on context clues)
    - Any obvious dependencies on other proposed beans or existing work
+   - **Do NOT assign bean IDs yet.** Use working titles only (e.g., "Theme Foundation", "Sidebar Restyle"). IDs are assigned at creation time in Phase 3.
 
 ### Phase 2: Dialogue
 
-5. **Present the initial breakdown** -- Show the user the proposed beans:
+5. **Present the initial breakdown** -- Show the user the proposed beans using working titles only (no IDs):
    ```
    I've identified N potential beans from your input:
 
@@ -53,6 +54,7 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
 
    Let me ask some questions to refine these.
    ```
+   **No bean IDs in this list.** IDs are assigned during creation (Phase 3).
 
 6. **Ask clarifying questions** -- For each proposed bean (or for the set as a whole), ask about areas that are unclear or need user input:
    - **Priority:** "How important is [X] relative to [Y]? Should it be High, Medium, or Low?"
@@ -82,25 +84,33 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
 
 8. **Check for dry run** -- If `dry_run` is true, skip creation and go to step 11.
 
-9. **Create each bean** -- For each agreed-upon bean, invoke the `/new-bean` workflow:
-   - Generate the next sequential bean ID
-   - Create `ai/beans/BEAN-NNN-<slug>/bean.md` with all fields:
+9. **Create each bean (deferred ID assignment)** -- For each agreed-upon bean:
+
+   **For each bean, in sequence (not parallel):**
+   a. **Re-read `ai/beans/_index.md`** to get the current max ID. Another agent may have added beans since your last read or since the previous bean in this batch.
+   b. **Assign the next sequential ID** (max + 1).
+   c. **Create the directory and bean.md** — `ai/beans/BEAN-NNN-<slug>/bean.md` with all fields:
      - **Problem Statement:** Derived from the user's description and dialogue
      - **Goal:** What success looks like (from the user's acceptance criteria discussion)
      - **Scope:** In Scope and Out of Scope (from the dialogue)
      - **Acceptance Criteria:** Concrete, testable checklist items
      - **Priority:** As agreed in the dialogue
-     - **Dependencies:** Noted in the Notes section if they depend on other beans
-   - Update `ai/beans/_index.md` with the new entry
+     - **Dependencies:** Noted in the Notes section, referencing other beans **by title** (not ID) for beans in the same batch that haven't been created yet, or by ID for beans that already exist
+   d. **Append to `_index.md`** immediately after creating the bean.md.
+   e. **Record the assigned ID** so subsequent beans in this batch can reference it by ID.
 
-10. **Handle duplicates** -- If a proposed bean closely matches an existing bean:
+   **Important:** Each bean must be fully written (directory + bean.md + index entry) before starting the next one. This ensures each new bean sees the correct max ID. Cross-references within the batch should be updated to use the actual assigned IDs after all beans are created.
+
+10. **Fix cross-references** -- After all beans are created, do a single pass to update any bean.md files that referenced other beans in the batch by title. Replace title references with the actual BEAN-NNN IDs now that they're known.
+
+11. **Handle duplicates** -- If a proposed bean closely matches an existing bean:
     - Warn the user: "This looks similar to BEAN-NNN ([title]). Create it anyway?"
     - If the user says yes, create it
     - If the user says no, skip it
 
 ### Phase 4: Summary
 
-11. **Present results** -- Show a summary table of all created (or proposed, if dry run) beans:
+12. **Present results** -- Show a summary table of all created (or proposed, if dry run) beans:
     ```
     Created N beans:
 
