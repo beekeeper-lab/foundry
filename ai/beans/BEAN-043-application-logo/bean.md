@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-043 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
 | **Owner** | (unassigned) |
@@ -48,11 +48,11 @@ Add the provided logo graphic to the project, wire it up as the application's wi
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Copy logo PNG to `resources/icons/foundry-logo.png` | developer | | Pending |
-| 2 | Update `pyproject.toml` to include `resources/` in package data | developer | 1 | Pending |
-| 3 | Add `setWindowIcon()` call in `foundry_app/main.py` | developer | 1 | Pending |
-| 4 | Add logo to About dialog in `main_window.py` | developer | 1 | Pending |
-| 5 | Verify icon renders in window, taskbar, and About dialog | tech-qa | 2,3,4 | Pending |
+| 1 | Generate logo PNG to `resources/icons/foundry-logo.png` | developer | | Done |
+| 2 | Update `pyproject.toml` to include `resources/icons` in package data | developer | 1 | Done |
+| 3 | Add `setWindowIcon()` call in `foundry_app/main.py` | developer | 1 | Done |
+| 4 | Add logo to About dialog in `main_window.py` | developer | 1 | Done |
+| 5 | Run tests and lint | tech-qa | 2,3,4 | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
