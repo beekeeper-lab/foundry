@@ -131,6 +131,7 @@ def _placeholder(title: str, description: str) -> QWidget:
 
 SCREENS: list[tuple[str, str, str]] = [
     ("Builder", "Project Builder", "Create a new Claude Code project from building blocks."),
+    ("Library", "Library Manager", "Browse and explore the library structure."),
     ("History", "Generation History", "View past generation runs and their manifests."),
     ("Settings", "Settings", "Configure library paths, workspace root, and preferences."),
 ]
