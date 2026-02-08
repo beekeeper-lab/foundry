@@ -144,7 +144,7 @@ class TestLifecycle:
         screen = GenerationProgressScreen()
         screen.start()
         screen.finish(total_files=10, warnings=2)
-        assert screen.summary_label.isVisible()
+        assert not screen.summary_label.isHidden()
         assert "10 files" in screen.summary_label.text()
         assert "2 warnings" in screen.summary_label.text()
 
@@ -152,7 +152,7 @@ class TestLifecycle:
         screen = GenerationProgressScreen()
         screen.start()
         screen.finish(total_files=5)
-        assert screen.open_button.isVisible()
+        assert not screen.open_button.isHidden()
 
     def test_finish_sets_progress_to_max(self):
         screen = GenerationProgressScreen()
@@ -164,7 +164,7 @@ class TestLifecycle:
         screen = GenerationProgressScreen()
         screen.start()
         screen.finish_with_error("Disk full")
-        assert screen.summary_label.isVisible()
+        assert not screen.summary_label.isHidden()
         assert "failed" in screen.summary_label.text().lower()
         assert "Disk full" in screen.summary_label.text()
 
@@ -172,7 +172,7 @@ class TestLifecycle:
         screen = GenerationProgressScreen()
         screen.start()
         screen.finish_with_error("Error")
-        assert not screen.open_button.isVisible()
+        assert screen.open_button.isHidden()
 
     def test_append_log(self):
         screen = GenerationProgressScreen()
