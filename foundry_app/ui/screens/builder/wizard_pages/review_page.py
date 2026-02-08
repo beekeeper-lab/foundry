@@ -23,11 +23,31 @@ from foundry_app.core.models import (
     CompositionSpec,
     Strictness,
 )
+from foundry_app.ui.theme import (
+    ACCENT_PRIMARY_MUTED,
+    ACCENT_SECONDARY,
+    ACCENT_SECONDARY_HOVER,
+    BG_BASE,
+    BORDER_DEFAULT,
+    FONT_SIZE_LG,
+    FONT_SIZE_SM,
+    FONT_SIZE_XL,
+    FONT_SIZE_XS,
+    FONT_WEIGHT_BOLD,
+    RADIUS_LG,
+    SPACE_LG,
+    SPACE_MD,
+    SPACE_XL,
+    TEXT_DISABLED,
+    TEXT_ON_ACCENT,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+)
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Stylesheet constants (Catppuccin Mocha theme)
+# Stylesheet constants (built from centralised theme)
 # ---------------------------------------------------------------------------
 
 PAGE_STYLE = """
@@ -36,39 +56,48 @@ QWidget#review-page {
 }
 """
 
-SECTION_STYLE = """
-QFrame#review-section {
-    background-color: #1e1e2e;
-    border: 1px solid #313244;
-    border-radius: 8px;
-    padding: 16px;
-}
+SECTION_STYLE = f"""
+QFrame#review-section {{
+    background-color: {BG_BASE};
+    border: 1px solid {BORDER_DEFAULT};
+    border-radius: {RADIUS_LG}px;
+    padding: {SPACE_LG}px;
+}}
 """
 
-SECTION_TITLE_STYLE = "color: #89b4fa; font-size: 15px; font-weight: bold;"
-HEADING_STYLE = "color: #cdd6f4; font-size: 22px; font-weight: bold;"
-SUBHEADING_STYLE = "color: #6c7086; font-size: 13px;"
-LABEL_STYLE = "color: #a6adc8; font-size: 13px;"
-VALUE_STYLE = "color: #cdd6f4; font-size: 13px; font-weight: bold;"
-ITEM_STYLE = "color: #cdd6f4; font-size: 13px;"
-BADGE_STYLE = "color: #a6adc8; font-size: 11px; font-style: italic;"
-EMPTY_STYLE = "color: #585b70; font-size: 13px; font-style: italic;"
-GENERATE_BTN_STYLE = """
-QPushButton#generate-btn {
-    background-color: #89b4fa;
-    color: #1e1e2e;
+SECTION_TITLE_STYLE = (
+    f"color: {ACCENT_SECONDARY}; font-size: {FONT_SIZE_LG - 1}px;"
+    f" font-weight: {FONT_WEIGHT_BOLD};"
+)
+HEADING_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_XL + 2}px;"
+    f" font-weight: {FONT_WEIGHT_BOLD};"
+)
+SUBHEADING_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM + 1}px;"
+LABEL_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM + 1}px;"
+VALUE_STYLE = (
+    f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_SM + 1}px;"
+    f" font-weight: {FONT_WEIGHT_BOLD};"
+)
+ITEM_STYLE = f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_SM + 1}px;"
+BADGE_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_XS}px; font-style: italic;"
+EMPTY_STYLE = f"color: {TEXT_DISABLED}; font-size: {FONT_SIZE_SM + 1}px; font-style: italic;"
+GENERATE_BTN_STYLE = f"""
+QPushButton#generate-btn {{
+    background-color: {ACCENT_SECONDARY};
+    color: {TEXT_ON_ACCENT};
     border: none;
-    border-radius: 8px;
-    padding: 12px 32px;
-    font-size: 16px;
-    font-weight: bold;
-}
-QPushButton#generate-btn:hover {
-    background-color: #b4d0fb;
-}
-QPushButton#generate-btn:pressed {
-    background-color: #74a8fc;
-}
+    border-radius: {RADIUS_LG}px;
+    padding: {SPACE_MD}px {SPACE_XL + 8}px;
+    font-size: {FONT_SIZE_LG}px;
+    font-weight: {FONT_WEIGHT_BOLD};
+}}
+QPushButton#generate-btn:hover {{
+    background-color: {ACCENT_SECONDARY_HOVER};
+}}
+QPushButton#generate-btn:pressed {{
+    background-color: {ACCENT_PRIMARY_MUTED};
+}}
 """
 
 
@@ -198,6 +227,7 @@ class ReviewPage(QWidget):
         # Generate button
         self._generate_btn = QPushButton("Generate Project")
         self._generate_btn.setObjectName("generate-btn")
+        self._generate_btn.setToolTip("Generate the project from current configuration")
         self._generate_btn.setStyleSheet(GENERATE_BTN_STYLE)
         self._generate_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._generate_btn.clicked.connect(self._on_generate_clicked)

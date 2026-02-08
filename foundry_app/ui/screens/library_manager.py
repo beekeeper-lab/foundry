@@ -22,16 +22,17 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from foundry_app.ui.theme import (
+    ACCENT_PRIMARY,
+    BG_BASE,
+    BG_SURFACE,
+    BORDER_DEFAULT,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+)
 from foundry_app.ui.widgets.markdown_editor import MarkdownEditor
 
 logger = logging.getLogger(__name__)
-
-# Catppuccin Mocha
-_BG = "#1e1e2e"
-_SURFACE = "#313244"
-_TEXT = "#cdd6f4"
-_SUBTEXT = "#6c7086"
-_ACCENT = "#cba6f7"
 
 # Top-level categories mapped to their directory paths relative to library root.
 # Order matters — this is the display order in the tree.
@@ -247,7 +248,7 @@ class LibraryManagerScreen(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet(f"background-color: {_BG};")
+        self.setStyleSheet(f"background-color: {BG_BASE};")
         self._library_root: Path | None = None
 
         layout = QVBoxLayout(self)
@@ -257,18 +258,18 @@ class LibraryManagerScreen(QWidget):
         # Title
         title = QLabel("Library Manager")
         title.setFont(QFont("", 20, QFont.Weight.Bold))
-        title.setStyleSheet(f"color: {_TEXT};")
+        title.setStyleSheet(f"color: {TEXT_PRIMARY};")
         layout.addWidget(title)
 
         subtitle = QLabel("Browse the library hierarchy and edit file contents.")
-        subtitle.setStyleSheet(f"color: {_SUBTEXT}; font-size: 14px;")
+        subtitle.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 14px;")
         layout.addWidget(subtitle)
 
         # Splitter: tree (left) + editor (right)
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setStyleSheet(f"""
             QSplitter::handle {{
-                background-color: {_SURFACE};
+                background-color: {BG_SURFACE};
                 width: 2px;
             }}
         """)
@@ -285,28 +286,30 @@ class LibraryManagerScreen(QWidget):
 
         _btn_style = f"""
             QPushButton {{
-                background-color: {_SURFACE};
-                color: {_TEXT};
-                border: 1px solid {_SURFACE};
+                background-color: {BG_SURFACE};
+                color: {TEXT_PRIMARY};
+                border: 1px solid {BORDER_DEFAULT};
                 border-radius: 4px;
                 padding: 4px 10px;
                 font-size: 12px;
             }}
             QPushButton:hover {{
-                background-color: {_BG};
+                background-color: {BG_BASE};
             }}
             QPushButton:disabled {{
-                color: {_SUBTEXT};
+                color: {TEXT_SECONDARY};
             }}
         """
 
         self._new_btn = QPushButton("New...")
+        self._new_btn.setToolTip("Create a new library asset")
         self._new_btn.setStyleSheet(_btn_style)
         self._new_btn.setEnabled(False)
         self._new_btn.clicked.connect(self._on_new_asset)
         toolbar.addWidget(self._new_btn)
 
         self._delete_btn = QPushButton("Delete")
+        self._delete_btn.setToolTip("Delete the selected library asset")
         self._delete_btn.setStyleSheet(_btn_style)
         self._delete_btn.setEnabled(False)
         self._delete_btn.clicked.connect(self._on_delete_asset)
@@ -320,9 +323,9 @@ class LibraryManagerScreen(QWidget):
         self._tree.setHeaderHidden(True)
         self._tree.setStyleSheet(f"""
             QTreeWidget {{
-                background-color: {_SURFACE};
-                color: {_TEXT};
-                border: 1px solid {_SURFACE};
+                background-color: {BG_SURFACE};
+                color: {TEXT_PRIMARY};
+                border: 1px solid {BORDER_DEFAULT};
                 border-radius: 4px;
                 font-size: 13px;
                 padding: 4px;
@@ -331,11 +334,11 @@ class LibraryManagerScreen(QWidget):
                 padding: 4px 8px;
             }}
             QTreeWidget::item:selected {{
-                background-color: {_BG};
-                color: {_ACCENT};
+                background-color: {BG_BASE};
+                color: {ACCENT_PRIMARY};
             }}
             QTreeWidget::branch {{
-                background-color: {_SURFACE};
+                background-color: {BG_SURFACE};
             }}
         """)
         self._tree.currentItemChanged.connect(self._on_item_selected)
@@ -350,7 +353,7 @@ class LibraryManagerScreen(QWidget):
         editor_layout.setSpacing(4)
 
         self._file_label = QLabel("")
-        self._file_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px;")
+        self._file_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
         editor_layout.addWidget(self._file_label)
 
         self._editor = MarkdownEditor()
@@ -369,7 +372,7 @@ class LibraryManagerScreen(QWidget):
             "Go to Settings to set your library root directory."
         )
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 14px;")
+        self._empty_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 14px;")
         self._empty_label.setWordWrap(True)
         layout.addWidget(self._empty_label)
         self._empty_label.hide()

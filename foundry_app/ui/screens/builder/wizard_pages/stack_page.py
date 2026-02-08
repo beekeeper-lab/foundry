@@ -222,12 +222,14 @@ class StackSelectionPage(QWidget):
         order_row.setSpacing(8)
 
         self._move_up_btn = QPushButton("\u25b2 Move Up")
+        self._move_up_btn.setToolTip("Move selected stack higher in compilation order")
         self._move_up_btn.setStyleSheet(ORDER_BTN_STYLE)
         self._move_up_btn.setEnabled(False)
         self._move_up_btn.clicked.connect(self._on_move_up)
         order_row.addWidget(self._move_up_btn)
 
         self._move_down_btn = QPushButton("\u25bc Move Down")
+        self._move_down_btn.setToolTip("Move selected stack lower in compilation order")
         self._move_down_btn.setStyleSheet(ORDER_BTN_STYLE)
         self._move_down_btn.setEnabled(False)
         self._move_down_btn.clicked.connect(self._on_move_down)

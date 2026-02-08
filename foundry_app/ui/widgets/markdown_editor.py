@@ -23,39 +23,42 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-logger = logging.getLogger(__name__)
+from foundry_app.ui.theme import (
+    ACCENT_PRIMARY,
+    ACCENT_PRIMARY_HOVER,
+    BG_BASE,
+    BG_SURFACE,
+    BORDER_DEFAULT,
+    STATUS_ERROR,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+)
 
-# Catppuccin Mocha palette
-_BG = "#1e1e2e"
-_SURFACE = "#313244"
-_TEXT = "#cdd6f4"
-_SUBTEXT = "#a6adc8"
-_ACCENT = "#cba6f7"
-_RED = "#f38ba8"
+logger = logging.getLogger(__name__)
 
 _PREVIEW_CSS = f"""
 body {{
-    background-color: {_SURFACE};
-    color: {_TEXT};
+    background-color: {BG_SURFACE};
+    color: {TEXT_PRIMARY};
     font-family: sans-serif;
     font-size: 13px;
     padding: 12px;
     line-height: 1.5;
 }}
 h1, h2, h3, h4, h5, h6 {{
-    color: {_ACCENT};
+    color: {ACCENT_PRIMARY};
     margin-top: 16px;
     margin-bottom: 8px;
 }}
 code {{
-    background-color: {_BG};
+    background-color: {BG_BASE};
     padding: 2px 4px;
     border-radius: 3px;
     font-family: monospace;
     font-size: 12px;
 }}
 pre {{
-    background-color: {_BG};
+    background-color: {BG_BASE};
     padding: 12px;
     border-radius: 4px;
     overflow-x: auto;
@@ -64,21 +67,21 @@ pre code {{
     padding: 0;
 }}
 a {{
-    color: {_ACCENT};
+    color: {ACCENT_PRIMARY};
 }}
 blockquote {{
-    border-left: 3px solid {_ACCENT};
+    border-left: 3px solid {ACCENT_PRIMARY};
     margin-left: 0;
     padding-left: 12px;
-    color: {_SUBTEXT};
+    color: {TEXT_SECONDARY};
 }}
 """
 
 _EDITOR_STYLE = f"""
 QPlainTextEdit {{
-    background-color: {_SURFACE};
-    color: {_TEXT};
-    border: 1px solid {_SURFACE};
+    background-color: {BG_SURFACE};
+    color: {TEXT_PRIMARY};
+    border: 1px solid {BORDER_DEFAULT};
     border-radius: 4px;
     font-family: monospace;
     font-size: 12px;
@@ -88,9 +91,9 @@ QPlainTextEdit {{
 
 _PREVIEW_WIDGET_STYLE = f"""
 QTextBrowser {{
-    background-color: {_SURFACE};
-    color: {_TEXT};
-    border: 1px solid {_SURFACE};
+    background-color: {BG_SURFACE};
+    color: {TEXT_PRIMARY};
+    border: 1px solid {BORDER_DEFAULT};
     border-radius: 4px;
     padding: 0px;
 }}
@@ -133,37 +136,39 @@ class MarkdownEditor(QWidget):
         toolbar.setSpacing(8)
 
         self._dirty_label = QLabel("")
-        self._dirty_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px;")
+        self._dirty_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
         toolbar.addWidget(self._dirty_label)
 
         toolbar.addStretch()
 
         self._revert_btn = QPushButton("Revert")
+        self._revert_btn.setToolTip("Discard changes and reload from disk")
         self._revert_btn.setEnabled(False)
         self._revert_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {_SURFACE};
-                color: {_TEXT};
-                border: 1px solid {_SURFACE};
+                background-color: {BG_SURFACE};
+                color: {TEXT_PRIMARY};
+                border: 1px solid {BORDER_DEFAULT};
                 border-radius: 4px;
                 padding: 4px 12px;
                 font-size: 12px;
             }}
             QPushButton:hover {{
-                background-color: {_BG};
+                background-color: {BG_BASE};
             }}
             QPushButton:disabled {{
-                color: {_SUBTEXT};
+                color: {TEXT_SECONDARY};
             }}
         """)
         toolbar.addWidget(self._revert_btn)
 
         self._save_btn = QPushButton("Save")
+        self._save_btn.setToolTip("Save changes to disk")
         self._save_btn.setEnabled(False)
         self._save_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {_ACCENT};
-                color: {_BG};
+                background-color: {ACCENT_PRIMARY};
+                color: {BG_BASE};
                 border: none;
                 border-radius: 4px;
                 padding: 4px 12px;
@@ -171,11 +176,11 @@ class MarkdownEditor(QWidget):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: #b4befe;
+                background-color: {ACCENT_PRIMARY_HOVER};
             }}
             QPushButton:disabled {{
-                background-color: {_SURFACE};
-                color: {_SUBTEXT};
+                background-color: {BG_SURFACE};
+                color: {TEXT_SECONDARY};
             }}
         """)
         toolbar.addWidget(self._save_btn)
@@ -186,7 +191,7 @@ class MarkdownEditor(QWidget):
         self._splitter = QSplitter()
         self._splitter.setStyleSheet(f"""
             QSplitter::handle {{
-                background-color: {_SURFACE};
+                background-color: {BG_SURFACE};
                 width: 2px;
             }}
         """)
@@ -330,10 +335,10 @@ class MarkdownEditor(QWidget):
         self._revert_btn.setEnabled(dirty)
         if dirty:
             self._dirty_label.setText("Modified")
-            self._dirty_label.setStyleSheet(f"color: {_RED}; font-size: 12px;")
+            self._dirty_label.setStyleSheet(f"color: {STATUS_ERROR}; font-size: 12px;")
         else:
             self._dirty_label.setText("")
-            self._dirty_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px;")
+            self._dirty_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
         self.dirty_changed.emit(dirty)
 
     def _update_preview(self) -> None:

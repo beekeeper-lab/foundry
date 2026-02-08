@@ -17,21 +17,19 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from foundry_app.ui.theme import (
+    ACCENT_PRIMARY,
+    ACCENT_PRIMARY_HOVER,
+    BG_BASE,
+    BG_SURFACE,
+    BORDER_DEFAULT,
+    STATUS_ERROR,
+    STATUS_SUCCESS,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+)
+
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Catppuccin Mocha colours
-# ---------------------------------------------------------------------------
-
-_BG = "#1e1e2e"
-_SURFACE = "#313244"
-_TEXT = "#cdd6f4"
-_SUBTEXT = "#6c7086"
-_ACCENT = "#cba6f7"
-_GREEN = "#a6e3a1"
-_RED = "#f38ba8"
-_YELLOW = "#f9e2af"
 
 
 # ---------------------------------------------------------------------------
@@ -66,14 +64,14 @@ class StageStatusWidget(QWidget):
         self._icon = QLabel("\u2022")  # bullet
         self._icon.setFixedWidth(24)
         self._icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._icon.setStyleSheet(f"color: {_SUBTEXT}; font-size: 16px;")
+        self._icon.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 16px;")
 
         self._label = QLabel(label)
-        self._label.setStyleSheet(f"color: {_TEXT}; font-size: 14px;")
+        self._label.setStyleSheet(f"color: {TEXT_PRIMARY}; font-size: 14px;")
 
         self._status_label = QLabel("Pending")
         self._status_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self._status_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px;")
+        self._status_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
 
         layout.addWidget(self._icon)
         layout.addWidget(self._label, stretch=1)
@@ -86,33 +84,33 @@ class StageStatusWidget(QWidget):
     def set_running(self) -> None:
         self._status = "running"
         self._icon.setText("\u25B6")  # play symbol
-        self._icon.setStyleSheet(f"color: {_ACCENT}; font-size: 16px;")
+        self._icon.setStyleSheet(f"color: {ACCENT_PRIMARY}; font-size: 16px;")
         self._status_label.setText("Running...")
-        self._status_label.setStyleSheet(f"color: {_ACCENT}; font-size: 12px;")
+        self._status_label.setStyleSheet(f"color: {ACCENT_PRIMARY}; font-size: 12px;")
 
     def set_done(self, file_count: int = 0) -> None:
         self._status = "done"
         self._icon.setText("\u2713")  # checkmark
-        self._icon.setStyleSheet(f"color: {_GREEN}; font-size: 16px;")
+        self._icon.setStyleSheet(f"color: {STATUS_SUCCESS}; font-size: 16px;")
         text = "Done"
         if file_count:
             text += f" ({file_count} files)"
         self._status_label.setText(text)
-        self._status_label.setStyleSheet(f"color: {_GREEN}; font-size: 12px;")
+        self._status_label.setStyleSheet(f"color: {STATUS_SUCCESS}; font-size: 12px;")
 
     def set_error(self, message: str = "Error") -> None:
         self._status = "error"
         self._icon.setText("\u2717")  # x-mark
-        self._icon.setStyleSheet(f"color: {_RED}; font-size: 16px;")
+        self._icon.setStyleSheet(f"color: {STATUS_ERROR}; font-size: 16px;")
         self._status_label.setText(message)
-        self._status_label.setStyleSheet(f"color: {_RED}; font-size: 12px;")
+        self._status_label.setStyleSheet(f"color: {STATUS_ERROR}; font-size: 12px;")
 
     def set_skipped(self) -> None:
         self._status = "skipped"
         self._icon.setText("\u2013")  # en-dash
-        self._icon.setStyleSheet(f"color: {_SUBTEXT}; font-size: 16px;")
+        self._icon.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 16px;")
         self._status_label.setText("Skipped")
-        self._status_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px;")
+        self._status_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
 
 
 # ---------------------------------------------------------------------------
@@ -129,7 +127,7 @@ class GenerationProgressScreen(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet(f"background-color: {_BG};")
+        self.setStyleSheet(f"background-color: {BG_BASE};")
         self._start_time: float | None = None
         self._stage_widgets: dict[str, StageStatusWidget] = {}
 
@@ -140,7 +138,7 @@ class GenerationProgressScreen(QWidget):
         # Title
         title = QLabel("Generation Progress")
         title.setFont(QFont("", 20, QFont.Weight.Bold))
-        title.setStyleSheet(f"color: {_TEXT};")
+        title.setStyleSheet(f"color: {TEXT_PRIMARY};")
         layout.addWidget(title)
 
         # Progress bar
@@ -151,12 +149,12 @@ class GenerationProgressScreen(QWidget):
         self._progress_bar.setFixedHeight(8)
         self._progress_bar.setStyleSheet(f"""
             QProgressBar {{
-                background-color: {_SURFACE};
+                background-color: {BG_SURFACE};
                 border: none;
                 border-radius: 4px;
             }}
             QProgressBar::chunk {{
-                background-color: {_ACCENT};
+                background-color: {ACCENT_PRIMARY};
                 border-radius: 4px;
             }}
         """)
@@ -164,7 +162,7 @@ class GenerationProgressScreen(QWidget):
 
         # Elapsed time
         self._elapsed_label = QLabel("Elapsed: 0.0s")
-        self._elapsed_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px;")
+        self._elapsed_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
         layout.addWidget(self._elapsed_label)
 
         # Stage list
@@ -175,7 +173,7 @@ class GenerationProgressScreen(QWidget):
 
         # Log area
         log_label = QLabel("Log")
-        log_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px; margin-top: 8px;")
+        log_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px; margin-top: 8px;")
         layout.addWidget(log_label)
 
         self._log = QTextEdit()
@@ -183,9 +181,9 @@ class GenerationProgressScreen(QWidget):
         self._log.setFixedHeight(120)
         self._log.setStyleSheet(f"""
             QTextEdit {{
-                background-color: {_SURFACE};
-                color: {_TEXT};
-                border: 1px solid {_SURFACE};
+                background-color: {BG_SURFACE};
+                color: {TEXT_PRIMARY};
+                border: 1px solid {BORDER_DEFAULT};
                 border-radius: 4px;
                 font-family: monospace;
                 font-size: 12px;
@@ -196,16 +194,17 @@ class GenerationProgressScreen(QWidget):
 
         # Summary (hidden until complete)
         self._summary_label = QLabel("")
-        self._summary_label.setStyleSheet(f"color: {_TEXT}; font-size: 14px;")
+        self._summary_label.setStyleSheet(f"color: {TEXT_PRIMARY}; font-size: 14px;")
         self._summary_label.setVisible(False)
         layout.addWidget(self._summary_label)
 
         # Open project button (hidden until complete)
         self._open_btn = QPushButton("Open Project Folder")
+        self._open_btn.setToolTip("Open the generated project directory")
         self._open_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {_ACCENT};
-                color: {_BG};
+                background-color: {ACCENT_PRIMARY};
+                color: {BG_BASE};
                 border: none;
                 border-radius: 6px;
                 padding: 10px 20px;
@@ -213,7 +212,7 @@ class GenerationProgressScreen(QWidget):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: #b4befe;
+                background-color: {ACCENT_PRIMARY_HOVER};
             }}
         """)
         self._open_btn.setVisible(False)
@@ -252,9 +251,9 @@ class GenerationProgressScreen(QWidget):
         for w in self._stage_widgets.values():
             w._status = "pending"
             w._icon.setText("\u2022")
-            w._icon.setStyleSheet(f"color: {_SUBTEXT}; font-size: 16px;")
+            w._icon.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 16px;")
             w._status_label.setText("Pending")
-            w._status_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px;")
+            w._status_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
         self.append_log("Generation started...")
 
     def mark_stage_running(self, stage_key: str) -> None:
@@ -294,7 +293,7 @@ class GenerationProgressScreen(QWidget):
         if warnings:
             summary_parts.append(f"{warnings} warnings")
         self._summary_label.setText(" \u2014 ".join(summary_parts))
-        self._summary_label.setStyleSheet(f"color: {_GREEN}; font-size: 14px;")
+        self._summary_label.setStyleSheet(f"color: {STATUS_SUCCESS}; font-size: 14px;")
         self._summary_label.setVisible(True)
         self._open_btn.setVisible(True)
         self._progress_bar.setValue(self._progress_bar.maximum())
@@ -305,7 +304,7 @@ class GenerationProgressScreen(QWidget):
         """Mark generation as failed."""
         elapsed = self._elapsed()
         self._summary_label.setText(f"Generation failed: {message}")
-        self._summary_label.setStyleSheet(f"color: {_RED}; font-size: 14px;")
+        self._summary_label.setStyleSheet(f"color: {STATUS_ERROR}; font-size: 14px;")
         self._summary_label.setVisible(True)
         self.append_log(f"FAILED after {elapsed:.1f}s: {message}")
         self.generation_failed.emit(message)

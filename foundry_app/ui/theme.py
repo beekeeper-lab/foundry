@@ -227,6 +227,35 @@ QMenu::item:selected {{
 
 /* Scroll bars */
 {QSS_SCROLLBAR}
+
+/* Focus indicators — brass/gold border for keyboard navigation */
+QPushButton:focus {{
+    outline: none;
+    border: 2px solid {ACCENT_PRIMARY};
+    border-radius: {RADIUS_SM}px;
+}}
+QComboBox:focus {{
+    border: 2px solid {ACCENT_PRIMARY};
+}}
+QListWidget:focus {{
+    border: 2px solid {ACCENT_PRIMARY};
+    border-radius: {RADIUS_SM}px;
+}}
+QTreeWidget:focus {{
+    border: 2px solid {ACCENT_PRIMARY};
+    border-radius: {RADIUS_SM}px;
+}}
+QLineEdit:focus {{
+    border: 2px solid {ACCENT_PRIMARY};
+}}
+QTextEdit:focus {{
+    border: 2px solid {ACCENT_PRIMARY};
+    border-radius: {RADIUS_SM}px;
+}}
+QPlainTextEdit:focus {{
+    border: 2px solid {ACCENT_PRIMARY};
+    border-radius: {RADIUS_SM}px;
+}}
 """
 
 

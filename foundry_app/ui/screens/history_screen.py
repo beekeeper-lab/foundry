@@ -20,16 +20,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from foundry_app.ui.theme import (
+    ACCENT_PRIMARY,
+    ACCENT_PRIMARY_HOVER,
+    BG_BASE,
+    BG_SURFACE,
+    BORDER_DEFAULT,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+)
 from foundry_app.ui.widgets.branded_empty_state import BrandedEmptyState
 
 logger = logging.getLogger(__name__)
-
-# Catppuccin Mocha
-_BG = "#1e1e2e"
-_SURFACE = "#313244"
-_TEXT = "#cdd6f4"
-_SUBTEXT = "#6c7086"
-_ACCENT = "#cba6f7"
 
 
 class HistoryScreen(QWidget):
@@ -39,7 +41,7 @@ class HistoryScreen(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet(f"background-color: {_BG};")
+        self.setStyleSheet(f"background-color: {BG_BASE};")
         self._projects_root: Path | None = None
 
         root_layout = QVBoxLayout(self)
@@ -65,11 +67,11 @@ class HistoryScreen(QWidget):
         # Title
         title = QLabel("Generation History")
         title.setFont(QFont("", 20, QFont.Weight.Bold))
-        title.setStyleSheet(f"color: {_TEXT};")
+        title.setStyleSheet(f"color: {TEXT_PRIMARY};")
         layout.addWidget(title)
 
         subtitle = QLabel("Browse past generation runs and view their manifests.")
-        subtitle.setStyleSheet(f"color: {_SUBTEXT}; font-size: 14px;")
+        subtitle.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 14px;")
         layout.addWidget(subtitle)
 
         # Split view: run list (left) + manifest details (right)
@@ -78,15 +80,15 @@ class HistoryScreen(QWidget):
         # Run list
         left = QVBoxLayout()
         list_label = QLabel("Past Runs")
-        list_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px;")
+        list_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
         left.addWidget(list_label)
 
         self._run_list = QListWidget()
         self._run_list.setStyleSheet(f"""
             QListWidget {{
-                background-color: {_SURFACE};
-                color: {_TEXT};
-                border: 1px solid {_SURFACE};
+                background-color: {BG_SURFACE};
+                color: {TEXT_PRIMARY};
+                border: 1px solid {BORDER_DEFAULT};
                 border-radius: 4px;
                 font-size: 13px;
                 padding: 4px;
@@ -95,8 +97,8 @@ class HistoryScreen(QWidget):
                 padding: 8px 12px;
             }}
             QListWidget::item:selected {{
-                background-color: {_BG};
-                color: {_ACCENT};
+                background-color: {BG_BASE};
+                color: {ACCENT_PRIMARY};
             }}
         """)
         self._run_list.currentRowChanged.connect(self._on_run_selected)
@@ -105,16 +107,16 @@ class HistoryScreen(QWidget):
         # Manifest details
         right = QVBoxLayout()
         details_label = QLabel("Manifest Details")
-        details_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px;")
+        details_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
         right.addWidget(details_label)
 
         self._details = QTextEdit()
         self._details.setReadOnly(True)
         self._details.setStyleSheet(f"""
             QTextEdit {{
-                background-color: {_SURFACE};
-                color: {_TEXT};
-                border: 1px solid {_SURFACE};
+                background-color: {BG_SURFACE};
+                color: {TEXT_PRIMARY};
+                border: 1px solid {BORDER_DEFAULT};
                 border-radius: 4px;
                 font-family: monospace;
                 font-size: 12px;
@@ -125,15 +127,16 @@ class HistoryScreen(QWidget):
 
         # Metadata summary
         self._meta_label = QLabel("")
-        self._meta_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 12px;")
+        self._meta_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
         right.addWidget(self._meta_label)
 
         # Regenerate button
         self._regen_btn = QPushButton("Re-generate from this composition")
+        self._regen_btn.setToolTip("Re-run project generation using this composition")
         self._regen_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {_ACCENT};
-                color: {_BG};
+                background-color: {ACCENT_PRIMARY};
+                color: {BG_BASE};
                 border: none;
                 border-radius: 6px;
                 padding: 10px 20px;
@@ -141,11 +144,11 @@ class HistoryScreen(QWidget):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: #b4befe;
+                background-color: {ACCENT_PRIMARY_HOVER};
             }}
             QPushButton:disabled {{
-                background-color: {_SURFACE};
-                color: {_SUBTEXT};
+                background-color: {BG_SURFACE};
+                color: {TEXT_SECONDARY};
             }}
         """)
         self._regen_btn.setEnabled(False)

@@ -7,9 +7,7 @@ from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from foundry_app.core.resources import splash_image_path
-
-_TEXT = "#cdd6f4"
-_SUBTEXT = "#a6adc8"
+from foundry_app.ui.theme import TEXT_PRIMARY, TEXT_SECONDARY
 
 
 class BrandedEmptyState(QWidget):
@@ -34,13 +32,13 @@ class BrandedEmptyState(QWidget):
         self._heading = QLabel(heading)
         self._heading.setFont(QFont("", 24, QFont.Weight.Bold))
         self._heading.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._heading.setStyleSheet(f"color: {_TEXT}; background: transparent;")
+        self._heading.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
 
         self._description = QLabel(description)
         self._description.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._description.setWordWrap(True)
         self._description.setStyleSheet(
-            f"color: {_SUBTEXT}; font-size: 15px; background: transparent;"
+            f"color: {TEXT_SECONDARY}; font-size: 15px; background: transparent;"
         )
 
         layout.addWidget(self._heading)
