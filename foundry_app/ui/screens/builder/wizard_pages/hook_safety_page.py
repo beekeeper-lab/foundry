@@ -39,8 +39,10 @@ from foundry_app.core.models import (
 )
 from foundry_app.ui.theme import (
     ACCENT_PRIMARY,
+    ACCENT_PRIMARY_HOVER,
     ACCENT_SECONDARY_MUTED,
     BG_INSET,
+    BG_OVERLAY,
     BG_SURFACE,
     BORDER_DEFAULT,
     FONT_SIZE_LG,
@@ -51,7 +53,10 @@ from foundry_app.ui.theme import (
     FONT_WEIGHT_BOLD,
     RADIUS_MD,
     RADIUS_SM,
+    SPACE_LG,
     SPACE_MD,
+    SPACE_SM,
+    SPACE_XL,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
@@ -116,7 +121,7 @@ QPushButton {{
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER_DEFAULT};
     border-radius: {RADIUS_SM}px;
-    padding: 4px 12px;
+    padding: {SPACE_SM // 2}px {SPACE_MD}px;
     font-size: {FONT_SIZE_SM}px;
 }}
 QPushButton:hover {{
@@ -130,8 +135,52 @@ QComboBox {{
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER_DEFAULT};
     border-radius: {RADIUS_SM}px;
-    padding: 2px 6px;
+    padding: {SPACE_SM // 2}px {SPACE_SM}px;
     font-size: {FONT_SIZE_SM}px;
+}}
+QComboBox:focus {{
+    border-color: {ACCENT_PRIMARY};
+    border-width: 2px;
+}}
+QComboBox:hover {{
+    border-color: {ACCENT_SECONDARY_MUTED};
+}}
+QComboBox::drop-down {{
+    border: none;
+    padding-right: {SPACE_SM}px;
+}}
+QComboBox::down-arrow {{
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid {TEXT_SECONDARY};
+    margin-right: {SPACE_SM}px;
+}}
+QComboBox QAbstractItemView {{
+    background-color: {BG_OVERLAY};
+    color: {TEXT_PRIMARY};
+    border: 1px solid {BORDER_DEFAULT};
+    border-radius: {RADIUS_SM}px;
+    selection-background-color: {ACCENT_SECONDARY_MUTED};
+    selection-color: {TEXT_PRIMARY};
+    padding: {SPACE_SM // 2}px;
+}}
+"""
+
+CHECKBOX_STYLE = f"""
+QCheckBox::indicator {{
+    width: 16px;
+    height: 16px;
+    border: 1px solid {BORDER_DEFAULT};
+    border-radius: 3px;
+    background-color: {BG_INSET};
+}}
+QCheckBox::indicator:hover {{
+    border-color: {ACCENT_SECONDARY_MUTED};
+}}
+QCheckBox::indicator:checked {{
+    background-color: {ACCENT_PRIMARY};
+    border-color: {ACCENT_PRIMARY_HOVER};
 }}
 """
 
@@ -156,11 +205,12 @@ class HookPackCard(QFrame):
 
     def _build_ui(self) -> None:
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setSpacing(10)
+        layout.setContentsMargins(SPACE_MD, SPACE_SM + 2, SPACE_MD, SPACE_SM + 2)
+        layout.setSpacing(SPACE_SM + 2)
 
         # Checkbox
         self._checkbox = QCheckBox()
+        self._checkbox.setStyleSheet(CHECKBOX_STYLE)
         self._checkbox.setChecked(True)  # enabled by default
         self._checkbox.stateChanged.connect(self._on_toggled)
         layout.addWidget(self._checkbox)
@@ -269,8 +319,8 @@ class SafetyPolicySection(QFrame):
         self.setFrameShape(QFrame.Shape.StyledPanel)
 
         self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(12, 10, 12, 10)
-        self._layout.setSpacing(6)
+        self._layout.setContentsMargins(SPACE_MD, SPACE_SM + 2, SPACE_MD, SPACE_SM + 2)
+        self._layout.setSpacing(SPACE_SM - 2)
 
         heading = QLabel(title)
         heading.setStyleSheet(SECTION_HEADING_STYLE)
@@ -279,9 +329,10 @@ class SafetyPolicySection(QFrame):
     def add_toggle(self, key: str, label: str, default: bool = True) -> QCheckBox:
         """Add a boolean toggle to this section."""
         row = QHBoxLayout()
-        row.setSpacing(10)
+        row.setSpacing(SPACE_SM + 2)
 
         cb = QCheckBox()
+        cb.setStyleSheet(CHECKBOX_STYLE)
         cb.setChecked(default)
         cb.stateChanged.connect(lambda _: self.changed.emit())
         row.addWidget(cb)
@@ -343,8 +394,8 @@ class HookSafetyPage(QWidget):
 
     def _build_ui(self) -> None:
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(24, 20, 24, 20)
-        outer.setSpacing(12)
+        outer.setContentsMargins(SPACE_XL, SPACE_XL - 4, SPACE_XL, SPACE_XL - 4)
+        outer.setSpacing(SPACE_MD)
 
         heading = QLabel("Hook & Safety Configuration")
         heading.setStyleSheet(HEADING_STYLE)
@@ -368,7 +419,7 @@ class HookSafetyPage(QWidget):
         self._content = QWidget()
         self._content_layout = QVBoxLayout(self._content)
         self._content_layout.setContentsMargins(0, 0, 0, 0)
-        self._content_layout.setSpacing(16)
+        self._content_layout.setSpacing(SPACE_LG)
 
         # --- Hooks section ---
         self._build_hooks_section()
@@ -388,7 +439,7 @@ class HookSafetyPage(QWidget):
 
         # Posture selector row
         posture_row = QHBoxLayout()
-        posture_row.setSpacing(10)
+        posture_row.setSpacing(SPACE_SM + 2)
 
         posture_label = QLabel("Safety Posture:")
         posture_label.setStyleSheet(CONFIG_LABEL_STYLE)
@@ -409,7 +460,7 @@ class HookSafetyPage(QWidget):
         self._hook_card_container = QWidget()
         self._hook_card_layout = QVBoxLayout(self._hook_card_container)
         self._hook_card_layout.setContentsMargins(0, 0, 0, 0)
-        self._hook_card_layout.setSpacing(8)
+        self._hook_card_layout.setSpacing(SPACE_SM)
         self._content_layout.addWidget(self._hook_card_container)
 
     def _build_safety_section(self) -> None:
@@ -420,7 +471,7 @@ class HookSafetyPage(QWidget):
 
         # Preset buttons
         preset_row = QHBoxLayout()
-        preset_row.setSpacing(8)
+        preset_row.setSpacing(SPACE_SM)
 
         self._permissive_btn = QPushButton("Permissive")
         self._permissive_btn.setStyleSheet(PRESET_BTN_STYLE)

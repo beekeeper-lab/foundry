@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import re
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QFormLayout,
     QLabel,
     QLineEdit,
     QVBoxLayout,
@@ -14,6 +13,26 @@ from PySide6.QtWidgets import (
 )
 
 from foundry_app.core.models import ProjectIdentity
+from foundry_app.ui.theme import (
+    ACCENT_PRIMARY,
+    BG_BASE,
+    BG_INSET,
+    BORDER_DEFAULT,
+    BORDER_SUBTLE,
+    FONT_SIZE_MD,
+    FONT_SIZE_SM,
+    FONT_SIZE_XL,
+    FONT_WEIGHT_BOLD,
+    RADIUS_SM,
+    SPACE_LG,
+    SPACE_MD,
+    SPACE_SM,
+    SPACE_XXL,
+    STATUS_ERROR,
+    TEXT_DISABLED,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+)
 
 # ---------------------------------------------------------------------------
 # Slug helper
@@ -34,49 +53,52 @@ def _slugify(text: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Stylesheet (extends the Catppuccin theme from MainWindow)
+# Stylesheet (themed — industrial dark palette with brass/gold accents)
 # ---------------------------------------------------------------------------
 
-PAGE_STYLE = """
-QLabel#page-title {
-    color: #cdd6f4;
-    font-size: 22px;
-    font-weight: bold;
-}
-QLabel#page-subtitle {
-    color: #a6adc8;
-    font-size: 14px;
-    margin-bottom: 12px;
-}
-QLabel.field-label {
-    color: #cdd6f4;
-    font-size: 13px;
-}
-QLineEdit {
-    background-color: #313244;
-    color: #cdd6f4;
-    border: 1px solid #45475a;
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 14px;
-}
-QLineEdit:focus {
-    border-color: #cba6f7;
-}
-QLineEdit:read-only {
-    background-color: #1e1e2e;
-    color: #6c7086;
-    border-color: #313244;
-}
-QLabel#slug-preview {
-    color: #6c7086;
-    font-size: 12px;
+PAGE_STYLE = f"""
+QLabel#page-title {{
+    color: {TEXT_PRIMARY};
+    font-size: {FONT_SIZE_XL}px;
+    font-weight: {FONT_WEIGHT_BOLD};
+}}
+QLabel#page-subtitle {{
+    color: {TEXT_SECONDARY};
+    font-size: {FONT_SIZE_MD}px;
+    margin-bottom: {SPACE_MD}px;
+}}
+QLabel.field-label {{
+    color: {TEXT_SECONDARY};
+    font-size: {FONT_SIZE_SM}px;
+    font-weight: {FONT_WEIGHT_BOLD};
+    padding-bottom: {SPACE_SM // 2}px;
+}}
+QLineEdit {{
+    background-color: {BG_INSET};
+    color: {TEXT_PRIMARY};
+    border: 1px solid {BORDER_DEFAULT};
+    border-radius: {RADIUS_SM}px;
+    padding: {SPACE_SM}px {SPACE_MD}px;
+    font-size: {FONT_SIZE_MD}px;
+}}
+QLineEdit:focus {{
+    border-color: {ACCENT_PRIMARY};
+    border-width: 2px;
+}}
+QLineEdit:read-only {{
+    background-color: {BG_BASE};
+    color: {TEXT_DISABLED};
+    border-color: {BORDER_SUBTLE};
+}}
+QLabel#slug-preview {{
+    color: {TEXT_DISABLED};
+    font-size: {FONT_SIZE_SM}px;
     font-style: italic;
-}
-QLabel#validation-hint {
-    color: #f38ba8;
-    font-size: 12px;
-}
+}}
+QLabel#validation-hint {{
+    color: {STATUS_ERROR};
+    font-size: {FONT_SIZE_SM}px;
+}}
 """
 
 
@@ -102,8 +124,8 @@ class ProjectPage(QWidget):
 
     def _build_ui(self) -> None:
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(40, 32, 40, 32)
-        outer.setSpacing(8)
+        outer.setContentsMargins(SPACE_XXL, SPACE_XXL, SPACE_XXL, SPACE_XXL)
+        outer.setSpacing(SPACE_SM)
 
         # Header
         title = QLabel("Create Your Project")
@@ -118,35 +140,45 @@ class ProjectPage(QWidget):
         subtitle.setWordWrap(True)
         outer.addWidget(subtitle)
 
-        outer.addSpacing(12)
+        outer.addSpacing(SPACE_LG)
 
-        # Form
-        form = QFormLayout()
-        form.setSpacing(12)
-        form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        # Form — labels above inputs
+        self._name_label = QLabel("Project Name")
+        self._name_label.setProperty("class", "field-label")
+        outer.addWidget(self._name_label)
 
         self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("e.g. My Awesome Project")
         self._name_edit.setMaxLength(120)
-        name_label = QLabel("Project Name")
-        name_label.setProperty("class", "field-label")
-        form.addRow(name_label, self._name_edit)
+        outer.addWidget(self._name_edit)
+
+        # Validation hint (hidden by default, sits below name field)
+        self._validation_hint = QLabel("")
+        self._validation_hint.setObjectName("validation-hint")
+        self._validation_hint.setVisible(False)
+        outer.addWidget(self._validation_hint)
+
+        outer.addSpacing(SPACE_MD)
+
+        self._tagline_label = QLabel("Tagline")
+        self._tagline_label.setProperty("class", "field-label")
+        outer.addWidget(self._tagline_label)
 
         self._tagline_edit = QLineEdit()
         self._tagline_edit.setPlaceholderText("e.g. A fast, modern API gateway")
         self._tagline_edit.setMaxLength(200)
-        tagline_label = QLabel("Tagline")
-        tagline_label.setProperty("class", "field-label")
-        form.addRow(tagline_label, self._tagline_edit)
+        outer.addWidget(self._tagline_edit)
+
+        outer.addSpacing(SPACE_MD)
+
+        self._slug_label = QLabel("Slug")
+        self._slug_label.setProperty("class", "field-label")
+        outer.addWidget(self._slug_label)
 
         self._slug_edit = QLineEdit()
         self._slug_edit.setReadOnly(True)
         self._slug_edit.setPlaceholderText("auto-generated from name")
-        slug_label = QLabel("Slug")
-        slug_label.setProperty("class", "field-label")
-        form.addRow(slug_label, self._slug_edit)
-
-        outer.addLayout(form)
+        outer.addWidget(self._slug_edit)
 
         # Slug hint
         self._slug_hint = QLabel(
@@ -154,12 +186,6 @@ class ProjectPage(QWidget):
         )
         self._slug_hint.setObjectName("slug-preview")
         outer.addWidget(self._slug_hint)
-
-        # Validation hint (hidden by default)
-        self._validation_hint = QLabel("")
-        self._validation_hint.setObjectName("validation-hint")
-        self._validation_hint.setVisible(False)
-        outer.addWidget(self._validation_hint)
 
         outer.addStretch(1)
 

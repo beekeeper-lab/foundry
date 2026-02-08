@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-049 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-07 |
-| **Owner** | (unassigned) |
+| **Owner** | Developer |
 | **Category** | App |
 
 ## Problem Statement
@@ -39,15 +39,15 @@ Restyle all form and input elements to match the industrial theme: labels above 
 
 ## Acceptance Criteria
 
-- [ ] All form elements use `theme.py` constants — no inline hex values
-- [ ] QLineEdit has clear unfocused/focused/error/read-only states
-- [ ] QComboBox matches the industrial dark theme with clean dropdowns
-- [ ] QCheckBox has custom styling consistent with the theme
-- [ ] Validation messages use muted red with clear but calm presentation
-- [ ] Labels have proper typography hierarchy (weight/size, not just color)
-- [ ] Forms feel structured and precise — "entering parameters in a control system"
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] All form elements use `theme.py` constants — no inline hex values
+- [x] QLineEdit has clear unfocused/focused/error/read-only states
+- [x] QComboBox matches the industrial dark theme with clean dropdowns
+- [x] QCheckBox has custom styling consistent with the theme
+- [x] Validation messages use muted red with clear but calm presentation
+- [x] Labels have proper typography hierarchy (weight/size, not just color)
+- [x] Forms feel structured and precise — "entering parameters in a control system"
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 

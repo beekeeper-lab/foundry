@@ -57,7 +57,7 @@
 | BEAN-033 | Generation Progress Screen | App | Medium | Done | team-lead |
 | BEAN-034 | CLI Interface | App | Medium | Done | team-lead |
 | BEAN-035 | Export & History Screens | App | Low | Done | team-lead |
-| BEAN-036 | Update About Dialog Text | App | Low | New | (unassigned) |
+| BEAN-036 | Update About Dialog Text | App | Low | Done | team-lead |
 | BEAN-037 | Library Manager — Screen Shell & Tree Browser | App | High | Done | team-lead |
 | BEAN-038 | Library Manager — Markdown Editor Widget | App | High | Done | team-lead |
 | BEAN-039 | Library Manager — Persona Editor | App | High | New | (unassigned) |
@@ -70,7 +70,7 @@
 | BEAN-046 | Main Window & Sidebar Restyle | App | High | Done | team-lead |
 | BEAN-047 | Icon Set for Industrial Theme | App | Medium | New | (unassigned) |
 | BEAN-048 | Wizard Card Components Restyle | App | High | Done | team-lead |
-| BEAN-049 | Form & Input Styling | App | Medium | New | (unassigned) |
+| BEAN-049 | Form & Input Styling | App | Medium | Done | Developer |
 | BEAN-050 | Progress & Status Screens Restyle | App | Medium | New | (unassigned) |
 | BEAN-051 | Review Page & Typography System | App | Medium | New | (unassigned) |
 | BEAN-052 | Accessibility & Visual Polish | App | Medium | New | (unassigned) |
