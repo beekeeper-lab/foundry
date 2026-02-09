@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-074 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-09 |
+| **Completed** | 2026-02-09 |
+| **Duration** | <5m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -36,13 +36,13 @@ Update `ai/context/bean-workflow.md` to document the new `Unapproved → Approve
 
 ## Acceptance Criteria
 
-- [ ] `ai/context/bean-workflow.md` shows `Unapproved → Approved → In Progress → Done` lifecycle
-- [ ] No references to `Picked` or `New` status in the workflow doc
-- [ ] Obsidian review process is documented as a step between creation and execution
-- [ ] Approval gate behavior is documented (what checks `/long-run` performs)
-- [ ] `Deferred` status is still documented
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `ai/context/bean-workflow.md` shows `Unapproved → Approved → In Progress → Done` lifecycle
+- [x] No references to `Picked` or `New` status in the workflow doc
+- [x] Obsidian review process is documented as a step between creation and execution
+- [x] Approval gate behavior is documented (what checks `/long-run` performs)
+- [x] `Deferred` status is still documented
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 

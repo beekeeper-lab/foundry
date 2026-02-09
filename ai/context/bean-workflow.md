@@ -8,6 +8,7 @@ A **Bean** is a unit of work — a feature, enhancement, bug fix, or epic. Beans
 ai/beans/
   _index.md                    # Master backlog index
   _bean-template.md            # Template for creating new beans
+  _review.md                   # Generated MOC for Obsidian review (auto-generated)
   BEAN-NNN-<slug>/
     bean.md                    # Bean definition (problem, goal, scope, criteria)
     tasks/                     # Task files created during decomposition
@@ -31,16 +32,20 @@ Multiple Claude Code agents may be working in this codebase simultaneously. Each
 
 Beans are locked by their Status + Owner fields in both `_index.md` and `bean.md`. These two fields together act as a lock.
 
-1. **Before picking a bean**, re-read `_index.md`. If the bean's Status is `Picked`, `In Progress`, or `Done`, it is locked — skip it.
+1. **Before picking a bean**, re-read `_index.md`. If the bean's Status is `In Progress` or `Done`, it is locked — skip it. If `Unapproved`, it cannot be picked yet.
 2. **To claim a bean**, atomically update both `_index.md` and `bean.md`:
    - Set Status to `In Progress`
    - Set Owner to a unique identifier (e.g., `team-lead`, `agent-2`, or the session context)
-3. **A bean is locked when** Status is `Picked` or `In Progress` AND Owner is set. No other agent should pick, modify, or work on a locked bean.
-4. **A bean is unlocked when** Status is `New` or `Deferred` with no Owner, or Status is `Done`.
+3. **A bean is locked when** Status is `In Progress` AND Owner is set. No other agent should pick, modify, or work on a locked bean.
+4. **A bean is unlocked when** Status is `Approved` or `Deferred` with no Owner, or Status is `Done`.
 5. **If you find a conflict** (you tried to pick a bean but it's already claimed when you go to write), abandon the pick and select a different bean.
 6. **Stale locks** — if a bean has been `In Progress` for an unusually long time with no file changes, it may indicate a crashed agent. Do NOT auto-unlock it. Report it to the user and let them decide.
 
 ## Bean Lifecycle
+
+```
+Unapproved → Approved → In Progress → Done
+```
 
 ### 1. Creation
 
@@ -50,7 +55,7 @@ Anyone can create a bean:
 2. Compute next ID = highest existing + 1
 3. Create directory `ai/beans/BEAN-NNN-<slug>/` and copy `_bean-template.md` to `bean.md`
 4. Fill in all fields: Problem Statement, Goal, Scope, Acceptance Criteria
-5. Set Status to `New` and assign a Priority
+5. Set Status to `Unapproved` and assign a Priority
 6. Append the bean to `ai/beans/_index.md`
 
 Bean IDs are sequential: BEAN-001, BEAN-002, etc.
@@ -66,17 +71,41 @@ When creating multiple beans at once (e.g., from `/backlog-refinement`), **do no
 
 This prevents ID collisions when multiple agents create beans concurrently.
 
-### 2. Picking
+### 2. Approval
 
-The Team Lead reviews the backlog (`ai/beans/_index.md`) and picks 1-3 beans to work on:
+Newly created beans have status `Unapproved`. The user must review and approve them before they can be executed. This is the **approval gate** — no work begins without explicit human approval.
+
+**Review methods:**
+
+1. **Obsidian review** (recommended) — Run `/review-beans` to generate a filtered MOC file (`ai/beans/_review.md`) with links to beans awaiting review, then open Obsidian on the `ai/beans/` directory. Edit bean files directly to:
+   - Change status from `Unapproved` to `Approved`
+   - Adjust priority, scope, or acceptance criteria
+   - Add notes or dependencies
+   - Defer beans by changing status to `Deferred`
+
+2. **Terminal review** — Edit `bean.md` and `_index.md` files directly using any editor.
+
+**Approval process:**
+
+1. **Review** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria
+2. **Evaluate** — Is the scope reasonable? Are criteria testable? Is the priority correct?
+3. **Approve** — Change Status from `Unapproved` to `Approved` in both `bean.md` and `_index.md`
+4. **Defer** — Optionally change status to `Deferred` for beans that should wait
+
+**What `/long-run` checks:** When the Team Lead enters autonomous mode, it only processes beans with status `Approved`. Beans with status `Unapproved` are skipped entirely. This ensures the user has reviewed and signed off on every unit of work before it begins.
+
+### 3. Picking
+
+The Team Lead reviews the backlog (`ai/beans/_index.md`) and picks beans to work on:
 
 1. **Re-read `_index.md`** — check for beans claimed by other agents since your last read
 2. Assess priority and dependencies between beans
-3. **Skip locked beans** — any bean with Status `Picked`/`In Progress` and an Owner is claimed by another agent
-4. **Claim the bean** — update Status to `Picked` (or `In Progress`) and set Owner in both `bean.md` and `_index.md`. This is the lock.
-5. Update the index table
+3. **Only pick `Approved` beans** — `Unapproved` beans cannot be picked. They must be reviewed and approved first.
+4. **Skip locked beans** — any bean with Status `In Progress` and an Owner is claimed by another agent
+5. **Claim the bean** — update Status to `In Progress` and set Owner in both `bean.md` and `_index.md`. This is the lock.
+6. Update the index table
 
-### 3. Decomposition
+### 4. Decomposition
 
 The Team Lead breaks each picked bean into tasks:
 
@@ -85,7 +114,7 @@ The Team Lead breaks each picked bean into tasks:
 3. Assign each task an owner (persona) and define dependencies
 4. Follow the natural wave: BA → Architect → Developer → Tech-QA
 5. Skip personas that aren't needed for a given bean
-6. Update bean status to `In Progress`
+6. Bean status is already `In Progress` from the picking step
 
 Each task file should include:
 - **Owner:** Which persona handles it
@@ -94,7 +123,7 @@ Each task file should include:
 - **Inputs:** What the owner needs to read
 - **Definition of Done:** Concrete checklist
 
-### 4. Execution
+### 5. Execution
 
 Each persona claims their task(s) in dependency order:
 
@@ -103,7 +132,7 @@ Each persona claims their task(s) in dependency order:
 3. Update the task file with completion status
 4. Create a handoff note for downstream tasks if needed
 
-### 5. Verification
+### 6. Verification
 
 The Team Lead reviews completed work:
 
@@ -112,7 +141,7 @@ The Team Lead reviews completed work:
 3. Run tests (`uv run pytest`) and lint (`uv run ruff check foundry_app/`)
 4. Flag any gaps for rework
 
-### 6. Closure
+### 7. Closure
 
 Once all acceptance criteria are met:
 
@@ -153,11 +182,11 @@ Examples: `bean/BEAN-006-backlog-refinement`, `bean/BEAN-012-user-auth`
    This is the **first action** after picking a bean. No work happens before the branch exists.
 2. **Work on the branch** — All task commits for this bean happen on the feature branch. Never commit to `main`.
 3. **Merge to test** — After the bean is verified and closed, the Merge Captain merges the feature branch into `test` using `/merge-bean`.
-4. **Cleanup** — After a successful merge, the feature branch can be deleted.
+4. **Cleanup** — After a successful merge, the feature branch is deleted (local + remote).
 
 ### Branch Creation Rules
 
-- `/pick-bean --start` always creates the feature branch (mandatory).
+- `/pick-bean` always creates the feature branch (mandatory).
 - `/long-run` always creates a feature branch for each bean it processes.
 - Manual bean work MUST create the branch when moving to `In Progress`.
 - There are no exceptions — even doc-only beans get their own branch.
@@ -166,8 +195,8 @@ Examples: `bean/BEAN-006-backlog-refinement`, `bean/BEAN-012-user-auth`
 
 | Status | Meaning |
 |--------|---------|
-| `New` | Created, not yet reviewed by Team Lead |
-| `Picked` | Team Lead has selected it for work |
+| `Unapproved` | Created, awaiting human review and approval |
+| `Approved` | Reviewed and approved, ready for execution |
 | `In Progress` | Tasks have been created and execution is underway |
 | `Done` | All acceptance criteria met |
 | `Deferred` | Intentionally postponed |
