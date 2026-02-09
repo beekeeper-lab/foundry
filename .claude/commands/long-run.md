@@ -38,7 +38,7 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 8. **Verify acceptance criteria** — Check every criterion in the bean's AC list. Run tests and lint if applicable.
 9. **Close the bean** — Update status to `Done` in both `bean.md` and `_index.md`.
 10. **Commit on feature branch** — Stage all changed files and commit with message: `BEAN-NNN: <title>`. The commit goes on the `bean/BEAN-NNN-<slug>` branch.
-11. **Merge to test** — Execute `/merge-bean` to merge the feature branch into `test`: checkout test, pull latest, merge with `--no-ff`, push. If merge conflicts occur, report and stop.
+11. **Merge to test** — Execute `/merge-bean` to merge the feature branch into `test`: checkout test, pull latest, merge with `--no-ff`, push. If merge conflicts occur, report and stop. *(In parallel mode, workers do NOT merge — the orchestrator handles merging sequentially after each worker completes.)*
 12. **Return to main** — Checkout the main branch: `git checkout main`.
 13. **Report progress** — Summarize what was completed: bean title, tasks executed, branch name, merge commit, files changed.
 14. **Loop** — Go back to step 1. Continue until no actionable beans remain.
@@ -78,41 +78,73 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
 2. If not in tmux, display: "Parallel mode requires tmux. Please restart Claude Code inside a tmux session and re-run `/long-run --fast N`."
 3. If in tmux, proceed with worker spawning.
 
-**Worker spawning:**
-1. Select up to N independent beans from the backlog (beans with no unmet inter-bean dependencies).
-2. For each selected bean, write an initial status file and spawn a tmux worker using a launcher script:
+**Worker spawning (worktree-based):**
+1. Select up to N independent beans from the backlog (beans with no unmet inter-bean dependencies). Pre-assign all beans — the orchestrator selects them upfront.
+2. For each selected bean, create an isolated git worktree, write an initial status file, and spawn a tmux worker:
    ```bash
-   STATUS_FILE="/tmp/foundry-worker-BEAN-NNN.status"
+   REPO_ROOT=$(git rev-parse --show-toplevel)
+   BEAN_LABEL="BEAN-NNN"
+   BEAN_SLUG="BEAN-NNN-slug"
+   WORKTREE_DIR="/tmp/foundry-worktree-${BEAN_LABEL}"
+   BRANCH_NAME="bean/${BEAN_SLUG}"
+   STATUS_FILE="/tmp/foundry-worker-${BEAN_LABEL}.status"
+
+   # Clean stale worktree from a prior run
+   git worktree remove --force "$WORKTREE_DIR" 2>/dev/null
+
+   # Create feature branch + worktree
+   if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
+     git worktree add "$WORKTREE_DIR" "$BRANCH_NAME"
+   else
+     git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" main
+   fi
+
    cat > "$STATUS_FILE" << EOF
-   bean: BEAN-NNN
+   bean: ${BEAN_LABEL}
    title: (starting)
    tasks_total: 0
    tasks_done: 0
    current_task:
    status: starting
    message:
+   worktree: ${WORKTREE_DIR}
    updated: $(date -Iseconds)
    EOF
 
    LAUNCHER=$(mktemp /tmp/foundry-bean-XXXXXX.sh)
    cat > "$LAUNCHER" << 'SCRIPT_EOF'
    #!/bin/bash
-   cd /home/gregg/Nextcloud/workspace/foundry
+   cd /tmp/foundry-worktree-BEAN-NNN
    claude --dangerously-skip-permissions --agent team-lead \
-     "Process BEAN-NNN-<slug> through the full team wave. ...
+     "Process BEAN-NNN-slug through the full team wave.
+
+   You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.
+   - Do NOT create or checkout branches.
+   - Do NOT run /merge-bean — the orchestrator handles merging after you finish.
+   - Do NOT checkout main or test.
+
+   1. Decompose into tasks
+   2. Execute the wave (BA → Architect → Developer → Tech-QA)
+   3. Verify acceptance criteria
+   4. Commit on the feature branch
+   5. Update bean status to Done
+
    STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition.
    See /spawn-bean command for full status file format and update rules."
    SCRIPT_EOF
    chmod +x "$LAUNCHER"
    tmux new-window -n "bean-NNN" "bash $LAUNCHER; rm -f $LAUNCHER"
    ```
-   The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits. Stagger spawns by ~15 seconds. Worker prompts include the status file protocol from `/spawn-bean` (status values: starting, decomposing, running, blocked, error, done).
+   The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits. No stagger delay needed — worktrees provide full isolation. Worker prompts include the status file protocol from `/spawn-bean` (status values: starting, decomposing, running, blocked, error, done).
 3. The main window remains the orchestrator — it does not process beans itself.
 
 **Bean assignment rules:**
 - Only assign beans that have no unmet dependencies on other in-progress or pending beans.
 - If fewer than N independent beans are available, spawn only as many workers as there are beans.
-- As a worker completes its bean (its window disappears or status file shows `done`), check for newly-unblocked beans and spawn a new worker for the next one.
+- As a worker completes its bean (its window disappears or status file shows `done`):
+  1. Remove the worktree: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
+  2. Merge the bean: run `/merge-bean NNN` from the main repo
+  3. Check for newly-unblocked beans and spawn a new worker with a fresh worktree for the next one.
 
 **Progress monitoring — dashboard loop:**
 
@@ -122,8 +154,8 @@ The main window enters a dashboard loop after spawning workers. See `/spawn-bean
 - Render a dashboard table showing each bean's progress bar, percentage (tasks_done/tasks_total), and color-coded status.
 - Alert on `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no update for 5+ minutes).
 - When a worker finishes and beans remain, spawn a replacement worker for the next unblocked bean.
-- When all workers are done and no actionable beans remain, report completion, clean up status files (`rm -f /tmp/foundry-worker-*.status`), and exit.
-- To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`
+- When all workers are done and no actionable beans remain, report completion, clean up status files (`rm -f /tmp/foundry-worker-*.status`), run `git worktree prune` to clean up any stale worktree references, and exit.
+- To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
 
 | Flag | Default | Description |
 |------|---------|-------------|

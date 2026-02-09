@@ -30,7 +30,7 @@ Workers communicate progress back to the main window via status files in `/tmp/`
 
 Each worker writes to: `/tmp/foundry-worker-BEAN-NNN.status`
 
-For auto-pick workers (no bean ID known at spawn time), use: `/tmp/foundry-worker-auto-N.status` initially — the worker renames it to the real bean ID once it picks one.
+For single auto-pick workers (no bean ID, no `--count`), use: `/tmp/foundry-worker-auto-1.status` initially — the worker renames it to the real bean ID once it picks one. When using `--count N`, beans are pre-assigned so all status files use the real bean ID from the start.
 
 ### File Format
 
@@ -42,6 +42,7 @@ tasks_done: 2
 current_task: 03-developer-implement
 status: running
 message:
+worktree: /tmp/foundry-worktree-BEAN-018
 updated: 2026-02-07T14:32:01
 ```
 
@@ -74,19 +75,34 @@ Always update the `updated` timestamp when writing.
 ### Step 1: Determine what to spawn
 
 - **Specific beans given** — Read `ai/beans/_index.md`. For each bean ID, verify it exists and has status `New` or `Deferred`. Resolve short IDs (e.g., `16` → `BEAN-016`). Extract the slug from the directory name.
-- **`--count N`** — Read the index. Identify the top N beans by priority (High before Medium before Low) that have status `New`. You will NOT pre-assign beans — each child team lead will pick its own to avoid race conditions.
+- **`--count N`** — Read the index. Identify the top N beans by priority (High before Medium before Low) that have status `New`. Pre-assign all N beans — the orchestrator selects them upfront and creates isolated worktrees, eliminating race conditions.
 - **No args** — Same as `--count 1`.
 
-### Step 2: Create launcher scripts
+### Step 2: Create worktrees and launcher scripts
 
-For **each** worker, create a launcher script. The launcher script avoids shell quoting issues with long prompts.
+For **each** worker, create a git worktree for isolation, then create a launcher script. The worktree gives each worker its own independent working directory while sharing the same `.git` object store — no branch collisions, no file stomping.
 
 ```bash
 # Variables — replace with actual values
-BEAN_LABEL="BEAN-NNN"   # or "auto" if team lead is picking
-WINDOW_NAME="bean-NNN"  # or "team-lead-1", "team-lead-2" for auto-pick
-STATUS_FILE="/tmp/foundry-worker-BEAN-NNN.status"
+BEAN_LABEL="BEAN-NNN"
+BEAN_SLUG="BEAN-NNN-slug"
+WINDOW_NAME="bean-NNN"
+REPO_ROOT=$(git rev-parse --show-toplevel)
+WORKTREE_DIR="/tmp/foundry-worktree-${BEAN_LABEL}"
+BRANCH_NAME="bean/${BEAN_SLUG}"
+STATUS_FILE="/tmp/foundry-worker-${BEAN_LABEL}.status"
 PROMPT="<prompt text from Step 3>"
+
+# Clean stale worktree from a prior run if it exists
+git worktree remove --force "$WORKTREE_DIR" 2>/dev/null
+
+# Create feature branch + worktree
+# If branch already exists (e.g., resuming), use it without -b
+if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
+  git worktree add "$WORKTREE_DIR" "$BRANCH_NAME"
+else
+  git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" main
+fi
 
 # Write initial status file so dashboard picks it up immediately
 cat > "$STATUS_FILE" << EOF
@@ -97,14 +113,15 @@ tasks_done: 0
 current_task:
 status: starting
 message:
+worktree: ${WORKTREE_DIR}
 updated: $(date -Iseconds)
 EOF
 
-# Create a temp launcher script
+# Create a temp launcher script — cd's to the worktree, NOT the main repo
 LAUNCHER=$(mktemp /tmp/foundry-bean-XXXXXX.sh)
 cat > "$LAUNCHER" << SCRIPT_EOF
 #!/bin/bash
-cd /home/gregg/Nextcloud/workspace/foundry
+cd "$WORKTREE_DIR"
 claude --dangerously-skip-permissions --agent team-lead \
   "$PROMPT"
 SCRIPT_EOF
@@ -144,8 +161,6 @@ The `tiled` layout automatically arranges panes into a grid: 2 = side-by-side, 4
 - **Auto-close**: When tmux runs a command (vs opening a bare shell), the window/pane automatically closes when the command exits.
 - **Clean temp files**: Each launcher deletes itself after claude exits.
 
-When spawning multiple workers, stagger by ~15 seconds so each team lead has time to claim a bean before the next one reads the index.
-
 ### Step 3: Craft the prompt
 
 The prompt must include status file instructions so the worker reports progress.
@@ -154,6 +169,11 @@ The prompt must include status file instructions so the worker reports progress.
 
 ```
 Pick BEAN-NNN (slug) using /pick-bean NNN --start, then execute the full bean lifecycle autonomously.
+
+You are running in an ISOLATED GIT WORKTREE. Your feature branch (bean/BEAN-NNN-slug) is already checked out.
+- Do NOT create or checkout branches — you are already on the correct feature branch.
+- Do NOT run /merge-bean — the orchestrator handles merging after you finish.
+- Do NOT checkout main or test — this will fail in a worktree if those branches are checked out elsewhere.
 
 STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition:
 - Write the file using: cat > /tmp/foundry-worker-BEAN-NNN.status << 'SF_EOF'
@@ -164,6 +184,7 @@ STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at 
   current_task: <current task filename or empty>
   status: <starting|decomposing|running|blocked|error|done>
   message: <empty or explanation for blocked/error>
+  worktree: /tmp/foundry-worktree-BEAN-NNN
   updated: <ISO timestamp>
   SF_EOF
 - Update after: picking the bean (decomposing), decomposing tasks (running, set tasks_total), completing each task (increment tasks_done), hitting a blocker (blocked + message), errors (error + message), and completion (done).
@@ -176,19 +197,18 @@ Bean lifecycle:
 4. Use /handoff between persona transitions
 5. Run tests (uv run pytest) and lint (uv run ruff check foundry_app/) before closing
 6. Commit all changes on the feature branch
-7. Use /merge-bean to merge into test
-8. Use /status-report to produce final summary
+7. Use /status-report to produce final summary
 Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
 ```
 
-**When auto-picking** (no bean ID specified), the prompt should be:
+**When auto-picking** (single worker, no bean ID specified — i.e., `/spawn-bean` with no args), the orchestrator does NOT create a worktree. The single worker runs in the main repo directory and handles its own branch:
 
 ```
 You are a Team Lead. Read ai/beans/_index.md and pick the highest-priority bean with status New that is not owned by another agent. Use /pick-bean <id> --start to claim it, then execute the full bean lifecycle autonomously.
 
 STATUS FILE PROTOCOL — You MUST update your status file at every transition:
-- Your initial status file is at /tmp/foundry-worker-auto-N.status
-- Once you pick a bean, RENAME the file: mv /tmp/foundry-worker-auto-N.status /tmp/foundry-worker-BEAN-NNN.status
+- Your initial status file is at /tmp/foundry-worker-auto-1.status
+- Once you pick a bean, RENAME the file: mv /tmp/foundry-worker-auto-1.status /tmp/foundry-worker-BEAN-NNN.status
 - Then continue updating the renamed file.
 - Write the file using: cat > /tmp/foundry-worker-BEAN-NNN.status << 'SF_EOF'
   bean: BEAN-NNN
@@ -214,6 +234,8 @@ Bean lifecycle:
 8. Use /status-report to produce final summary
 Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
 ```
+
+**When using `--count N`** (multiple workers), each bean is pre-assigned by the orchestrator with its own worktree. Use the **specific bean prompt** above — every worker knows its bean ID and runs in its isolated worktree.
 
 ### Step 4: Dashboard — monitor workers from the main window
 
@@ -261,8 +283,18 @@ When a worker has `status: blocked`:
 - Below the table, print a prominent alert: `⚠  N worker(s) need attention`
 - Include the window switch shortcut so the user can jump there immediately
 
+**Worker completion — orchestrator merge:**
+
+When a worker's status changes to `done` (or its window/pane closes):
+
+1. **Remove the worktree**: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
+2. **Merge the bean**: Run `/merge-bean NNN` from the main repo to merge the feature branch into `test`.
+3. **Spawn replacement**: If actionable beans remain in the backlog, create a new worktree + launcher for the next bean and spawn a replacement worker.
+
+This ensures merges happen sequentially from the main repo (avoiding the worktree limitation where `test` can't be checked out from a worktree if it's in use elsewhere).
+
 **Dashboard exit conditions:**
-- All status files show `done` → print completion summary, clean up status files, exit
+- All status files show `done` and all merges complete → print completion summary, clean up status files, exit
 - All worker windows/panes have closed → print completion summary, clean up any remaining status files, exit
 - User interrupts → exit cleanly (status files remain for inspection)
 
@@ -273,17 +305,21 @@ Workers clean up automatically:
 - The temp launcher script deletes itself after use.
 - Status files persist in `/tmp/` until the dashboard exits and cleans them up, or until the OS cleans `/tmp/`.
 - The dashboard cleans up status files when all workers complete: `rm -f /tmp/foundry-worker-*.status`
+- **Worktree cleanup**: The orchestrator removes each worktree after merging (see Step 4). As a final safety net, run `git worktree prune` after all workers complete to clean up any stale worktree references.
 - To force-kill a stuck worker:
   - **Windows mode**: `tmux kill-window -t "bean-NNN"`
   - **Wide mode**: switch to the "workers" window, select the pane, and `` ` x `` to kill it
+  - After killing, also remove the worktree: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
 
 ## Important Notes
 
 - Each spawned Claude runs with `--dangerously-skip-permissions` and `--agent team-lead`
 - **Windows mode** (default): each worker is a separate window (dot in status bar). Navigate with `Alt-N` or `` ` e ``
 - **Wide mode** (`--wide`): all workers share one window as tiled panes — ideal for large monitors where you can see all workers at once
-- When spawning multiple auto-pick workers, stagger by ~15 seconds so each team lead has time to claim a bean before the next one reads the index — this prevents two agents from picking the same bean
-- The bean locking protocol in `_index.md` provides a safety net, but staggering is still recommended
+- **Git worktrees** provide isolation: each worker gets its own working directory at `/tmp/foundry-worktree-BEAN-NNN/`. No branch collisions, no file stomping between workers.
+- **Pre-assignment** eliminates race conditions: when using `--count N`, the orchestrator selects all beans upfront and creates worktrees before spawning. No stagger delay needed.
+- **Orchestrator merges**: Workers do NOT run `/merge-bean`. The orchestrator handles merging sequentially after each worker completes, since worktrees cannot checkout `test` if it's checked out elsewhere.
+- **`uv` in worktrees**: Each worktree auto-creates its own `.venv` on first `uv run` — works seamlessly.
 - Child agents work fully autonomously — no user input needed for normal flow
 - Workers auto-close when done — no manual cleanup needed (both windows and panes)
 - **Status files** in `/tmp/foundry-worker-*.status` are the communication channel — the dashboard reads these, workers write them

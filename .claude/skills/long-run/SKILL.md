@@ -111,21 +111,38 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 5. **Select independent beans** — From the actionable set, select up to N beans that have no unmet inter-bean dependencies. Beans that depend on other pending or in-progress beans are queued, not parallelized.
 6. **Update bean statuses** — Mark each selected bean as `In Progress` in both `bean.md` and `_index.md`. Set owner to `team-lead`.
 7. **Write initial status files** — For each selected bean, create a status file at `/tmp/foundry-worker-BEAN-NNN.status` with `status: starting`. This allows the dashboard to track the worker immediately. See the Status File Protocol in `/spawn-bean` for the full file format and status values (`starting`, `decomposing`, `running`, `blocked`, `error`, `done`).
-8. **Spawn workers** — For each selected bean, create a launcher script and open a tmux child window:
+8. **Create worktrees and spawn workers** — For each selected bean, create an isolated git worktree, then create a launcher script and open a tmux child window:
    ```bash
+   WORKTREE_DIR="/tmp/foundry-worktree-BEAN-NNN"
+   BRANCH_NAME="bean/BEAN-NNN-slug"
+
+   # Clean stale worktree from a prior run
+   git worktree remove --force "$WORKTREE_DIR" 2>/dev/null
+
+   # Create feature branch + worktree
+   if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
+     git worktree add "$WORKTREE_DIR" "$BRANCH_NAME"
+   else
+     git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" main
+   fi
+
    LAUNCHER=$(mktemp /tmp/foundry-bean-XXXXXX.sh)
    cat > "$LAUNCHER" << 'SCRIPT_EOF'
    #!/bin/bash
-   cd /home/gregg/Nextcloud/workspace/foundry
+   cd /tmp/foundry-worktree-BEAN-NNN
    claude --dangerously-skip-permissions --agent team-lead \
-     "Process BEAN-NNN-<slug> through the full team wave:
-   1. Create feature branch bean/BEAN-NNN-<slug>
-   2. Decompose into tasks
-   3. Execute the wave (BA → Architect → Developer → Tech-QA)
-   4. Verify acceptance criteria
-   5. Commit on the feature branch
-   6. Update bean status to Done
-   7. Merge feature branch into test (Merge Captain)
+     "Process BEAN-NNN-slug through the full team wave.
+
+   You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.
+   - Do NOT create or checkout branches.
+   - Do NOT run /merge-bean — the orchestrator handles merging after you finish.
+   - Do NOT checkout main or test.
+
+   1. Decompose into tasks
+   2. Execute the wave (BA → Architect → Developer → Tech-QA)
+   3. Verify acceptance criteria
+   4. Commit on the feature branch
+   5. Update bean status to Done
 
    STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition.
    See /spawn-bean command for full status file format and update rules."
@@ -133,8 +150,8 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    chmod +x "$LAUNCHER"
    tmux new-window -n "bean-NNN" "bash $LAUNCHER; rm -f $LAUNCHER"
    ```
-   The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits (no bare shell left behind). The launcher script self-deletes after use. Stagger spawns by ~15 seconds.
-9. **Record worker assignments** — Track which window name maps to which bean and status file.
+   The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits (no bare shell left behind). The launcher script self-deletes after use. No stagger delay needed — worktrees provide full isolation.
+9. **Record worker assignments** — Track which window name maps to which bean, worktree path, and status file.
 
 ### Parallel Phase 4: Dashboard Monitoring
 
@@ -144,17 +161,19 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
     - Alert on `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no status file update for 5+ minutes).
     - Cross-reference with `tmux list-windows` to detect closed windows (worker exited).
 11. **Report completions** — As each worker finishes (status file shows `done` or window disappears), report in the dashboard.
-12. **Assign next bean** — When a worker completes:
+12. **Merge and assign next bean** — When a worker completes:
+    - Remove the worktree: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
+    - Merge the bean: run `/merge-bean NNN` from the main repo (merges feature branch into `test`).
     - Re-read the backlog for newly unblocked beans.
-    - If an independent actionable bean exists, write its status file and spawn a new worker window using the same launcher script pattern.
+    - If an independent actionable bean exists, create a new worktree, write its status file, and spawn a new worker window using the same launcher script pattern.
     - If no more beans, do not spawn.
-    - To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`
+    - To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
 
 ### Parallel Phase 5: Completion
 
 13. **Check termination** — When all workers are done (status files show `done` or all windows closed) and no actionable beans remain, exit the dashboard loop.
 14. **Final report** — Output: total beans processed, parallel vs sequential breakdown, all branch names created, remaining backlog status.
-15. **Cleanup** — Remove status files: `rm -f /tmp/foundry-worker-*.status`
+15. **Cleanup** — Remove status files: `rm -f /tmp/foundry-worker-*.status`. Run `git worktree prune` to clean up any stale worktree references.
 
 ### Bean Assignment Rules
 
