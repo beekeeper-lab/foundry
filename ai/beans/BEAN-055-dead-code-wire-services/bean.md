@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-055 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-08 |
-| **Owner** | (unassigned) |
+| **Owner** | Developer |
 | **Category** | App |
 
 ## Problem Statement
@@ -33,25 +33,25 @@ Wire the pipeline to call real services directly, remove misleading stub wrapper
 
 ## Acceptance Criteria
 
-- [ ] `_run_pipeline()` calls `compile_project()` from `compiler.py` directly (not a stub)
-- [ ] `_run_pipeline()` calls `copy_assets()` from `asset_copier.py` directly (not a stub)
-- [ ] No functions named `_stub_*` remain in `generator.py`
-- [ ] No log messages say "not yet implemented" for implemented services
-- [ ] `StackOverrides` is either removed or marked with a comment explaining it's reserved
-- [ ] `PersonaInfo.id` has `Field(..., min_length=1)`
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `_run_pipeline()` calls `compile_project()` from `compiler.py` directly (not a stub)
+- [x] `_run_pipeline()` calls `copy_assets()` from `asset_copier.py` directly (not a stub)
+- [x] No functions named `_stub_*` remain in `generator.py`
+- [x] No log messages say "not yet implemented" for implemented services
+- [x] `StackOverrides` is either removed or marked with a comment explaining it's reserved
+- [x] `PersonaInfo.id` has `Field(..., min_length=1)`
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Wire compile_project() into _run_pipeline() | | | Pending |
-| 2 | Wire copy_assets() into _run_pipeline() | | | Pending |
-| 3 | Remove _stub_ wrappers, inline or rename remaining helpers | | 1, 2 | Pending |
-| 4 | Remove or annotate StackOverrides | | | Pending |
-| 5 | Add min_length=1 to PersonaInfo.id | | | Pending |
-| 6 | Update generator tests for new direct calls | | 1, 2, 3 | Pending |
+| 1 | Wire compile_project() into _run_pipeline() | Developer | Done |
+| 2 | Wire copy_assets() into _run_pipeline() | Developer | Done |
+| 3 | Remove _stub_ wrappers, inline or rename remaining helpers | | 1, 2 | Done |
+| 4 | Remove or annotate StackOverrides | Developer | Done |
+| 5 | Add min_length=1 to PersonaInfo.id | Developer | Done |
+| 6 | Update generator tests for new direct calls | | 1, 2, 3 | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
