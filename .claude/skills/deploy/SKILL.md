@@ -2,12 +2,32 @@
 
 ## Description
 
-Promotes `test` to `main` via a pull request. Creates the PR, runs tests, and merges if they pass. One approval, no extra prompts.
+Promotes a source branch into a target branch via a pull request. Creates the PR, runs tests, and merges if they pass. One approval, no extra prompts.
+
+Two modes:
+- `/deploy` — Promotes `test` → `main` (default). Full release with branch cleanup.
+- `/deploy test` — Promotes current branch → `test`. Integration deploy for feature branches.
 
 ## Trigger
 
 - Invoked by the `/deploy` slash command.
-- Requires `test` branch to exist and be ahead of `main`.
+- Source branch must be ahead of target branch.
+
+## Inputs
+
+| Input | Type | Required | Description |
+|-------|------|----------|-------------|
+| target | String | No | Target branch: `main` (default) or `test` |
+| tag | String | No | Version tag for the merge commit (e.g., `v1.2.0`). Only valid when target is `main`. |
+
+## Branch Resolution
+
+| Target | Source | Use Case |
+|--------|--------|----------|
+| `main` (default) | `test` | Release: promote integration branch to production |
+| `test` | current branch | Integration: merge feature branch into test |
+
+When target is `test`, the source is whatever branch you are on when you invoke `/deploy test`. This is typically a `bean/BEAN-NNN-<slug>` feature branch.
 
 ## Process
 
@@ -15,13 +35,15 @@ Promotes `test` to `main` via a pull request. Creates the PR, runs tests, and me
 
 1. **Save current branch** — Record it so we can return at the end.
 2. **Auto-stash if dirty** — If `git status --porcelain` shows changes, run `git stash --include-untracked -m "deploy-auto-stash"`. Do NOT ask — just stash and continue.
-3. **Checkout test** — `git checkout test`.
-4. **Push test** — `git push origin test` to ensure remote is up to date.
-5. **Verify ahead of main** — `git log main..test --oneline`. If empty, report "Nothing to deploy", restore stash, return to original branch, exit.
+3. **Determine source and target:**
+   - If target is `main`: source = `test`. Checkout `test`.
+   - If target is `test`: source = the saved current branch. Stay on that branch.
+4. **Push source** — `git push origin <source>` to ensure remote is up to date.
+5. **Verify ahead of target** — `git log <target>..<source> --oneline`. If empty, report "Nothing to deploy", restore stash, return to original branch, exit.
 
 ### Phase 2: Quality Gate
 
-6. **Run tests** — `uv run pytest` on the test branch.
+6. **Run tests** — `uv run pytest` on the source branch.
    - If any fail: report failures, restore stash, return to original branch. Stop.
    - If all pass: record the count.
 
@@ -29,16 +51,16 @@ Promotes `test` to `main` via a pull request. Creates the PR, runs tests, and me
 
 ### Phase 3: Build Release Notes
 
-8. **Identify beans** — Parse `git log main..test --oneline` for `BEAN-NNN:` messages. Cross-reference with `ai/beans/_index.md` for titles.
+8. **Identify beans** — Parse `git log <target>..<source> --oneline` for `BEAN-NNN:` messages. Cross-reference with `ai/beans/_index.md` for titles.
 
-9. **Count branches to clean** — List all `bean/*` branches (local + remote). Count how many are merged into test.
+9. **Count branches to clean** (target=`main` only) — List all `bean/*` branches (local + remote). Count how many are merged into main.
 
 ### Phase 4: User Approval — ONE prompt
 
 10. **Present summary and ask once:**
     ```
     ===================================================
-    DEPLOY: test → main (via PR)
+    DEPLOY: <source> → <target> (via PR)
     ===================================================
 
     Beans: <list>
@@ -46,13 +68,16 @@ Promotes `test` to `main` via a pull request. Creates the PR, runs tests, and me
     Ruff: clean / N violations
 
     Post-merge: N feature branches will be deleted
+    (branch cleanup shown only for target=main)
 
     On "go": create PR, merge it, delete branches,
     restore working tree. No further prompts.
     ===================================================
     ```
 
-11. **Single approval** with options: go / go with tag / abort.
+11. **Single approval:**
+    - Target `main`: go / go with tag / abort
+    - Target `test`: go / abort
 
     **CRITICAL: This is the ONLY user prompt. Everything after "go" runs without stopping.**
 
@@ -60,7 +85,7 @@ Promotes `test` to `main` via a pull request. Creates the PR, runs tests, and me
 
 12. **Create PR:**
     ```bash
-    gh pr create --base main --head test \
+    gh pr create --base <target> --head <source> \
       --title "Deploy: <date> — <bean list summary>" \
       --body "<release notes>"
     ```
@@ -71,24 +96,26 @@ Promotes `test` to `main` via a pull request. Creates the PR, runs tests, and me
     ```
     Use `--merge` (not squash/rebase) to preserve history.
 
-14. **Tag (optional)** — If requested: `git tag <version> && git push origin --tags`.
+14. **Tag (optional, target=`main` only)** — If requested: `git tag <version> && git push origin --tags`.
 
-15. **Delete local feature branches** — All `bean/*` branches merged into main: `git branch -d`. Stale/orphaned ones for Done beans: `git branch -D`.
+15. **Delete local feature branches (target=`main` only)** — All `bean/*` branches merged into main: `git branch -d`. Stale/orphaned ones for Done beans: `git branch -D`.
 
-16. **Delete remote feature branches** — Any `remotes/origin/bean/*`: `git push origin --delete`.
+16. **Delete remote feature branches (target=`main` only)** — Any `remotes/origin/bean/*`: `git push origin --delete`.
 
-17. **Sync local main** — `git checkout main && git pull origin main`.
+17. **Sync local target** — `git checkout <target> && git pull origin <target>`.
 
-18. **Restore stash** — If we auto-stashed: `git stash pop`. On conflict, prefer HEAD for files that came from test.
+18. **Return to original branch** — `git checkout <original-branch>`.
 
-19. **Report success** — PR URL, merge commit, beans deployed, branches deleted.
+19. **Restore stash** — If we auto-stashed: `git stash pop`. On conflict, prefer HEAD.
+
+20. **Report success** — PR URL, merge commit, beans deployed, branches deleted (if applicable).
 
 ## Key Rules
 
 - **One approval gate.** User says "go" once. Everything after is automatic.
 - **Auto-stash, auto-restore.** Dirty working tree handled silently.
 - **PR is created AND merged.** Not just created — the full cycle completes.
-- **Branch cleanup included.** No separate step needed.
+- **Branch cleanup only on main deploys.** Feature branches are cleaned up when promoting to main, not when merging to test.
 - **If a command is blocked by sandbox:** print the exact command for the user to run manually, then continue with the rest.
 
 ## Error Conditions
