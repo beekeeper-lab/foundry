@@ -410,6 +410,26 @@ class TestFileAction:
             fa = FileAction(path="test.md", action=action_type.value)
             assert fa.action == action_type
 
+    def test_rejects_path_traversal(self):
+        with pytest.raises(ValidationError, match="must not contain"):
+            FileAction(path="../../../etc/passwd", action=FileActionType.CREATE)
+
+    def test_rejects_embedded_dotdot(self):
+        with pytest.raises(ValidationError, match="must not contain"):
+            FileAction(path="foo/../../bar", action=FileActionType.CREATE)
+
+    def test_rejects_absolute_path(self):
+        with pytest.raises(ValidationError, match="must be relative"):
+            FileAction(path="/etc/passwd", action=FileActionType.CREATE)
+
+    def test_accepts_valid_relative_path(self):
+        fa = FileAction(path="sub/dir/file.md", action=FileActionType.CREATE)
+        assert fa.path == "sub/dir/file.md"
+
+    def test_accepts_dotfile(self):
+        fa = FileAction(path=".claude/settings.json", action=FileActionType.CREATE)
+        assert fa.path == ".claude/settings.json"
+
 
 class TestOverlayPlan:
     def test_empty(self):

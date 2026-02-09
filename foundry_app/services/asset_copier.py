@@ -120,6 +120,9 @@ def _copy_directory_files(
     dest_dir.mkdir(parents=True, exist_ok=True)
 
     for src_file in sorted(src_dir.iterdir()):
+        if src_file.is_symlink():
+            warnings.append(f"Skipping symlink: {src_file.name}")
+            continue
         if not src_file.is_file():
             continue
 

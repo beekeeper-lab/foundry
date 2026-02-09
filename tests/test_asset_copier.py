@@ -449,6 +449,40 @@ class TestStageResult:
 # ---------------------------------------------------------------------------
 
 
+
+class TestSymlinkSkipping:
+
+    def test_skips_symlinks_with_warning(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        target_file = tmp_path / "outside.md"
+        target_file.write_text("# Outside file\n")
+        (lib / "claude" / "commands" / "evil-link.md").symlink_to(target_file)
+
+        result = copy_assets(_make_spec(), idx, lib, output)
+
+        assert not (output / ".claude" / "commands" / "evil-link.md").exists()
+        assert any("Skipping symlink" in w and "evil-link.md" in w for w in result.warnings)
+
+    def test_copies_regular_files_alongside_symlinks(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        target_file = tmp_path / "outside.md"
+        target_file.write_text("# Outside file\n")
+        (lib / "claude" / "commands" / "evil-link.md").symlink_to(target_file)
+
+        result = copy_assets(_make_spec(), idx, lib, output)
+
+        assert (output / ".claude" / "commands" / "validate-repo.md").is_file()
+        assert ".claude/commands/validate-repo.md" in result.wrote
+
+
 class TestEdgeCases:
 
     def test_accepts_string_paths(self, tmp_path: Path):

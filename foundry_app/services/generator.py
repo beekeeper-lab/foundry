@@ -105,6 +105,8 @@ def _compare_trees(source: Path, target: Path) -> OverlayPlan:
 
     # Walk the source tree to find creates and updates
     for src_file in sorted(source.rglob("*")):
+        if src_file.is_symlink():
+            continue
         if src_file.is_dir():
             continue
         rel = str(src_file.relative_to(source))
@@ -135,6 +137,8 @@ def _compare_trees(source: Path, target: Path) -> OverlayPlan:
     # Walk the target tree to find deletes (files in target but not in source)
     if target.exists():
         for tgt_file in sorted(target.rglob("*")):
+            if tgt_file.is_symlink():
+                continue
             if tgt_file.is_dir():
                 continue
             rel = str(tgt_file.relative_to(target))

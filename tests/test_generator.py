@@ -538,6 +538,38 @@ class TestCompareTrees:
         assert len(plan.skips) == 1
         assert len(plan.deletes) == 1
 
+    def test_skips_symlinks_in_source(self, tmp_path: Path):
+        source = tmp_path / "source"
+        target = tmp_path / "target"
+        source.mkdir()
+        target.mkdir()
+
+        (source / "real.txt").write_text("real content")
+        outside = tmp_path / "outside.txt"
+        outside.write_text("outside content")
+        (source / "link.txt").symlink_to(outside)
+
+        plan = _compare_trees(source, target)
+
+        paths = [a.path for a in plan.actions]
+        assert "real.txt" in paths
+        assert "link.txt" not in paths
+
+    def test_skips_symlinks_in_target(self, tmp_path: Path):
+        source = tmp_path / "source"
+        target = tmp_path / "target"
+        source.mkdir()
+        target.mkdir()
+
+        outside = tmp_path / "outside.txt"
+        outside.write_text("outside content")
+        (target / "link.txt").symlink_to(outside)
+
+        plan = _compare_trees(source, target)
+
+        paths = [a.path for a in plan.actions]
+        assert "link.txt" not in paths
+
 
 # ---------------------------------------------------------------------------
 # Apply overlay plan

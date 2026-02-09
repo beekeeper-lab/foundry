@@ -1048,6 +1048,12 @@ class LibraryManagerScreen(QWidget):
         if answer != QMessageBox.StandardButton.Yes:
             return
 
+        resolved = path.resolve()
+        if not resolved.is_relative_to(self._library_root.resolve()):
+            logger.error("Refusing to delete path outside library root: %s", resolved)
+            QMessageBox.critical(self, "Error", "Cannot delete: path is outside library root.")
+            return
+
         if path.is_dir():
             shutil.rmtree(path)
             logger.info("Deleted directory %s", path)

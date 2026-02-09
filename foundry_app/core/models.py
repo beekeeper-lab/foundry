@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from pathlib import PurePosixPath
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -409,6 +410,16 @@ class FileAction(BaseModel):
     path: str = Field(..., description="Relative path within the project")
     action: FileActionType
     reason: str = Field(default="", description="Why this action was chosen")
+
+    @field_validator("path")
+    @classmethod
+    def validate_path(cls, v: str) -> str:
+        p = PurePosixPath(v)
+        if p.is_absolute():
+            raise ValueError(f"FileAction path must be relative, got: {v}")
+        if ".." in p.parts:
+            raise ValueError(f"FileAction path must not contain '..', got: {v}")
+        return v
 
 
 class OverlayPlan(BaseModel):
