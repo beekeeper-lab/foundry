@@ -84,7 +84,7 @@
 | BEAN-060 | Sidebar Navigation Modernization | App | High | Done | team-lead |
 | BEAN-061 | Remove Menu Bar | App | High | Done | team-lead |
 | BEAN-062 | Settings Screen — Core Paths | App | High | Done | team-lead |
-| BEAN-063 | Settings Screen — Generation & Safety Defaults | App | Medium | New | (unassigned) |
+| BEAN-063 | Settings Screen — Generation & Safety Defaults | App | Medium | Done | team-lead |
 | BEAN-064 | Settings Screen — Appearance & Advanced | App | Low | New | (unassigned) |
 | BEAN-065 | Wire Screens into Main Window | App | High | Done | team-lead |
 | BEAN-066 | Builder Wizard Screen | App | High | New | (unassigned) |

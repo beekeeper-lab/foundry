@@ -8,12 +8,14 @@ from pathlib import Path
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QFileDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -61,9 +63,27 @@ class SettingsScreen(QWidget):
         self._load_values()
 
     def _build_ui(self) -> None:
-        layout = QVBoxLayout(self)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet(f"""
+            QScrollArea {{ background-color: {BG_BASE}; border: none; }}
+            QScrollBar:vertical {{
+                background-color: {BG_INSET}; width: 8px;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {BORDER_DEFAULT}; border-radius: 4px;
+            }}
+        """)
+        outer_layout.addWidget(scroll)
+
+        content = QWidget()
+        layout = QVBoxLayout(content)
         layout.setContentsMargins(SPACE_XXL, SPACE_XL, SPACE_XXL, SPACE_XL)
         layout.setSpacing(SPACE_LG)
+        scroll.setWidget(content)
 
         # Title
         title = QLabel("Settings")
@@ -71,7 +91,7 @@ class SettingsScreen(QWidget):
         title.setStyleSheet(f"color: {TEXT_PRIMARY};")
         layout.addWidget(title)
 
-        subtitle = QLabel("Configure library and workspace paths.")
+        subtitle = QLabel("Configure paths, generation behavior, and safety defaults.")
         subtitle.setStyleSheet(
             f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_MD}px;"
         )
@@ -148,6 +168,106 @@ class SettingsScreen(QWidget):
 
         layout.addLayout(ws_row)
 
+        # -- Generation Defaults section --
+        layout.addSpacing(SPACE_LG)
+        self._add_section_header(layout, "GENERATION DEFAULTS")
+
+        gen_desc = QLabel(
+            "Default generation behavior for new compositions. "
+            "These can be overridden per-composition in the wizard."
+        )
+        gen_desc.setWordWrap(True)
+        gen_desc.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
+        layout.addWidget(gen_desc)
+
+        # Overlay mode checkbox
+        self._overlay_check = QCheckBox("Enable overlay mode (preserve existing files)")
+        self._overlay_check.setStyleSheet(f"""
+            QCheckBox {{ color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px; }}
+            QCheckBox::indicator {{ width: 16px; height: 16px; }}
+        """)
+        self._overlay_check.toggled.connect(self._on_overlay_changed)
+        layout.addWidget(self._overlay_check)
+
+        # Strictness dropdown
+        strict_row = QHBoxLayout()
+        strict_row.setSpacing(SPACE_SM)
+        strict_label = QLabel("Validation strictness:")
+        strict_label.setStyleSheet(
+            f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
+        )
+        strict_row.addWidget(strict_label)
+        self._strictness_combo = QComboBox()
+        self._strictness_combo.addItem("Light", "light")
+        self._strictness_combo.addItem("Standard", "standard")
+        self._strictness_combo.addItem("Strict", "strict")
+        self._strictness_combo.setStyleSheet(self._combo_style())
+        self._strictness_combo.currentIndexChanged.connect(self._on_strictness_changed)
+        strict_row.addWidget(self._strictness_combo)
+        strict_row.addStretch()
+        layout.addLayout(strict_row)
+
+        # Seed mode dropdown
+        seed_row = QHBoxLayout()
+        seed_row.setSpacing(SPACE_SM)
+        seed_label = QLabel("Default seed mode:")
+        seed_label.setStyleSheet(
+            f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
+        )
+        seed_row.addWidget(seed_label)
+        self._seed_combo = QComboBox()
+        self._seed_combo.addItem("Detailed", "detailed")
+        self._seed_combo.addItem("Kickoff", "kickoff")
+        self._seed_combo.addItem("None", "none")
+        self._seed_combo.setStyleSheet(self._combo_style())
+        self._seed_combo.currentIndexChanged.connect(self._on_seed_mode_changed)
+        seed_row.addWidget(self._seed_combo)
+        seed_row.addStretch()
+        layout.addLayout(seed_row)
+
+        # -- Safety Defaults section --
+        layout.addSpacing(SPACE_LG)
+        self._add_section_header(layout, "SAFETY DEFAULTS")
+
+        safety_desc = QLabel(
+            "Default safety posture for generated projects. "
+            "Controls git policies, shell restrictions, and secret scanning."
+        )
+        safety_desc.setWordWrap(True)
+        safety_desc.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
+        layout.addWidget(safety_desc)
+
+        # Write safety config checkbox
+        self._write_safety_check = QCheckBox("Write safety config to generated projects")
+        self._write_safety_check.setStyleSheet(f"""
+            QCheckBox {{ color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px; }}
+            QCheckBox::indicator {{ width: 16px; height: 16px; }}
+        """)
+        self._write_safety_check.toggled.connect(self._on_write_safety_changed)
+        layout.addWidget(self._write_safety_check)
+
+        # Safety posture dropdown
+        posture_row = QHBoxLayout()
+        posture_row.setSpacing(SPACE_SM)
+        posture_label = QLabel("Default safety posture:")
+        posture_label.setStyleSheet(
+            f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
+        )
+        posture_row.addWidget(posture_label)
+        self._posture_combo = QComboBox()
+        self._posture_combo.addItem("Baseline", "baseline")
+        self._posture_combo.addItem("Hardened", "hardened")
+        self._posture_combo.addItem("Regulated", "regulated")
+        self._posture_combo.setStyleSheet(self._combo_style())
+        self._posture_combo.currentIndexChanged.connect(self._on_posture_changed)
+        posture_row.addWidget(self._posture_combo)
+        posture_row.addStretch()
+        layout.addLayout(posture_row)
+
         layout.addStretch(1)
 
     # -- Public API --------------------------------------------------------
@@ -171,6 +291,26 @@ class SettingsScreen(QWidget):
     @property
     def workspace_browse_button(self) -> QPushButton:
         return self._workspace_browse_btn
+
+    @property
+    def overlay_check(self) -> QCheckBox:
+        return self._overlay_check
+
+    @property
+    def strictness_combo(self) -> QComboBox:
+        return self._strictness_combo
+
+    @property
+    def seed_combo(self) -> QComboBox:
+        return self._seed_combo
+
+    @property
+    def write_safety_check(self) -> QCheckBox:
+        return self._write_safety_check
+
+    @property
+    def posture_combo(self) -> QComboBox:
+        return self._posture_combo
 
     def set_library_root(self, path: str) -> None:
         """Programmatically set the library root and persist it."""
@@ -208,6 +348,32 @@ class SettingsScreen(QWidget):
         if path and path != self._library_root_edit.text():
             self.set_library_root(path)
 
+    def _on_overlay_changed(self, checked: bool) -> None:
+        self._settings.default_overlay_mode = checked
+        logger.info("Overlay mode default set to: %s", checked)
+
+    def _on_strictness_changed(self, index: int) -> None:
+        val = self._strictness_combo.itemData(index)
+        if val:
+            self._settings.default_strictness = val
+            logger.info("Strictness default set to: %s", val)
+
+    def _on_seed_mode_changed(self, index: int) -> None:
+        val = self._seed_combo.itemData(index)
+        if val:
+            self._settings.default_seed_mode = val
+            logger.info("Seed mode default set to: %s", val)
+
+    def _on_write_safety_changed(self, checked: bool) -> None:
+        self._settings.write_safety_config = checked
+        logger.info("Write safety config default set to: %s", checked)
+
+    def _on_posture_changed(self, index: int) -> None:
+        val = self._posture_combo.itemData(index)
+        if val:
+            self._settings.default_safety_posture = val
+            logger.info("Safety posture default set to: %s", val)
+
     # -- Internal ----------------------------------------------------------
 
     def _load_values(self) -> None:
@@ -220,6 +386,30 @@ class SettingsScreen(QWidget):
             self._workspace_root_edit.setText(ws)
 
         self._refresh_recent()
+
+        # Generation defaults
+        self._overlay_check.setChecked(self._settings.default_overlay_mode)
+
+        strictness = self._settings.default_strictness
+        for i in range(self._strictness_combo.count()):
+            if self._strictness_combo.itemData(i) == strictness:
+                self._strictness_combo.setCurrentIndex(i)
+                break
+
+        seed_mode = self._settings.default_seed_mode
+        for i in range(self._seed_combo.count()):
+            if self._seed_combo.itemData(i) == seed_mode:
+                self._seed_combo.setCurrentIndex(i)
+                break
+
+        # Safety defaults
+        self._write_safety_check.setChecked(self._settings.write_safety_config)
+
+        posture = self._settings.default_safety_posture
+        for i in range(self._posture_combo.count()):
+            if self._posture_combo.itemData(i) == posture:
+                self._posture_combo.setCurrentIndex(i)
+                break
 
     def _refresh_recent(self) -> None:
         self._recent_combo.blockSignals(True)
