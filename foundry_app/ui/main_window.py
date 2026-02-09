@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QFont
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QAction, QFont, QIcon
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMainWindow,
     QMenuBar,
+    QPushButton,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from foundry_app.core.settings import FoundrySettings
 from foundry_app.ui import theme
+from foundry_app.ui.icons import icon_path
 from foundry_app.ui.screens.history_screen import HistoryScreen
 from foundry_app.ui.screens.library_manager import LibraryManagerScreen
 from foundry_app.ui.screens.settings_screen import SettingsScreen
@@ -47,10 +49,11 @@ QMainWindow {{{{
     outline: none;
     font-size: {theme.FONT_SIZE_MD}px;
     color: {theme.TEXT_PRIMARY};
-    padding: {theme.SPACE_SM}px 0;
+    padding: {theme.SPACE_LG}px 0 {theme.SPACE_SM}px 0;
 }}}}
 #sidebar QListWidget::item {{{{
-    padding: {theme.SPACE_MD}px {theme.SPACE_XL}px;
+    padding: {theme.SPACE_MD}px {theme.SPACE_LG}px;
+    margin: 2px 0;
     border-radius: 0;
 }}}}
 #sidebar QListWidget::item:selected {{{{
@@ -64,13 +67,25 @@ QMainWindow {{{{
     color: {theme.ACCENT_PRIMARY_HOVER};
 }}}}
 
-/* Brand label — brass accent header */
-#brand-label {{{{
-    color: {theme.ACCENT_PRIMARY};
-    font-size: {theme.FONT_SIZE_XL}px;
-    font-weight: {theme.FONT_WEIGHT_BOLD};
-    padding: {theme.SPACE_XL}px {theme.SPACE_XL}px {theme.SPACE_MD}px {theme.SPACE_XL}px;
-    border-bottom: 1px solid {theme.BORDER_SUBTLE};
+/* Sidebar footer — version & info */
+#sidebar-footer {{{{
+    border-top: 1px solid {theme.BORDER_SUBTLE};
+    padding: {theme.SPACE_SM}px {theme.SPACE_LG}px;
+}}}}
+#sidebar-footer QLabel {{{{
+    color: {theme.TEXT_DISABLED};
+    font-size: {theme.FONT_SIZE_XS}px;
+}}}}
+#sidebar-footer QPushButton {{{{
+    background: transparent;
+    border: none;
+    color: {theme.TEXT_DISABLED};
+    font-size: {theme.FONT_SIZE_XS}px;
+    text-align: left;
+    padding: {theme.SPACE_XS}px 0;
+}}}}
+#sidebar-footer QPushButton:hover {{{{
+    color: {theme.ACCENT_PRIMARY_HOVER};
 }}}}
 
 /* Content area */
@@ -139,11 +154,16 @@ def _placeholder(title: str, description: str) -> QWidget:
 # Screen registry
 # ---------------------------------------------------------------------------
 
-SCREENS: list[tuple[str, str, str]] = [
-    ("Builder", "Project Builder", "Create a new Claude Code project from building blocks."),
-    ("Library", "Library Manager", "Browse and explore the library structure."),
-    ("History", "Generation History", "View past generation runs and their manifests."),
-    ("Settings", "Settings", "Configure library paths, workspace root, and preferences."),
+# (label, icon_name, screen_title, screen_description)
+SCREENS: list[tuple[str, str, str, str]] = [
+    ("Builder", "builder", "Project Builder",
+     "Create a new Claude Code project from building blocks."),
+    ("Library", "library", "Library Manager",
+     "Browse and explore the library structure."),
+    ("History", "history", "Generation History",
+     "View past generation runs and their manifests."),
+    ("Settings", "settings", "Settings",
+     "Configure library paths, workspace root, and preferences."),
 ]
 
 
@@ -199,16 +219,34 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
 
-        brand = QLabel("Foundry")
-        brand.setObjectName("brand-label")
-        sidebar_layout.addWidget(brand)
-
         self._nav_list = QListWidget()
-        for label, _, _ in SCREENS:
+        self._nav_list.setIconSize(QSize(20, 20))
+        for label, icon_name, _, _ in SCREENS:
             item = QListWidgetItem(label)
+            try:
+                item.setIcon(QIcon(str(icon_path(icon_name))))
+            except FileNotFoundError:
+                logger.warning("Icon not found for nav item: %s", icon_name)
             self._nav_list.addItem(item)
         sidebar_layout.addWidget(self._nav_list, stretch=1)
-        sidebar_layout.addStretch(0)
+
+        # --- Sidebar footer: version + about ---
+        footer = QWidget()
+        footer.setObjectName("sidebar-footer")
+        footer_layout = QHBoxLayout(footer)
+        footer_layout.setContentsMargins(0, 0, 0, 0)
+        footer_layout.setSpacing(theme.SPACE_XS)
+
+        from foundry_app import __version__
+
+        about_btn = QPushButton(f"v{__version__}")
+        about_btn.setObjectName("sidebar-about-btn")
+        about_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        about_btn.setToolTip("About Foundry")
+        about_btn.clicked.connect(self._show_about)
+        footer_layout.addWidget(about_btn)
+        footer_layout.addStretch()
+        sidebar_layout.addWidget(footer)
 
         # --- Content stack ---
         self._stack = QStackedWidget()
