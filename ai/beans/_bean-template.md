@@ -6,6 +6,9 @@
 | **Status** | New |
 | **Priority** | Medium |
 | **Created** | YYYY-MM-DD |
+| **Started** | — |
+| **Completed** | — |
+| **Duration** | — |
 | **Owner** | (unassigned) |
 | **Category** | (App \| Process \| Infra) |
 
@@ -45,3 +48,16 @@ What is the desired outcome when this bean is complete?
 ## Notes
 
 (Any additional context, links, or discussion.)
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 |      |       |          |           |            |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | — |
+| **Total Duration** | — |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |

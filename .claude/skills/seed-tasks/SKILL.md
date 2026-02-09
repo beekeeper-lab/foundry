@@ -32,7 +32,11 @@ personas execute. It runs during the Seed phase of the Foundry pipeline
 4. **Assign a primary persona per task** -- Use the category-to-persona mapping (e.g., implementation tasks go to `developer`, test tasks go to `tech-qa`, documentation tasks go to `technical-writer`).
 5. **Identify dependencies between tasks** -- Mark blocking relationships (e.g., "implement API" blocks "write API tests"). Flag any circular dependencies as errors.
 6. **Priority-rank tasks** -- Produce a strict ordering with no ties. Rank by dependency depth first (blockers before dependents), then by business value.
-7. **Generate task files with acceptance criteria** -- Write one markdown file per task containing: title, description, assigned persona, acceptance criteria, dependencies, and priority rank.
+7. **Generate task files with acceptance criteria** -- Write one markdown file per task containing: title, description, assigned persona, acceptance criteria, dependencies, and priority rank. Include telemetry fields in the task file metadata table, initialized to `—`:
+   - **Started:** —
+   - **Completed:** —
+   - **Duration:** —
+   - **Tokens:** —
 
 ## Outputs
 

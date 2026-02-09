@@ -25,6 +25,7 @@ Reads the beans backlog and produces a formatted summary of all beans grouped by
    - Read the bean's `bean.md`
    - Parse the Tasks table to count: total tasks, pending, in progress, done
    - Note any blocked tasks
+   - Parse the Telemetry section to extract duration totals and token totals
 
 3. **Apply filter** -- If a status filter is provided, include only beans matching that status.
 
@@ -42,9 +43,9 @@ Reads the beans backlog and produces a formatted summary of all beans grouped by
    **Totals:** 3 Done | 1 In Progress | 2 New
 
    ### In Progress
-   | Bean ID | Title | Priority | Owner | Tasks |
-   |---------|-------|----------|-------|-------|
-   | BEAN-003 | Bean Commands | Medium | team-lead | 1/2 done |
+   | Bean ID | Title | Priority | Owner | Tasks | Duration | Tokens |
+   |---------|-------|----------|-------|-------|----------|--------|
+   | BEAN-003 | Bean Commands | Medium | team-lead | 1/2 done | 45m | 23k tokens |
 
    ### New
    | Bean ID | Title | Priority |

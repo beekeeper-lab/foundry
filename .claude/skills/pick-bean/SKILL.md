@@ -42,6 +42,7 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`), assigning own
 6. **Update bean.md** -- In the metadata table:
    - Set `Status` to the new status
    - Set `Owner` to `team-lead`
+   - If `start` is true (status → In Progress): set `Started` to the current timestamp (`YYYY-MM-DD HH:MM`). This is when the bean clock starts.
 
 7. **Update backlog index** -- In `ai/beans/_index.md`, find the row matching `BEAN-{NNN}` and update:
    - Status column to the new status

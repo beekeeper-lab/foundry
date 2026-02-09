@@ -55,21 +55,29 @@ Use these skills at the specified points in the workflow. Skills are in `.claude
 - **Inputs:** What the owner needs to read (file paths)
 - **Acceptance Criteria:** Concrete checklist
 - **Definition of Done:** When is this task finished
+- **Started:** Timestamp when persona begins work (recorded by the persona, format: `YYYY-MM-DD HH:MM`)
+- **Completed:** Timestamp when persona finishes (recorded by the persona, format: `YYYY-MM-DD HH:MM`)
+- **Duration:** Elapsed time computed from Started/Completed (format: `23m` or `1h 15m`)
+- **Tokens:** Self-reported token usage from Claude Code session (format: `12,450 in / 3,200 out`)
 
 **After each task completes:**
 1. Use `/close-loop` to verify the task's outputs against its acceptance criteria
 2. If pass: use `/handoff` to create a handoff doc for the next persona
 3. If fail: return the task to the owner with specific feedback
-4. Use `/status-report` to update progress
+4. Record the task's timing and token data in the task file metadata (Started, Completed, Duration, Tokens)
+5. Update the bean's Telemetry table with the task's row (task number, name, owner, duration, tokens in, tokens out)
+6. Use `/status-report` to update progress
 
 **Closing a bean:**
 1. Use `/close-loop` on the final task
 2. Run `/validate-repo` as a structural health check
 3. Verify tests pass: `uv run pytest`
 4. Verify lint is clean: `uv run ruff check foundry_app/`
-5. Update bean status to `Done` in both `bean.md` and `_index.md`
-6. Use `/status-report` to produce a final summary
-7. Note any follow-up beans spawned during execution
+5. Record bean `Completed` timestamp and compute `Duration` in the bean header metadata table
+6. Fill in the Telemetry summary table with totals (Total Tasks, Total Duration, Total Tokens In, Total Tokens Out)
+7. Update bean status to `Done` in both `bean.md` and `_index.md`
+8. Use `/status-report` to produce a final summary (include telemetry in the summary)
+9. Note any follow-up beans spawned during execution
 
 ## Project Context
 
@@ -139,6 +147,8 @@ Print once when all tasks are done, before commit/merge.
 BEAN-NNN | DONE
 ===================================================
 Tasks: N total, N done, 0 failed
+Duration: 1h 23m (total across all tasks)
+Tokens: 45,200 in / 12,100 out
 Branch: bean/BEAN-NNN-<slug>
 
 Changes:

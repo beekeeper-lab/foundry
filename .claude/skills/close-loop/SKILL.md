@@ -33,7 +33,12 @@ enforces the quality contract that keeps the autonomous team reliable.
 5. **Run automated quality checks** -- Execute any applicable automated validation: linting, test suites, format checks, schema validation. Record results.
 6. **Generate a verification report** -- Produce a structured report listing each criterion, its status, and supporting evidence or failure reasons.
 7. **If all criteria pass** -- Mark the task as `complete`. Identify downstream tasks that were blocked and notify the consuming persona(s) that the dependency is satisfied.
-8. **If any criteria fail** -- Mark the task as `returned`. Send the verification report back to the producing persona with specific, actionable failure descriptions.
+8. **Record task completion telemetry** -- After the task passes verification:
+   - Record the `Completed` timestamp (`YYYY-MM-DD HH:MM`) in the task file metadata
+   - Compute `Duration` from the task's `Started` and `Completed` timestamps (format: `23m` or `1h 15m`)
+   - If the persona has not already recorded token usage, prompt them to self-report their Claude Code session token counts (format: `in / out`)
+   - Update the task metadata `Tokens` field with the reported values
+9. **If any criteria fail** -- Mark the task as `returned`. Send the verification report back to the producing persona with specific, actionable failure descriptions.
 
 ## Outputs
 
