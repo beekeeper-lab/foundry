@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-056 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | Low |
 | **Created** | 2026-02-08 |
 | **Owner** | (unassigned) |
@@ -33,23 +33,23 @@ Improve error handling and reliability so failures produce clear messages and al
 
 ## Acceptance Criteria
 
-- [ ] `get_resource_path()` logs a warning when neither dev nor bundled path exists
-- [ ] `scaffold_project()` no longer has the redundant `if dir_path.exists()` check
-- [ ] Library manager `_on_new_asset()` catches `OSError` and shows a user-friendly error dialog
-- [ ] CLI calls `setup_logging()` before generation so logs are written to disk
-- [ ] `StackOverrides` is removed or marked with a TODO comment
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `get_resource_path()` logs a warning when neither dev nor bundled path exists
+- [x] `scaffold_project()` no longer has the redundant `if dir_path.exists()` check
+- [x] Library manager `_on_new_asset()` catches `OSError` and shows a user-friendly error dialog
+- [x] CLI calls `setup_logging()` before generation so logs are written to disk
+- [x] `StackOverrides` is removed or marked with a TODO comment
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Add warning log in resources.py get_resource_path() | | | Pending |
-| 2 | Simplify scaffold.py directory creation (remove exists check) | | | Pending |
-| 3 | Add try/except around write_text in library_manager._on_new_asset() | | | Pending |
-| 4 | Add setup_logging() call in cli.py _run_generate() | | | Pending |
-| 5 | Clean up StackOverrides in models.py | | | Pending |
+| 1 | Add warning log in resources.py get_resource_path() | Developer | | Done |
+| 2 | Simplify scaffold.py directory creation (remove exists check) | Developer | | Done |
+| 3 | Add try/except around write_text in library_manager._on_new_asset() | Developer | | Done |
+| 4 | Add setup_logging() call in cli.py _run_generate() | Developer | | Done |
+| 5 | Clean up StackOverrides in models.py | Developer | | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
