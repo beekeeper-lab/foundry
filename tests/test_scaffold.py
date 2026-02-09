@@ -11,7 +11,6 @@ from foundry_app.core.models import (
 )
 from foundry_app.services.scaffold import scaffold_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

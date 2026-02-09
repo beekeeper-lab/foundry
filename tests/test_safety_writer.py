@@ -15,7 +15,6 @@ from foundry_app.core.models import (
 )
 from foundry_app.services.safety_writer import write_safety
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

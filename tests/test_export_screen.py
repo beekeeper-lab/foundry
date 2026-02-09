@@ -3,8 +3,6 @@
 import json
 from pathlib import Path
 
-import pytest
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from foundry_app.ui.screens.export_screen import ExportScreen

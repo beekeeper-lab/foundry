@@ -13,7 +13,6 @@ from foundry_app.core.models import (
 )
 from foundry_app.services.seeder import seed_tasks
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

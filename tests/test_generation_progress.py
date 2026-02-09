@@ -1,6 +1,5 @@
 """Tests for foundry_app.ui.screens.generation_progress — progress screen."""
 
-import pytest
 from PySide6.QtWidgets import QApplication
 
 from foundry_app.ui.screens.generation_progress import (

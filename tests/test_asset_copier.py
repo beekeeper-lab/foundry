@@ -13,7 +13,6 @@ from foundry_app.core.models import (
 )
 from foundry_app.services.asset_copier import copy_assets
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
