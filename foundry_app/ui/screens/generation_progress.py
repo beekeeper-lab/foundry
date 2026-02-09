@@ -46,6 +46,7 @@ from foundry_app.ui.theme import (
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
+from foundry_app.ui.widgets.spinner_widget import SpinnerWidget
 
 logger = logging.getLogger(__name__)
 
@@ -175,11 +176,19 @@ class GenerationProgressScreen(QWidget):
         layout.setContentsMargins(SPACE_XXL, SPACE_XL, SPACE_XXL, SPACE_XL)
         layout.setSpacing(SPACE_LG)
 
-        # Title
+        # Title row with spinner
+        title_row = QHBoxLayout()
+        title_row.setSpacing(SPACE_MD)
+
+        self._spinner = SpinnerWidget(size=32)
+        title_row.addWidget(self._spinner)
+
         title = QLabel("Generation Progress")
         title.setFont(QFont("", FONT_SIZE_XL, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {TEXT_PRIMARY};")
-        layout.addWidget(title)
+        title_row.addWidget(title)
+        title_row.addStretch()
+        layout.addLayout(title_row)
 
         # Progress bar
         self._progress_bar = QProgressBar()
@@ -292,6 +301,10 @@ class GenerationProgressScreen(QWidget):
     def stage_widget(self, key: str) -> StageStatusWidget | None:
         return self._stage_widgets.get(key)
 
+    @property
+    def spinner(self) -> SpinnerWidget:
+        return self._spinner
+
     def start(self) -> None:
         """Mark the start of generation."""
         self._start_time = time.monotonic()
@@ -299,6 +312,7 @@ class GenerationProgressScreen(QWidget):
         self._log.clear()
         self._summary_label.setVisible(False)
         self._open_btn.setVisible(False)
+        self._spinner.start()
         for w in self._stage_widgets.values():
             w._status = "pending"
             w._icon.setText("\u2022")
@@ -354,6 +368,7 @@ class GenerationProgressScreen(QWidget):
         self._summary_label.setVisible(True)
         self._open_btn.setVisible(True)
         self._progress_bar.setValue(self._progress_bar.maximum())
+        self._spinner.stop()
         self.append_log(
             f"Finished: {total_files} files, {warnings} warnings, {elapsed:.1f}s"
         )
@@ -367,6 +382,7 @@ class GenerationProgressScreen(QWidget):
             f"color: {STATUS_ERROR}; font-size: {FONT_SIZE_MD}px;"
         )
         self._summary_label.setVisible(True)
+        self._spinner.stop()
         self.append_log(f"FAILED after {elapsed:.1f}s: {message}")
         self.generation_failed.emit(message)
 

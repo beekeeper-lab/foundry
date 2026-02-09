@@ -79,17 +79,17 @@
 | BEAN-055 | Wire Real Services & Clean Up Dead Code | App | Medium | Done | team-lead |
 | BEAN-056 | Robustness Improvements | App | Low | Done | team-lead |
 | BEAN-057 | Test Coverage Gaps | App | Medium | Done | team-lead |
-| BEAN-058 | Add Branded Spinner Graphic | App | Medium | New | (unassigned) |
+| BEAN-058 | Add Branded Spinner Graphic | App | Medium | Done | team-lead |
 | BEAN-059 | Theme Wiring Fix | App | High | Done | team-lead |
-| BEAN-060 | Sidebar Navigation Modernization | App | High | New | (unassigned) |
-| BEAN-061 | Remove Menu Bar | App | High | New | (unassigned) |
-| BEAN-062 | Settings Screen — Core Paths | App | High | New | (unassigned) |
-| BEAN-063 | Settings Screen — Generation & Safety Defaults | App | Medium | New | (unassigned) |
-| BEAN-064 | Settings Screen — Appearance & Advanced | App | Low | New | (unassigned) |
-| BEAN-065 | Wire Screens into Main Window | App | High | New | (unassigned) |
-| BEAN-066 | Builder Wizard Screen | App | High | New | (unassigned) |
-| BEAN-067 | Wire Compiler & Asset Copier into Pipeline | App | High | New | (unassigned) |
-| BEAN-068 | Agent Writer Service (Persona + Stack Team Members) | App | High | New | (unassigned) |
-| BEAN-069 | Workflow Hook Packs (Git & Az) | App | High | New | (unassigned) |
-| BEAN-070 | MCP Config Generation | App | Medium | New | (unassigned) |
-| BEAN-071 | Skills & Commands Copier Enhancement | App | Medium | New | (unassigned) |
+| BEAN-060 | Sidebar Navigation Modernization | App | High | Done | team-lead |
+| BEAN-061 | Remove Menu Bar | App | High | Done | team-lead |
+| BEAN-062 | Settings Screen — Core Paths | App | High | Done | team-lead |
+| BEAN-063 | Settings Screen — Generation & Safety Defaults | App | Medium | Done | team-lead |
+| BEAN-064 | Settings Screen — Appearance & Advanced | App | Low | Done | team-lead |
+| BEAN-065 | Wire Screens into Main Window | App | High | Done | team-lead |
+| BEAN-066 | Builder Wizard Screen | App | High | Done | team-lead |
+| BEAN-067 | Wire Compiler & Asset Copier into Pipeline | App | High | Done | team-lead |
+| BEAN-068 | Agent Writer Service (Persona + Stack Team Members) | App | High | Done | team-lead |
+| BEAN-069 | Workflow Hook Packs (Git & Az) | App | High | Done | team-lead |
+| BEAN-070 | MCP Config Generation | App | Medium | Done | team-lead |
+| BEAN-071 | Skills & Commands Copier Enhancement | App | Medium | Done | team-lead |

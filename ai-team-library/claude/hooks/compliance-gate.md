@@ -1,5 +1,8 @@
 # Hook Pack: Compliance Gate
 
+## Category
+code-quality
+
 ## Purpose
 
 Enforces compliance requirements for regulated environments. Collects evidence, verifies controls, maintains audit trails, and ensures separation of duties. Required for projects handling sensitive data, financial systems, or healthcare information.

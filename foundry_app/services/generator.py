@@ -20,10 +20,12 @@ from foundry_app.core.models import (
     Strictness,
     ValidationResult,
 )
+from foundry_app.services.agent_writer import write_agents
 from foundry_app.services.asset_copier import copy_assets
 from foundry_app.services.compiler import compile_project
 from foundry_app.services.diff_reporter import write_diff_report
 from foundry_app.services.library_indexer import build_library_index
+from foundry_app.services.mcp_writer import write_mcp_config
 from foundry_app.services.safety_writer import write_safety
 from foundry_app.services.scaffold import scaffold_project
 from foundry_app.services.seeder import seed_tasks
@@ -168,17 +170,23 @@ def _run_pipeline(
     # Stage 2: Compile member prompts
     stages["compile"] = compile_project(spec, library, library_root, output_dir)
 
-    # Stage 3: Copy assets
+    # Stage 3: Write agent files
+    stages["agent_writer"] = write_agents(spec, library, library_root, output_dir)
+
+    # Stage 4: Copy assets
     stages["copy_assets"] = copy_assets(spec, library, library_root, output_dir)
 
-    # Stage 4: Seed tasks (only if enabled)
+    # Stage 5: Write MCP config
+    stages["mcp_config"] = write_mcp_config(spec, output_dir)
+
+    # Stage 6: Seed tasks (only if enabled)
     if spec.generation.seed_tasks:
         stages["seed_tasks"] = seed_tasks(spec, output_dir)
 
-    # Stage 5: Write safety config
+    # Stage 7: Write safety config
     stages["safety"] = write_safety(spec, output_dir)
 
-    # Stage 6: Diff report (only if enabled)
+    # Stage 8: Diff report (only if enabled)
     if spec.generation.write_diff_report:
         plan = overlay_plan if overlay_plan is not None else OverlayPlan()
         stages["diff_report"] = write_diff_report(plan, output_dir)

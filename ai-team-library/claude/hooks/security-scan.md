@@ -1,5 +1,8 @@
 # Hook Pack: Security Scan
 
+## Category
+code-quality
+
 ## Purpose
 
 Detects security issues at key workflow points: vulnerable dependencies, hardcoded secrets, static analysis findings, and license violations. Acts as a safety net that catches security problems before they reach production.
