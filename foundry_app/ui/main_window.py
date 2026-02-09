@@ -21,10 +21,10 @@ from PySide6.QtWidgets import (
 from foundry_app.core.settings import FoundrySettings
 from foundry_app.ui import theme
 from foundry_app.ui.icons import icon_path
+from foundry_app.ui.screens.builder_screen import BuilderScreen
 from foundry_app.ui.screens.history_screen import HistoryScreen
 from foundry_app.ui.screens.library_manager import LibraryManagerScreen
 from foundry_app.ui.screens.settings_screen import SettingsScreen
-from foundry_app.ui.widgets.branded_empty_state import BrandedEmptyState
 
 logger = logging.getLogger(__name__)
 
@@ -222,12 +222,9 @@ class MainWindow(QMainWindow):
         self._stack = QStackedWidget()
         self._stack.setObjectName("content-stack")
 
-        # Index 0: Builder (placeholder until BEAN-066 wires the wizard)
-        self._stack.addWidget(BrandedEmptyState(
-            heading="Welcome to Foundry",
-            description="Create a new Claude Code project from reusable building blocks.\n"
-            "Select a composition to get started.",
-        ))
+        # Index 0: Builder wizard
+        self._builder_screen = BuilderScreen()
+        self._stack.addWidget(self._builder_screen)
 
         # Index 1: Library Manager
         self._library_screen = LibraryManagerScreen()
@@ -254,6 +251,7 @@ class MainWindow(QMainWindow):
         lib_root = self._settings.library_root
         if lib_root:
             self._library_screen.set_library_root(lib_root)
+            self._load_builder_library(lib_root)
             logger.info("Library root loaded from settings: %s", lib_root)
 
         ws_root = self._settings.workspace_root
@@ -263,7 +261,22 @@ class MainWindow(QMainWindow):
     def _on_library_root_changed(self, path: str) -> None:
         """React to library root changes from the settings screen."""
         self._library_screen.set_library_root(path)
+        self._load_builder_library(path)
         logger.info("Library root updated: %s", path)
+
+    def _load_builder_library(self, path: str) -> None:
+        """Index the library and load it into the builder wizard."""
+        from pathlib import Path
+
+        from foundry_app.services.library_indexer import build_library_index
+
+        lib_path = Path(path)
+        if lib_path.is_dir():
+            try:
+                index = build_library_index(lib_path)
+                self._builder_screen.set_library_index(index)
+            except Exception:
+                logger.warning("Failed to index library at %s", path, exc_info=True)
 
     # -- Public API --------------------------------------------------------
 
@@ -276,6 +289,10 @@ class MainWindow(QMainWindow):
     def nav_list(self) -> QListWidget:
         """Access the navigation list for programmatic control."""
         return self._nav_list
+
+    @property
+    def builder_screen(self) -> BuilderScreen:
+        return self._builder_screen
 
     @property
     def library_screen(self) -> LibraryManagerScreen:
