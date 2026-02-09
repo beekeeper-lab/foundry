@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-072 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
+| **Started** | 2026-02-09 |
+| **Completed** | 2026-02-09 |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -37,14 +37,14 @@ A new `/review-beans` skill + command that generates a filtered Map of Content (
 
 ## Acceptance Criteria
 
-- [ ] `/review-beans` command exists and is documented
-- [ ] `/review-beans` generates `ai/beans/_review.md` with filtered bean links
-- [ ] Default filter is `--status unapproved`
-- [ ] `--category` filter works (App, Process, Infra)
-- [ ] Obsidian opens targeting the beans directory
-- [ ] User can edit bean status in Obsidian and changes persist (they're editing real files)
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `/review-beans` command exists and is documented
+- [x] `/review-beans` generates `ai/beans/_review.md` with filtered bean links
+- [x] Default filter is `--status unapproved`
+- [x] `--category` filter works (App, Process, Infra)
+- [x] Obsidian opens targeting the beans directory
+- [x] User can edit bean status in Obsidian and changes persist (they're editing real files)
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 

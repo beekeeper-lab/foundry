@@ -580,6 +580,7 @@ Foundry provides **22 skills** and **24 commands** for Claude Code automation. S
 | `/scaffold-project` | Generation | Create standard project folder structure from a composition spec |
 | `/seed-tasks` | Planning | Decompose objectives into assignable tasks with dependencies |
 | `/show-backlog` | Planning | Display the bean backlog in a concise table format |
+| `/review-beans` | Planning | Generate MOC and open Obsidian for bean review and approval |
 | `/spawn-bean` | Execution | Spawn parallel tmux workers for concurrent bean processing |
 | `/status-report` | Reporting | Generate a progress summary with blockers, velocity, and next steps |
 | `/validate-config` | Quality | Check secrets hygiene, env vars, and config schemas |
@@ -718,6 +719,27 @@ Displays the bean backlog in a concise table format with optional filtering.
 - `--category` — Filter: `App`, `Process`, `Infra`
 
 **Produces:** Markdown table with bean ID, summary, and category; count totals
+
+---
+
+#### `/review-beans` — Review Beans in Obsidian
+
+Generates a filtered Map of Content (MOC) linking to beans by status, then opens Obsidian for review. Edit bean files directly to approve, defer, or refine them.
+
+```
+/review-beans [--status <status>] [--category <cat>]
+```
+
+**Options:**
+- `--status` — Filter: `unapproved` (default), `approved`, `in-progress`, `done`, `deferred`, `all`
+- `--category` — Filter: `App`, `Process`, `Infra`
+
+**What it does:**
+1. Reads `_index.md` and applies filters
+2. Generates `ai/beans/_review.md` with Obsidian wiki-links to matching beans
+3. Opens Obsidian on `ai/beans/` (falls back to printing the path if Obsidian is not installed)
+
+**Produces:** MOC file at `ai/beans/_review.md`, Obsidian launched
 
 ---
 

@@ -93,6 +93,6 @@
 | BEAN-069 | Workflow Hook Packs (Git & Az) | App | High | Done | team-lead |
 | BEAN-070 | MCP Config Generation | App | Medium | Done | team-lead |
 | BEAN-071 | Skills & Commands Copier Enhancement | App | Medium | Done | team-lead |
-| BEAN-072 | Obsidian Review Skill | Process | High | Approved | (unassigned) |
+| BEAN-072 | Obsidian Review Skill | Process | High | Done | team-lead |
 | BEAN-073 | Approval Gate Wiring | Process | High | Approved | (unassigned) |
 | BEAN-074 | Bean Workflow Docs Update | Process | Medium | Approved | (unassigned) |
