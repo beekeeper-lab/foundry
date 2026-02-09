@@ -650,12 +650,11 @@ class TestOverlayGeneration:
         spec = _make_spec()
 
         manifest, _, plan = generate_project(
-            spec, lib_root, output_root=output_dir, overlay=True,
+            spec, lib_root, output_root=output_dir, overlay=True, dry_run=True,
         )
 
-        # user-file.txt should be in the delete list (not in source)
-        # but it was generated, so the overlay plan handles it
-        assert (output_dir / "user-file.txt").exists() or not (output_dir / "user-file.txt").exists()
+        # dry-run computes the plan but does not apply it, so user file is preserved
+        assert (output_dir / "user-file.txt").read_text() == "keep me"
 
     def test_overlay_has_apply_stage_in_manifest(self, tmp_path: Path):
         lib_root = _make_library_dir(tmp_path)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
@@ -376,7 +376,7 @@ class GenerationManifest(BaseModel):
     """Complete record of a generation run."""
 
     run_id: str = Field(..., description="Unique run identifier (timestamp-based)")
-    generated_at: datetime = Field(default_factory=datetime.now)
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     library_version: str = Field(default="", description="Git short-hash of library")
     composition_snapshot: dict[str, Any] = Field(
         default_factory=dict,
