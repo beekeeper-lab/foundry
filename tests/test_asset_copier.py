@@ -55,6 +55,12 @@ def _make_library(tmp_path: Path) -> Path:
     (hook_dir / "pre-commit-lint.md").write_text("# Pre-commit Lint\n")
     (hook_dir / "security-scan.md").write_text("# Security Scan\n")
 
+    # Skills
+    skill_dir = lib / "claude" / "skills"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "review-pr.md").write_text("# Review PR\n")
+    (skill_dir / "deploy.md").write_text("# Deploy\n")
+
     return lib
 
 
@@ -316,6 +322,49 @@ class TestHookCopying:
 
 
 # ---------------------------------------------------------------------------
+# Skills copying
+# ---------------------------------------------------------------------------
+
+
+class TestSkillsCopying:
+
+    def test_copies_skills_from_library(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        result = copy_assets(_make_spec(), idx, lib, output)
+
+        assert (output / ".claude" / "skills" / "review-pr.md").is_file()
+        assert (output / ".claude" / "skills" / "deploy.md").is_file()
+        assert ".claude/skills/review-pr.md" in result.wrote
+        assert ".claude/skills/deploy.md" in result.wrote
+
+    def test_creates_skills_dir_if_missing(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        copy_assets(_make_spec(), idx, lib, output)
+
+        assert (output / ".claude" / "skills").is_dir()
+
+    def test_skill_content_matches_source(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        copy_assets(_make_spec(), idx, lib, output)
+
+        src = (lib / "claude" / "skills" / "review-pr.md").read_text()
+        dest = (output / ".claude" / "skills" / "review-pr.md").read_text()
+        assert src == dest
+
+
+# ---------------------------------------------------------------------------
 # Overlay mode (existing files)
 # ---------------------------------------------------------------------------
 
@@ -413,8 +462,8 @@ class TestStageResult:
         )
         result = copy_assets(spec, idx, lib, output)
 
-        # 2 templates + 2 commands + 2 hooks = 6
-        assert len(result.wrote) == 6
+        # 2 templates + 2 commands + 2 hooks + 2 skills = 8
+        assert len(result.wrote) == 8
 
     def test_no_warnings_on_clean_run(self, tmp_path: Path):
         lib = _make_library(tmp_path)

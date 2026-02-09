@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 _GLOBAL_ASSET_DIRS = [
     ("claude/commands", ".claude/commands"),
     ("claude/hooks", ".claude/hooks"),
+    ("claude/skills", ".claude/skills"),
 ]
 
 

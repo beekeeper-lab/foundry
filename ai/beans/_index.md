@@ -92,4 +92,4 @@
 | BEAN-068 | Agent Writer Service (Persona + Stack Team Members) | App | High | Done | team-lead |
 | BEAN-069 | Workflow Hook Packs (Git & Az) | App | High | New | (unassigned) |
 | BEAN-070 | MCP Config Generation | App | Medium | New | (unassigned) |
-| BEAN-071 | Skills & Commands Copier Enhancement | App | Medium | New | (unassigned) |
+| BEAN-071 | Skills & Commands Copier Enhancement | App | Medium | Done | team-lead |
