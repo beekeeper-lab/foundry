@@ -119,6 +119,7 @@ Once all acceptance criteria are met:
 1. Update bean status to `Done`
 2. Update `ai/beans/_index.md`
 3. Note any follow-up beans spawned during execution
+4. **Merge feature branch to `test`** using `/merge-bean` (Merge Captain). This step is mandatory — a bean is not fully closed until its branch has been merged to `test` and tests pass on the integrated branch
 
 ## Branch Strategy
 
