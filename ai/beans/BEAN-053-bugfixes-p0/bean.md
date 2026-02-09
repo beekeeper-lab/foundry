@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-053 |
-| **Status** | New |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-08 |
 | **Owner** | (unassigned) |
@@ -31,23 +31,23 @@ Fix all four P0 bugs so tests actually verify behavior, CLI flags are validated,
 
 ## Acceptance Criteria
 
-- [ ] `test_overlay_preserves_existing_files` asserts file content is preserved (not a tautology)
-- [ ] Running `foundry-cli generate comp.yml --dry-run` (without `--overlay`) prints an error and exits with code 1
-- [ ] `ValidationError` is caught separately from generic `Exception` with a distinct error message
-- [ ] `GenerationManifest.generated_at` produces UTC timestamps with timezone info
-- [ ] Existing tests updated to handle timezone-aware datetimes
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `test_overlay_preserves_existing_files` asserts file content is preserved (not a tautology)
+- [x] Running `foundry-cli generate comp.yml --dry-run` (without `--overlay`) prints an error and exits with code 1
+- [x] `ValidationError` is caught separately from generic `Exception` with a distinct error message
+- [x] `GenerationManifest.generated_at` produces UTC timestamps with timezone info
+- [x] Existing tests updated to handle timezone-aware datetimes
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Fix tautological assertion in test_generator.py:658 | | | Pending |
-| 2 | Add --dry-run / --overlay validation in cli.py _run_generate() | | | Pending |
-| 3 | Split exception handler: catch ValidationError then Exception separately | | | Pending |
-| 4 | Change datetime.now() to datetime.now(timezone.utc) in models.py | | | Pending |
-| 5 | Update any tests that compare generated_at values | | 4 | Pending |
+| 1 | Fix tautological assertion in test_generator.py:658 | Developer | | Done |
+| 2 | Add --dry-run / --overlay validation in cli.py _run_generate() | Developer | | Done |
+| 3 | Split exception handler: catch ValidationError then Exception separately | Developer | | Done |
+| 4 | Change datetime.now() to datetime.now(timezone.utc) in models.py | Developer | | Done |
+| 5 | Update any tests that compare generated_at values | Developer | 4 | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
