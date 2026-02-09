@@ -79,7 +79,7 @@
 | BEAN-055 | Wire Real Services & Clean Up Dead Code | App | Medium | Done | team-lead |
 | BEAN-056 | Robustness Improvements | App | Low | Done | team-lead |
 | BEAN-057 | Test Coverage Gaps | App | Medium | Done | team-lead |
-| BEAN-058 | Add Branded Spinner Graphic | App | Medium | New | (unassigned) |
+| BEAN-058 | Add Branded Spinner Graphic | App | Medium | Done | team-lead |
 | BEAN-059 | Theme Wiring Fix | App | High | Done | team-lead |
 | BEAN-060 | Sidebar Navigation Modernization | App | High | Done | team-lead |
 | BEAN-061 | Remove Menu Bar | App | High | Done | team-lead |
