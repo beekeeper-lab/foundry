@@ -153,6 +153,7 @@ class HookPackSelection(BaseModel):
     """A single hook pack chosen for the project."""
 
     id: str = Field(..., min_length=1, description="Hook pack identifier")
+    category: str = Field(default="", description="Hook category (git, az, code-quality)")
     enabled: bool = Field(default=True)
     mode: HookMode = Field(default=HookMode.ENFORCING)
 
@@ -477,6 +478,7 @@ class HookPackInfo(BaseModel):
     id: str
     path: str = Field(..., description="Path to hook pack directory")
     files: list[str] = Field(default_factory=list, description="Hook policy filenames")
+    category: str = Field(default="", description="Hook category (git, az, code-quality)")
 
 
 class LibraryIndex(BaseModel):

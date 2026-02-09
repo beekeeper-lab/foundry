@@ -70,6 +70,24 @@ def _scan_stacks(stacks_dir: Path) -> list[StackInfo]:
     return stacks
 
 
+def _parse_hook_category(path: Path) -> str:
+    """Extract the category from a hook pack markdown file.
+
+    Looks for a ``## Category`` heading followed by the category value on the next line.
+    Returns empty string if not found.
+    """
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return ""
+    for i, line in enumerate(lines):
+        if line.strip().lower() == "## category" and i + 1 < len(lines):
+            cat = lines[i + 1].strip()
+            if cat:
+                return cat
+    return ""
+
+
 def _scan_hook_packs(hooks_dir: Path) -> list[HookPackInfo]:
     """Scan the claude/hooks/ directory and return HookPackInfo for each .md file."""
     if not hooks_dir.is_dir():
@@ -86,6 +104,7 @@ def _scan_hook_packs(hooks_dir: Path) -> list[HookPackInfo]:
                 id=entry.stem,
                 path=str(entry),
                 files=[entry.name],
+                category=_parse_hook_category(entry),
             )
         )
 

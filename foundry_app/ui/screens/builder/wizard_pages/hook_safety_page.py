@@ -68,11 +68,29 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 HOOK_PACK_DESCRIPTIONS: dict[str, tuple[str, str]] = {
+    # Code quality
     "pre-commit-lint": ("Pre-Commit Lint", "Linting and formatting checks before code commit"),
     "post-task-qa": ("Post-Task QA", "Output validation after task completion"),
     "security-scan": ("Security Scan", "Security and secret scanning"),
     "compliance-gate": ("Compliance Gate", "Compliance verification"),
     "hook-policy": ("Hook Policy", "Hook policy documentation"),
+    # Git workflow
+    "git-commit-branch": ("Commit Branch Guard", "Prevent direct commits to protected branches"),
+    "git-push-feature": ("Push Feature Branch", "Push feature branch with upstream tracking"),
+    "git-generate-pr": ("Generate PR", "Create pull requests via gh CLI"),
+    "git-merge-to-test": ("Merge to Test", "Merge approved PRs to test branch"),
+    "git-merge-to-prod": ("Merge to Prod", "Merge test to production with safety gates"),
+    # Azure CLI
+    "az-read-only": ("Az Read-Only", "Allow only read operations on Azure resources"),
+    "az-limited-ops": ("Az Limited-Ops", "Allow deploys, block destructive Azure operations"),
+}
+
+# Category display names
+CATEGORY_LABELS: dict[str, str] = {
+    "git": "Git Workflow",
+    "az": "Azure CLI",
+    "code-quality": "Code Quality",
+    "": "Other",
 }
 
 # ---------------------------------------------------------------------------
@@ -278,6 +296,7 @@ class HookPackCard(QFrame):
         """Build a HookPackSelection from the current card state."""
         return HookPackSelection(
             id=self._pack.id,
+            category=self._pack.category,
             enabled=self._checkbox.isChecked(),
             mode=self.mode,
         )
@@ -385,6 +404,7 @@ class HookSafetyPage(QWidget):
     ) -> None:
         super().__init__(parent)
         self._cards: dict[str, HookPackCard] = {}
+        self._category_labels: list[QLabel] = []
         self._safety_sections: dict[str, SafetyPolicySection] = {}
         self._build_ui()
         if library_index is not None:
@@ -545,20 +565,49 @@ class HookSafetyPage(QWidget):
     # -- Public API ---------------------------------------------------------
 
     def load_hook_packs(self, library_index: LibraryIndex) -> None:
-        """Populate the hook pack section with packs from a LibraryIndex."""
-        # Clear existing cards
+        """Populate the hook pack section with packs from a LibraryIndex, grouped by category."""
+        # Clear existing cards and category labels
         for card in self._cards.values():
             self._hook_card_layout.removeWidget(card)
             card.deleteLater()
         self._cards.clear()
 
-        for pack in library_index.hook_packs:
-            card = HookPackCard(pack)
-            card.toggled.connect(self._on_card_toggled)
-            self._hook_card_layout.addWidget(card)
-            self._cards[pack.id] = card
+        for widget in self._category_labels:
+            self._hook_card_layout.removeWidget(widget)
+            widget.deleteLater()
+        self._category_labels.clear()
 
-        logger.info("Loaded %d hook pack cards", len(self._cards))
+        # Group packs by category
+        groups: dict[str, list[HookPackInfo]] = {}
+        for pack in library_index.hook_packs:
+            cat = pack.category or ""
+            groups.setdefault(cat, []).append(pack)
+
+        # Render groups in a stable order
+        category_order = ["git", "az", "code-quality", ""]
+        for cat in category_order:
+            packs = groups.get(cat, [])
+            if not packs:
+                continue
+
+            # Category heading
+            cat_label = CATEGORY_LABELS.get(cat, cat.replace("-", " ").title())
+            heading = QLabel(cat_label)
+            heading.setStyleSheet(
+                f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_MD}px; "
+                f"font-weight: {FONT_WEIGHT_BOLD}; "
+                f"padding-top: {SPACE_SM}px;"
+            )
+            self._hook_card_layout.addWidget(heading)
+            self._category_labels.append(heading)
+
+            for pack in packs:
+                card = HookPackCard(pack)
+                card.toggled.connect(self._on_card_toggled)
+                self._hook_card_layout.addWidget(card)
+                self._cards[pack.id] = card
+
+        logger.info("Loaded %d hook pack cards in %d categories", len(self._cards), len(groups))
 
     def get_hooks_config(self) -> HooksConfig:
         """Return the current hook configuration."""
