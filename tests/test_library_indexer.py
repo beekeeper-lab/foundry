@@ -39,7 +39,14 @@ EXPECTED_STACKS = [
 ]
 
 EXPECTED_HOOK_PACKS = [
+    "az-limited-ops",
+    "az-read-only",
     "compliance-gate",
+    "git-commit-branch",
+    "git-generate-pr",
+    "git-merge-to-prod",
+    "git-merge-to-test",
+    "git-push-feature",
     "hook-policy",
     "post-task-qa",
     "pre-commit-lint",
@@ -206,3 +213,61 @@ class TestLibraryIndexLookups:
     def test_hook_pack_by_id_not_found(self):
         idx = build_library_index(LIBRARY_ROOT)
         assert idx.hook_pack_by_id("nonexistent") is None
+
+
+# ---------------------------------------------------------------------------
+# Hook category tests
+# ---------------------------------------------------------------------------
+
+
+class TestHookPackCategories:
+    """Test that hook packs have correct categories assigned."""
+
+    def test_git_hooks_have_git_category(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        git_ids = [
+            "git-commit-branch", "git-push-feature", "git-generate-pr",
+            "git-merge-to-test", "git-merge-to-prod",
+        ]
+        for pack_id in git_ids:
+            pack = idx.hook_pack_by_id(pack_id)
+            assert pack is not None, f"{pack_id} not found"
+            assert pack.category == "git", f"{pack_id} category={pack.category}"
+
+    def test_az_hooks_have_az_category(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        az_ids = ["az-read-only", "az-limited-ops"]
+        for pack_id in az_ids:
+            pack = idx.hook_pack_by_id(pack_id)
+            assert pack is not None, f"{pack_id} not found"
+            assert pack.category == "az", f"{pack_id} category={pack.category}"
+
+    def test_code_quality_hooks_have_category(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        cq_ids = ["pre-commit-lint", "post-task-qa", "security-scan", "compliance-gate"]
+        for pack_id in cq_ids:
+            pack = idx.hook_pack_by_id(pack_id)
+            assert pack is not None, f"{pack_id} not found"
+            assert pack.category == "code-quality", f"{pack_id} category={pack.category}"
+
+    def test_category_from_tmp_file(self, tmp_path: Path):
+        """Test category parsing from a hook pack file with Category header."""
+        hooks_dir = tmp_path / "claude" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "my-hook.md").write_text(
+            "# Hook Pack: My Hook\n\n## Category\ncustom\n\n## Purpose\nTest\n"
+        )
+        idx = build_library_index(tmp_path)
+        pack = idx.hook_pack_by_id("my-hook")
+        assert pack is not None
+        assert pack.category == "custom"
+
+    def test_no_category_defaults_empty(self, tmp_path: Path):
+        """Hook packs without a Category header get empty string."""
+        hooks_dir = tmp_path / "claude" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "bare.md").write_text("# Hook Pack: Bare\n\n## Purpose\nTest\n")
+        idx = build_library_index(tmp_path)
+        pack = idx.hook_pack_by_id("bare")
+        assert pack is not None
+        assert pack.category == ""

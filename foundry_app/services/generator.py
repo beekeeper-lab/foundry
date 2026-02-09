@@ -23,9 +23,9 @@ from foundry_app.core.models import (
 from foundry_app.services.agent_writer import write_agents
 from foundry_app.services.asset_copier import copy_assets
 from foundry_app.services.compiler import compile_project
-from foundry_app.services.mcp_writer import write_mcp_config
 from foundry_app.services.diff_reporter import write_diff_report
 from foundry_app.services.library_indexer import build_library_index
+from foundry_app.services.mcp_writer import write_mcp_config
 from foundry_app.services.safety_writer import write_safety
 from foundry_app.services.scaffold import scaffold_project
 from foundry_app.services.seeder import seed_tasks
