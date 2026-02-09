@@ -27,14 +27,15 @@ examples/             # Example composition YAMLs
 
 A **Bean** is a unit of work (feature, enhancement, bug fix, or epic). Beans live in `ai/beans/BEAN-NNN-<slug>/`.
 
-**Lifecycle:** New → Picked → In Progress → Done
+**Lifecycle:** Unapproved → Approved → In Progress → Done
 
-1. Create a bean from `ai/beans/_bean-template.md`
-2. Team Lead picks beans from the backlog (`ai/beans/_index.md`)
-3. Team Lead decomposes into tasks with owners and dependencies
-4. Each persona claims tasks, produces outputs, creates handoffs
-5. Team Lead verifies outputs against acceptance criteria
-6. Bean marked Done
+1. Create a bean from `ai/beans/_bean-template.md` (status: `Unapproved`)
+2. User reviews and approves beans (status: `Approved`)
+3. Team Lead picks approved beans from the backlog (`ai/beans/_index.md`)
+4. Team Lead decomposes into tasks with owners and dependencies
+5. Each persona claims tasks, produces outputs, creates handoffs
+6. Team Lead verifies outputs against acceptance criteria
+7. Bean marked Done
 
 See `ai/context/bean-workflow.md` for the full lifecycle specification.
 

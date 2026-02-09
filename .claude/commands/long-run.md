@@ -25,7 +25,7 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 
 ## Process
 
-1. **Read backlog** — Parse `ai/beans/_index.md`. Identify beans with status `New` or `Picked`.
+1. **Read backlog** — Parse `ai/beans/_index.md`. Identify beans with status `Approved`.
 2. **Check for actionable beans** — If no beans are actionable (all `Done`, `Deferred`, or blocked by dependencies), report "Backlog clear — no actionable beans" and stop.
 3. **Select best bean** — Apply selection heuristics (see Options below) to choose the single best bean to work on next.
 4. **Pick the bean** — Update status to `In Progress` in both `bean.md` and `_index.md`. Set owner to `team-lead`.

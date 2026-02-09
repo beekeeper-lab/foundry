@@ -14,7 +14,7 @@ Detects and resolves duplicates, scope overlaps, contradictions, missing depende
 
 | Input | Type | Required | Description |
 |-------|------|----------|-------------|
-| status | String | No | Which beans to analyze. Default: `New`. Also accepts `open` (New + Picked + In Progress), `all`, or any single status value. |
+| status | String | No | Which beans to analyze. Default: `Unapproved`. Also accepts `open` (Unapproved + Approved + In Progress), `all`, or any single status value. |
 | dry_run | Boolean | No | If true, show findings without applying changes. Defaults to false. |
 
 ## Process
@@ -22,8 +22,8 @@ Detects and resolves duplicates, scope overlaps, contradictions, missing depende
 ### Phase 1: Analysis
 
 1. **Read the backlog** — Parse `ai/beans/_index.md` to get the full bean table. Apply the status filter:
-   - `New` (default): Only beans with Status = New
-   - `open`: Beans with Status = New, Picked, or In Progress
+   - `Unapproved` (default): Only beans with Status = Unapproved
+   - `open`: Beans with Status = Unapproved, Approved, or In Progress
    - `all`: Every bean regardless of status
    - Any other value: Exact status match
 
@@ -72,7 +72,7 @@ Detects and resolves duplicates, scope overlaps, contradictions, missing depende
 
    **Check 6: Done Duplication** (Severity: High)
    - Compare each target bean's Problem Statement and Goal against all Done beans.
-   - Flag when a New bean's goal substantially matches work that has already been completed.
+   - Flag when an Unapproved bean's goal substantially matches work that has already been completed.
    - Include the matching Done bean ID and title, plus the overlapping text as evidence.
 
 6. **Run 2 additional structural checks**:

@@ -1,6 +1,6 @@
 # /bean-status Command
 
-Claude Code slash command that displays the current state of the beans backlog — a quick snapshot of what's new, in progress, and done.
+Claude Code slash command that displays the current state of the beans backlog — a quick snapshot of what's unapproved, approved, in progress, and done.
 
 ## Purpose
 
@@ -23,12 +23,12 @@ Provides a readable summary of the beans backlog without having to open and pars
 
 1. **Read index** -- Parse `ai/beans/_index.md` and extract the backlog table.
 2. **Read bean details** -- For each bean, read its `bean.md` to get the tasks table and acceptance criteria status.
-3. **Categorize** -- Group beans by status: New, Picked, In Progress, Done, Deferred.
+3. **Categorize** -- Group beans by status: In Progress, Approved, Unapproved, Deferred, Done.
 4. **Format summary** -- Display:
-   - Counts by status (e.g., "3 Done, 1 In Progress, 2 New")
+   - Counts by status (e.g., "3 Done, 1 In Progress, 2 Approved, 1 Unapproved")
    - Table of beans with ID, Title, Priority, Status, Owner
    - If `--verbose`: include task breakdown for In Progress beans (how many tasks done vs total)
-5. **Highlight actionable items** -- Flag beans that are `New` and ready to pick, or `In Progress` with all tasks done (ready to close).
+5. **Highlight actionable items** -- Flag beans that are `Approved` and ready to pick, `Unapproved` and awaiting review, or `In Progress` with all tasks done (ready to close).
 
 ## Output
 
@@ -40,7 +40,7 @@ Provides a readable summary of the beans backlog without having to open and pars
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--filter <status>` | All | Show only beans with this status: `new`, `picked`, `in-progress`, `done`, `deferred` |
+| `--filter <status>` | All | Show only beans with this status: `unapproved`, `approved`, `in-progress`, `done`, `deferred` |
 | `--verbose` | `false` | Include task-level detail for active beans |
 
 ## Error Handling
@@ -64,8 +64,14 @@ Displays all beans grouped by status with counts.
 ```
 Shows only active beans with their task breakdown (e.g., "3/4 tasks done").
 
-**Only new beans ready for picking:**
+**Only approved beans ready for picking:**
 ```
-/bean-status --filter new
+/bean-status --filter approved
 ```
 Shows beans available for the Team Lead to pick.
+
+**Only unapproved beans awaiting review:**
+```
+/bean-status --filter unapproved
+```
+Shows beans that need human review before they can be executed.

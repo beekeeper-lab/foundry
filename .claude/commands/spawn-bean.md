@@ -74,8 +74,8 @@ Always update the `updated` timestamp when writing.
 
 ### Step 1: Determine what to spawn
 
-- **Specific beans given** — Read `ai/beans/_index.md`. For each bean ID, verify it exists and has status `New` or `Deferred`. Resolve short IDs (e.g., `16` → `BEAN-016`). Extract the slug from the directory name.
-- **`--count N`** — Read the index. Identify the top N beans by priority (High before Medium before Low) that have status `New`. Pre-assign all N beans — the orchestrator selects them upfront and creates isolated worktrees, eliminating race conditions.
+- **Specific beans given** — Read `ai/beans/_index.md`. For each bean ID, verify it exists and has status `Approved` or `Deferred`. Resolve short IDs (e.g., `16` → `BEAN-016`). Extract the slug from the directory name.
+- **`--count N`** — Read the index. Identify the top N beans by priority (High before Medium before Low) that have status `Approved`. Pre-assign all N beans — the orchestrator selects them upfront and creates isolated worktrees, eliminating race conditions.
 - **No args** — Same as `--count 1`.
 
 ### Step 2: Create worktrees and launcher scripts
@@ -168,7 +168,7 @@ The prompt must include status file instructions so the worker reports progress.
 **When a specific bean is given**, the prompt should be:
 
 ```
-Pick BEAN-NNN (slug) using /pick-bean NNN --start, then execute the full bean lifecycle autonomously.
+Pick BEAN-NNN (slug) using /pick-bean NNN, then execute the full bean lifecycle autonomously.
 
 You are running in an ISOLATED GIT WORKTREE. Your feature branch (bean/BEAN-NNN-slug) is already checked out.
 - Do NOT create or checkout branches — you are already on the correct feature branch.
@@ -204,7 +204,7 @@ Work autonomously until the bean is Done. Do not ask for user input unless you e
 **When auto-picking** (single worker, no bean ID specified — i.e., `/spawn-bean` with no args), the orchestrator does NOT create a worktree. The single worker runs in the main repo directory and handles its own branch:
 
 ```
-You are a Team Lead. Read ai/beans/_index.md and pick the highest-priority bean with status New that is not owned by another agent. Use /pick-bean <id> --start to claim it, then execute the full bean lifecycle autonomously.
+You are a Team Lead. Read ai/beans/_index.md and pick the highest-priority bean with status Approved that is not owned by another agent. Use /pick-bean <id> to claim it, then execute the full bean lifecycle autonomously.
 
 STATUS FILE PROTOCOL — You MUST update your status file at every transition:
 - Your initial status file is at /tmp/foundry-worker-auto-1.status

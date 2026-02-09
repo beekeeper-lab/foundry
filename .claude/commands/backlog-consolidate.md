@@ -12,7 +12,7 @@ When multiple refinement sessions run in parallel (e.g., 3 Claude windows creati
 /backlog-consolidate [--status <status>] [--dry-run]
 ```
 
-- `--status <value>` — Filter which beans to analyze. Default: `New`. Also accepts `open` (New + Picked + In Progress), `all`, or any single status value.
+- `--status <value>` — Filter which beans to analyze. Default: `Unapproved`. Also accepts `open` (Unapproved + Approved + In Progress), `all`, or any single status value.
 - `--dry-run` — Show findings and proposed changes without applying them.
 
 ## Inputs
@@ -25,7 +25,7 @@ When multiple refinement sessions run in parallel (e.g., 3 Claude windows creati
 
 ## Process
 
-1. **Read the backlog** — Parse `ai/beans/_index.md`, filter to target beans (default: `New`). Also load all Done beans as a reference set.
+1. **Read the backlog** — Parse `ai/beans/_index.md`, filter to target beans (default: `Unapproved`). Also load all Done beans as a reference set.
 2. **Load all target bean files** — Read each `bean.md` in full: Problem Statement, Goal, Scope, Acceptance Criteria, Notes.
 3. **Run analysis checks** — Compare every pair of target beans plus each target bean against Done beans. Detect:
    - **Duplicates** — Near-identical Problem Statements or Goals (Critical)
@@ -54,7 +54,7 @@ When multiple refinement sessions run in parallel (e.g., 3 Claude windows creati
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--status <value>` | `New` | Filter beans to analyze. `open` = New + Picked + In Progress. `all` = every status. |
+| `--status <value>` | `Unapproved` | Filter beans to analyze. `open` = Unapproved + Approved + In Progress. `all` = every status. |
 | `--dry-run` | `false` | Show findings and proposed changes without applying them. |
 
 ## Error Handling
@@ -72,7 +72,7 @@ When multiple refinement sessions run in parallel (e.g., 3 Claude windows creati
 ```
 /backlog-consolidate
 ```
-Analyzes all New beans, finds duplicates and overlaps, presents findings, and applies agreed changes.
+Analyzes all Unapproved beans, finds duplicates and overlaps, presents findings, and applies agreed changes.
 
 **Dry run to preview issues:**
 ```
@@ -84,7 +84,7 @@ Shows all findings without modifying any files.
 ```
 /backlog-consolidate --status open
 ```
-Includes New, Picked, and In Progress beans in the analysis.
+Includes Unapproved, Approved, and In Progress beans in the analysis.
 
 **Analyze the entire backlog:**
 ```

@@ -2,7 +2,7 @@
 
 ## Description
 
-Updates a bean's status from `New` to `Picked` (or `In Progress`), assigning ownership to the Team Lead. This is the formal act of selecting a bean from the backlog for decomposition and execution. Updates both the bean's own file and the backlog index to keep them in sync.
+Updates a bean's status from `Approved` to `In Progress`, assigning ownership to the Team Lead. This is the formal act of selecting a bean from the backlog for decomposition and execution. Only beans with `Approved` status can be picked — `Unapproved` beans must be reviewed and approved first. Updates both the bean's own file and the backlog index to keep them in sync.
 
 ## Trigger
 
@@ -15,7 +15,6 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`), assigning own
 | Input | Type | Required | Description |
 |-------|------|----------|-------------|
 | bean_id | Text | Yes | Bean ID to pick (e.g., `BEAN-006`, `006`, or `6`) |
-| start | Boolean | No | If true, set status to `In Progress` instead of `Picked`. Defaults to false. |
 
 ## Process
 
@@ -32,36 +31,33 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`), assigning own
 4. **Read current state** -- Open the bean's `bean.md`. Parse the metadata table to get current Status and Owner.
 
 5. **Check lock** -- Validate the bean is available:
-   - `New` or `Deferred` (no Owner) → available, proceed
-   - `Picked` or `In Progress` with **your** Owner → already yours, proceed (idempotent)
-   - `Picked` or `In Progress` with **a different** Owner → error with `BeanLocked`: "Bean is claimed by another agent. Pick a different bean."
+   - `Approved` (no Owner) → available, proceed
+   - `In Progress` with **your** Owner → already yours, proceed (idempotent)
+   - `In Progress` with **a different** Owner → error with `BeanLocked`: "Bean is claimed by another agent. Pick a different bean."
+   - `Unapproved` → error with `BeanUnapproved`: "Bean has not been approved yet. Review and approve it first."
    - `Done` → error with `BeanDone`, cannot re-pick a completed bean
 
-5. **Determine new status** -- If `start` is true: `In Progress`. Otherwise: `Picked`.
-
 6. **Update bean.md** -- In the metadata table:
-   - Set `Status` to the new status
+   - Set `Status` to `In Progress`
    - Set `Owner` to `team-lead`
-   - If `start` is true (status → In Progress): set `Started` to the current timestamp (`YYYY-MM-DD HH:MM`). This is when the bean clock starts.
+   - Set `Started` to the current timestamp (`YYYY-MM-DD HH:MM`). This is when the bean clock starts.
 
 7. **Update backlog index** -- In `ai/beans/_index.md`, find the row matching `BEAN-{NNN}` and update:
-   - Status column to the new status
+   - Status column to `In Progress`
    - Owner column to `team-lead`
 
 8. **Ensure test branch exists** -- Check if the `test` integration branch exists locally:
    - Run: `git branch --list test`
    - If it doesn't exist, create it: `git checkout -b test main && git checkout -` (create from main, then return)
 
-9. **Create feature branch** -- Always create the feature branch when starting:
-   - If `start` is true:
-     - Derive the slug from the bean directory name (e.g., `BEAN-006-backlog-refinement`)
-     - Run: `git checkout -b bean/BEAN-NNN-<slug>`
-     - If the branch already exists, check it out instead of creating.
+9. **Create feature branch** -- Always create the feature branch:
+   - Derive the slug from the bean directory name (e.g., `BEAN-006-backlog-refinement`)
+   - Run: `git checkout -b bean/BEAN-NNN-<slug>`
+   - If the branch already exists, check it out instead of creating.
    - Feature branching is mandatory. Every bean gets its own branch.
 
-10. **Confirm** -- Report: bean ID, title, new status, branch name, and next step:
-    - If `Picked`: "Ready for review. Use `/pick-bean {id} --start` when ready to decompose."
-    - If `In Progress`: "Ready for decomposition on branch `bean/BEAN-NNN-<slug>`. Create task files in `tasks/` subdirectory."
+10. **Confirm** -- Report: bean ID, title, status (`In Progress`), branch name, and next step:
+    - "Ready for decomposition on branch `bean/BEAN-NNN-<slug>`. Create task files in `tasks/` subdirectory."
 
 ## Outputs
 
@@ -75,17 +71,18 @@ Updates a bean's status from `New` to `Picked` (or `In Progress`), assigning own
 ## Quality Criteria
 
 - Both `bean.md` and `_index.md` are updated atomically (both or neither).
-- Status transitions are valid: only `New` or `Deferred` beans can be picked.
+- Status transitions are valid: only `Approved` or `Deferred` beans can be picked. `Unapproved` beans are rejected.
 - Owner is always set to `team-lead` when picking.
-- The operation is idempotent: picking an already-picked bean is a no-op with a warning.
+- The operation is idempotent: picking an already-in-progress bean owned by you is a no-op with a warning.
 
 ## Error Conditions
 
 | Error | Cause | Resolution |
 |-------|-------|------------|
 | `BeanNotFound` | No bean directory matches the ID | Check `_index.md` for valid IDs |
-| `AlreadyActive` | Bean is already `Picked` or `In Progress` by you | Warning only — no action needed |
-| `BeanLocked` | Bean is `Picked` or `In Progress` with a different Owner | Pick a different bean — this one is claimed by another agent |
+| `AlreadyActive` | Bean is already `In Progress` by you | Warning only — no action needed |
+| `BeanLocked` | Bean is `In Progress` with a different Owner | Pick a different bean — this one is claimed by another agent |
+| `BeanUnapproved` | Bean status is `Unapproved` | Review and approve the bean first |
 | `BeanDone` | Bean status is `Done` | Cannot re-pick; create a follow-up bean with `/new-bean` |
 
 ## Dependencies

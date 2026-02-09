@@ -8,7 +8,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 
 - Invoked by the `/long-run` slash command.
 - Should only be used by the Team Lead persona.
-- Requires at least one bean in `_index.md` with status `New` or `Picked`.
+- Requires at least one bean in `_index.md` with status `Approved`.
 
 ## Inputs
 
@@ -30,7 +30,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 ### Phase 1: Backlog Assessment
 
 1. **Read the backlog index** — Parse `ai/beans/_index.md` to get all beans and their statuses.
-2. **Filter actionable beans** — Select beans with status `New`, or `Picked` with no Owner or with your own Owner. Exclude `Done`, `Deferred`, beans blocked by unfinished dependencies, and beans locked by another agent (status `Picked` or `In Progress` with a different Owner). If `category` is provided, further filter to only beans whose Category column matches (case-insensitive).
+2. **Filter actionable beans** — Select beans with status `Approved`. Exclude `Done`, `Deferred`, `Unapproved`, beans blocked by unfinished dependencies, and beans locked by another agent (status `In Progress` with a different Owner). If `category` is provided, further filter to only beans whose Category column matches (case-insensitive).
 3. **Check stop condition** — If no actionable beans exist (or none match the category filter), report final summary and exit. If category is active, mention it: "No actionable beans matching category: Process."
 
 ### Phase 2: Bean Selection
@@ -102,7 +102,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
 ### Parallel Phase 2: Backlog Assessment
 
-2. **Read the backlog index** — Same as sequential Phase 1: parse `_index.md`, filter actionable beans (skip locked beans owned by other agents). Apply `category` filter if provided.
+2. **Read the backlog index** — Same as sequential Phase 1: parse `_index.md`, filter actionable beans with status `Approved` (skip `Unapproved`, locked beans owned by other agents). Apply `category` filter if provided.
 3. **Check stop condition** — If no actionable beans (or none matching category), report and exit.
 4. **Read candidate beans** — Read each actionable bean's `bean.md` to understand dependencies.
 
@@ -197,7 +197,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
 ## Quality Criteria
 
-- Each bean goes through the complete lifecycle: pick → decompose → execute → verify → close.
+- Each bean goes through the complete lifecycle: approved → in progress → decompose → execute → verify → close.
 - No bean is skipped without explanation.
 - Bean selection follows the documented heuristics consistently.
 - All acceptance criteria are verified before marking a bean as Done.

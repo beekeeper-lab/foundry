@@ -29,12 +29,12 @@ Automates the boilerplate of creating a new bean: assigning the next sequential 
 3. **Create directory** -- Create `ai/beans/BEAN-{NNN}-{slug}/` and `ai/beans/BEAN-{NNN}-{slug}/tasks/`.
 4. **Populate bean.md** -- Copy the template from `ai/beans/_bean-template.md` and fill in:
    - Bean ID: `BEAN-{NNN}`
-   - Status: `New`
+   - Status: `Unapproved`
    - Priority: from `--priority` flag or `Medium`
    - Created: today's date (YYYY-MM-DD)
    - Owner: `(unassigned)`
    - Title in the heading
-5. **Update index** -- Append a row to the Backlog table in `ai/beans/_index.md` with the new bean's ID, title, priority, status `New`, and owner `—`.
+5. **Update index** -- Append a row to the Backlog table in `ai/beans/_index.md` with the new bean's ID, title, priority, status `Unapproved`, and owner `—`.
 6. **Confirm** -- Display the bean ID, directory path, and a reminder to fill in the Problem Statement and Acceptance Criteria.
 
 ## Output

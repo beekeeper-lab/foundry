@@ -14,14 +14,14 @@ Reads the beans backlog and produces a formatted summary of all beans grouped by
 
 | Input | Type | Required | Description |
 |-------|------|----------|-------------|
-| filter | Enum: `new`, `picked`, `in-progress`, `done`, `deferred` | No | Show only beans with this status. Default: show all. |
+| filter | Enum: `unapproved`, `approved`, `in-progress`, `done`, `deferred` | No | Show only beans with this status. Default: show all. |
 | verbose | Boolean | No | Include task breakdown for active beans. Default: false. |
 
 ## Process
 
 1. **Read backlog index** -- Parse `ai/beans/_index.md` to extract the Backlog table. For each row, capture: Bean ID, Title, Priority, Status, Owner.
 
-2. **Enrich with task data** (if `--verbose`) -- For each bean that is `Picked` or `In Progress`:
+2. **Enrich with task data** (if `--verbose`) -- For each bean that is `In Progress`:
    - Read the bean's `bean.md`
    - Parse the Tasks table to count: total tasks, pending, in progress, done
    - Note any blocked tasks
@@ -31,8 +31,8 @@ Reads the beans backlog and produces a formatted summary of all beans grouped by
 
 4. **Group by status** -- Organize beans into groups:
    - In Progress (most important — active work)
-   - Picked (next up)
-   - New (backlog)
+   - Approved (ready for execution)
+   - Unapproved (awaiting review)
    - Deferred (parked)
    - Done (completed)
 
@@ -40,21 +40,22 @@ Reads the beans backlog and produces a formatted summary of all beans grouped by
    ```
    ## Bean Backlog Summary
 
-   **Totals:** 3 Done | 1 In Progress | 2 New
+   **Totals:** 3 Done | 1 In Progress | 2 Approved | 1 Unapproved
 
    ### In Progress
    | Bean ID | Title | Priority | Owner | Tasks | Duration | Tokens |
    |---------|-------|----------|-------|-------|----------|--------|
    | BEAN-003 | Bean Commands | Medium | team-lead | 1/2 done | 45m | 23k tokens |
 
-   ### New
+   ### Approved
    | Bean ID | Title | Priority |
    |---------|-------|----------|
    | BEAN-001 | Backlog Seeding | Medium |
    ```
 
 6. **Highlight actionable items** -- At the bottom, add a "Next Actions" section:
-   - Beans with status `New` that are ready to pick
+   - Beans with status `Approved` that are ready to pick
+   - Beans with status `Unapproved` that need human review
    - Beans `In Progress` with all tasks `Done` that are ready to close
    - Beans `In Progress` with blocked tasks
 

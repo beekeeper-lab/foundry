@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-073 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
+| **Started** | 2026-02-09 |
+| **Completed** | 2026-02-09 |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -44,22 +44,22 @@ Implement the new bean lifecycle: `Unapproved → Approved → In Progress → D
 
 ## Acceptance Criteria
 
-- [ ] `_bean-template.md` has `Unapproved` as default status
-- [ ] `/backlog-refinement` creates beans with status `Unapproved`
-- [ ] `/new-bean` creates beans with status `Unapproved`
-- [ ] `/long-run` skips `Unapproved` beans, only picks `Approved`
-- [ ] `/spawn-bean` only picks `Approved` beans
-- [ ] `/pick-bean` only accepts `Approved` beans, transitions to `In Progress`
-- [ ] `/pick-bean` no longer has a `Picked` state or `--start` flag distinction
-- [ ] `/bean-status` shows `Unapproved` and `Approved` groups, no `Picked`
-- [ ] `/show-backlog` accepts `unapproved` and `approved` as filter values
-- [ ] `/backlog-consolidate` defaults to `Unapproved`
-- [ ] `_index.md` status key reflects new lifecycle
-- [ ] Team Lead agent references updated lifecycle
-- [ ] README Bean Lifecycle section updated
-- [ ] No references to `Picked` or `New` status remain in skills/commands/agents
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `_bean-template.md` has `Unapproved` as default status
+- [x] `/backlog-refinement` creates beans with status `Unapproved`
+- [x] `/new-bean` creates beans with status `Unapproved`
+- [x] `/long-run` skips `Unapproved` beans, only picks `Approved`
+- [x] `/spawn-bean` only picks `Approved` beans
+- [x] `/pick-bean` only accepts `Approved` beans, transitions to `In Progress`
+- [x] `/pick-bean` no longer has a `Picked` state or `--start` flag distinction
+- [x] `/bean-status` shows `Unapproved` and `Approved` groups, no `Picked`
+- [x] `/show-backlog` accepts `unapproved` and `approved` as filter values
+- [x] `/backlog-consolidate` defaults to `Unapproved`
+- [x] `_index.md` status key reflects new lifecycle
+- [x] Team Lead agent references updated lifecycle
+- [x] README Bean Lifecycle section updated
+- [x] No references to `Picked` or `New` status remain in skills/commands/agents
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 

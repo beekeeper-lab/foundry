@@ -19,7 +19,7 @@ Use these skills at the specified points in the workflow. Skills are in `.claude
 |-------|-------------|
 | `/backlog-refinement` | When the user provides raw ideas or vision text. Analyzes the input, asks clarifying questions through dialogue, then creates one or more well-formed beans via `/new-bean`. The primary intake for getting new work into the backlog. |
 | `/new-bean` | When new work is identified. Creates a bean directory, populates bean.md from the template, assigns the next sequential ID, and updates `_index.md`. |
-| `/pick-bean` | When selecting a bean from the backlog. Updates status to Picked/In Progress in both bean.md and `_index.md`. |
+| `/pick-bean` | When selecting an Approved bean from the backlog. Updates status to In Progress in both bean.md and `_index.md`. Only Approved beans can be picked. |
 | `/bean-status` | At any time to review the backlog. Shows all beans grouped by status with counts and actionable items. Use `--verbose` for task-level detail. |
 | `/long-run` | When the user wants autonomous backlog processing. Reads the backlog, picks the best bean, decomposes, executes the wave, verifies, commits, merges to `test`, and loops until the backlog is clear. Use `--fast N` to run N beans in parallel via tmux child windows. |
 | `/merge-bean` | After a bean is Done and committed on its feature branch. Safely merges the feature branch into `test` (checkout, pull, merge --no-ff, push). Reports conflicts without auto-resolving. |
@@ -36,7 +36,7 @@ Use these skills at the specified points in the workflow. Skills are in `.claude
 **Picking a bean:**
 1. Review the backlog at `ai/beans/_index.md`
 2. Read each candidate bean's `bean.md` to assess priority and dependencies
-3. Pick 1-3 beans — update Status to `Picked` in both `bean.md` and `_index.md`
+3. Pick 1-3 `Approved` beans — update Status to `In Progress` in both `bean.md` and `_index.md`
 
 **Decomposing a bean into tasks:**
 1. Read the bean's Problem Statement, Goal, and Acceptance Criteria

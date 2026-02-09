@@ -40,7 +40,7 @@ Creates a new bean in the project's beans backlog. Assigns the next sequential I
 6. **Populate bean.md** -- Read `ai/beans/_bean-template.md`. Replace placeholders:
    - `BEAN-NNN` → the assigned ID
    - `[Title]` → the provided title
-   - Status → `New`
+   - Status → `Unapproved`
    - Priority → from input or `Medium`
    - Created → today's date in `YYYY-MM-DD` format
    - Owner → `(unassigned)`
@@ -49,7 +49,7 @@ Creates a new bean in the project's beans backlog. Assigns the next sequential I
 
 7. **Update backlog index** -- Append a new row to the Backlog table in `ai/beans/_index.md`:
    ```
-   | BEAN-{NNN} | {title} | {priority} | New | — |
+   | BEAN-{NNN} | {title} | {priority} | Unapproved | — |
    ```
 
 8. **Confirm** -- Report: bean ID, directory path, and remind the user to fill in Problem Statement, Goal, Scope, and Acceptance Criteria if not provided.

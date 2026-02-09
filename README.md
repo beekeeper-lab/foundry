@@ -486,12 +486,12 @@ Five core personas collaborate through a structured workflow:
 ### Bean Lifecycle
 
 ```
-New → Picked → In Progress → Done
+Unapproved → Approved → In Progress → Done
 ```
 
-1. **New** — A bean is created via `/new-bean` or `/backlog-refinement` and added to `ai/beans/_index.md`
-2. **Picked** — The Team Lead claims the bean via `/pick-bean`, assigning ownership
-3. **In Progress** — The Team Lead decomposes the bean into tasks via `/seed-tasks` and creates a feature branch. Personas execute tasks in dependency waves: BA → Architect → Developer → Tech-QA
+1. **Unapproved** — A bean is created via `/new-bean` or `/backlog-refinement` and added to `ai/beans/_index.md`. It awaits human review and approval.
+2. **Approved** — The user reviews the bean (e.g., in Obsidian via `/review-beans`) and changes its status to `Approved`, signaling it is ready for execution.
+3. **In Progress** — The Team Lead claims the bean via `/pick-bean`, assigns ownership, creates a feature branch, and decomposes it into tasks. Personas execute tasks in dependency waves: BA → Architect → Developer → Tech-QA.
 4. **Done** — All acceptance criteria pass, tests are green, lint is clean, and the bean is merged
 
 ### Bean Directory Structure
@@ -648,7 +648,7 @@ Detects and resolves duplicates, scope overlaps, contradictions, missing depende
 ```
 
 **Options:**
-- `--status` — Filter beans: `New` (default), `open`, `all`, or any single status
+- `--status` — Filter beans: `Unapproved` (default), `open`, `all`, or any single status
 - `--dry-run` — Show findings without applying changes
 
 **What it does:**
@@ -663,21 +663,18 @@ Detects and resolves duplicates, scope overlaps, contradictions, missing depende
 
 #### `/pick-bean` — Claim a Bean for Execution
 
-Updates a bean's status from `New` to `Picked` (or `In Progress`), assigning ownership to the Team Lead and creating the feature branch.
+Updates a bean's status from `Approved` to `In Progress`, assigning ownership to the Team Lead and creating the feature branch. Only `Approved` beans can be picked — `Unapproved` beans must be reviewed first.
 
 ```
-/pick-bean <bean-id> [--start]
+/pick-bean <bean-id>
 ```
-
-**Options:**
-- `--start` — Set status directly to `In Progress`, create feature branch, and record `Started` timestamp
 
 **What it does:**
 1. Resolves bean ID (accepts `BEAN-006`, `006`, or `6`)
-2. Validates the bean is available (not locked by another agent)
-3. Updates `bean.md` and `_index.md` with new status and owner
+2. Validates the bean is `Approved` and not locked by another agent
+3. Updates `bean.md` and `_index.md` with `In Progress` status and owner
 4. Ensures `test` branch exists locally
-5. If `--start`: creates `bean/BEAN-NNN-<slug>` feature branch and records `Started` timestamp
+5. Creates `bean/BEAN-NNN-<slug>` feature branch and records `Started` timestamp
 
 **Produces:** Updated `bean.md`, updated `_index.md`, feature branch
 
@@ -692,12 +689,12 @@ Displays the current state of the beans backlog grouped by status.
 ```
 
 **Options:**
-- `--filter` — Show only beans with this status: `new`, `picked`, `in-progress`, `done`, `deferred`
+- `--filter` — Show only beans with this status: `unapproved`, `approved`, `in-progress`, `done`, `deferred`
 - `--verbose` — Include task-level detail, telemetry (duration, tokens) for active beans
 
 **What it does:**
 1. Reads `_index.md` and each bean's `bean.md`
-2. Groups beans by status: In Progress, Picked, New, Deferred, Done
+2. Groups beans by status: In Progress, Approved, Unapproved, Deferred, Done
 3. In verbose mode: parses task tables and telemetry sections
 4. Highlights actionable items (beans ready to pick, ready to close, or blocked)
 
@@ -714,7 +711,7 @@ Displays the bean backlog in a concise table format with optional filtering.
 ```
 
 **Options:**
-- `--status` — Filter: `New`, `Picked`, `In Progress`, `Done`, `Deferred`, `open`, `all`
+- `--status` — Filter: `Unapproved`, `Approved`, `In Progress`, `Done`, `Deferred`, `open`, `all`
 - `--category` — Filter: `App`, `Process`, `Infra`
 
 **Produces:** Markdown table with bean ID, summary, and category; count totals

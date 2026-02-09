@@ -8,7 +8,7 @@ Displays the bean backlog in a concise table format showing each bean's ID, a on
 /show-backlog [--status <status>] [--category <cat>]
 ```
 
-- `--status <status>` -- Filter by status: `New`, `Picked`, `In Progress`, `Done`, `Deferred`, or `open` (shortcut for all non-Done). Default: show all.
+- `--status <status>` -- Filter by status: `Unapproved`, `Approved`, `In Progress`, `Done`, `Deferred`, or `open` (shortcut for all non-Done). Default: show all.
 - `--category <cat>` -- Filter by category: `App`, `Process`, `Infra`. Case-insensitive. Default: show all.
 
 ## Process

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-NNN |
-| **Status** | New |
+| **Status** | Unapproved |
 | **Priority** | Medium |
 | **Created** | YYYY-MM-DD |
 | **Started** | — |
