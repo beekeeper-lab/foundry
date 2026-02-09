@@ -126,6 +126,34 @@ class FoundrySettings:
     def write_safety_config(self, enabled: bool) -> None:
         self.set_value("safety/write_config", enabled)
 
+    # -- appearance --------------------------------------------------------
+
+    @property
+    def font_size_preference(self) -> str:
+        val = str(self.value("appearance/font_size", "medium"))
+        return val if val in ("small", "medium", "large") else "medium"
+
+    @font_size_preference.setter
+    def font_size_preference(self, size: str) -> None:
+        self.set_value("appearance/font_size", size)
+
+    @property
+    def theme_preference(self) -> str:
+        val = str(self.value("appearance/theme", "dark"))
+        return val if val in ("dark",) else "dark"
+
+    @theme_preference.setter
+    def theme_preference(self, name: str) -> None:
+        self.set_value("appearance/theme", name)
+
+    # -- advanced ----------------------------------------------------------
+
+    def reset_all(self) -> None:
+        """Clear all settings and restore defaults."""
+        self._qs.clear()
+        self._qs.sync()
+        logger.info("All settings reset to defaults")
+
     # -- window geometry ---------------------------------------------------
 
     @property

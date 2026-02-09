@@ -38,6 +38,7 @@ from foundry_app.ui.theme import (
     SPACE_SM,
     SPACE_XL,
     SPACE_XXL,
+    STATUS_ERROR,
     TEXT_ON_ACCENT,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
@@ -268,6 +269,79 @@ class SettingsScreen(QWidget):
         posture_row.addStretch()
         layout.addLayout(posture_row)
 
+        # -- Appearance section --
+        layout.addSpacing(SPACE_LG)
+        self._add_section_header(layout, "APPEARANCE")
+
+        appear_desc = QLabel(
+            "Visual preferences for the application. "
+            "Font size changes take effect immediately."
+        )
+        appear_desc.setWordWrap(True)
+        appear_desc.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
+        layout.addWidget(appear_desc)
+
+        # Font size dropdown
+        font_row = QHBoxLayout()
+        font_row.setSpacing(SPACE_SM)
+        font_label = QLabel("Font size:")
+        font_label.setStyleSheet(
+            f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
+        )
+        font_row.addWidget(font_label)
+        self._font_size_combo = QComboBox()
+        self._font_size_combo.addItem("Small", "small")
+        self._font_size_combo.addItem("Medium", "medium")
+        self._font_size_combo.addItem("Large", "large")
+        self._font_size_combo.setStyleSheet(self._combo_style())
+        self._font_size_combo.currentIndexChanged.connect(self._on_font_size_changed)
+        font_row.addWidget(self._font_size_combo)
+        font_row.addStretch()
+        layout.addLayout(font_row)
+
+        # Theme dropdown (placeholder for future)
+        theme_row = QHBoxLayout()
+        theme_row.setSpacing(SPACE_SM)
+        theme_label = QLabel("Theme:")
+        theme_label.setStyleSheet(
+            f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
+        )
+        theme_row.addWidget(theme_label)
+        self._theme_combo = QComboBox()
+        self._theme_combo.addItem("Dark (Industrial)", "dark")
+        self._theme_combo.setStyleSheet(self._combo_style())
+        self._theme_combo.currentIndexChanged.connect(self._on_theme_changed)
+        theme_row.addWidget(self._theme_combo)
+        theme_row.addStretch()
+        layout.addLayout(theme_row)
+
+        # -- Advanced section --
+        layout.addSpacing(SPACE_LG)
+        self._add_section_header(layout, "ADVANCED")
+
+        from foundry_app import __version__
+
+        version_label = QLabel(f"Foundry v{__version__}")
+        version_label.setStyleSheet(
+            f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
+        )
+        layout.addWidget(version_label)
+
+        config_path = QLabel(f"Config: {self._settings._qs.fileName()}")
+        config_path.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
+        config_path.setWordWrap(True)
+        layout.addWidget(config_path)
+
+        self._reset_btn = QPushButton("Reset All Settings")
+        self._reset_btn.setStyleSheet(self._danger_button_style())
+        self._reset_btn.clicked.connect(self._on_reset_all)
+        self._reset_btn.setFixedWidth(200)
+        layout.addWidget(self._reset_btn)
+
         layout.addStretch(1)
 
     # -- Public API --------------------------------------------------------
@@ -311,6 +385,18 @@ class SettingsScreen(QWidget):
     @property
     def posture_combo(self) -> QComboBox:
         return self._posture_combo
+
+    @property
+    def font_size_combo(self) -> QComboBox:
+        return self._font_size_combo
+
+    @property
+    def theme_combo(self) -> QComboBox:
+        return self._theme_combo
+
+    @property
+    def reset_button(self) -> QPushButton:
+        return self._reset_btn
 
     def set_library_root(self, path: str) -> None:
         """Programmatically set the library root and persist it."""
@@ -374,6 +460,34 @@ class SettingsScreen(QWidget):
             self._settings.default_safety_posture = val
             logger.info("Safety posture default set to: %s", val)
 
+    def _on_font_size_changed(self, index: int) -> None:
+        val = self._font_size_combo.itemData(index)
+        if val:
+            self._settings.font_size_preference = val
+            logger.info("Font size preference set to: %s", val)
+
+    def _on_theme_changed(self, index: int) -> None:
+        val = self._theme_combo.itemData(index)
+        if val:
+            self._settings.theme_preference = val
+            logger.info("Theme preference set to: %s", val)
+
+    def _on_reset_all(self) -> None:
+        from PySide6.QtWidgets import QMessageBox
+
+        result = QMessageBox.question(
+            self,
+            "Reset All Settings",
+            "This will clear all settings and restore defaults.\n\n"
+            "Are you sure?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if result == QMessageBox.StandardButton.Yes:
+            self._settings.reset_all()
+            self._load_values()
+            logger.info("All settings reset to defaults")
+
     # -- Internal ----------------------------------------------------------
 
     def _load_values(self) -> None:
@@ -409,6 +523,19 @@ class SettingsScreen(QWidget):
         for i in range(self._posture_combo.count()):
             if self._posture_combo.itemData(i) == posture:
                 self._posture_combo.setCurrentIndex(i)
+                break
+
+        # Appearance
+        font_size = self._settings.font_size_preference
+        for i in range(self._font_size_combo.count()):
+            if self._font_size_combo.itemData(i) == font_size:
+                self._font_size_combo.setCurrentIndex(i)
+                break
+
+        theme_pref = self._settings.theme_preference
+        for i in range(self._theme_combo.count()):
+            if self._theme_combo.itemData(i) == theme_pref:
+                self._theme_combo.setCurrentIndex(i)
                 break
 
     def _refresh_recent(self) -> None:
@@ -492,5 +619,21 @@ class SettingsScreen(QWidget):
                 border: 1px solid {BORDER_DEFAULT};
                 selection-background-color: {ACCENT_PRIMARY};
                 selection-color: {TEXT_ON_ACCENT};
+            }}
+        """
+
+    def _danger_button_style(self) -> str:
+        return f"""
+            QPushButton {{
+                background-color: {STATUS_ERROR};
+                color: {TEXT_PRIMARY};
+                border: none;
+                border-radius: {RADIUS_SM}px;
+                padding: {SPACE_SM}px {SPACE_LG}px;
+                font-size: {FONT_SIZE_MD}px;
+                font-weight: {FONT_WEIGHT_BOLD};
+            }}
+            QPushButton:hover {{
+                background-color: #cc6666;
             }}
         """

@@ -152,6 +152,43 @@ class TestSafetyDefaults:
 
 
 # ---------------------------------------------------------------------------
+# Appearance
+# ---------------------------------------------------------------------------
+
+class TestAppearance:
+    def test_font_size_default_is_medium(self, settings):
+        assert settings.font_size_preference == "medium"
+
+    def test_set_font_size(self, settings):
+        settings.font_size_preference = "large"
+        assert settings.font_size_preference == "large"
+
+    def test_font_size_invalid_falls_back(self, settings):
+        settings.set_value("appearance/font_size", "huge")
+        assert settings.font_size_preference == "medium"
+
+    def test_theme_default_is_dark(self, settings):
+        assert settings.theme_preference == "dark"
+
+    def test_set_theme(self, settings):
+        settings.theme_preference = "dark"
+        assert settings.theme_preference == "dark"
+
+
+# ---------------------------------------------------------------------------
+# Reset all
+# ---------------------------------------------------------------------------
+
+class TestResetAll:
+    def test_reset_clears_values(self, settings):
+        settings.library_root = "/some/path"
+        settings.default_strictness = "strict"
+        settings.reset_all()
+        assert settings.library_root == ""
+        assert settings.default_strictness == "standard"
+
+
+# ---------------------------------------------------------------------------
 # sync / value
 # ---------------------------------------------------------------------------
 
