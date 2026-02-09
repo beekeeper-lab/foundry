@@ -565,7 +565,7 @@ Foundry provides **22 skills** and **24 commands** for Claude Code automation. S
 | `/build-traceability` | Quality | Map acceptance criteria to test cases; identify coverage gaps |
 | `/close-loop` | Quality | Verify task outputs against acceptance criteria; record telemetry |
 | `/compile-team` | Generation | Resolve persona/stack references; produce unified CLAUDE.md |
-| `/deploy` | Deployment | Promote `test` → `main` via PR with tests, review, and release notes |
+| `/deploy` | Deployment | Promote `test` → `main` (or current branch → `test`) via PR with tests and release notes |
 | `/handoff` | Workflow | Package artifacts and context for the next persona in the wave |
 | `/long-run` | Execution | Autonomous backlog processing — pick, decompose, execute, merge, loop |
 | `/merge-bean` | Integration | Merge a bean's feature branch into `test` with conflict detection |
@@ -1107,26 +1107,31 @@ Safely merges a bean's feature branch into the `test` integration branch.
 
 ---
 
-#### `/deploy` — Promote Test to Main
+#### `/deploy` — Deploy via Pull Request
 
-Promotes `test` to `main` via a pull request with full verification.
+Promotes a source branch into a target branch via PR with full verification.
 
 ```
-/deploy [--tag <version>]
+/deploy              # test → main (release)
+/deploy test         # current branch → test (integration)
+/deploy --tag v2.0.0 # test → main with version tag
 ```
 
 **Options:**
-- `--tag` — Version tag for the merge commit
+- `target` — Target branch: `main` (default) or `test`
+- `--tag` — Version tag for the merge commit (main only)
 
 **What it does:**
-1. Runs `uv run pytest` and `uv run ruff check` — stops if either fails
-2. Builds release notes from bean commits
-3. Shows summary and waits for single user approval
-4. Creates PR via `gh pr create --base main --head test`
-5. Merges PR, optionally tags, deletes merged feature branches
-6. Syncs local `main`
+1. Determines source/target — `main`: source is `test`. `test`: source is current branch.
+2. Runs `uv run pytest` and `uv run ruff check` — stops if either fails
+3. Builds release notes from bean commits
+4. Shows summary and waits for single user approval
+5. Creates PR via `gh pr create --base <target> --head <source>`
+6. Merges PR, optionally tags
+7. Deletes merged feature branches (main deploys only)
+8. Syncs local target branch
 
-**Produces:** Merged PR, cleaned up branches, deployment report with PR URL
+**Produces:** Merged PR, deployment report with PR URL, branch cleanup (main only)
 
 ---
 
