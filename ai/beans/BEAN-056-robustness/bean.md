@@ -45,11 +45,11 @@ Improve error handling and reliability so failures produce clear messages and al
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Add warning log in resources.py get_resource_path() | Developer | | Done |
-| 2 | Simplify scaffold.py directory creation (remove exists check) | Developer | | Done |
-| 3 | Add try/except around write_text in library_manager._on_new_asset() | Developer | | Done |
-| 4 | Add setup_logging() call in cli.py _run_generate() | Developer | | Done |
-| 5 | Clean up StackOverrides in models.py | Developer | | Done |
+| 1 | Add warning log in resources.py get_resource_path() | | | Done |
+| 2 | Simplify scaffold.py directory creation (remove exists check) | | | Done |
+| 3 | Add try/except around write_text in library_manager._on_new_asset() | | | Done |
+| 4 | Add setup_logging() call in cli.py _run_generate() | | | Done |
+| 5 | Clean up StackOverrides in models.py | | | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
