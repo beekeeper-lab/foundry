@@ -44,12 +44,15 @@ Safely merges a bean's feature branch into the `test` integration branch. Handle
    - **Clean merge**: proceed to Phase 4.
    - **Conflict**: go to Conflict Handling (below).
 
-### Phase 4: Push & Report
+### Phase 4: Push & Cleanup
 
 9. **Push to remote** — `git push origin test`.
    - If push fails (e.g., another worker pushed first), pull and retry once.
-10. **Return to main** — `git checkout main`.
-11. **Report success** — Output: bean title, feature branch name, target branch, merge commit hash.
+10. **Delete feature branch** — `git branch -d bean/BEAN-NNN-<slug>`.
+    - If the branch is also on the remote: `git push origin --delete bean/BEAN-NNN-<slug>`.
+    - If delete fails (e.g., worktree reference), log a warning but continue.
+11. **Return to main** — `git checkout main`.
+12. **Report success** — Output: bean title, feature branch name (deleted), target branch, merge commit hash.
 
 ### Conflict Handling
 
@@ -73,8 +76,8 @@ If step 8 detects merge conflicts:
 - The target branch is always pulled before merging (handles concurrent merges).
 - Merge uses `--no-ff` to preserve merge history.
 - Conflicts are never auto-resolved — they are reported clearly.
-- After a successful merge, the working directory returns to `main`.
-- After a failed merge, the working directory returns to the feature branch.
+- After a successful merge, the feature branch is deleted (local + remote) and the working directory returns to `main`.
+- After a failed merge, the working directory returns to the feature branch (branch is preserved for conflict resolution).
 - Push failures trigger one retry after pull.
 
 ## Error Conditions

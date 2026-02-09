@@ -1,0 +1,91 @@
+# BEAN-073: Approval Gate Wiring
+
+| Field | Value |
+|-------|-------|
+| **Bean ID** | BEAN-073 |
+| **Status** | Approved |
+| **Priority** | High |
+| **Created** | 2026-02-09 |
+| **Started** | — |
+| **Completed** | — |
+| **Duration** | — |
+| **Owner** | (unassigned) |
+| **Category** | Process |
+
+## Problem Statement
+
+Beans created by `/backlog-refinement` go straight to `New` status and can be immediately picked up by `/long-run`. There is no human approval gate — the user has no chance to review scope, priority, or acceptance criteria before work begins. The status lifecycle needs a new `Unapproved` state and the `Picked` state should be dropped (it serves no practical purpose).
+
+## Goal
+
+Implement the new bean lifecycle: `Unapproved → Approved → In Progress → Done`. Update all skills, commands, agents, and docs that reference bean statuses. Drop the `Picked` status entirely.
+
+## Scope
+
+### In Scope
+- New lifecycle: `Unapproved → Approved → In Progress → Done` (plus `Deferred`)
+- Update `_bean-template.md`: default status to `Unapproved`
+- Update `_index.md`: status key table with new statuses, drop `Picked`
+- Update `/backlog-refinement`: create beans as `Unapproved`
+- Update `/new-bean`: default status to `Unapproved`
+- Update `/long-run`: only pick `Approved` beans (skip `Unapproved`)
+- Update `/spawn-bean`: same — only pick `Approved` beans
+- Update `/pick-bean`: only allow picking `Approved` beans, go straight to `In Progress` (remove `Picked` logic)
+- Update `/bean-status`: replace `Picked` with `Unapproved`/`Approved` grouping
+- Update `/show-backlog`: update `--status` filter values
+- Update `/backlog-consolidate`: default filter from `New` to `Unapproved`
+- Update `.claude/agents/team-lead.md`: lifecycle references
+- Update `README.md`: Bean Lifecycle section
+
+### Out of Scope
+- Obsidian integration (that's BEAN-072)
+- Migrating existing beans (all 71 are `Done`, no migration needed)
+- Adding approval timestamps or approval-by fields
+
+## Acceptance Criteria
+
+- [ ] `_bean-template.md` has `Unapproved` as default status
+- [ ] `/backlog-refinement` creates beans with status `Unapproved`
+- [ ] `/new-bean` creates beans with status `Unapproved`
+- [ ] `/long-run` skips `Unapproved` beans, only picks `Approved`
+- [ ] `/spawn-bean` only picks `Approved` beans
+- [ ] `/pick-bean` only accepts `Approved` beans, transitions to `In Progress`
+- [ ] `/pick-bean` no longer has a `Picked` state or `--start` flag distinction
+- [ ] `/bean-status` shows `Unapproved` and `Approved` groups, no `Picked`
+- [ ] `/show-backlog` accepts `unapproved` and `approved` as filter values
+- [ ] `/backlog-consolidate` defaults to `Unapproved`
+- [ ] `_index.md` status key reflects new lifecycle
+- [ ] Team Lead agent references updated lifecycle
+- [ ] README Bean Lifecycle section updated
+- [ ] No references to `Picked` or `New` status remain in skills/commands/agents
+- [ ] All tests pass (`uv run pytest`)
+- [ ] Lint clean (`uv run ruff check foundry_app/`)
+
+## Tasks
+
+| # | Task | Owner | Depends On | Status |
+|---|------|-------|------------|--------|
+| 1 | | | | Pending |
+
+> Tasks are populated by the Team Lead during decomposition.
+> Task files go in `tasks/` subdirectory.
+
+## Notes
+
+- BEAN-072 (Obsidian review skill) depends on this bean for the `Unapproved` status to exist
+- BEAN-074 (workflow docs) depends on this bean for the canonical lifecycle definition
+- All 71 existing beans are `Done` — no migration needed
+- The `Deferred` status is unchanged
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 |      |       |          |           |            |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | — |
+| **Total Duration** | — |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |

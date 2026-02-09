@@ -38,8 +38,9 @@ After a bean has been verified and committed on its feature branch, the Merge Ca
    - Return to the feature branch: `git checkout bean/BEAN-NNN-<slug>`.
    - Stop with a clear message listing the conflicts for manual resolution.
 8. **Push to target** — `git push origin test`.
-9. **Return to main** — `git checkout main`.
-10. **Report success** — Output: bean title, feature branch, target branch, merge commit hash.
+9. **Delete feature branch** — `git branch -d bean/BEAN-NNN-<slug>`. If also on remote, `git push origin --delete bean/BEAN-NNN-<slug>`.
+10. **Return to main** — `git checkout main`.
+11. **Report success** — Output: bean title, feature branch (deleted), target branch, merge commit hash.
 
 ## Output
 
@@ -77,6 +78,7 @@ Merges the feature branch into `dev` instead of `test`.
 ✓ Merged BEAN-011 (Merge Captain Auto-Merge)
   Branch: bean/BEAN-011-merge-captain-auto-merge → test
   Commit: f4e5d6c
+  Cleaned: branch deleted (local + remote)
 ```
 
 **Conflict output:**
