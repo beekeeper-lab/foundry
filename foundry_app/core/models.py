@@ -444,7 +444,7 @@ class OverlayPlan(BaseModel):
 class PersonaInfo(BaseModel):
     """Metadata about a discovered persona in the library."""
 
-    id: str
+    id: str = Field(..., min_length=1)
     path: str = Field(..., description="Path to persona directory")
     has_persona_md: bool = False
     has_outputs_md: bool = False

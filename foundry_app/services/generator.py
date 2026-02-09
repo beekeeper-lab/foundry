@@ -20,6 +20,8 @@ from foundry_app.core.models import (
     Strictness,
     ValidationResult,
 )
+from foundry_app.services.asset_copier import copy_assets
+from foundry_app.services.compiler import compile_project
 from foundry_app.services.diff_reporter import write_diff_report
 from foundry_app.services.library_indexer import build_library_index
 from foundry_app.services.safety_writer import write_safety
@@ -28,45 +30,6 @@ from foundry_app.services.seeder import seed_tasks
 from foundry_app.services.validator import run_pre_generation_validation
 
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Stub stages (to be replaced by real services in future beans)
-# ---------------------------------------------------------------------------
-
-
-def _stub_compile(spec: CompositionSpec, library: LibraryIndex, output_dir: Path) -> StageResult:
-    """Stub for the compiler service (BEAN-027)."""
-    logger.info("Compile stage: stub (BEAN-027 not yet implemented)")
-    return StageResult()
-
-
-def _stub_copy_assets(
-    spec: CompositionSpec, library: LibraryIndex, output_dir: Path,
-) -> StageResult:
-    """Stub for the asset copier service (BEAN-028)."""
-    logger.info("Copy assets stage: stub (BEAN-028 not yet implemented)")
-    return StageResult()
-
-
-def _stub_seed_tasks(spec: CompositionSpec, output_dir: Path) -> StageResult:
-    """Stub for the seeder service (BEAN-029) — replaced by real implementation."""
-    return seed_tasks(spec, output_dir)
-
-
-def _stub_write_safety(spec: CompositionSpec, output_dir: Path) -> StageResult:
-    """Stub for the safety writer service (BEAN-030) — replaced by real implementation."""
-    return write_safety(spec, output_dir)
-
-
-def _stub_diff_report(
-    spec: CompositionSpec, output_dir: Path, plan: OverlayPlan | None = None,
-) -> StageResult:
-    """Diff report stage — replaced by real implementation."""
-    if plan is None:
-        # No overlay plan available (standard mode); produce empty report
-        plan = OverlayPlan()
-    return write_diff_report(plan, output_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -188,6 +151,7 @@ def _apply_overlay_plan(plan: OverlayPlan, source: Path, target: Path) -> StageR
 def _run_pipeline(
     spec: CompositionSpec,
     library: LibraryIndex,
+    library_root: Path,
     output_dir: Path,
     overlay_plan: OverlayPlan | None = None,
 ) -> dict[str, StageResult]:
@@ -197,22 +161,23 @@ def _run_pipeline(
     # Stage 1: Scaffold
     stages["scaffold"] = scaffold_project(spec, output_dir)
 
-    # Stage 2: Compile member prompts (stub)
-    stages["compile"] = _stub_compile(spec, library, output_dir)
+    # Stage 2: Compile member prompts
+    stages["compile"] = compile_project(spec, library, library_root, output_dir)
 
-    # Stage 3: Copy assets (stub)
-    stages["copy_assets"] = _stub_copy_assets(spec, library, output_dir)
+    # Stage 3: Copy assets
+    stages["copy_assets"] = copy_assets(spec, library, library_root, output_dir)
 
     # Stage 4: Seed tasks (only if enabled)
     if spec.generation.seed_tasks:
-        stages["seed_tasks"] = _stub_seed_tasks(spec, output_dir)
+        stages["seed_tasks"] = seed_tasks(spec, output_dir)
 
     # Stage 5: Write safety config
-    stages["safety"] = _stub_write_safety(spec, output_dir)
+    stages["safety"] = write_safety(spec, output_dir)
 
     # Stage 6: Diff report (only if enabled)
     if spec.generation.write_diff_report:
-        stages["diff_report"] = _stub_diff_report(spec, output_dir, overlay_plan)
+        plan = overlay_plan if overlay_plan is not None else OverlayPlan()
+        stages["diff_report"] = write_diff_report(plan, output_dir)
 
     return stages
 
@@ -288,7 +253,7 @@ def generate_project(
             tmp_path = Path(tmp_dir)
 
             # Phase 1: Generate into temp directory
-            stages = _run_pipeline(composition, library, tmp_path)
+            stages = _run_pipeline(composition, library, library_path, tmp_path)
             manifest.stages = stages
 
             # Phase 2: Compare against target
@@ -315,7 +280,7 @@ def generate_project(
         )
     else:
         # Standard mode: write directly to output
-        stages = _run_pipeline(composition, library, output_dir)
+        stages = _run_pipeline(composition, library, library_path, output_dir)
         manifest.stages = stages
 
     # Write manifest file if enabled

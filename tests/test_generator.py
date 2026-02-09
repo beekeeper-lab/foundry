@@ -220,7 +220,7 @@ class TestStandardGeneration:
         assert manifest.composition_snapshot != {}
         assert manifest.composition_snapshot["project"]["slug"] == "test-project"
 
-    def test_stub_stages_included_in_manifest(self, tmp_path: Path):
+    def test_service_stages_included_in_manifest(self, tmp_path: Path):
         lib_root = _make_library_dir(tmp_path)
         output_dir = tmp_path / "output" / "test-project"
         spec = _make_spec()
@@ -753,6 +753,7 @@ class TestPipelineExecution:
 
     def test_pipeline_runs_all_stages(self, tmp_path: Path):
         lib = _make_library(tmp_path)
+        lib_root = Path(lib.library_root)
         output_dir = tmp_path / "pipeline-output"
         output_dir.mkdir()
         spec = _make_spec(
@@ -762,7 +763,7 @@ class TestPipelineExecution:
             ),
         )
 
-        stages = _run_pipeline(spec, lib, output_dir)
+        stages = _run_pipeline(spec, lib, lib_root, output_dir)
 
         assert "scaffold" in stages
         assert "compile" in stages
@@ -773,6 +774,7 @@ class TestPipelineExecution:
 
     def test_pipeline_optional_stages_controlled_by_spec(self, tmp_path: Path):
         lib = _make_library(tmp_path)
+        lib_root = Path(lib.library_root)
         output_dir = tmp_path / "pipeline-output"
         output_dir.mkdir()
         spec = _make_spec(
@@ -782,23 +784,23 @@ class TestPipelineExecution:
             ),
         )
 
-        stages = _run_pipeline(spec, lib, output_dir)
+        stages = _run_pipeline(spec, lib, lib_root, output_dir)
 
         assert "seed_tasks" not in stages
         assert "diff_report" not in stages
 
-    def test_stub_stages_return_empty_results(self, tmp_path: Path):
+    def test_real_services_produce_output(self, tmp_path: Path):
         lib = _make_library(tmp_path)
+        lib_root = Path(lib.library_root)
         output_dir = tmp_path / "pipeline-output"
         output_dir.mkdir()
         spec = _make_spec()
 
-        stages = _run_pipeline(spec, lib, output_dir)
+        stages = _run_pipeline(spec, lib, lib_root, output_dir)
 
-        assert stages["compile"].wrote == []
-        assert stages["compile"].warnings == []
-        assert stages["copy_assets"].wrote == []
-        # Safety writer now delegates to real implementation (BEAN-030)
+        # Compile now produces CLAUDE.md via real compiler service
+        assert "CLAUDE.md" in stages["compile"].wrote
+        # Safety writer produces real output
         assert ".claude/settings.json" in stages["safety"].wrote
 
 
