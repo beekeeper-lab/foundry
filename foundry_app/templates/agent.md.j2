@@ -1,0 +1,27 @@
+# {{ role_name }}
+
+**Role:** {{ role_description }}
+**Stack:** {{ stack_names }}
+**Output directory:** `ai/outputs/{{ persona_id }}/`
+
+## Mission
+
+{{ mission }}
+
+## Key Rules
+
+{% for rule in key_rules -%}
+- {{ rule }}
+{% endfor %}
+{% if stack_sections %}
+## Stack Context
+
+{% for stack in stack_sections %}
+### {{ stack.name }}
+
+{{ stack.highlights }}
+
+{% endfor %}
+{% endif %}
+---
+*Full compiled prompt:* `ai/generated/members/{{ persona_id }}.md`
