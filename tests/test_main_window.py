@@ -35,8 +35,10 @@ class TestConstruction:
         assert window.minimumWidth() >= 900
         assert window.minimumHeight() >= 600
 
-    def test_has_menu_bar(self, window):
-        assert window.menuBar() is not None
+    def test_no_menu_bar(self, window):
+        menu_bar = window.menuBar()
+        # QMainWindow always returns a QMenuBar, but it should be empty
+        assert menu_bar.actions() == []
 
     def test_has_central_widget(self, window):
         assert window.centralWidget() is not None
@@ -50,7 +52,7 @@ class TestNavigation:
     def test_nav_list_has_correct_items(self, window):
         nav = window.nav_list
         assert nav.count() == len(SCREENS)
-        for i, (label, _, _) in enumerate(SCREENS):
+        for i, (label, *_rest) in enumerate(SCREENS):
             assert nav.item(i).text() == label
 
     def test_stack_has_correct_count(self, window):

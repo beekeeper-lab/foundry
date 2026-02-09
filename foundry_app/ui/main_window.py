@@ -5,14 +5,13 @@ from __future__ import annotations
 import logging
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QAction, QFont, QIcon
+from PySide6.QtGui import QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QMainWindow,
-    QMenuBar,
     QPushButton,
     QStackedWidget,
     QVBoxLayout,
@@ -102,24 +101,6 @@ QMainWindow {{{{
     font-size: {theme.FONT_SIZE_LG}px;
 }}}}
 
-/* Menu bar */
-QMenuBar {{{{
-    background-color: {theme.BG_INSET};
-    color: {theme.TEXT_PRIMARY};
-    border-bottom: 1px solid {theme.BORDER_DEFAULT};
-    padding: 2px;
-}}}}
-QMenuBar::item:selected {{{{
-    background-color: {theme.BG_SURFACE};
-}}}}
-QMenu {{{{
-    background-color: {theme.BG_SURFACE};
-    color: {theme.TEXT_PRIMARY};
-    border: 1px solid {theme.BORDER_DEFAULT};
-}}}}
-QMenu::item:selected {{{{
-    background-color: {theme.BG_OVERLAY};
-}}}}
 """
 
 
@@ -181,28 +162,17 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(900, 600)
         self.setStyleSheet(STYLESHEET)
 
-        self._build_menu_bar()
         self._build_ui()
+        self._setup_shortcuts()
         self._restore_geometry()
         self._apply_initial_settings()
         logger.info("MainWindow initialised")
 
     # -- UI construction ---------------------------------------------------
 
-    def _build_menu_bar(self) -> None:
-        menu_bar = QMenuBar(self)
-        self.setMenuBar(menu_bar)
-
-        file_menu = menu_bar.addMenu("&File")
-        quit_action = QAction("&Quit", self)
-        quit_action.setShortcut("Ctrl+Q")
-        quit_action.triggered.connect(self.close)
-        file_menu.addAction(quit_action)
-
-        help_menu = menu_bar.addMenu("&Help")
-        about_action = QAction("&About Foundry", self)
-        about_action.triggered.connect(self._show_about)
-        help_menu.addAction(about_action)
+    def _setup_shortcuts(self) -> None:
+        quit_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
+        quit_shortcut.activated.connect(self.close)
 
     def _build_ui(self) -> None:
         central = QWidget()
