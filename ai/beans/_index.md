@@ -102,3 +102,31 @@
 | BEAN-078 | Wizard Empty-State Messaging | App | Medium | Done | team-lead |
 | BEAN-079 | Obsidian MCP Integration | Process | High | Done | team-lead |
 | BEAN-080 | Bean & Task Telemetry Automation | Process | High | Done | team-lead |
+| BEAN-081 | Library Manager — Persona Read | App | High | Approved | (unassigned) |
+| BEAN-082 | Library Manager — Persona Create | App | Medium | Approved | (unassigned) |
+| BEAN-083 | Library Manager — Persona Update | App | Medium | Approved | (unassigned) |
+| BEAN-084 | Library Manager — Persona Delete | App | Medium | Approved | (unassigned) |
+| BEAN-085 | Library Manager — Stack Read | App | High | Approved | (unassigned) |
+| BEAN-086 | Library Manager — Stack Create | App | Medium | Approved | (unassigned) |
+| BEAN-087 | Library Manager — Stack Update | App | Medium | Approved | (unassigned) |
+| BEAN-088 | Library Manager — Stack Delete | App | Medium | Approved | (unassigned) |
+| BEAN-089 | Library Manager — Template Read | App | High | Approved | (unassigned) |
+| BEAN-090 | Library Manager — Template Create | App | Medium | Approved | (unassigned) |
+| BEAN-091 | Library Manager — Template Update | App | Medium | Approved | (unassigned) |
+| BEAN-092 | Library Manager — Template Delete | App | Medium | Approved | (unassigned) |
+| BEAN-093 | Library Manager — Workflow Read | App | High | Approved | (unassigned) |
+| BEAN-094 | Library Manager — Workflow Create | App | Medium | Approved | (unassigned) |
+| BEAN-095 | Library Manager — Workflow Update | App | Medium | Approved | (unassigned) |
+| BEAN-096 | Library Manager — Workflow Delete | App | Medium | Approved | (unassigned) |
+| BEAN-097 | Library Manager — Command Read | App | High | Approved | (unassigned) |
+| BEAN-098 | Library Manager — Command Create | App | Medium | Approved | (unassigned) |
+| BEAN-099 | Library Manager — Command Update | App | Medium | Approved | (unassigned) |
+| BEAN-100 | Library Manager — Command Delete | App | Medium | Approved | (unassigned) |
+| BEAN-101 | Library Manager — Skill Read | App | High | Approved | (unassigned) |
+| BEAN-102 | Library Manager — Skill Create | App | Medium | Approved | (unassigned) |
+| BEAN-103 | Library Manager — Skill Update | App | Medium | Approved | (unassigned) |
+| BEAN-104 | Library Manager — Skill Delete | App | Medium | Approved | (unassigned) |
+| BEAN-105 | Library Manager — Hook Read | App | High | Approved | (unassigned) |
+| BEAN-106 | Library Manager — Hook Create | App | Medium | Approved | (unassigned) |
+| BEAN-107 | Library Manager — Hook Update | App | Medium | Approved | (unassigned) |
+| BEAN-108 | Library Manager — Hook Delete | App | Medium | Approved | (unassigned) |

@@ -140,7 +140,7 @@ Collect decisions, generate a project, and export it.
 
 | Screen | Purpose |
 |---|---|
-| **New Project Wizard** | 5-step guided flow: Identity, Stacks, Personas, Hooks, Review & Generate |
+| **New Project Wizard** | 6-step guided flow: Identity, Personas, Stacks, Architecture, Hooks & Safety, Review & Generate |
 | **Composition Editor** | Power-edit `composition.yml` with synchronized Form and YAML views |
 | **Generate** | Run the pipeline, watch stage progress, inspect the generation manifest |
 | **Export** | Copy/move the project to its final destination with pre-export validation |
@@ -230,7 +230,7 @@ Shows the diff report comparing the current generation against any previous run.
 
 Foundry ships with a built-in library (`ai-team-library/`) containing a comprehensive set of building blocks ready to use.
 
-### Personas (14)
+### Personas (13)
 
 Each persona includes four components: `persona.md` (identity + principles), `outputs.md` (deliverables contract), `prompts.md` (invocation playbook), and `templates/` (forms the role fills out).
 
@@ -553,7 +553,7 @@ Use `/long-run --fast N` or `/spawn-bean --count N` to process multiple beans si
 
 ## Skills & Commands Summary
 
-Foundry provides **22 skills** and **24 commands** for Claude Code automation. Skills contain the full implementation logic (in `.claude/skills/<name>/SKILL.md`). Commands are the slash-command triggers (in `.claude/commands/<name>.md`) that invoke skills.
+Foundry provides **23 skills** and **25 commands** for Claude Code automation. Skills contain the full implementation logic (in `.claude/skills/<name>/SKILL.md`). Commands are the slash-command triggers (in `.claude/commands/<name>.md`) that invoke skills.
 
 ### Quick Reference
 
@@ -1177,7 +1177,7 @@ Pulls the latest code and launches the Foundry desktop app.
 uv run pytest
 ```
 
-The test suite includes 565+ tests covering the full pipeline, data contracts, IO layer, validation, CLI, and service modules.
+The test suite includes 1235 tests covering the full pipeline, data contracts, IO layer, validation, CLI, and service modules.
 
 ### Lint
 
@@ -1257,7 +1257,7 @@ foundry/
     skills/                            # 22 skill definitions
     commands/                          # 24 command definitions
     hooks/                             # Git/operation hooks
-  tests/                               # 565+ tests across 16 files
+  tests/                               # 1235 tests across 32 files
   examples/                            # 4 example composition YAML files
   resources/
     icons/                             # App icons
