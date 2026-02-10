@@ -2347,6 +2347,80 @@ class TestSkillUpdate:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         _select_persona_file(screen, "persona.md")
+# ---------------------------------------------------------------------------
+# Hook update — end-to-end integration (BEAN-107)
+# ---------------------------------------------------------------------------
+
+
+def _find_hooks_category(screen: LibraryManagerScreen):
+    """Return the Claude Hooks top-level tree item."""
+    for i in range(screen.tree.topLevelItemCount()):
+        item = screen.tree.topLevelItem(i)
+        if item.text(0) == "Claude Hooks":
+            return item
+    return None
+
+
+class TestHookUpdate:
+    """Verify hook select → edit → save → revert flow through LibraryManagerScreen."""
+
+    def test_selecting_hook_loads_content_into_editor(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        assert hooks_item is not None
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        assert "Lint hook" in screen.editor_widget.editor.toPlainText()
+
+    def test_selecting_hook_sets_file_label(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        assert "pre-commit-lint.md" in screen.file_label.text()
+
+    def test_selecting_hook_sets_editor_file_path(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        expected = lib / "claude" / "hooks" / "pre-commit-lint.md"
+        assert screen.editor_widget.file_path == expected
+
+    def test_editing_hook_triggers_dirty_state(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        assert screen.editor_widget.dirty is False
+        screen.editor_widget.editor.setPlainText("# Updated hook content")
+        assert screen.editor_widget.dirty is True
+        assert screen.editor_widget.dirty_label.text() == "Modified"
+
+    def test_save_hook_persists_to_disk(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        screen.editor_widget.editor.setPlainText("# Updated hook content")
+        result = screen.editor_widget.save()
+        assert result is True
+        disk_content = (lib / "claude" / "hooks" / "pre-commit-lint.md").read_text(
+            encoding="utf-8"
+        )
+        assert disk_content == "# Updated hook content"
+
+    def test_save_hook_clears_dirty_state(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
         screen.editor_widget.editor.setPlainText("# Changed")
         assert screen.editor_widget.dirty is True
         screen.editor_widget.save()
@@ -2639,6 +2713,14 @@ class TestStackUpdate:
         _select_skill_file(screen)
         original = screen.editor_widget.editor.toPlainText()
         screen.editor_widget.editor.setPlainText("# Totally different content")
+    def test_revert_hook_restores_original_content(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        original = screen.editor_widget.editor.toPlainText()
+        screen.editor_widget.editor.setPlainText("# Completely different")
         assert screen.editor_widget.dirty is True
         screen.editor_widget.revert()
         assert screen.editor_widget.editor.toPlainText() == original
@@ -3245,3 +3327,61 @@ class TestStackButtonState:
                 screen.tree.setCurrentItem(item.child(0))  # handoff dir
                 break
         assert screen.editor_widget.editor.toPlainText() == ""
+    def test_revert_hook_clears_dirty_label(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.dirty_label.text() == "Modified"
+        screen.editor_widget.revert()
+        assert screen.editor_widget.dirty_label.text() == ""
+
+    def test_preview_updates_on_hook_edit(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        screen.editor_widget.editor.setPlainText("# New Heading\n\nNew paragraph.")
+        # Force immediate preview update (bypass debounce timer)
+        screen.editor_widget._update_preview()
+        html = screen.editor_widget.preview_pane.toHtml()
+        assert "New Heading" in html
+
+    def test_save_button_enabled_after_hook_edit(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        assert not screen.editor_widget.save_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.save_button.isEnabled()
+
+    def test_revert_button_enabled_after_hook_edit(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        assert not screen.editor_widget.revert_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.revert_button.isEnabled()
+
+    def test_save_then_revert_shows_saved_content(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        hooks_item = _find_hooks_category(screen)
+        screen.tree.setCurrentItem(hooks_item.child(0))
+        # Save new content
+        screen.editor_widget.editor.setPlainText("# Saved version")
+        screen.editor_widget.save()
+        # Edit again, then revert — should show saved version
+        screen.editor_widget.editor.setPlainText("# Unsaved edits")
+        assert screen.editor_widget.dirty is True
+        screen.editor_widget.revert()
+        assert screen.editor_widget.editor.toPlainText() == "# Saved version"
+        assert screen.editor_widget.dirty is False

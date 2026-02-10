@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-107 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-10 |
+| **Completed** | 2026-02-10 |
+| **Duration** | 1 session |
+| **Owner** | Developer |
 | **Category** | App |
 
 ## Problem Statement
@@ -36,13 +36,13 @@ A user can select an existing hook, edit its markdown content in the editor, sav
 
 ## Acceptance Criteria
 
-- [ ] Selecting a hook loads its content into the editor
-- [ ] Editing text triggers the dirty/modified state indicator
-- [ ] Clicking 'Save' persists changes to disk and clears the dirty state
-- [ ] Clicking 'Revert' restores the original content and clears the dirty state
-- [ ] The live preview updates in real-time during editing
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Selecting a hook loads its content into the editor
+- [x] Editing text triggers the dirty/modified state indicator
+- [x] Clicking 'Save' persists changes to disk and clears the dirty state
+- [x] Clicking 'Revert' restores the original content and clears the dirty state
+- [x] The live preview updates in real-time during editing
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
@@ -69,7 +69,7 @@ Key files:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 0m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
