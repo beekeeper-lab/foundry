@@ -62,9 +62,10 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 ### Phase 4: Wave Execution
 
 12. **Execute tasks in dependency order** — For each task:
+    - Record the `Started` timestamp (`YYYY-MM-DD HH:MM`) in the task file metadata when beginning execution.
     - Read the task file and all referenced inputs.
     - Perform the work as the assigned persona.
-    - Write outputs to `ai/outputs/<persona>/`.
+    - On completion, run the `/close-loop` telemetry recording: record `Completed` timestamp, compute `Duration`, prompt for token self-report, and update the bean's Telemetry per-task table row.
     - Update the task status to `Done` in the task file and the bean's task table.
     - Reprint the **Header Block + Task Progress Table** after each status change.
 13. **Skip inapplicable roles** — If a role has no meaningful contribution for a bean (e.g., Architect for a documentation-only bean), skip it. Document the skip reason in the bean's Notes section.
