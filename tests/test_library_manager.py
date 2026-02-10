@@ -1281,6 +1281,42 @@ class TestCreateTemplate:
                 assert item.childCount() == before + 1
                 break
 
+    def test_new_template_auto_selected_after_create(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Shared Templates":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("auto-select", True)):
+            screen._on_new_asset()
+        current = screen.tree.currentItem()
+        assert current is not None
+        assert current.text(0) == "auto-select.md"
+        # Editor should show the starter content
+        assert "# Auto Select" in screen.editor_widget.editor.toPlainText()
+        assert "## Purpose" in screen.editor_widget.editor.toPlainText()
+
+    def test_new_persona_template_auto_selected_after_create(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                screen.tree.setCurrentItem(child)
+                break
+        with patch(_INPUT_DIALOG, return_value=("checklist", True)):
+            screen._on_new_asset()
+        current = screen.tree.currentItem()
+        assert current is not None
+        assert current.text(0) == "checklist.md"
+        assert "# Checklist" in screen.editor_widget.editor.toPlainText()
+
 
 # ---------------------------------------------------------------------------
 # Template CRUD — delete operations

@@ -809,6 +809,26 @@ class LibraryManagerScreen(QWidget):
         )
         self._delete_btn.setEnabled(editable and (has_file or is_asset_dir))
 
+    def _select_file_in_tree(self, file_path: str) -> None:
+        """Find and select the tree item whose UserRole data matches *file_path*."""
+        for i in range(self._tree.topLevelItemCount()):
+            result = self._find_item_by_path(self._tree.topLevelItem(i), file_path)
+            if result is not None:
+                self._tree.setCurrentItem(result)
+                return
+
+    def _find_item_by_path(
+        self, item: QTreeWidgetItem, file_path: str
+    ) -> QTreeWidgetItem | None:
+        """Recursively search for an item matching the given path."""
+        if item.data(0, Qt.ItemDataRole.UserRole) == file_path:
+            return item
+        for i in range(item.childCount()):
+            result = self._find_item_by_path(item.child(i), file_path)
+            if result is not None:
+                return result
+        return None
+
     # -- Stack helpers -----------------------------------------------------
 
     def _is_stack_subitem(self, item: QTreeWidgetItem | None) -> bool:
@@ -1023,6 +1043,7 @@ class LibraryManagerScreen(QWidget):
             return
         logger.info("Created template %s", dest)
         self.refresh_tree()
+        self._select_file_in_tree(str(dest))
 
     def _on_delete_asset(self) -> None:
         """Delete the selected file (or asset directory) after confirmation."""
