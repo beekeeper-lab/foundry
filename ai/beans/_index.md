@@ -97,7 +97,7 @@
 | BEAN-073 | Approval Gate Wiring | Process | High | Done | team-lead |
 | BEAN-074 | Bean Workflow Docs Update | Process | Medium | Done | team-lead |
 | BEAN-075 | Auto-Detect Library Root | App | High | Done | team-lead |
-| BEAN-076 | Sidebar Nav Button Restyle | App | High | Approved | (unassigned) |
+| BEAN-076 | Sidebar Nav Button Restyle | App | High | Done | team-lead |
 | BEAN-077 | Wizard Navigation Validation Feedback | App | High | Approved | (unassigned) |
 | BEAN-078 | Wizard Empty-State Messaging | App | Medium | Approved | (unassigned) |
 | BEAN-079 | Obsidian MCP Integration | Process | High | Done | team-lead |

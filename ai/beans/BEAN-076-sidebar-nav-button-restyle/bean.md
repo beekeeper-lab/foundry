@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-076 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
+| **Started** | 2026-02-09 |
+| **Completed** | 2026-02-09 |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -42,16 +42,16 @@ Replace the sidebar navigation with icon-over-text button controls that are visu
 
 ## Acceptance Criteria
 
-- [ ] Nav items are rendered as icon-over-text buttons (icon centered above label)
-- [ ] Icons are 32-40px, clearly visible against the dark background
-- [ ] Sidebar background is dark, matching the app theme palette
-- [ ] Selected item has a clear gold/brass accent indicator
-- [ ] Hover state provides visual feedback on non-selected items
-- [ ] All 4 screens switch correctly when clicking nav items
-- [ ] Keyboard navigation works (arrow keys to move, Enter/Space to select)
-- [ ] Version footer remains functional at the bottom of the sidebar
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Nav items are rendered as icon-over-text buttons (icon centered above label)
+- [x] Icons are 32-40px, clearly visible against the dark background
+- [x] Sidebar background is dark, matching the app theme palette
+- [x] Selected item has a clear gold/brass accent indicator
+- [x] Hover state provides visual feedback on non-selected items
+- [x] All 4 screens switch correctly when clicking nav items
+- [x] Keyboard navigation works (arrow keys to move, Enter/Space to select)
+- [x] Version footer remains functional at the bottom of the sidebar
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
