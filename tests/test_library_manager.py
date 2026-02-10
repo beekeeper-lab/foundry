@@ -1625,3 +1625,166 @@ class TestStackDelete:
             if item.text(0) == "Stacks":
                 assert item.childCount() == 0
                 break
+
+
+# ---------------------------------------------------------------------------
+# Stack Update — end-to-end workflow (BEAN-087)
+# ---------------------------------------------------------------------------
+
+
+def _select_stack_file(screen, stack_name: str, file_name: str):
+    """Helper: select a file inside a stack directory in the tree."""
+    for i in range(screen.tree.topLevelItemCount()):
+        item = screen.tree.topLevelItem(i)
+        if item.text(0) == "Stacks":
+            for j in range(item.childCount()):
+                stack_dir = item.child(j)
+                if stack_dir.text(0) == stack_name:
+                    for k in range(stack_dir.childCount()):
+                        child = stack_dir.child(k)
+                        if child.text(0) == file_name:
+                            screen.tree.setCurrentItem(child)
+                            return child
+    return None
+
+
+class TestStackUpdate:
+
+    def test_selecting_stack_file_loads_content(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        assert "Conventions" in screen.editor_widget.editor.toPlainText()
+
+    def test_selecting_stack_file_shows_file_label(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        assert "conventions.md" in screen.file_label.text()
+
+    def test_editing_stack_triggers_dirty_state(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        assert screen.editor_widget.dirty is False
+        screen.editor_widget.editor.setPlainText("# Updated conventions")
+        assert screen.editor_widget.dirty is True
+        assert screen.editor_widget.dirty_label.text() == "Modified"
+
+    def test_save_stack_persists_to_disk(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        screen.editor_widget.editor.setPlainText("# New conventions content")
+        assert screen.editor_widget.dirty is True
+        result = screen.editor_widget.save()
+        assert result is True
+        assert screen.editor_widget.dirty is False
+        disk_content = (lib / "stacks" / "python-fastapi" / "conventions.md").read_text(
+            encoding="utf-8"
+        )
+        assert disk_content == "# New conventions content"
+
+    def test_save_clears_dirty_label(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        screen.editor_widget.editor.setPlainText("changed")
+        assert screen.editor_widget.dirty_label.text() == "Modified"
+        screen.editor_widget.save()
+        assert screen.editor_widget.dirty_label.text() == ""
+
+    def test_revert_stack_restores_original(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        original = screen.editor_widget.editor.toPlainText()
+        screen.editor_widget.editor.setPlainText("unsaved changes")
+        assert screen.editor_widget.dirty is True
+        screen.editor_widget.revert()
+        assert screen.editor_widget.editor.toPlainText() == original
+        assert screen.editor_widget.dirty is False
+
+    def test_revert_clears_dirty_label(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        screen.editor_widget.editor.setPlainText("changed")
+        assert screen.editor_widget.dirty_label.text() == "Modified"
+        screen.editor_widget.revert()
+        assert screen.editor_widget.dirty_label.text() == ""
+
+    def test_preview_updates_for_stack(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        screen.editor_widget.editor.setPlainText("# Stack Preview Test")
+        screen.editor_widget._update_preview()
+        html = screen.editor_widget.preview_pane.toHtml()
+        assert "Stack Preview Test" in html
+
+    def test_save_button_enabled_when_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        assert not screen.editor_widget.save_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("changed")
+        assert screen.editor_widget.save_button.isEnabled()
+
+    def test_revert_button_enabled_when_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        assert not screen.editor_widget.revert_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("changed")
+        assert screen.editor_widget.revert_button.isEnabled()
+
+    def test_update_different_stack_files(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Edit and save stack.md
+        _select_stack_file(screen, "python-fastapi", "stack.md")
+        screen.editor_widget.editor.setPlainText("# Updated stack")
+        screen.editor_widget.save()
+        # Edit and save testing.md
+        _select_stack_file(screen, "python-fastapi", "testing.md")
+        screen.editor_widget.editor.setPlainText("# Updated testing")
+        screen.editor_widget.save()
+        # Verify both persisted
+        assert (lib / "stacks" / "python-fastapi" / "stack.md").read_text(
+            encoding="utf-8"
+        ) == "# Updated stack"
+        assert (lib / "stacks" / "python-fastapi" / "testing.md").read_text(
+            encoding="utf-8"
+        ) == "# Updated testing"
+
+    def test_switching_stack_files_loads_new_content(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        assert "Conventions" in screen.editor_widget.editor.toPlainText()
+        _select_stack_file(screen, "python-fastapi", "testing.md")
+        assert "Testing" in screen.editor_widget.editor.toPlainText()
+
+    def test_dirty_state_resets_on_file_switch(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        screen.editor_widget.editor.setPlainText("unsaved edits")
+        assert screen.editor_widget.dirty is True
+        # Switch to a different file — editor reloads, dirty resets
+        _select_stack_file(screen, "python-fastapi", "testing.md")
+        assert screen.editor_widget.dirty is False
