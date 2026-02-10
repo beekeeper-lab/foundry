@@ -123,6 +123,13 @@ class BuilderScreen(QWidget):
         # Connect review page generate signal
         self._review_page.generate_requested.connect(self._on_generate)
 
+        # Connect page validation signals to update Next button state
+        self._project_page.completeness_changed.connect(
+            lambda _: self._update_next_enabled()
+        )
+        self._persona_page.selection_changed.connect(self._update_next_enabled)
+        self._stack_page.selection_changed.connect(self._update_next_enabled)
+
         # Navigation bar
         nav_bar = QWidget()
         nav_bar.setStyleSheet(f"""
@@ -224,11 +231,20 @@ class BuilderScreen(QWidget):
             return page.is_valid()
         return True
 
+    def _update_next_enabled(self) -> None:
+        """Enable/disable Next button based on current page validity."""
+        idx = self._page_stack.currentIndex()
+        if idx >= len(self._pages) - 1:
+            return  # Review page — Next is hidden
+        valid = self._is_current_page_valid()
+        self._next_btn.setEnabled(valid)
+
     def _update_nav_state(self) -> None:
         idx = self._page_stack.currentIndex()
         self._back_btn.setVisible(idx > 0)
         # Hide Next on review page (generate button lives there)
         self._next_btn.setVisible(idx < len(self._pages) - 1)
+        self._update_next_enabled()
 
         # Update step indicator styles
         for i, label in enumerate(self._step_labels):
@@ -307,5 +323,9 @@ class BuilderScreen(QWidget):
             }}
             QPushButton:hover {{
                 background-color: {theme.ACCENT_PRIMARY_HOVER};
+            }}
+            QPushButton:disabled {{
+                background-color: {theme.ACCENT_PRIMARY_MUTED};
+                color: {theme.TEXT_DISABLED};
             }}
         """

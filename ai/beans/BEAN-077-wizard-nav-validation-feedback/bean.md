@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-077 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
+| **Started** | 2026-02-09 |
+| **Completed** | 2026-02-09 |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -39,17 +39,17 @@ The Next button is disabled (grayed out) whenever the current wizard page is not
 
 ## Acceptance Criteria
 
-- [ ] Next button is disabled on wizard page 0 (Project) when the project name field is empty
-- [ ] Next button enables on page 0 when a project name is entered
-- [ ] Next button is disabled on page 1 (Personas) when no persona is selected
-- [ ] Next button enables on page 1 when at least one persona is selected
-- [ ] Next button is disabled on page 2 (Stacks) when no stack is selected
-- [ ] Next button enables on page 2 when at least one stack is selected
-- [ ] Next button is always enabled on pages 3 (Architecture) and 4 (Safety) since those are optional
-- [ ] Button state updates reactively (not just on click) — toggling a checkbox immediately updates the button
-- [ ] Disabled button has a visually distinct style (grayed/muted)
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Next button is disabled on wizard page 0 (Project) when the project name field is empty
+- [x] Next button enables on page 0 when a project name is entered
+- [x] Next button is disabled on page 1 (Personas) when no persona is selected
+- [x] Next button enables on page 1 when at least one persona is selected
+- [x] Next button is disabled on page 2 (Stacks) when no stack is selected
+- [x] Next button enables on page 2 when at least one stack is selected
+- [x] Next button is always enabled on pages 3 (Architecture) and 4 (Safety) since those are optional
+- [x] Button state updates reactively (not just on click) — toggling a checkbox immediately updates the button
+- [x] Disabled button has a visually distinct style (grayed/muted)
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
