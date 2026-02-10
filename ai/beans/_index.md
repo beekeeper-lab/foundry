@@ -126,7 +126,7 @@
 | BEAN-102 | Library Manager — Skill Create | App | Medium | Approved | (unassigned) |
 | BEAN-103 | Library Manager — Skill Update | App | Medium | Approved | (unassigned) |
 | BEAN-104 | Library Manager — Skill Delete | App | Medium | Approved | (unassigned) |
-| BEAN-105 | Library Manager — Hook Read | App | High | Approved | (unassigned) |
+| BEAN-105 | Library Manager — Hook Read | App | High | Done | developer |
 | BEAN-106 | Library Manager — Hook Create | App | Medium | Approved | (unassigned) |
 | BEAN-107 | Library Manager — Hook Update | App | Medium | Approved | (unassigned) |
 | BEAN-108 | Library Manager — Hook Delete | App | Medium | Approved | (unassigned) |
