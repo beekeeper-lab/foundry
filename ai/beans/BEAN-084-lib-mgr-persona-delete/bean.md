@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-084 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-10 02:29 |
+| **Completed** | 2026-02-10 02:29 |
+| **Duration** | 0m |
+| **Owner** | Developer |
 | **Category** | App |
 
 ## Problem Statement
@@ -36,13 +36,13 @@ A user can select an existing persona and delete it via the 'Delete' button with
 
 ## Acceptance Criteria
 
-- [ ] The 'Delete' button is enabled when a persona is selected
-- [ ] Clicking 'Delete' shows a confirmation dialog naming the persona
-- [ ] Confirming deletes the persona file/directory from disk
-- [ ] Tree auto-refreshes and the deleted persona is gone
-- [ ] Cancelling the dialog preserves the persona unchanged
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] The 'Delete' button is enabled when a persona is selected
+- [x] Clicking 'Delete' shows a confirmation dialog naming the persona
+- [x] Confirming deletes the persona file/directory from disk
+- [x] Tree auto-refreshes and the deleted persona is gone
+- [x] Cancelling the dialog preserves the persona unchanged
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
@@ -69,7 +69,7 @@ Key files:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 0m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
