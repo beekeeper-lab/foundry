@@ -122,7 +122,7 @@
 | BEAN-098 | Library Manager — Command Create | App | Medium | Approved | (unassigned) |
 | BEAN-099 | Library Manager — Command Update | App | Medium | Approved | (unassigned) |
 | BEAN-100 | Library Manager — Command Delete | App | Medium | Approved | (unassigned) |
-| BEAN-101 | Library Manager — Skill Read | App | High | Approved | (unassigned) |
+| BEAN-101 | Library Manager — Skill Read | App | High | Done | developer |
 | BEAN-102 | Library Manager — Skill Create | App | Medium | Approved | (unassigned) |
 | BEAN-103 | Library Manager — Skill Update | App | Medium | Approved | (unassigned) |
 | BEAN-104 | Library Manager — Skill Delete | App | Medium | Approved | (unassigned) |

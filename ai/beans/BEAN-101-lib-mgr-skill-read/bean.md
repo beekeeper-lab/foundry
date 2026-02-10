@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-101 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-10 02:02 |
+| **Completed** | 2026-02-10 02:02 |
+| **Duration** | 0m |
+| **Owner** | developer |
 | **Category** | App |
 
 ## Problem Statement
@@ -36,21 +36,20 @@ When a user clicks on the skill category in the Library Manager tree, all existi
 
 ## Acceptance Criteria
 
-- [ ] Tree shows all existing skills when the Skill category is selected
-- [ ] Clicking a skill file displays its content in the editor pane
-- [ ] File path label updates to show the selected file path
-- [ ] Live preview renders the skill markdown correctly
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Tree shows all existing skills when the Skill category is selected
+- [x] Clicking a skill file displays its content in the editor pane
+- [x] File path label updates to show the selected file path
+- [x] Live preview renders the skill markdown correctly
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Verify skill read logic in library_manager.py | developer | — | Done |
+| 2 | Write skill read tests (tests/test_skill_read.py) | developer | 1 | Done |
+| 3 | Run tests and lint | developer | 2 | Done |
 
 ## Notes
 
@@ -68,7 +67,7 @@ Key files:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 0m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
