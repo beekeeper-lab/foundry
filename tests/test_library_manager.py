@@ -1092,6 +1092,66 @@ class TestDeleteAsset:
             screen._on_delete_asset()
         assert not target.exists()
 
+    def test_delete_skill_cancelled_keeps_directory(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        target = lib / "claude" / "skills" / "handoff"
+        assert target.is_dir()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Skills":
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.No):
+            screen._on_delete_asset()
+        assert target.is_dir()
+
+    def test_delete_skill_confirmation_shows_name(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Skills":
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(
+            _MSG_QUESTION, return_value=QMessageBox.StandardButton.No
+        ) as mock_q:
+            screen._on_delete_asset()
+        msg = mock_q.call_args[0][2]
+        assert "handoff" in msg
+
+    def test_tree_refreshes_after_skill_delete(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Skills":
+                assert item.childCount() == 1
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
+            screen._on_delete_asset()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Skills":
+                assert item.childCount() == 0
+                break
+
+    def test_delete_button_enabled_for_skill_dir(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Skills":
+                screen.tree.setCurrentItem(item.child(0))
+                break
+        assert screen.delete_button.isEnabled()
+
     def test_delete_cancelled_keeps_file(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
