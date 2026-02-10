@@ -96,9 +96,9 @@
 | BEAN-072 | Obsidian Review Skill | Process | High | Done | team-lead |
 | BEAN-073 | Approval Gate Wiring | Process | High | Done | team-lead |
 | BEAN-074 | Bean Workflow Docs Update | Process | Medium | Done | team-lead |
-| BEAN-075 | Auto-Detect Library Root | App | High | Unapproved | (unassigned) |
-| BEAN-076 | Sidebar Nav Button Restyle | App | High | Unapproved | (unassigned) |
-| BEAN-077 | Wizard Navigation Validation Feedback | App | High | Unapproved | (unassigned) |
-| BEAN-078 | Wizard Empty-State Messaging | App | Medium | Unapproved | (unassigned) |
+| BEAN-075 | Auto-Detect Library Root | App | High | Approved | (unassigned) |
+| BEAN-076 | Sidebar Nav Button Restyle | App | High | Approved | (unassigned) |
+| BEAN-077 | Wizard Navigation Validation Feedback | App | High | Approved | (unassigned) |
+| BEAN-078 | Wizard Empty-State Messaging | App | Medium | Approved | (unassigned) |
 | BEAN-079 | Obsidian MCP Integration | Process | High | Done | team-lead |
 | BEAN-080 | Bean & Task Telemetry Automation | Process | High | Done | team-lead |
