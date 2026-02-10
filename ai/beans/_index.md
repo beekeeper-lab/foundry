@@ -102,7 +102,7 @@
 | BEAN-078 | Wizard Empty-State Messaging | App | Medium | Done | team-lead |
 | BEAN-079 | Obsidian MCP Integration | Process | High | Done | team-lead |
 | BEAN-080 | Bean & Task Telemetry Automation | Process | High | Done | team-lead |
-| BEAN-081 | Library Manager — Persona Read | App | High | Approved | (unassigned) |
+| BEAN-081 | Library Manager — Persona Read | App | High | Done | developer |
 | BEAN-082 | Library Manager — Persona Create | App | Medium | Approved | (unassigned) |
 | BEAN-083 | Library Manager — Persona Update | App | Medium | Approved | (unassigned) |
 | BEAN-084 | Library Manager — Persona Delete | App | Medium | Approved | (unassigned) |
