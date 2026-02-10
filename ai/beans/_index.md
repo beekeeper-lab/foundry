@@ -130,4 +130,4 @@
 | BEAN-106 | Library Manager — Hook Create | App | Medium | Done | developer |
 | BEAN-107 | Library Manager — Hook Update | App | Medium | Done | developer |
 | BEAN-108 | Library Manager — Hook Delete | App | Medium | Done | developer |
-| BEAN-109 | Library Manager — Missing CRUD Test Coverage | App | Medium | Approved | (unassigned) |
+| BEAN-109 | Library Manager — Missing CRUD Test Coverage | App | Medium | In Progress | team-lead |
