@@ -130,7 +130,9 @@
 | BEAN-095 | Library Manager — Workflow Update | App | Medium | Approved | (unassigned) |
 | BEAN-096 | Library Manager — Workflow Delete | App | Medium | Approved | (unassigned) |
 | BEAN-097 | Library Manager — Command Read | App | High | Done | team-lead |
-| BEAN-098 | Library Manager — Command Create | App | Medium | Approved | (unassigned) |
+| BEAN-098 | Library Manager — Command Create | App | Medium | Done | team-lead |
+| BEAN-097 | Library Manager — Command Read | App | High | Done | team-lead |
+| BEAN-098 | Library Manager — Command Create | App | Medium | Done | Developer |
 | BEAN-099 | Library Manager — Command Update | App | Medium | Approved | (unassigned) |
 | BEAN-100 | Library Manager — Command Delete | App | Medium | Approved | (unassigned) |
 | BEAN-101 | Library Manager — Skill Read | App | High | Done | developer |

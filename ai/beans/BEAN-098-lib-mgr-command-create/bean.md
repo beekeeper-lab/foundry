@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-098 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
+| **Started** | 2026-02-10 |
+| **Completed** | 2026-02-10 |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | Developer |
 | **Category** | App |
 
 ## Problem Statement
@@ -36,13 +36,13 @@ A user can create a new command via the 'New...' button, providing a name, and t
 
 ## Acceptance Criteria
 
-- [ ] Clicking 'New...' on Command category opens a name input dialog
-- [ ] Entering a valid name creates the command with starter content on disk
-- [ ] Tree auto-refreshes and the new command is visible
-- [ ] Selecting the new command shows its starter content in the editor
-- [ ] Duplicate name detection prevents overwriting existing commands
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Clicking 'New...' on Command category opens a name input dialog
+- [x] Entering a valid name creates the command with starter content on disk
+- [x] Tree auto-refreshes and the new command is visible
+- [x] Selecting the new command shows its starter content in the editor
+- [x] Duplicate name detection prevents overwriting existing commands
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
@@ -69,7 +69,7 @@ Key files:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 0m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |

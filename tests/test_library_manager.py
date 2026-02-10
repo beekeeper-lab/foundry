@@ -601,6 +601,41 @@ class TestCreateAsset:
         content = created.read_text(encoding="utf-8")
         assert "/my-new-cmd" in content
 
+    def test_create_command_auto_selects(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Select Claude Commands category
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Commands":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("my-new-cmd", True)):
+            screen._on_new_asset()
+        # The new command should be auto-selected in the tree
+        current = screen.tree.currentItem()
+        assert current is not None
+        assert current.text(0) == "my-new-cmd.md"
+        # Its file path should point to the created file
+        created = lib / "claude" / "commands" / "my-new-cmd.md"
+        assert current.data(0, 0x0100) == str(created)  # Qt.ItemDataRole.UserRole
+
+    def test_create_command_shows_content_in_editor(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Claude Commands":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("deploy-app", True)):
+            screen._on_new_asset()
+        # The editor should show the starter content with the command name
+        editor_text = screen.editor_widget.toPlainText()
+        assert "/deploy-app" in editor_text
+
     def test_create_skill(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
