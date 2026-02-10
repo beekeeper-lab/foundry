@@ -112,7 +112,7 @@
 | BEAN-088 | Library Manager — Stack Delete | App | Medium | Approved | (unassigned) |
 | BEAN-089 | Library Manager — Template Read | App | High | Approved | (unassigned) |
 | BEAN-090 | Library Manager — Template Create | App | Medium | Approved | (unassigned) |
-| BEAN-091 | Library Manager — Template Update | App | Medium | Approved | (unassigned) |
+| BEAN-091 | Library Manager — Template Update | App | Medium | Done | developer |
 | BEAN-092 | Library Manager — Template Delete | App | Medium | Approved | (unassigned) |
 | BEAN-093 | Library Manager — Workflow Read | App | High | Approved | (unassigned) |
 | BEAN-094 | Library Manager — Workflow Create | App | Medium | Approved | (unassigned) |

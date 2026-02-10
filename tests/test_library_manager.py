@@ -1625,3 +1625,221 @@ class TestStackDelete:
             if item.text(0) == "Stacks":
                 assert item.childCount() == 0
                 break
+
+
+# ---------------------------------------------------------------------------
+# Template Update — end-to-end (BEAN-091)
+# ---------------------------------------------------------------------------
+
+
+def _select_shared_template(screen: LibraryManagerScreen, filename: str):
+    """Helper: select a file node under the Shared Templates category."""
+    for i in range(screen.tree.topLevelItemCount()):
+        item = screen.tree.topLevelItem(i)
+        if item.text(0) == "Shared Templates":
+            for j in range(item.childCount()):
+                child = item.child(j)
+                if child.text(0) == filename:
+                    screen.tree.setCurrentItem(child)
+                    return child
+            # Check subdirectories too
+            for j in range(item.childCount()):
+                child = item.child(j)
+                if child.data(0, 0x0100) is None:  # directory node
+                    for k in range(child.childCount()):
+                        sub = child.child(k)
+                        if sub.text(0) == filename:
+                            screen.tree.setCurrentItem(sub)
+                            return sub
+    return None
+
+
+class TestTemplateUpdate:
+    """BEAN-091: Verify the template update workflow end-to-end."""
+
+    def test_selecting_shared_template_loads_content(self, tmp_path: Path):
+        """AC: Selecting a template loads its content into the editor."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        assert "Claude template" in screen.editor_widget.editor.toPlainText()
+
+    def test_selecting_shared_template_sets_file_path(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        assert screen.editor_widget.file_path is not None
+        assert screen.editor_widget.file_path.name == "CLAUDE.md.j2"
+
+    def test_selecting_template_in_subdirectory(self, tmp_path: Path):
+        """Templates in subdirectories (e.g. shared/) also load correctly."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "adr.md")
+        assert "ADR template" in screen.editor_widget.editor.toPlainText()
+
+    def test_editing_template_triggers_dirty_state(self, tmp_path: Path):
+        """AC: Editing text triggers the dirty/modified state indicator."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        assert screen.editor_widget.dirty is False
+        screen.editor_widget.editor.setPlainText("# Modified template")
+        assert screen.editor_widget.dirty is True
+        assert screen.editor_widget.dirty_label.text() == "Modified"
+
+    def test_save_persists_template_to_disk(self, tmp_path: Path):
+        """AC: Clicking 'Save' persists changes to disk and clears dirty state."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        template_path = lib / "templates" / "CLAUDE.md.j2"
+        original = template_path.read_text(encoding="utf-8")
+        # Edit
+        screen.editor_widget.editor.setPlainText("# Updated template content")
+        assert screen.editor_widget.dirty is True
+        # Save
+        result = screen.editor_widget.save()
+        assert result is True
+        assert screen.editor_widget.dirty is False
+        assert screen.editor_widget.dirty_label.text() == ""
+        # Verify disk
+        assert template_path.read_text(encoding="utf-8") == "# Updated template content"
+        assert template_path.read_text(encoding="utf-8") != original
+
+    def test_save_button_enabled_when_template_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        assert not screen.editor_widget.save_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("changed")
+        assert screen.editor_widget.save_button.isEnabled()
+
+    def test_save_button_disabled_after_save(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        screen.editor_widget.editor.setPlainText("changed")
+        screen.editor_widget.save()
+        assert not screen.editor_widget.save_button.isEnabled()
+
+    def test_revert_restores_original_template(self, tmp_path: Path):
+        """AC: Clicking 'Revert' restores original content and clears dirty state."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        original = screen.editor_widget.editor.toPlainText()
+        # Edit
+        screen.editor_widget.editor.setPlainText("# Totally different content")
+        assert screen.editor_widget.dirty is True
+        # Revert
+        screen.editor_widget.revert()
+        assert screen.editor_widget.editor.toPlainText() == original
+        assert screen.editor_widget.dirty is False
+        assert screen.editor_widget.dirty_label.text() == ""
+
+    def test_revert_button_enabled_when_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        assert not screen.editor_widget.revert_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("changed")
+        assert screen.editor_widget.revert_button.isEnabled()
+
+    def test_revert_button_disabled_after_revert(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        screen.editor_widget.editor.setPlainText("changed")
+        screen.editor_widget.revert()
+        assert not screen.editor_widget.revert_button.isEnabled()
+
+    def test_preview_updates_on_template_edit(self, tmp_path: Path):
+        """AC: The live preview updates in real-time during editing."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        screen.editor_widget.editor.setPlainText("# Preview Heading\n\nSome paragraph.")
+        # Force immediate preview update (bypass debounce)
+        screen.editor_widget._update_preview()
+        html = screen.editor_widget.preview_pane.toHtml()
+        assert "Preview Heading" in html
+
+    def test_disk_unchanged_until_save(self, tmp_path: Path):
+        """Editing does not write to disk — only explicit save does."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        template_path = lib / "templates" / "CLAUDE.md.j2"
+        original = template_path.read_text(encoding="utf-8")
+        screen.editor_widget.editor.setPlainText("# Not yet saved")
+        # Disk should still have original content
+        assert template_path.read_text(encoding="utf-8") == original
+
+    def test_file_saved_signal_emitted_on_template_save(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        screen.editor_widget.editor.setPlainText("changed")
+        saved_paths: list[str] = []
+        screen.editor_widget.file_saved.connect(saved_paths.append)
+        screen.editor_widget.save()
+        assert len(saved_paths) == 1
+        assert "CLAUDE.md.j2" in saved_paths[0]
+
+    def test_dirty_changed_signal_on_template_edit(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        signals: list[bool] = []
+        screen.editor_widget.dirty_changed.connect(signals.append)
+        screen.editor_widget.editor.setPlainText("modified")
+        assert True in signals
+
+    def test_persona_template_update(self, tmp_path: Path):
+        """Persona-level templates can also be edited and saved."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Navigate to Personas > developer > templates > impl.md.j2
+        personas_item = screen.tree.topLevelItem(0)
+        dev_item = personas_item.child(0)
+        for i in range(dev_item.childCount()):
+            child = dev_item.child(i)
+            if child.text(0) == "templates":
+                for j in range(child.childCount()):
+                    tpl = child.child(j)
+                    if tpl.text(0) == "impl.md.j2":
+                        screen.tree.setCurrentItem(tpl)
+                        break
+                break
+        assert "template" in screen.editor_widget.editor.toPlainText()
+        # Edit and save
+        screen.editor_widget.editor.setPlainText("# Updated persona template")
+        assert screen.editor_widget.dirty is True
+        result = screen.editor_widget.save()
+        assert result is True
+        assert screen.editor_widget.dirty is False
+        target = lib / "personas" / "developer" / "templates" / "impl.md.j2"
+        assert target.read_text(encoding="utf-8") == "# Updated persona template"
+
+    def test_file_label_shows_template_path(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_shared_template(screen, "CLAUDE.md.j2")
+        assert "CLAUDE.md.j2" in screen.file_label.text()
