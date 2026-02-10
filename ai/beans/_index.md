@@ -106,7 +106,7 @@
 | BEAN-082 | Library Manager — Persona Create | App | Medium | Approved | (unassigned) |
 | BEAN-083 | Library Manager — Persona Update | App | Medium | Approved | (unassigned) |
 | BEAN-084 | Library Manager — Persona Delete | App | Medium | Approved | (unassigned) |
-| BEAN-085 | Library Manager — Stack Read | App | High | Approved | (unassigned) |
+| BEAN-085 | Library Manager — Stack Read | App | High | Done | Developer |
 | BEAN-086 | Library Manager — Stack Create | App | Medium | Approved | (unassigned) |
 | BEAN-087 | Library Manager — Stack Update | App | Medium | Approved | (unassigned) |
 | BEAN-088 | Library Manager — Stack Delete | App | Medium | Approved | (unassigned) |

@@ -1625,3 +1625,155 @@ class TestStackDelete:
             if item.text(0) == "Stacks":
                 assert item.childCount() == 0
                 break
+
+
+# ---------------------------------------------------------------------------
+# Stack Read — BEAN-085
+# ---------------------------------------------------------------------------
+
+
+class TestStackRead:
+    """Verify stack listing in tree and file loading into editor (BEAN-085)."""
+
+    def _find_stacks_item(self, screen):
+        """Return the top-level 'Stacks' tree item."""
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                return item
+        return None
+
+    def test_stacks_category_lists_all_stacks(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        stacks_item = self._find_stacks_item(screen)
+        assert stacks_item is not None
+        # _create_library creates one stack: python-fastapi
+        assert stacks_item.childCount() == 1
+        assert stacks_item.child(0).text(0) == "python-fastapi"
+
+    def test_stacks_category_lists_multiple_stacks(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        # Add a second stack
+        second = lib / "stacks" / "rust-actix"
+        second.mkdir(parents=True)
+        (second / "conventions.md").write_text("# Rust Actix", encoding="utf-8")
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        stacks_item = self._find_stacks_item(screen)
+        assert stacks_item.childCount() == 2
+        child_names = [stacks_item.child(i).text(0) for i in range(stacks_item.childCount())]
+        assert "python-fastapi" in child_names
+        assert "rust-actix" in child_names
+
+    def test_stack_directory_shows_nested_files(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        stacks_item = self._find_stacks_item(screen)
+        stack_dir_item = stacks_item.child(0)  # python-fastapi
+        # _create_library adds stack.md, conventions.md, testing.md
+        assert stack_dir_item.childCount() == 3
+        file_names = sorted(
+            stack_dir_item.child(i).text(0) for i in range(stack_dir_item.childCount())
+        )
+        assert file_names == ["conventions.md", "stack.md", "testing.md"]
+
+    def test_clicking_stack_file_loads_content_in_editor(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        stacks_item = self._find_stacks_item(screen)
+        stack_dir_item = stacks_item.child(0)
+        # Find and select stack.md
+        for i in range(stack_dir_item.childCount()):
+            child = stack_dir_item.child(i)
+            if child.text(0) == "stack.md":
+                screen.tree.setCurrentItem(child)
+                break
+        assert "Python + FastAPI" in screen.editor_widget.editor.toPlainText()
+
+    def test_clicking_stack_conventions_loads_content(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        stacks_item = self._find_stacks_item(screen)
+        stack_dir_item = stacks_item.child(0)
+        for i in range(stack_dir_item.childCount()):
+            child = stack_dir_item.child(i)
+            if child.text(0) == "conventions.md":
+                screen.tree.setCurrentItem(child)
+                break
+        assert "Conventions" in screen.editor_widget.editor.toPlainText()
+
+    def test_file_path_label_updates_for_stack_file(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        stacks_item = self._find_stacks_item(screen)
+        stack_dir_item = stacks_item.child(0)
+        for i in range(stack_dir_item.childCount()):
+            child = stack_dir_item.child(i)
+            if child.text(0) == "testing.md":
+                screen.tree.setCurrentItem(child)
+                break
+        label_text = screen.file_label.text()
+        assert "testing.md" in label_text
+        assert "stacks" in label_text
+
+    def test_selecting_stack_directory_clears_editor(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        stacks_item = self._find_stacks_item(screen)
+        # First select a file to load content
+        stack_dir_item = stacks_item.child(0)
+        screen.tree.setCurrentItem(stack_dir_item.child(0))
+        assert screen.editor_widget.editor.toPlainText() != ""
+        # Now select the directory node — editor should clear
+        screen.tree.setCurrentItem(stack_dir_item)
+        assert screen.editor_widget.editor.toPlainText() == ""
+
+    def test_live_preview_renders_stack_markdown(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        stacks_item = self._find_stacks_item(screen)
+        stack_dir_item = stacks_item.child(0)
+        for i in range(stack_dir_item.childCount()):
+            child = stack_dir_item.child(i)
+            if child.text(0) == "stack.md":
+                screen.tree.setCurrentItem(child)
+                break
+        # Force preview update (bypass debounce)
+        screen.editor_widget._update_preview()
+        html = screen.editor_widget.preview_pane.toHtml()
+        assert "Python" in html
+
+    def test_empty_stacks_directory_shows_no_children(self, tmp_path: Path):
+        lib = tmp_path / "empty-lib"
+        (lib / "stacks").mkdir(parents=True)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        stacks_item = self._find_stacks_item(screen)
+        assert stacks_item is not None
+        assert stacks_item.childCount() == 0
+
+    def test_stack_file_nodes_have_paths(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        tree = _build_file_tree(lib)
+        stacks_cat = next(c for c in tree if c["name"] == "Stacks")
+        stack_dir = stacks_cat["children"][0]  # python-fastapi
+        assert stack_dir["path"] is None  # directory node
+        for file_node in stack_dir["children"]:
+            assert file_node["path"] is not None
+            assert file_node["path"].endswith(".md")
+
+    def test_stack_directory_node_has_no_path(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        tree = _build_file_tree(lib)
+        stacks_cat = next(c for c in tree if c["name"] == "Stacks")
+        stack_dir = stacks_cat["children"][0]
+        assert stack_dir["name"] == "python-fastapi"
+        assert stack_dir["path"] is None
