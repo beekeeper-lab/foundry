@@ -6,22 +6,22 @@ import logging
 from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QFont, QIcon, QKeySequence, QShortcut
+from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QHBoxLayout,
     QLabel,
-    QListWidget,
-    QListWidgetItem,
     QMainWindow,
     QPushButton,
     QStackedWidget,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
 from foundry_app.core.settings import FoundrySettings
 from foundry_app.ui import theme
-from foundry_app.ui.icons import icon_path
+from foundry_app.ui.icons import load_icon
 from foundry_app.ui.screens.builder_screen import BuilderScreen
 from foundry_app.ui.screens.history_screen import HistoryScreen
 from foundry_app.ui.screens.library_manager import LibraryManagerScreen
@@ -43,28 +43,34 @@ QMainWindow {{{{
     background-color: {theme.BG_INSET};
     border-right: 1px solid {theme.BORDER_DEFAULT};
 }}}}
-#sidebar QListWidget {{{{
+
+/* Nav buttons — icon-over-text, large targets */
+.nav-button {{{{
     background-color: transparent;
     border: none;
-    outline: none;
-    font-size: {theme.FONT_SIZE_MD}px;
-    color: {theme.TEXT_PRIMARY};
-    padding: {theme.SPACE_LG}px 0 {theme.SPACE_SM}px 0;
-}}}}
-#sidebar QListWidget::item {{{{
-    padding: {theme.SPACE_MD}px {theme.SPACE_LG}px;
+    border-left: 3px solid transparent;
+    color: {theme.TEXT_SECONDARY};
+    font-size: {theme.FONT_SIZE_SM}px;
+    padding: {theme.SPACE_MD}px {theme.SPACE_SM}px;
     margin: 2px 0;
-    border-radius: 0;
+    text-align: center;
 }}}}
-#sidebar QListWidget::item:selected {{{{
+.nav-button:hover {{{{
+    background-color: {theme.BG_BASE};
+    color: {theme.ACCENT_PRIMARY_HOVER};
+}}}}
+.nav-button:checked {{{{
     background-color: {theme.BG_SURFACE};
     color: {theme.ACCENT_PRIMARY};
     font-weight: {theme.FONT_WEIGHT_BOLD};
     border-left: 3px solid {theme.ACCENT_PRIMARY};
 }}}}
-#sidebar QListWidget::item:hover:!selected {{{{
-    background-color: {theme.BG_BASE};
-    color: {theme.ACCENT_PRIMARY_HOVER};
+.nav-button:focus {{{{
+    outline: none;
+    border-left: 3px solid {theme.ACCENT_SECONDARY};
+}}}}
+.nav-button:checked:focus {{{{
+    border-left: 3px solid {theme.ACCENT_PRIMARY};
 }}}}
 
 /* Sidebar footer — version & info */
@@ -190,16 +196,37 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
 
-        self._nav_list = QListWidget()
-        self._nav_list.setIconSize(QSize(20, 20))
-        for label, icon_name, _, _ in SCREENS:
-            item = QListWidgetItem(label)
+        nav_container = QWidget()
+        nav_layout = QVBoxLayout(nav_container)
+        nav_layout.setContentsMargins(0, theme.SPACE_LG, 0, theme.SPACE_SM)
+        nav_layout.setSpacing(0)
+
+        self._nav_buttons: list[QToolButton] = []
+        self._nav_group = QButtonGroup(self)
+        self._nav_group.setExclusive(True)
+
+        for i, (label, icon_name, _, _) in enumerate(SCREENS):
+            btn = QToolButton()
+            btn.setText(label)
+            btn.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonTextUnderIcon
+            )
+            btn.setIconSize(QSize(36, 36))
+            btn.setCheckable(True)
+            btn.setProperty("class", "nav-button")
+            btn.setFixedHeight(72)
+            btn.setSizePolicy(btn.sizePolicy())
+            btn.setMinimumWidth(180)
             try:
-                item.setIcon(QIcon(str(icon_path(icon_name))))
+                btn.setIcon(load_icon(icon_name, color=theme.TEXT_SECONDARY, size=36))
             except FileNotFoundError:
-                logger.warning("Icon not found for nav item: %s", icon_name)
-            self._nav_list.addItem(item)
-        sidebar_layout.addWidget(self._nav_list, stretch=1)
+                logger.warning("Icon not found for nav: %s", icon_name)
+            self._nav_buttons.append(btn)
+            self._nav_group.addButton(btn, i)
+            nav_layout.addWidget(btn)
+
+        nav_layout.addStretch()
+        sidebar_layout.addWidget(nav_container, stretch=1)
 
         # --- Sidebar footer: version + about ---
         footer = QWidget()
@@ -244,8 +271,8 @@ class MainWindow(QMainWindow):
         root_layout.addWidget(self._stack, stretch=1)
 
         # Wire navigation
-        self._nav_list.currentRowChanged.connect(self._stack.setCurrentIndex)
-        self._nav_list.setCurrentRow(0)
+        self._nav_group.idClicked.connect(self._stack.setCurrentIndex)
+        self._nav_buttons[0].setChecked(True)
 
     def _apply_initial_settings(self) -> None:
         """Pass persisted settings to screens on startup."""
@@ -307,9 +334,14 @@ class MainWindow(QMainWindow):
         return self._stack
 
     @property
-    def nav_list(self) -> QListWidget:
-        """Access the navigation list for programmatic control."""
-        return self._nav_list
+    def nav_buttons(self) -> list[QToolButton]:
+        """Access the navigation buttons for programmatic control."""
+        return self._nav_buttons
+
+    @property
+    def nav_group(self) -> QButtonGroup:
+        """Access the navigation button group."""
+        return self._nav_group
 
     @property
     def builder_screen(self) -> BuilderScreen:
