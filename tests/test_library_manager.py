@@ -2279,6 +2279,11 @@ class TestPersonaUpdate:
         result = screen.editor_widget.save()
         assert result is True
         disk_content = (lib / "personas" / "developer" / "persona.md").read_text(
+            encoding="utf-8"
+        )
+        assert disk_content == new_content
+
+
 # ---------------------------------------------------------------------------
 # Skill update — end-to-end editing flow (BEAN-103)
 # ---------------------------------------------------------------------------
