@@ -729,7 +729,6 @@ class LibraryManagerScreen(QWidget):
                 item, child.get("children", []), template_style=child_style
             )
 
-<<<<<<< HEAD
     def _select_tree_item_by_path(self, file_path: str) -> None:
         """Find and select the tree item whose UserRole data matches *file_path*."""
         for i in range(self._tree.topLevelItemCount()):
@@ -750,7 +749,6 @@ class LibraryManagerScreen(QWidget):
                 return result
         return None
 
-=======
     def _select_path_in_tree(self, target_path: str) -> None:
         """Find and select the tree item whose file path matches *target_path*."""
 
@@ -768,7 +766,7 @@ class LibraryManagerScreen(QWidget):
             if _search(self._tree.topLevelItem(i)):
                 return
 
->>>>>>> bean/BEAN-098-lib-mgr-command-create
+
     def _on_item_selected(self, current: QTreeWidgetItem | None, _prev) -> None:
         """Load the file into the editor when a file node is selected."""
         self._update_button_state(current)
@@ -1085,12 +1083,7 @@ class LibraryManagerScreen(QWidget):
             return
         logger.info("Created %s", dest)
         self.refresh_tree()
-<<<<<<< HEAD
         self._select_tree_item_by_path(str(dest))
-=======
-        self._select_path_in_tree(str(dest))
-
->>>>>>> bean/BEAN-098-lib-mgr-command-create
 
     def _create_template(self, target_dir: Path) -> None:
         """Prompt user and create a new template file in *target_dir*."""

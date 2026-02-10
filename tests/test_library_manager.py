@@ -1896,10 +1896,6 @@ class TestStackDelete:
                 break
 
 
-# ---------------------------------------------------------------------------
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 # Stack Read — BEAN-085
 # ---------------------------------------------------------------------------
 
@@ -2049,7 +2045,9 @@ class TestStackRead:
         stack_dir = stacks_cat["children"][0]
         assert stack_dir["name"] == "python-fastapi"
         assert stack_dir["path"] is None
-=======
+
+
+# ---------------------------------------------------------------------------
 # Persona Update — end-to-end integration tests (BEAN-083)
 # ---------------------------------------------------------------------------
 
@@ -2067,7 +2065,7 @@ def _select_persona_file(screen, filename="persona.md"):
 
 
 class TestPersonaUpdate:
-    """End-to-end tests for persona update: select → edit → save → verify."""
+    """End-to-end tests for persona update: select -> edit -> save -> verify."""
 
     def test_select_persona_loads_content_into_editor(self, tmp_path):
         lib = _create_library(tmp_path)
@@ -2216,8 +2214,9 @@ class TestPersonaUpdate:
         screen.editor_widget.editor.setPlainText("# Version 2")
         screen.editor_widget.save()
         assert target.read_text(encoding="utf-8") == "# Version 2"
->>>>>>> bean/BEAN-083-lib-mgr-persona-update
-=======
+
+
+# ---------------------------------------------------------------------------
 # Stack Update — end-to-end workflow (BEAN-087)
 # ---------------------------------------------------------------------------
 
@@ -2326,7 +2325,61 @@ class TestStackUpdate:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         _select_stack_file(screen, "python-fastapi", "conventions.md")
-=======
+        assert not screen.editor_widget.save_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("changed")
+        assert screen.editor_widget.save_button.isEnabled()
+
+    def test_revert_button_enabled_when_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        assert not screen.editor_widget.revert_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("changed")
+        assert screen.editor_widget.revert_button.isEnabled()
+
+    def test_update_different_stack_files(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        # Edit and save stack.md
+        _select_stack_file(screen, "python-fastapi", "stack.md")
+        screen.editor_widget.editor.setPlainText("# Updated stack")
+        screen.editor_widget.save()
+        # Edit and save testing.md
+        _select_stack_file(screen, "python-fastapi", "testing.md")
+        screen.editor_widget.editor.setPlainText("# Updated testing")
+        screen.editor_widget.save()
+        # Verify both persisted
+        assert (lib / "stacks" / "python-fastapi" / "stack.md").read_text(
+            encoding="utf-8"
+        ) == "# Updated stack"
+        assert (lib / "stacks" / "python-fastapi" / "testing.md").read_text(
+            encoding="utf-8"
+        ) == "# Updated testing"
+
+    def test_switching_stack_files_loads_new_content(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        assert "Conventions" in screen.editor_widget.editor.toPlainText()
+        _select_stack_file(screen, "python-fastapi", "testing.md")
+        assert "Testing" in screen.editor_widget.editor.toPlainText()
+
+    def test_dirty_state_resets_on_file_switch(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        screen.editor_widget.editor.setPlainText("unsaved edits")
+        assert screen.editor_widget.dirty is True
+        # Switch to a different file — editor reloads, dirty resets
+        _select_stack_file(screen, "python-fastapi", "testing.md")
+        assert screen.editor_widget.dirty is False
+
+
+# ---------------------------------------------------------------------------
 # Template Update — end-to-end (BEAN-091)
 # ---------------------------------------------------------------------------
 
@@ -2416,13 +2469,10 @@ class TestTemplateUpdate:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         _select_shared_template(screen, "CLAUDE.md.j2")
->>>>>>> bean/BEAN-091-lib-mgr-template-update
         assert not screen.editor_widget.save_button.isEnabled()
         screen.editor_widget.editor.setPlainText("changed")
         assert screen.editor_widget.save_button.isEnabled()
 
-<<<<<<< HEAD
-=======
     def test_save_button_disabled_after_save(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
@@ -2448,62 +2498,15 @@ class TestTemplateUpdate:
         assert screen.editor_widget.dirty is False
         assert screen.editor_widget.dirty_label.text() == ""
 
->>>>>>> bean/BEAN-091-lib-mgr-template-update
     def test_revert_button_enabled_when_dirty(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-<<<<<<< HEAD
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
-=======
         _select_shared_template(screen, "CLAUDE.md.j2")
->>>>>>> bean/BEAN-091-lib-mgr-template-update
         assert not screen.editor_widget.revert_button.isEnabled()
         screen.editor_widget.editor.setPlainText("changed")
         assert screen.editor_widget.revert_button.isEnabled()
 
-<<<<<<< HEAD
-    def test_update_different_stack_files(self, tmp_path: Path):
-        lib = _create_library(tmp_path)
-        screen = LibraryManagerScreen()
-        screen.set_library_root(lib)
-        # Edit and save stack.md
-        _select_stack_file(screen, "python-fastapi", "stack.md")
-        screen.editor_widget.editor.setPlainText("# Updated stack")
-        screen.editor_widget.save()
-        # Edit and save testing.md
-        _select_stack_file(screen, "python-fastapi", "testing.md")
-        screen.editor_widget.editor.setPlainText("# Updated testing")
-        screen.editor_widget.save()
-        # Verify both persisted
-        assert (lib / "stacks" / "python-fastapi" / "stack.md").read_text(
-            encoding="utf-8"
-        ) == "# Updated stack"
-        assert (lib / "stacks" / "python-fastapi" / "testing.md").read_text(
-            encoding="utf-8"
-        ) == "# Updated testing"
-
-    def test_switching_stack_files_loads_new_content(self, tmp_path: Path):
-        lib = _create_library(tmp_path)
-        screen = LibraryManagerScreen()
-        screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
-        assert "Conventions" in screen.editor_widget.editor.toPlainText()
-        _select_stack_file(screen, "python-fastapi", "testing.md")
-        assert "Testing" in screen.editor_widget.editor.toPlainText()
-
-    def test_dirty_state_resets_on_file_switch(self, tmp_path: Path):
-        lib = _create_library(tmp_path)
-        screen = LibraryManagerScreen()
-        screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
-        screen.editor_widget.editor.setPlainText("unsaved edits")
-        assert screen.editor_widget.dirty is True
-        # Switch to a different file — editor reloads, dirty resets
-        _select_stack_file(screen, "python-fastapi", "testing.md")
-        assert screen.editor_widget.dirty is False
->>>>>>> bean/BEAN-087-lib-mgr-stack-update
-=======
     def test_revert_button_disabled_after_revert(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
@@ -2592,4 +2595,3 @@ class TestTemplateUpdate:
         screen.set_library_root(lib)
         _select_shared_template(screen, "CLAUDE.md.j2")
         assert "CLAUDE.md.j2" in screen.file_label.text()
->>>>>>> bean/BEAN-091-lib-mgr-template-update
