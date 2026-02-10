@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-094 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
+| **Started** | 2026-02-10 |
+| **Completed** | 2026-02-10 |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | developer |
 | **Category** | App |
 
 ## Problem Statement
@@ -36,13 +36,13 @@ A user can create a new workflow via the 'New...' button, providing a name, and 
 
 ## Acceptance Criteria
 
-- [ ] Clicking 'New...' on Workflow category opens a name input dialog
-- [ ] Entering a valid name creates the workflow with starter content on disk
-- [ ] Tree auto-refreshes and the new workflow is visible
-- [ ] Selecting the new workflow shows its starter content in the editor
-- [ ] Duplicate name detection prevents overwriting existing workflows
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Clicking 'New...' on Workflow category opens a name input dialog
+- [x] Entering a valid name creates the workflow with starter content on disk
+- [x] Tree auto-refreshes and the new workflow is visible
+- [x] Selecting the new workflow shows its starter content in the editor
+- [x] Duplicate name detection prevents overwriting existing workflows
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
@@ -69,7 +69,7 @@ Key files:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 0m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |

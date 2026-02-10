@@ -735,6 +735,142 @@ class TestCreateAsset:
 
 
 # ---------------------------------------------------------------------------
+# Workflow Create — end-to-end (BEAN-094)
+# ---------------------------------------------------------------------------
+
+
+class TestWorkflowCreate:
+
+    def test_create_workflow_file_on_disk(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("deploy-guide", True)):
+            screen._on_new_asset()
+        created = lib / "workflows" / "deploy-guide.md"
+        assert created.is_file()
+        content = created.read_text(encoding="utf-8")
+        assert "# Deploy Guide" in content
+        assert "## Overview" in content
+
+    def test_create_workflow_auto_selects_in_tree(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("ci-pipeline", True)):
+            screen._on_new_asset()
+        current = screen.tree.currentItem()
+        assert current is not None
+        assert current.text(0) == "ci-pipeline.md"
+
+    def test_create_workflow_shows_content_in_editor(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("release-process", True)):
+            screen._on_new_asset()
+        editor_text = screen.editor_widget.editor.toPlainText()
+        assert "# Release Process" in editor_text
+        assert "## Overview" in editor_text
+
+    def test_create_workflow_tree_shows_new_item(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                before = item.childCount()
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("hotfix-guide", True)):
+            screen._on_new_asset()
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                assert item.childCount() == before + 1
+                child_names = [item.child(j).text(0) for j in range(item.childCount())]
+                assert "hotfix-guide.md" in child_names
+                break
+
+    def test_create_duplicate_workflow_shows_warning(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        with (
+            patch(_INPUT_DIALOG, return_value=("default", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+
+    def test_create_workflow_invalid_name_rejected(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        before_count = len(list((lib / "workflows").iterdir()))
+        with (
+            patch(_INPUT_DIALOG, return_value=("My Workflow!", True)),
+            patch(_MSG_WARNING) as mock_warn,
+        ):
+            screen._on_new_asset()
+        mock_warn.assert_called_once()
+        assert len(list((lib / "workflows").iterdir())) == before_count
+
+    def test_create_workflow_cancelled_does_nothing(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        before_count = len(list((lib / "workflows").iterdir()))
+        with patch(_INPUT_DIALOG, return_value=("", False)):
+            screen._on_new_asset()
+        assert len(list((lib / "workflows").iterdir())) == before_count
+
+    def test_create_workflow_file_label_shows_path(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Workflows":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("branching-strategy", True)):
+            screen._on_new_asset()
+        assert "branching-strategy.md" in screen.file_label.text()
+
+
+# ---------------------------------------------------------------------------
 # Screen CRUD — delete operations
 # ---------------------------------------------------------------------------
 
