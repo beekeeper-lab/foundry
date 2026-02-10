@@ -65,11 +65,16 @@ The wizard populates personas, stacks, and hook packs automatically on first lau
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Add `_detect_library_root()` method | team-lead | 2m | — | — |
+| 2 | Wire into `_apply_initial_settings()` | team-lead | (incl. in 1) | — | — |
+| 3 | Add unit test for detection logic | team-lead | (incl. in 1) | — | — |
+| 4 | Manual smoke test | team-lead | (incl. in 1) | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
+| **Total Tasks** | 4 |
+| **Total Duration** | 2m |
+| **Total Tokens In** | — (not tracked) |
+| **Total Tokens Out** | — (not tracked) |
+
+> Backfilled from git reflog: branch 19:58:35 → merge 20:00:29. Token data unavailable (pre-telemetry-automation).

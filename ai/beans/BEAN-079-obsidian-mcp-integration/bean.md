@@ -100,11 +100,19 @@ Claude Code ← mcp__MCP_DOCKER__obsidian_* tools
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Enable community plugins | team-lead | — | — | — |
+| 2 | Install Local REST API plugin | team-lead | — | — | — |
+| 3 | Configure plugin settings | team-lead | — | — | — |
+| 4 | Set OBSIDIAN_API_KEY in Docker MCP | team-lead | — | — | — |
+| 5 | Verify host.docker.internal resolution | team-lead | — | — | — |
+| 6 | End-to-end test round-trip | team-lead | — | — | — |
+| 7 | Write setup docs | team-lead | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
+| **Total Tasks** | 7 |
+| **Total Duration** | ~3m (git), longer with manual Obsidian setup |
+| **Total Tokens In** | — (not tracked) |
+| **Total Tokens Out** | — (not tracked) |
+
+> Backfilled from git reflog: branch 19:48:11 → merge 19:51:40 (shared commit with BEAN-080). Most tasks involved manual GUI interaction outside git timeline. Token data unavailable.

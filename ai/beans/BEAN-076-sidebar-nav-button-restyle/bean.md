@@ -74,11 +74,13 @@ Replace the sidebar navigation with icon-over-text button controls that are visu
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Replace QListWidget with QToolButton nav | team-lead | 2m | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
+| **Total Tasks** | 1 (single commit) |
+| **Total Duration** | 2m |
+| **Total Tokens In** | — (not tracked) |
+| **Total Tokens Out** | — (not tracked) |
+
+> Backfilled from git reflog: branch 20:00:54 → merge 20:02:59. Token data unavailable (pre-telemetry-automation).

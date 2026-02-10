@@ -75,11 +75,17 @@ The Next button is disabled (grayed out) whenever the current wizard page is not
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Add `_update_next_enabled()` method | team-lead | 1m | — | — |
+| 2 | Connect page signals | team-lead | (incl. in 1) | — | — |
+| 3 | Call from `_update_nav_state()` | team-lead | (incl. in 1) | — | — |
+| 4 | Add disabled button style | team-lead | (incl. in 1) | — | — |
+| 5 | Add/update tests | team-lead | (incl. in 1) | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
+| **Total Tasks** | 5 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | — (not tracked) |
+| **Total Tokens Out** | — (not tracked) |
+
+> Backfilled from git reflog: branch 20:03:15 → merge 20:04:33. Token data unavailable (pre-telemetry-automation).

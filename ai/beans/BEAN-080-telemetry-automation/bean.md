@@ -85,11 +85,17 @@ When a task is started, its timestamp is recorded. When a task completes, the ag
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Enhance close-loop with telemetry | team-lead | 3m | — | — |
+| 2 | Add Started recording to long-run | team-lead | (incl. in 1) | — | — |
+| 3 | Add telemetry rollup to merge-bean | team-lead | (incl. in 1) | — | — |
+| 4 | Include telemetry in handoff | team-lead | (incl. in 1) | — | — |
+| 5 | Verify all telemetry changes | team-lead | (incl. in 1) | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
+| **Total Tasks** | 5 |
+| **Total Duration** | 3m |
+| **Total Tokens In** | — (not tracked) |
+| **Total Tokens Out** | — (not tracked) |
+
+> Backfilled from git reflog: branch 19:48:11 → merge 19:51:40 (shared commit with BEAN-079). Token data unavailable — ironic for the telemetry bean itself.

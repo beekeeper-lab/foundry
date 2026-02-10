@@ -68,11 +68,17 @@ When a wizard page has no content because the library isn't loaded, the user see
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Add empty-state label to PersonaSelectionPage | team-lead | 6m | — | — |
+| 2 | Add empty-state label to StackSelectionPage | team-lead | (incl. in 1) | — | — |
+| 3 | Add empty-state label to HookSafetyPage | team-lead | (incl. in 1) | — | — |
+| 4 | Toggle visibility in load_*() methods | team-lead | (incl. in 1) | — | — |
+| 5 | Add tests for empty-state visibility | team-lead | (incl. in 1) | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
+| **Total Tasks** | 5 |
+| **Total Duration** | 6m |
+| **Total Tokens In** | — (not tracked) |
+| **Total Tokens Out** | — (not tracked) |
+
+> Backfilled from git reflog: branch 20:04:49 → merge 20:10:37. Includes context compaction mid-bean. Token data unavailable (pre-telemetry-automation).
