@@ -1625,3 +1625,172 @@ class TestStackDelete:
             if item.text(0) == "Stacks":
                 assert item.childCount() == 0
                 break
+
+
+# ---------------------------------------------------------------------------
+# Persona Update — end-to-end integration tests (BEAN-083)
+# ---------------------------------------------------------------------------
+
+
+def _select_persona_file(screen, filename="persona.md"):
+    """Navigate the tree to Personas > developer > <filename> and select it."""
+    personas_item = screen.tree.topLevelItem(0)
+    dev_item = personas_item.child(0)
+    for i in range(dev_item.childCount()):
+        child = dev_item.child(i)
+        if child.text(0) == filename:
+            screen.tree.setCurrentItem(child)
+            return child
+    return None
+
+
+class TestPersonaUpdate:
+    """End-to-end tests for persona update: select → edit → save → verify."""
+
+    def test_select_persona_loads_content_into_editor(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        assert "Developer persona" in screen.editor_widget.editor.toPlainText()
+        assert screen.editor_widget.file_path is not None
+
+    def test_edit_persona_sets_dirty_state(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        assert screen.editor_widget.dirty is False
+        screen.editor_widget.editor.setPlainText("# Updated persona content")
+        assert screen.editor_widget.dirty is True
+
+    def test_edit_persona_shows_modified_indicator(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        assert screen.editor_widget.dirty_label.text() == ""
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.dirty_label.text() == "Modified"
+
+    def test_save_persona_persists_to_disk(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        new_content = "# Updated Developer\n\nNew mission statement."
+        screen.editor_widget.editor.setPlainText(new_content)
+        result = screen.editor_widget.save()
+        assert result is True
+        disk_content = (lib / "personas" / "developer" / "persona.md").read_text(
+            encoding="utf-8"
+        )
+        assert disk_content == new_content
+
+    def test_save_persona_clears_dirty_state(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.dirty is True
+        screen.editor_widget.save()
+        assert screen.editor_widget.dirty is False
+        assert screen.editor_widget.dirty_label.text() == ""
+
+    def test_save_persona_enables_then_disables_save_button(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        assert not screen.editor_widget.save_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.save_button.isEnabled()
+        screen.editor_widget.save()
+        assert not screen.editor_widget.save_button.isEnabled()
+
+    def test_revert_persona_restores_original_content(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        original = screen.editor_widget.editor.toPlainText()
+        screen.editor_widget.editor.setPlainText("# Completely different")
+        screen.editor_widget.revert()
+        assert screen.editor_widget.editor.toPlainText() == original
+
+    def test_revert_persona_clears_dirty_state(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.dirty is True
+        screen.editor_widget.revert()
+        assert screen.editor_widget.dirty is False
+        assert screen.editor_widget.dirty_label.text() == ""
+
+    def test_revert_persona_does_not_alter_disk(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        original_disk = (lib / "personas" / "developer" / "persona.md").read_text(
+            encoding="utf-8"
+        )
+        screen.editor_widget.editor.setPlainText("# Changed")
+        screen.editor_widget.revert()
+        after_disk = (lib / "personas" / "developer" / "persona.md").read_text(
+            encoding="utf-8"
+        )
+        assert after_disk == original_disk
+
+    def test_preview_updates_during_persona_editing(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        screen.editor_widget.editor.setPlainText("# New Heading\n\nSome body text.")
+        screen.editor_widget._update_preview()
+        html = screen.editor_widget.preview_pane.toHtml()
+        assert "New Heading" in html
+
+    def test_update_outputs_md(self, tmp_path):
+        """Verify update works for outputs.md within the same persona."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "outputs.md")
+        new_content = "# Updated Outputs\n\nDeliverables list."
+        screen.editor_widget.editor.setPlainText(new_content)
+        screen.editor_widget.save()
+        disk = (lib / "personas" / "developer" / "outputs.md").read_text(
+            encoding="utf-8"
+        )
+        assert disk == new_content
+
+    def test_file_label_shows_persona_path(self, tmp_path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        label = screen.file_label.text()
+        assert "personas" in label
+        assert "developer" in label
+        assert "persona.md" in label
+
+    def test_consecutive_saves_accumulate(self, tmp_path):
+        """Multiple edits and saves should each persist."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_persona_file(screen, "persona.md")
+        target = lib / "personas" / "developer" / "persona.md"
+        # First edit and save
+        screen.editor_widget.editor.setPlainText("# Version 1")
+        screen.editor_widget.save()
+        assert target.read_text(encoding="utf-8") == "# Version 1"
+        # Second edit and save
+        screen.editor_widget.editor.setPlainText("# Version 2")
+        screen.editor_widget.save()
+        assert target.read_text(encoding="utf-8") == "# Version 2"
