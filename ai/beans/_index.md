@@ -116,7 +116,7 @@
 | BEAN-092 | Library Manager — Template Delete | App | Medium | Approved | (unassigned) |
 | BEAN-093 | Library Manager — Workflow Read | App | High | Approved | (unassigned) |
 | BEAN-094 | Library Manager — Workflow Create | App | Medium | Approved | (unassigned) |
-| BEAN-095 | Library Manager — Workflow Update | App | Medium | Approved | (unassigned) |
+| BEAN-095 | Library Manager — Workflow Update | App | Medium | Done | developer |
 | BEAN-096 | Library Manager — Workflow Delete | App | Medium | Approved | (unassigned) |
 | BEAN-097 | Library Manager — Command Read | App | High | Approved | (unassigned) |
 | BEAN-098 | Library Manager — Command Create | App | Medium | Approved | (unassigned) |

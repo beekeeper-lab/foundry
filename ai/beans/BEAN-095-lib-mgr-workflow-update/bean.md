@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-095 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-10 02:30 |
+| **Completed** | 2026-02-10 02:30 |
+| **Duration** | 0m |
+| **Owner** | developer |
 | **Category** | App |
 
 ## Problem Statement
@@ -36,22 +36,21 @@ A user can select an existing workflow, edit its markdown content in the editor,
 
 ## Acceptance Criteria
 
-- [ ] Selecting a workflow loads its content into the editor
-- [ ] Editing text triggers the dirty/modified state indicator
-- [ ] Clicking 'Save' persists changes to disk and clears the dirty state
-- [ ] Clicking 'Revert' restores the original content and clears the dirty state
-- [ ] The live preview updates in real-time during editing
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Selecting a workflow loads its content into the editor
+- [x] Editing text triggers the dirty/modified state indicator
+- [x] Clicking 'Save' persists changes to disk and clears the dirty state
+- [x] Clicking 'Revert' restores the original content and clears the dirty state
+- [x] The live preview updates in real-time during editing
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Verify workflow update code path and write tests | developer | — | Done |
+| 2 | Run tests and lint | developer | 1 | Done |
+| 3 | Update bean status and commit | developer | 2 | Done |
 
 ## Notes
 
@@ -69,7 +68,7 @@ Key files:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 0m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |

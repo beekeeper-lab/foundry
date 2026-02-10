@@ -1625,3 +1625,165 @@ class TestStackDelete:
             if item.text(0) == "Stacks":
                 assert item.childCount() == 0
                 break
+
+
+# ---------------------------------------------------------------------------
+# Workflow Update — BEAN-095
+# ---------------------------------------------------------------------------
+
+
+def _select_workflow_file(screen: LibraryManagerScreen, filename: str = "default.md"):
+    """Helper to select a workflow file node in the tree by filename."""
+    for i in range(screen.tree.topLevelItemCount()):
+        item = screen.tree.topLevelItem(i)
+        if item.text(0) == "Workflows":
+            for j in range(item.childCount()):
+                child = item.child(j)
+                if child.text(0) == filename:
+                    screen.tree.setCurrentItem(child)
+                    return child
+    return None
+
+
+class TestWorkflowUpdate:
+
+    def test_selecting_workflow_loads_content_into_editor(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        assert "Default workflow" in screen.editor_widget.editor.toPlainText()
+
+    def test_selecting_workflow_sets_file_path_on_editor(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        assert screen.editor_widget.file_path is not None
+        assert screen.editor_widget.file_path.name == "default.md"
+
+    def test_selecting_workflow_shows_file_label(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        assert "default.md" in screen.file_label.text()
+
+    def test_editing_workflow_triggers_dirty_state(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        assert screen.editor_widget.dirty is False
+        screen.editor_widget.editor.setPlainText("# Updated workflow")
+        assert screen.editor_widget.dirty is True
+
+    def test_editing_workflow_shows_modified_indicator(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        assert screen.editor_widget.dirty_label.text() == ""
+        screen.editor_widget.editor.setPlainText("# Updated workflow")
+        assert screen.editor_widget.dirty_label.text() == "Modified"
+
+    def test_saving_workflow_persists_to_disk(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        screen.editor_widget.editor.setPlainText("# Updated workflow content")
+        result = screen.editor_widget.save()
+        assert result is True
+        on_disk = (lib / "workflows" / "default.md").read_text(encoding="utf-8")
+        assert on_disk == "# Updated workflow content"
+
+    def test_saving_workflow_clears_dirty_state(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        screen.editor_widget.editor.setPlainText("# Updated workflow content")
+        assert screen.editor_widget.dirty is True
+        screen.editor_widget.save()
+        assert screen.editor_widget.dirty is False
+        assert screen.editor_widget.dirty_label.text() == ""
+
+    def test_saving_workflow_emits_file_saved_signal(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        screen.editor_widget.editor.setPlainText("# Updated")
+        saved_paths: list[str] = []
+        screen.editor_widget.file_saved.connect(saved_paths.append)
+        screen.editor_widget.save()
+        assert len(saved_paths) == 1
+        assert "default.md" in saved_paths[0]
+
+    def test_reverting_workflow_restores_original_content(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        original = screen.editor_widget.editor.toPlainText()
+        screen.editor_widget.editor.setPlainText("# Modified content")
+        screen.editor_widget.revert()
+        assert screen.editor_widget.editor.toPlainText() == original
+
+    def test_reverting_workflow_clears_dirty_state(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        screen.editor_widget.editor.setPlainText("# Modified content")
+        assert screen.editor_widget.dirty is True
+        screen.editor_widget.revert()
+        assert screen.editor_widget.dirty is False
+        assert screen.editor_widget.dirty_label.text() == ""
+
+    def test_workflow_preview_updates_on_edit(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        screen.editor_widget.editor.setPlainText("# New Heading\n\nNew paragraph.")
+        screen.editor_widget._update_preview()
+        html = screen.editor_widget.preview_pane.toHtml()
+        assert "New Heading" in html
+
+    def test_save_button_state_tracks_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        assert not screen.editor_widget.save_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.save_button.isEnabled()
+        screen.editor_widget.save()
+        assert not screen.editor_widget.save_button.isEnabled()
+
+    def test_revert_button_state_tracks_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        assert not screen.editor_widget.revert_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.revert_button.isEnabled()
+        screen.editor_widget.revert()
+        assert not screen.editor_widget.revert_button.isEnabled()
+
+    def test_workflow_roundtrip_edit_save_reload(self, tmp_path: Path):
+        """Full roundtrip: load → edit → save → reload from tree → verify."""
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_workflow_file(screen, "default.md")
+        screen.editor_widget.editor.setPlainText("# Fully updated workflow")
+        screen.editor_widget.save()
+        # Re-select by refreshing tree and selecting again
+        screen.refresh_tree()
+        _select_workflow_file(screen, "default.md")
+        assert screen.editor_widget.editor.toPlainText() == "# Fully updated workflow"
+        assert screen.editor_widget.dirty is False
