@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-092 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-10 02:32 |
+| **Completed** | 2026-02-10 02:32 |
+| **Duration** | 0m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -36,13 +36,13 @@ A user can select an existing template and delete it via the 'Delete' button wit
 
 ## Acceptance Criteria
 
-- [ ] The 'Delete' button is enabled when a template is selected
-- [ ] Clicking 'Delete' shows a confirmation dialog naming the template
-- [ ] Confirming deletes the template file/directory from disk
-- [ ] Tree auto-refreshes and the deleted template is gone
-- [ ] Cancelling the dialog preserves the template unchanged
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] The 'Delete' button is enabled when a template is selected
+- [x] Clicking 'Delete' shows a confirmation dialog naming the template
+- [x] Confirming deletes the template file/directory from disk
+- [x] Tree auto-refreshes and the deleted template is gone
+- [x] Cancelling the dialog preserves the template unchanged
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
@@ -69,7 +69,7 @@ Key files:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 0m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
