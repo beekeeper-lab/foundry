@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-097 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-10 01:53 |
+| **Completed** | 2026-02-10 01:53 |
+| **Duration** | 0m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -36,18 +36,18 @@ When a user clicks on the command category in the Library Manager tree, all exis
 
 ## Acceptance Criteria
 
-- [ ] Tree shows all existing commands when the Command category is selected
-- [ ] Clicking a command file displays its content in the editor pane
-- [ ] File path label updates to show the selected file path
-- [ ] Live preview renders the command markdown correctly
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Tree shows all existing commands when the Command category is selected
+- [x] Clicking a command file displays its content in the editor pane
+- [x] File path label updates to show the selected file path
+- [x] Live preview renders the command markdown correctly
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Verify command read logic and add tests | Developer | — | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
@@ -68,7 +68,7 @@ Key files:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 0m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
