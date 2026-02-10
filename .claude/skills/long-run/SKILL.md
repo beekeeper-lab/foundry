@@ -49,7 +49,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 
 ### Phase 3: Bean Execution
 
-7. **Pick the bean** — Update status to `In Progress` in both `bean.md` and `_index.md`. Set owner to `team-lead`.
+7. **Pick the bean** — Update status to `In Progress` in `bean.md`. Update `_index.md` to set status to `In Progress` and owner to `team-lead`. (In sequential mode the orchestrator is also the worker, so both updates happen here.)
 8. **Ensure test branch exists** — Check if `test` branch exists locally. If not, create it: `git checkout -b test main && git checkout -`.
 9. **Create feature branch** — Create and checkout the feature branch (mandatory for every bean):
    - Branch name: `bean/BEAN-NNN-<slug>` (derived from the bean directory name)
@@ -77,15 +77,15 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 ### Phase 5: Verification & Closure
 
 14. **Verify acceptance criteria** — Check every criterion in the bean's Acceptance Criteria section. For code beans: run tests (`uv run pytest`) and lint (`uv run ruff check`).
-15. **Close the bean** — Update status to `Done` in both `bean.md` and `_index.md`.
+15. **Close the bean** — Update status to `Done` in `bean.md`. (The orchestrator updates `_index.md` after the merge — see step 17.)
 16. **Commit on feature branch** — Stage all files changed during this bean's execution. Commit with message: `BEAN-NNN: <bean title>`. The commit goes on the `bean/BEAN-NNN-<slug>` branch.
 
 ### Phase 5.5: Merge Captain
 
-17. **Merge to test branch** — Execute the `/merge-bean` skill to merge the feature branch into `test`:
+17. **Merge to test branch and update index** — Execute the `/merge-bean` skill to merge the feature branch into `test`:
     - Checkout `test`, pull latest, merge `bean/BEAN-NNN-<slug>` with `--no-ff`, push.
     - If merge conflicts occur: report the conflicts, abort the merge, leave the bean on its feature branch, and stop the loop.
-    - If merge succeeds: continue.
+    - If merge succeeds: update `_index.md` to set the bean's status to `Done`, commit the index update on `test`, and push.
 18. **Stay on test** — Remain on the `test` branch (do not switch to `main`).
 19. **Report progress** — Print the **Completion Summary** from the Team Lead Communication Template: bean title, task counts, branch name, files changed, notes, and remaining backlog status.
 
@@ -115,7 +115,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 ### Parallel Phase 3: Worker Spawning
 
 5. **Select independent beans** — From the actionable set, select up to N beans that have no unmet inter-bean dependencies. Beans that depend on other pending or in-progress beans are queued, not parallelized.
-6. **Update bean statuses** — Mark each selected bean as `In Progress` in both `bean.md` and `_index.md`. Set owner to `team-lead`.
+6. **Update bean statuses** — For each selected bean, update `_index.md` to set status to `In Progress` and owner to `team-lead`. Commit this index update on `test` before spawning workers. (Workers will update their own `bean.md` independently; they must NOT touch `_index.md`.)
 7. **Write initial status files** — For each selected bean, create a status file at `/tmp/foundry-worker-BEAN-NNN.status` with `status: starting`. This allows the dashboard to track the worker immediately. See the Status File Protocol in `/spawn-bean` for the full file format and status values (`starting`, `decomposing`, `running`, `blocked`, `error`, `done`).
 8. **Create worktrees and spawn workers** — For each selected bean, create an isolated git worktree, then create a launcher script and open a tmux child window:
    ```bash
@@ -143,12 +143,14 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    - Do NOT create or checkout branches.
    - Do NOT run /merge-bean — the orchestrator handles merging after you finish.
    - Do NOT checkout main or test.
+   - Do NOT edit _index.md — the orchestrator is the sole writer of the backlog index.
 
-   1. Decompose into tasks
-   2. Execute the wave (BA → Architect → Developer → Tech-QA)
-   3. Verify acceptance criteria
-   4. Commit on the feature branch
-   5. Update bean status to Done
+   1. Update bean.md status to In Progress
+   2. Decompose into tasks
+   3. Execute the wave (BA → Architect → Developer → Tech-QA)
+   4. Verify acceptance criteria
+   5. Update bean.md status to Done
+   6. Commit on the feature branch
 
    STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition.
    See /spawn-bean command for full status file format and update rules."
@@ -167,11 +169,12 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
     - Alert on `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no status file update for 5+ minutes).
     - Cross-reference with `tmux list-windows` to detect closed windows (worker exited).
 11. **Report completions** — As each worker finishes (status file shows `done` or window disappears), report in the dashboard.
-12. **Merge and assign next bean** — When a worker completes:
+12. **Merge, update index, and assign next bean** — When a worker completes:
     - Remove the worktree: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
     - Merge the bean: run `/merge-bean NNN` from the main repo (merges feature branch into `test`).
+    - Update `_index.md` on `test`: set the bean's status to `Done`. Commit and push. (The orchestrator is the sole writer of `_index.md`.)
     - Re-read the backlog for newly unblocked beans.
-    - If an independent actionable bean exists, create a new worktree, write its status file, and spawn a new worker window using the same launcher script pattern.
+    - If an independent actionable bean exists, update `_index.md` to mark it `In Progress`, commit, create a new worktree, write its status file, and spawn a new worker window using the same launcher script pattern.
     - If no more beans, do not spawn.
     - To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
 
