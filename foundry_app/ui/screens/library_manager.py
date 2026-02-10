@@ -834,6 +834,31 @@ class LibraryManagerScreen(QWidget):
         )
         self._delete_btn.setEnabled(editable and (has_file or is_asset_dir))
 
+    # -- Tree selection helpers ---------------------------------------------
+
+    def _select_file_in_tree(self, file_path: Path) -> None:
+        """Find and select a tree item matching *file_path*, expanding ancestors."""
+        target = str(file_path)
+
+        def _search(parent: QTreeWidgetItem) -> bool:
+            for i in range(parent.childCount()):
+                child = parent.child(i)
+                if child.data(0, Qt.ItemDataRole.UserRole) == target:
+                    node = child.parent()
+                    while node is not None:
+                        self._tree.expandItem(node)
+                        node = node.parent()
+                    self._tree.setCurrentItem(child)
+                    return True
+                if _search(child):
+                    return True
+            return False
+
+        for i in range(self._tree.topLevelItemCount()):
+            top = self._tree.topLevelItem(i)
+            if _search(top):
+                return
+
     # -- Stack helpers -----------------------------------------------------
 
     def _is_stack_subitem(self, item: QTreeWidgetItem | None) -> bool:
@@ -990,6 +1015,7 @@ class LibraryManagerScreen(QWidget):
                 return
             logger.info("Created stack %s", stack_dir)
             self.refresh_tree()
+            self._select_file_in_tree(dest)
             return
 
         # Skills: create directory with SKILL.md

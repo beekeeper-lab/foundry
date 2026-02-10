@@ -1563,6 +1563,56 @@ class TestStackCreate:
                 assert item.childCount() == before + 1
                 break
 
+    def test_new_stack_auto_selected_after_create(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("go-fiber", True)):
+            screen._on_new_asset()
+        current = screen.tree.currentItem()
+        assert current is not None
+        assert current.text(0) == "conventions.md"
+        expected_path = str(lib / "stacks" / "go-fiber" / "conventions.md")
+        assert current.data(0, 0x0100) == expected_path  # Qt.ItemDataRole.UserRole
+
+    def test_new_stack_content_shown_in_editor(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("go-fiber", True)):
+            screen._on_new_asset()
+        editor_text = screen.editor_widget.editor.toPlainText()
+        assert "Go Fiber Stack Conventions" in editor_text
+
+    def test_new_stack_parent_expanded_in_tree(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        for i in range(screen.tree.topLevelItemCount()):
+            item = screen.tree.topLevelItem(i)
+            if item.text(0) == "Stacks":
+                screen.tree.setCurrentItem(item)
+                break
+        with patch(_INPUT_DIALOG, return_value=("go-fiber", True)):
+            screen._on_new_asset()
+        # The stack directory node should be expanded
+        current = screen.tree.currentItem()
+        assert current is not None
+        stack_node = current.parent()
+        assert stack_node is not None
+        assert stack_node.text(0) == "go-fiber"
+        assert stack_node.isExpanded()
+
 
 # ---------------------------------------------------------------------------
 # Stack CRUD — delete operations

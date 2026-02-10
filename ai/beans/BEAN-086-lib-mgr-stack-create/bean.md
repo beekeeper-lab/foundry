@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-086 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-10 02:02 |
+| **Completed** | 2026-02-10 02:02 |
+| **Duration** | 0m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -36,13 +36,13 @@ A user can create a new stack via the 'New...' button, providing a name, and the
 
 ## Acceptance Criteria
 
-- [ ] Clicking 'New...' on Stack category opens a name input dialog
-- [ ] Entering a valid name creates the stack with starter content on disk
-- [ ] Tree auto-refreshes and the new stack is visible
-- [ ] Selecting the new stack shows its starter content in the editor
-- [ ] Duplicate name detection prevents overwriting existing stacks
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Clicking 'New...' on Stack category opens a name input dialog
+- [x] Entering a valid name creates the stack with starter content on disk
+- [x] Tree auto-refreshes and the new stack is visible
+- [x] Selecting the new stack shows its starter content in the editor
+- [x] Duplicate name detection prevents overwriting existing stacks
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
@@ -69,7 +69,7 @@ Key files:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 0m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
