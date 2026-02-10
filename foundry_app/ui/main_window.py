@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QFont, QIcon, QKeySequence, QShortcut
@@ -249,14 +250,34 @@ class MainWindow(QMainWindow):
     def _apply_initial_settings(self) -> None:
         """Pass persisted settings to screens on startup."""
         lib_root = self._settings.library_root
+        if not lib_root:
+            lib_root = self._detect_library_root()
+            if lib_root:
+                self._settings.library_root = lib_root
+                self._settings.sync()
+                logger.info("Auto-detected library root persisted: %s", lib_root)
         if lib_root:
             self._library_screen.set_library_root(lib_root)
             self._load_builder_library(lib_root)
-            logger.info("Library root loaded from settings: %s", lib_root)
+            logger.info("Library root loaded: %s", lib_root)
 
         ws_root = self._settings.workspace_root
         if ws_root:
             self._history_screen.set_projects_root(ws_root)
+
+    @staticmethod
+    def _detect_library_root() -> str:
+        """Auto-detect ai-team-library/ relative to the foundry_app package."""
+        try:
+            # foundry_app/ui/main_window.py -> foundry_app/ui -> foundry_app
+            package_dir = Path(__file__).resolve().parent.parent
+            candidate = package_dir.parent / "ai-team-library"
+            if (candidate / "personas").is_dir():
+                logger.info("Auto-detected library root: %s", candidate)
+                return str(candidate)
+        except Exception:
+            logger.debug("Library auto-detection failed", exc_info=True)
+        return ""
 
     def _on_library_root_changed(self, path: str) -> None:
         """React to library root changes from the settings screen."""

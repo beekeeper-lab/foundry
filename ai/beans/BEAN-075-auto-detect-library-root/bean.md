@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-075 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
+| **Started** | 2026-02-09 |
+| **Completed** | 2026-02-09 |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -35,13 +35,13 @@ The wizard populates personas, stacks, and hook packs automatically on first lau
 
 ## Acceptance Criteria
 
-- [ ] On first launch with no `library_root` configured, the wizard auto-detects `ai-team-library/` and populates all 13 personas
-- [ ] The auto-detected path is persisted to QSettings so subsequent launches use it directly
-- [ ] If `library_root` is already set in settings, auto-detection is skipped (user override preserved)
-- [ ] If auto-detection fails (e.g., running from a different directory), no crash or error — page stays empty as before
-- [ ] Detection logic resolves relative to `foundry_app/` package location (not CWD)
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] On first launch with no `library_root` configured, the wizard auto-detects `ai-team-library/` and populates all 13 personas
+- [x] The auto-detected path is persisted to QSettings so subsequent launches use it directly
+- [x] If `library_root` is already set in settings, auto-detection is skipped (user override preserved)
+- [x] If auto-detection fails (e.g., running from a different directory), no crash or error — page stays empty as before
+- [x] Detection logic resolves relative to `foundry_app/` package location (not CWD)
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 

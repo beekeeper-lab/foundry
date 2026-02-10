@@ -89,6 +89,40 @@ class TestScreenReplacement:
 # Geometry persistence
 # ---------------------------------------------------------------------------
 
+class TestLibraryAutoDetect:
+    def test_detect_library_root_finds_sibling_dir(self):
+        """Detection resolves ai-team-library/ relative to the package."""
+        result = MainWindow._detect_library_root()
+        # In the foundry repo, ai-team-library/ exists as a sibling of foundry_app/
+        from pathlib import Path
+
+        expected = Path(__file__).resolve().parent.parent / "ai-team-library"
+        if expected.is_dir() and (expected / "personas").is_dir():
+            assert result == str(expected)
+        else:
+            # Running from a different location — detection returns empty
+            assert result == ""
+
+    def test_auto_detect_persists_to_settings(self, settings):
+        """When library_root is empty, auto-detection persists the result."""
+        assert settings.library_root == ""
+        w = MainWindow(settings=settings)
+        # If auto-detection found the library, it should now be in settings
+        from pathlib import Path
+
+        expected = Path(__file__).resolve().parent.parent / "ai-team-library"
+        if expected.is_dir() and (expected / "personas").is_dir():
+            assert settings.library_root == str(expected)
+        w.close()
+
+    def test_existing_setting_skips_detection(self, settings):
+        """If library_root is already set, auto-detection is skipped."""
+        settings.library_root = "/custom/path"
+        w = MainWindow(settings=settings)
+        assert settings.library_root == "/custom/path"
+        w.close()
+
+
 class TestGeometry:
     def test_close_saves_geometry(self, window, settings):
         window.close()
