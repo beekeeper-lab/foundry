@@ -1625,3 +1625,159 @@ class TestStackDelete:
             if item.text(0) == "Stacks":
                 assert item.childCount() == 0
                 break
+
+
+# ---------------------------------------------------------------------------
+# Command update — end-to-end (BEAN-099)
+# ---------------------------------------------------------------------------
+
+
+def _select_command_file(screen: LibraryManagerScreen) -> None:
+    """Select the review-pr.md command node in the tree."""
+    for i in range(screen.tree.topLevelItemCount()):
+        item = screen.tree.topLevelItem(i)
+        if item.text(0) == "Claude Commands":
+            screen.tree.setCurrentItem(item.child(0))
+            return
+    raise AssertionError("Claude Commands category not found")
+
+
+class TestCommandUpdate:
+
+    def test_select_command_loads_content(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        assert "Review PR" in screen.editor_widget.editor.toPlainText()
+
+    def test_select_command_sets_file_label(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        assert "review-pr.md" in screen.file_label.text()
+
+    def test_select_command_sets_file_path(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        assert screen.editor_widget.file_path is not None
+        assert screen.editor_widget.file_path.name == "review-pr.md"
+
+    def test_edit_command_triggers_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        assert not screen.editor_widget.dirty
+        screen.editor_widget.editor.setPlainText("# Updated content")
+        assert screen.editor_widget.dirty
+        assert screen.editor_widget.dirty_label.text() == "Modified"
+
+    def test_save_command_persists_to_disk(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        new_content = "# Updated Review PR\n\nNew instructions."
+        screen.editor_widget.editor.setPlainText(new_content)
+        result = screen.editor_widget.save()
+        assert result is True
+        on_disk = (lib / "claude" / "commands" / "review-pr.md").read_text(
+            encoding="utf-8"
+        )
+        assert on_disk == new_content
+
+    def test_save_command_clears_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.dirty
+        screen.editor_widget.save()
+        assert not screen.editor_widget.dirty
+        assert screen.editor_widget.dirty_label.text() == ""
+
+    def test_revert_command_restores_content(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        original = screen.editor_widget.editor.toPlainText()
+        screen.editor_widget.editor.setPlainText("# Totally different")
+        assert screen.editor_widget.dirty
+        screen.editor_widget.revert()
+        assert screen.editor_widget.editor.toPlainText() == original
+        assert not screen.editor_widget.dirty
+
+    def test_revert_command_clears_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        screen.editor_widget.editor.setPlainText("# Changed")
+        screen.editor_widget.revert()
+        assert not screen.editor_widget.dirty
+        assert screen.editor_widget.dirty_label.text() == ""
+
+    def test_preview_updates_during_command_edit(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        screen.editor_widget.editor.setPlainText("# New Heading\n\nParagraph.")
+        screen.editor_widget._update_preview()
+        html = screen.editor_widget.preview_pane.toHtml()
+        assert "New Heading" in html
+
+    def test_save_button_enabled_when_command_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        assert not screen.editor_widget.save_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.save_button.isEnabled()
+
+    def test_save_button_disabled_after_save(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        screen.editor_widget.editor.setPlainText("# Changed")
+        screen.editor_widget.save()
+        assert not screen.editor_widget.save_button.isEnabled()
+
+    def test_revert_button_enabled_when_command_dirty(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        assert not screen.editor_widget.revert_button.isEnabled()
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert screen.editor_widget.revert_button.isEnabled()
+
+    def test_file_saved_signal_emitted(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        screen.editor_widget.editor.setPlainText("# Changed")
+        saved: list[str] = []
+        screen.editor_widget.file_saved.connect(saved.append)
+        screen.editor_widget.save()
+        assert len(saved) == 1
+        assert "review-pr.md" in saved[0]
+
+    def test_dirty_changed_signal_emitted(self, tmp_path: Path):
+        lib = _create_library(tmp_path)
+        screen = LibraryManagerScreen()
+        screen.set_library_root(lib)
+        _select_command_file(screen)
+        signals: list[bool] = []
+        screen.editor_widget.dirty_changed.connect(signals.append)
+        screen.editor_widget.editor.setPlainText("# Changed")
+        assert True in signals
