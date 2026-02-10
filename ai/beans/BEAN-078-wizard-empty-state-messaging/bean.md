@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-078 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-09 |
-| **Started** | — |
-| **Completed** | — |
+| **Started** | 2026-02-09 |
+| **Completed** | 2026-02-09 |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -36,23 +36,23 @@ When a wizard page has no content because the library isn't loaded, the user see
 
 ## Acceptance Criteria
 
-- [ ] Persona page shows an empty-state message when no personas are loaded
-- [ ] Stack page shows an empty-state message when no stacks are loaded
-- [ ] Hook/Safety page shows an empty-state message when no hook packs are loaded
-- [ ] Empty-state message disappears when library is loaded (e.g., user configures Settings and returns to wizard)
-- [ ] Message is styled with `TEXT_SECONDARY` color and centered in the scroll area
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Persona page shows an empty-state message when no personas are loaded
+- [x] Stack page shows an empty-state message when no stacks are loaded
+- [x] Hook/Safety page shows an empty-state message when no hook packs are loaded
+- [x] Empty-state message disappears when library is loaded (e.g., user configures Settings and returns to wizard)
+- [x] Message is styled with `TEXT_SECONDARY` color and centered in the scroll area
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Add empty-state label to PersonaSelectionPage | | | Pending |
-| 2 | Add empty-state label to StackSelectionPage | | | Pending |
-| 3 | Add empty-state label to HookSafetyPage | | | Pending |
-| 4 | Toggle visibility in load_*() methods | | 1-3 | Pending |
-| 5 | Add tests for empty-state visibility | | 1-4 | Pending |
+| 1 | Add empty-state label to PersonaSelectionPage | team-lead | | Done |
+| 2 | Add empty-state label to StackSelectionPage | team-lead | | Done |
+| 3 | Add empty-state label to HookSafetyPage | team-lead | | Done |
+| 4 | Toggle visibility in load_*() methods | team-lead | 1-3 | Done |
+| 5 | Add tests for empty-state visibility | team-lead | 1-4 | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
