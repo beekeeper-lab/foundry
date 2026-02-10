@@ -275,6 +275,18 @@ class PersonaSelectionPage(QWidget):
         self._warning_label.setVisible(False)
         outer.addWidget(self._warning_label)
 
+        # Empty-state label (visible until library is loaded)
+        self._empty_label = QLabel(
+            "No library loaded. Go to Settings and configure your "
+            "Library Root to populate this page."
+        )
+        self._empty_label.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
+        self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._empty_label.setWordWrap(True)
+        outer.addWidget(self._empty_label)
+
         # Scrollable area for persona cards
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -309,6 +321,7 @@ class PersonaSelectionPage(QWidget):
             self._cards[persona.id] = card
             insert_idx += 1
 
+        self._empty_label.setVisible(len(self._cards) == 0)
         logger.info("Loaded %d persona cards", len(self._cards))
 
     def get_team_config(self) -> TeamConfig:

@@ -436,3 +436,30 @@ class TestTemplateBadge:
         page = PersonaSelectionPage(library_index=lib)
         assert len(page.persona_cards) == 1
         page.close()
+
+
+# ---------------------------------------------------------------------------
+# PersonaSelectionPage — empty-state messaging
+# ---------------------------------------------------------------------------
+
+class TestEmptyState:
+    def test_empty_label_visible_when_no_library(self, page):
+        assert page._empty_label.isHidden() is False
+
+    def test_empty_label_hidden_after_loading_personas(self, loaded_page):
+        assert loaded_page._empty_label.isHidden() is True
+
+    def test_empty_label_visible_after_loading_empty_library(self, page):
+        lib = LibraryIndex(library_root="/fake")
+        page.load_personas(lib)
+        assert page._empty_label.isHidden() is False
+
+    def test_empty_label_hidden_after_reloading_with_personas(self, page):
+        # Start empty
+        lib_empty = LibraryIndex(library_root="/fake")
+        page.load_personas(lib_empty)
+        assert page._empty_label.isHidden() is False
+        # Load real personas
+        lib = _make_library("developer", "architect")
+        page.load_personas(lib)
+        assert page._empty_label.isHidden() is True

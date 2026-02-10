@@ -476,6 +476,18 @@ class HookSafetyPage(QWidget):
         posture_row.addStretch(1)
         self._content_layout.addLayout(posture_row)
 
+        # Empty-state label for hooks (visible until library is loaded)
+        self._hook_empty_label = QLabel(
+            "No library loaded. Go to Settings and configure your "
+            "Library Root to populate this page."
+        )
+        self._hook_empty_label.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
+        self._hook_empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._hook_empty_label.setWordWrap(True)
+        self._content_layout.addWidget(self._hook_empty_label)
+
         # Hook card container
         self._hook_card_container = QWidget()
         self._hook_card_layout = QVBoxLayout(self._hook_card_container)
@@ -607,6 +619,7 @@ class HookSafetyPage(QWidget):
                 self._hook_card_layout.addWidget(card)
                 self._cards[pack.id] = card
 
+        self._hook_empty_label.setVisible(len(self._cards) == 0)
         logger.info("Loaded %d hook pack cards in %d categories", len(self._cards), len(groups))
 
     def get_hooks_config(self) -> HooksConfig:

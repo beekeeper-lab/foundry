@@ -679,3 +679,31 @@ class TestHookPackDescriptions:
         for pid, (name, desc) in HOOK_PACK_DESCRIPTIONS.items():
             assert len(name) > 0, f"{pid} has empty display name"
             assert len(desc) > 0, f"{pid} has empty description"
+
+
+# ---------------------------------------------------------------------------
+# HookSafetyPage — empty-state messaging
+# ---------------------------------------------------------------------------
+
+class TestHookEmptyState:
+    def test_empty_label_visible_when_no_library(self, page):
+        assert page._hook_empty_label.isHidden() is False
+
+    def test_empty_label_hidden_after_loading_packs(self):
+        lib = _make_full_library()
+        p = HookSafetyPage(library_index=lib)
+        assert p._hook_empty_label.isHidden() is True
+        p.close()
+
+    def test_empty_label_visible_after_loading_empty_library(self, page):
+        lib = LibraryIndex(library_root="/fake")
+        page.load_hook_packs(lib)
+        assert page._hook_empty_label.isHidden() is False
+
+    def test_empty_label_hidden_after_reloading_with_packs(self, page):
+        lib_empty = LibraryIndex(library_root="/fake")
+        page.load_hook_packs(lib_empty)
+        assert page._hook_empty_label.isHidden() is False
+        lib = _make_library("pre-commit-lint", "security-scan")
+        page.load_hook_packs(lib)
+        assert page._hook_empty_label.isHidden() is True
