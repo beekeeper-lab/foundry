@@ -99,6 +99,6 @@
 | BEAN-075 | Auto-Detect Library Root | App | High | Done | team-lead |
 | BEAN-076 | Sidebar Nav Button Restyle | App | High | Done | team-lead |
 | BEAN-077 | Wizard Navigation Validation Feedback | App | High | Done | team-lead |
-| BEAN-078 | Wizard Empty-State Messaging | App | Medium | Approved | (unassigned) |
+| BEAN-078 | Wizard Empty-State Messaging | App | Medium | Done | team-lead |
 | BEAN-079 | Obsidian MCP Integration | Process | High | Done | team-lead |
 | BEAN-080 | Bean & Task Telemetry Automation | Process | High | Done | team-lead |

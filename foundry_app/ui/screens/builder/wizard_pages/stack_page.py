@@ -218,6 +218,18 @@ class StackSelectionPage(QWidget):
         self._warning_label.setVisible(False)
         outer.addWidget(self._warning_label)
 
+        # Empty-state label (visible until library is loaded)
+        self._empty_label = QLabel(
+            "No library loaded. Go to Settings and configure your "
+            "Library Root to populate this page."
+        )
+        self._empty_label.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+        )
+        self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._empty_label.setWordWrap(True)
+        outer.addWidget(self._empty_label)
+
         order_row = QHBoxLayout()
         order_row.setSpacing(8)
 
@@ -267,6 +279,7 @@ class StackSelectionPage(QWidget):
             self._cards[stack.id] = card
             insert_idx += 1
 
+        self._empty_label.setVisible(len(self._cards) == 0)
         logger.info("Loaded %d stack cards", len(self._cards))
 
     def get_stack_selections(self) -> list[StackSelection]:

@@ -483,3 +483,31 @@ class TestStackDescriptions:
         for sid, (name, desc) in STACK_DESCRIPTIONS.items():
             assert len(name) > 0, f"{sid} has empty display name"
             assert len(desc) > 0, f"{sid} has empty description"
+
+
+# ---------------------------------------------------------------------------
+# StackSelectionPage — empty-state messaging
+# ---------------------------------------------------------------------------
+
+class TestEmptyState:
+    def test_empty_label_visible_when_no_library(self, page):
+        assert page._empty_label.isHidden() is False
+
+    def test_empty_label_hidden_after_loading_stacks(self):
+        lib = _make_full_library()
+        p = StackSelectionPage(library_index=lib)
+        assert p._empty_label.isHidden() is True
+        p.close()
+
+    def test_empty_label_visible_after_loading_empty_library(self, page):
+        lib = LibraryIndex(library_root="/fake")
+        page.load_stacks(lib)
+        assert page._empty_label.isHidden() is False
+
+    def test_empty_label_hidden_after_reloading_with_stacks(self, page):
+        lib_empty = LibraryIndex(library_root="/fake")
+        page.load_stacks(lib_empty)
+        assert page._empty_label.isHidden() is False
+        lib = _make_library("python", "react")
+        page.load_stacks(lib)
+        assert page._empty_label.isHidden() is True
