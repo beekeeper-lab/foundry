@@ -64,3 +64,18 @@ Replace all placeholder widgets in `main_window.py` with the real, implemented s
 - The `_placeholder()` function is defined around line 160 of main_window.py and used in `_init_screens()` around line 210.
 - LibraryManagerScreen exposes `set_library_root(path)` and auto-refreshes on `showEvent`.
 - HistoryScreen and ExportScreen may need a workspace_root to locate manifest files — check their constructors.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 7s).

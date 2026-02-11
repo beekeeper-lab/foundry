@@ -87,3 +87,18 @@ if src_file.is_symlink():
     warnings.append(f"Skipping symlink: {src_file.name}")
     continue
 ```
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 18m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 18m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 1080s).

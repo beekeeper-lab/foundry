@@ -63,3 +63,18 @@ Implement `foundry_app/services/asset_copier.py` that copies library assets into
 - Depends on: BEAN-016 (models), BEAN-018 (library indexer), BEAN-026 (scaffold)
 - Used by: BEAN-032 (Generator Orchestrator)
 - Must follow overlay-safe pattern from ADR-001
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 24s).

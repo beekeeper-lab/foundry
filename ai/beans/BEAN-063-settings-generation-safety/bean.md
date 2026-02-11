@@ -61,3 +61,18 @@ Extend the Settings screen with a "Generation Defaults" section and a "Safety De
 - Depends on BEAN-057 (Settings Screen — Core Paths) being done first so the settings_screen.py file exists.
 - The SafetyConfig model in `foundry_app/core/models.py` defines the structure. The safety.py service writes `settings.local.json`. This bean adds persistent defaults, not new safety behavior.
 - Consider a "Restore Defaults" button per section.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 5s).

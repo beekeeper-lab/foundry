@@ -64,3 +64,18 @@ A polished, modern sidebar navigation with icon + text items, a left-edge active
 - BEAN-047 (Icon Set) may provide the icons needed. If not available, create minimal inline SVG placeholders.
 - The current sidebar code is in `foundry_app/ui/main_window.py` lines 190-207. The nav list is exposed via `MainWindow.nav_list` property (line 239) — other code may depend on this API.
 - The About dialog trigger currently lives in the Help menu (line 180). It needs to be rewired to the sidebar footer info icon.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 5s).

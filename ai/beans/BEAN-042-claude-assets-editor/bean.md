@@ -67,3 +67,18 @@ Add editing capabilities for Claude integration assets (hooks, skills, commands)
 - This is the lowest priority editor bean since hooks/skills/commands change less frequently than personas and stacks.
 - The existing 16 commands, 16 skills, and 5 hook packs provide good reference for starter template content.
 - Workflow files (foundry-pipeline.md, task-taxonomy.md) are meta-documentation — editing them is straightforward since they have no structural requirements.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 36s).

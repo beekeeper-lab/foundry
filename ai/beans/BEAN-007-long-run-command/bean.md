@@ -84,3 +84,18 @@ This command automates the manual loop the user runs today:
 9. Loop back to step 1
 
 Future iterations could add: parallel bean processing, user checkpoints, automatic bean creation from discovered work, and estimated completion reporting.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

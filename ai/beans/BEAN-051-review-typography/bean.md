@@ -64,3 +64,18 @@ Restyle the review page with proper typography hierarchy using font weight, size
 - The review page is the last step before generation — it's the "launch sequence confirmation"
 - Style guide: "Clarity over decoration — dense information, but clean layout"
 - The Generate button is the single most important action in the app — give it appropriate weight
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 4m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 4m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 246s).

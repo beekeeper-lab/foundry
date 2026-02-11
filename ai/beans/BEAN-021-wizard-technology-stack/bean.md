@@ -58,3 +58,18 @@ Build the technology stack selection wizard page where users can browse all avai
 ## Notes
 
 Depends on BEAN-016 (StackSelection model), BEAN-017 (app shell), BEAN-018 (library indexer). This is wizard page 3 of 6.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 61s).

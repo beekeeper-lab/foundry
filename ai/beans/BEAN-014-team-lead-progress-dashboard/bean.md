@@ -63,3 +63,18 @@ Define and enforce a structured communication template that every team lead sess
 - The template should work well in both sequential and parallel (`--fast N`) tmux modes.
 - Key design constraint: tmux panes may be narrow. The table should be readable at ~100 columns.
 - The header + table should be the first thing visible when you glance at a tmux pane. Think of it like a process monitor — the "top" of `htop`, not a log file.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

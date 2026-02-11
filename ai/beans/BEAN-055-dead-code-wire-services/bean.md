@@ -82,3 +82,18 @@ if spec.generation.write_diff_report:
 ```
 
 Note: `compile_project()` and `copy_assets()` have different signatures than the stubs — verify the actual function signatures before wiring.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 15m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 15m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 943s).

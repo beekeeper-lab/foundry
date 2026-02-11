@@ -62,3 +62,18 @@ Create a functional `settings_screen.py` with the core path configuration needed
 - `FoundrySettings` already has `library_root`, `workspace_root`, `recent_libraries`, and `add_recent_library()` — the UI just needs to call these.
 - This bean is a prerequisite for the screen wiring bean and for the Library Manager to function.
 - The settings_changed signal should carry enough info for main_window to pass the new library_root to LibraryManagerScreen.set_library_root().
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 36s).

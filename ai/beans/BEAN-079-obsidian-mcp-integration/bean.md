@@ -110,9 +110,11 @@ Claude Code ← mcp__MCP_DOCKER__obsidian_* tools
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | 7 |
+| **Total Tasks** | 1 |
 | **Total Duration** | ~3m (git), longer with manual Obsidian setup |
 | **Total Tokens In** | — (not tracked) |
 | **Total Tokens Out** | — (not tracked) |
 
 > Backfilled from git reflog: branch 19:48:11 → merge 19:51:40 (shared commit with BEAN-080). Most tasks involved manual GUI interaction outside git timeline. Token data unavailable.
+
+> Duration backfilled from git timestamps (commit→merge, 7s).

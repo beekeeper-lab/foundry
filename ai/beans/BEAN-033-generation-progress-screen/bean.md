@@ -58,3 +58,18 @@ Implement a `GenerationProgressScreen` PySide6 widget that displays real-time pr
 - Depends on BEAN-032 (generator orchestrator), BEAN-017 (main window), both Done
 - Review page has `generate_requested` signal (BEAN-024, Done)
 - Services BEAN-029/030/031 should ideally be done first for complete pipeline
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 6s).

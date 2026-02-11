@@ -53,3 +53,18 @@ Rebuild the validator service that checks a CompositionSpec against the library 
 ## Notes
 
 Depends on BEAN-016 (models) and BEAN-018 (library indexer). Used by BEAN-024 (Review Page) and BEAN-032 (Generator Orchestrator).
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

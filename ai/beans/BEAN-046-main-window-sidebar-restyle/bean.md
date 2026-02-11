@@ -28,3 +28,18 @@ overall chrome — using the centralized theme from BEAN-045.
 - Menu bar: BG_INSET background, BG_SURFACE/BG_OVERLAY for menus
 - About dialog: themed with ACCENT_PRIMARY heading
 - Zero inline hex color values remain
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 74s).

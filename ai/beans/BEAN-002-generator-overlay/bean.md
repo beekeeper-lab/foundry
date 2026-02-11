@@ -53,3 +53,18 @@ Add an overlay mode to the generator that can write `.claude/` and `ai/` directl
 ## Notes
 
 This is the highest-priority bean because it directly unblocks iterative use of Foundry on existing projects — the core dogfooding use case.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

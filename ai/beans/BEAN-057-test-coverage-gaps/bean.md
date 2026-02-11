@@ -102,3 +102,18 @@ def test_overlay_preserves_user_file_content(tmp_path):
 
 ### Non-UI test list update
 Remember to add `tests/test_resources.py` to the non-UI test list in MEMORY.md.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 16m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 16m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 978s).

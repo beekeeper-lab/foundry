@@ -58,3 +58,18 @@ Implement a scaffold service that takes a CompositionSpec and creates the full d
 ## Notes
 
 Depends on BEAN-016 (models). Used by BEAN-032 (Generator Orchestrator). The scaffold service is the first stage of the generation pipeline — it creates the directory skeleton that all subsequent stages populate.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 30s).

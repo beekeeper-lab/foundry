@@ -81,11 +81,13 @@ Implement the new bean lifecycle: `Unapproved → Approved → In Progress → D
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | All tasks | team-lead | < 1m | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 7s).

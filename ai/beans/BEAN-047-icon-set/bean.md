@@ -67,3 +67,18 @@ Create a small, focused SVG icon set for Foundry and integrate it into the app's
 - Keep the set small — only icons we actually use. Can expand later.
 - Icons should work at 16px and 24px sizes
 - Consider using Qt's SVG support (`QSvgRenderer` or `QIcon.addFile`) for crisp rendering at any DPI
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 80s).

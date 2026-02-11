@@ -56,3 +56,18 @@ Build the PySide6 application skeleton: main window with navigation, stacked wid
 ## Notes
 
 Depends on BEAN-016 (Core Data Models). The main window should be designed to accommodate the 6-page wizard flow defined in BEAN-019 through BEAN-024.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 21s).

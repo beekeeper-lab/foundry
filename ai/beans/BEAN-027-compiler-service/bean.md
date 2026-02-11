@@ -70,3 +70,18 @@ Implement `foundry_app/services/compiler.py` with a `compile_project()` function
 - Follows the same pattern as scaffold.py: takes CompositionSpec + output_dir, returns StageResult
 - Additionally needs LibraryIndex and library_root to locate source files
 - Template variables use Jinja2 `{{ }}` syntax found in library persona files
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 28s).

@@ -59,3 +59,18 @@ The traditional QMenuBar is completely removed. All its functionality is preserv
 - The `_build_menu_bar` method is at `foundry_app/ui/main_window.py:168-181`.
 - Ctrl+Q shortcut is currently wired via `QAction.setShortcut("Ctrl+Q")` on the menu action (line 174). After removing the menu, this needs to be re-attached as a `QShortcut` on the main window directly.
 - BEAN-036 (Update About Dialog Text) should be done before or alongside this bean, since the About dialog location is changing.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 6s).

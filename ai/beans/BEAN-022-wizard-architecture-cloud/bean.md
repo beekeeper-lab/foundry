@@ -62,3 +62,18 @@ Build the architecture & cloud wizard page where users can select architecture p
 ## Notes
 
 Depends on BEAN-016 (data models), BEAN-017 (app shell). This is wizard page 4 of 6. Unlike stack and persona pages, this page should be OPTIONAL — projects can be generated without architecture/cloud selections.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 49s).

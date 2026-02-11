@@ -65,3 +65,18 @@ Add persona management capabilities to the Library Manager screen. Users can edi
 - Depends on BEAN-037 (screen shell & tree) and BEAN-038 (markdown editor widget).
 - The 13 existing personas provide good reference for what starter templates should contain.
 - Consider whether the persona.md starter template should include the standard sections (Mission, Scope, Operating Principles, etc.) pre-filled with guidance text.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 38s).

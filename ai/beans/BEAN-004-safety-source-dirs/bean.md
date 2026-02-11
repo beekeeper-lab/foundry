@@ -51,3 +51,18 @@ Allow the composition spec to define which directories are editable, so that `se
 ## Notes
 
 This is the pain point that triggered the manual `settings.local.json` fix during dogfooding setup.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

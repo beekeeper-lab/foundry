@@ -74,3 +74,18 @@ Add the provided gear graphic to the project, create a reusable `SpinnerWidget` 
 - If BEAN-043 has already updated `pyproject.toml` to include `resources/`, this bean doesn't need to repeat that
 - Current Generation Progress screen is at `foundry_app/ui/screens/generation_progress.py`
 - The spinner widget should be generic enough to use in future loading states (library indexing, export, etc.)
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 5s).

@@ -64,3 +64,18 @@ Implement two PySide6 UI screens: (1) Export Screen for archiving generated proj
 - Uses `shutil.make_archive` for export
 - Manifest model exists in `core/models.py`
 - Composition I/O in `foundry_app/io/composition_io.py`
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 5s).

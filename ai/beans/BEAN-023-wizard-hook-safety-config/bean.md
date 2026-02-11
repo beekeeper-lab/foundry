@@ -63,3 +63,18 @@ Build the hook & safety config wizard page where users can:
 ## Notes
 
 Depends on BEAN-016 (HooksConfig, SafetyConfig models), BEAN-017 (app shell), BEAN-018 (library indexer for hook packs). This is wizard page 5 of 6. The review page (BEAN-024) already expects hooks and safety data from the CompositionSpec.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 26s).

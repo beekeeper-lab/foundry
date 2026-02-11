@@ -59,3 +59,18 @@ Rebuild all Pydantic model classes and the YAML/JSON IO layer so that the rest o
 ## Notes
 
 This is the foundation bean. BEAN-017 through BEAN-035 all depend on this directly or transitively.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 62s).

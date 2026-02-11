@@ -70,3 +70,18 @@ Restyle all card components across the 4 card-based wizard pages using the centr
 - Consider a shared card base style from theme.py that each page extends
 - The hook/safety page is the most complex (615 lines) — handle with care
 - Test visually by running wizard: `uv run foundry`
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 6m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 6m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 391s).

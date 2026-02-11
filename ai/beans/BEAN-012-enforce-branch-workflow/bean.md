@@ -60,3 +60,18 @@ Make the feature branch workflow the enforced default for all bean processing. T
 Depends on: BEAN-008 (Feature Branch Workflow), BEAN-011 (Merge Captain Auto-Merge).
 
 This bean transitions us from "branching is documented but optional" to "branching is the enforced default." Working on `main` was appropriate for the early project bootstrapping phase, but going forward all bean work should be isolated on feature branches.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

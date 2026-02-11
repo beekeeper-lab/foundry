@@ -84,3 +84,18 @@ Depends on: BEAN-007 (Long Run Command), BEAN-008 (Feature Branch Workflow).
 ```
 
 Each worker window contains: Team Lead (decompose) → BA → Architect → Developer → Tech-QA → Merge Captain. The Merge Captain is the final stage (see BEAN-011).
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

@@ -59,3 +59,18 @@ Replace the minimal About text with 2-3 developer-focused paragraphs that explai
 - `QMessageBox.about()` supports basic HTML formatting (`<h3>`, `<p>`, etc.)
 - The text should convey the "building blocks" philosophy: compose a Claude Code project from a library of reusable personas, stacks, and templates rather than starting from scratch each time
 - **Dependency:** BEAN-043 (Add Application Logo) should be done first so the About dialog can include the logo
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 4m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 4m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 247s).

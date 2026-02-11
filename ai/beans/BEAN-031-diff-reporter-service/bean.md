@@ -55,3 +55,18 @@ Implement a `DiffReporterService` that generates a `diff-report.md` file summari
 - Generator stub at `generator.py:61-64`
 - Generator already computes `OverlayPlan` in `_compare_trees()`
 - Depends on BEAN-016 (models) and BEAN-032 (generator orchestrator), both Done
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 6s).

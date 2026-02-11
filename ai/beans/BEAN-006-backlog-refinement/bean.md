@@ -66,3 +66,18 @@ This command is the "front door" to the beans workflow. The flow is:
 6. Summary of created beans presented to the user
 
 This makes the beans system accessible to users who think in terms of "here's what I want" rather than "here's a well-scoped unit of work."
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

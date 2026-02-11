@@ -62,3 +62,18 @@ Add an "Appearance" section and an "Advanced" section to the Settings screen, gi
 - Font size scaling should multiply the theme's FONT_SIZE_* constants by a factor (0.85 / 1.0 / 1.15).
 - The log file path is set in `foundry_app/core/logging_config.py` — currently `~/.local/share/logs/foundry.log`.
 - Low priority because the app is fully functional without these features.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 6s).

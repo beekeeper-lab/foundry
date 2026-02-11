@@ -57,3 +57,18 @@ Refine the hook-policy and safety settings to support branch-level push permissi
 This bean is independent of the Long Run command but is a prerequisite for the Merge Captain auto-merge workflow (BEAN-011). Without refined push hooks, the Merge Captain cannot push to the test branch.
 
 The key principle: protect the production branch (main/master) while enabling workflow branches. This mirrors standard Git Flow / GitHub Flow patterns.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

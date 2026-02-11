@@ -65,3 +65,18 @@ Restyle the three operational screens (generation progress, export, history) to 
 - The generation progress screen is where users spend time waiting — it should feel calm and informative
 - Style guide: "Long-running operations should show clear status and deterministic progress"
 - The history screen's manifest JSON viewer could benefit from basic syntax highlighting matching the theme
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 53s).

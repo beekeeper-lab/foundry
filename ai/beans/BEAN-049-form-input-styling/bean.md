@@ -64,3 +64,18 @@ Restyle all form and input elements to match the industrial theme: labels above 
 - The project page is the first thing users see in the wizard — it sets the tone
 - Style guide says "label above input (not inline)" — may need layout change from QFormLayout to QVBoxLayout with manual label/input pairs
 - Validation should be "calm and informative" — no aggressive red borders or error icons
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 67s).

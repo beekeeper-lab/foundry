@@ -74,11 +74,13 @@ Clicking "Generate Project" launches the generation pipeline on a background thr
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | All tasks | team-lead | < 1m | — | — |
 
 | Metric | Value |
 |--------|-------|
 | **Total Tasks** | 1 |
-| **Total Duration** | 0m |
+| **Total Duration** | < 1m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

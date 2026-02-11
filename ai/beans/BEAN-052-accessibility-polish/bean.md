@@ -75,3 +75,18 @@ Add proper accessibility support and perform a final visual polish pass across t
 - Style guide: "High contrast text, keyboard navigable, focus states clearly visible, no information conveyed by color alone"
 - Run the app and tab through every screen to verify keyboard navigation
 - Use a contrast checker tool to verify color ratios
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 47s).

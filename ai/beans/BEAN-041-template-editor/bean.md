@@ -60,3 +60,18 @@ Add template management capabilities to the Library Manager screen. Users can br
 - Depends on BEAN-037 (screen shell & tree) and BEAN-038 (markdown editor widget).
 - Template files follow the standardized format: `# title`, Metadata table, `[placeholder]` fields, `- [ ]` checklists, `*italic*` guidance, DoD at bottom. The starter template for "New Template" should follow this convention.
 - There are currently 7 shared templates and 10-30 templates per persona, so the tree can get large. Consider lazy-loading template lists.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 9h 40m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 9h 40m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 34850s).

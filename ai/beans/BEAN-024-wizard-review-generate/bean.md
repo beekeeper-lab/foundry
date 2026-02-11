@@ -65,3 +65,18 @@ Build the final wizard page: a read-only summary screen that displays all compos
 ## Notes
 
 Depends on BEAN-016 (data models), BEAN-017 (app shell). This is wizard page 6 of 6 — the final page before generation. Pages 4 and 5 (Architecture & Cloud, Hook & Safety) are separate beans; this page should display whatever data is present in the CompositionSpec regardless.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 2m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 2m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 179s).

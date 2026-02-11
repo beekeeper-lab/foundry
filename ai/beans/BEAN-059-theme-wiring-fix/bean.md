@@ -54,3 +54,18 @@ The Foundry application renders with its intended dark industrial palette on sta
 - Fix was adding `from foundry_app.ui import theme` and `theme.apply_theme(app)` in `main.py` after QApplication creation, before any widgets.
 - About dialog was also fixed (separate from this bean) — text color changed from theme.TEXT_PRIMARY (light) to #2a2a2a (dark) since QMessageBox.about() uses a native light background.
 - Index status discrepancy for BEAN-045/046/047 was reconciled by another agent.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

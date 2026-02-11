@@ -63,3 +63,18 @@ Extend the asset copier to also copy skills from the library to `.claude/skills/
   - Possibly Foundry-specific: `/spawn-bean`, `/long-run`, `/backlog-refinement` (these reference Foundry's own tmux setup)
 - Consider a `library_metadata.json` or marker in each command/skill that flags it as "include in generated projects" vs. "Foundry internal only"
 - For the initial implementation, copying all commands/skills is acceptable — filtering can be refined later
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 7s).

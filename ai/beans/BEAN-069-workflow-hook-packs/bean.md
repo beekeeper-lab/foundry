@@ -90,3 +90,18 @@ Create fully functional Git and Az workflow hook packs as Claude Code hook defin
 - The category grouping in the UI is a visual change to `HookSafetyPage` — the underlying `HooksConfig` model just needs a category field on each pack
 - Consider making hook scripts portable (bash for Linux/macOS, with notes about Windows compatibility)
 - The existing code-quality hooks (pre-commit-lint, post-task-qa, security-scan, compliance-gate) get category `code-quality`
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 10s).

@@ -52,3 +52,18 @@ Enhance the compiler to optionally inject project context from `ai/context/proje
 ## Notes
 
 This bean complements the hand-crafted `ai/context/project.md` by making it automatically available inside each persona's compiled prompt, reducing context-switching during task execution.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

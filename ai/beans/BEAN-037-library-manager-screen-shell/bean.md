@@ -63,3 +63,18 @@ Add a new top-level "Library Manager" screen to Foundry's main window that provi
 - The tree scanning logic is directory-driven — it discovers new content types automatically.
 - Pure `_build_file_tree()` function is separated from UI for testability.
 - Hidden files (starting with `.`) are skipped in the tree.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 11m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 11m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 676s).

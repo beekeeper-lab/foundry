@@ -67,3 +67,18 @@ Create a reusable split-pane markdown editor widget: plain text editing on the l
 - The `markdown` Python package is lightweight and well-maintained. Alternatives: `mistune` (faster), `markdown-it-py` (CommonMark compliant). Choose based on what's simplest to integrate.
 - Preview rendering should use CSS that matches the Catppuccin Mocha theme for visual consistency.
 - Consider a toggle to hide the preview pane for users who prefer full-width editing.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 98s).

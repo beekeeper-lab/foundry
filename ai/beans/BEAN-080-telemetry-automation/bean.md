@@ -93,9 +93,11 @@ When a task is started, its timestamp is recorded. When a task completes, the ag
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | 5 |
+| **Total Tasks** | 1 |
 | **Total Duration** | 3m |
 | **Total Tokens In** | — (not tracked) |
 | **Total Tokens Out** | — (not tracked) |
 
 > Backfilled from git reflog: branch 19:48:11 → merge 19:51:40 (shared commit with BEAN-079). Token data unavailable — ironic for the telemetry bean itself.
+
+> Duration backfilled from git timestamps (commit→merge, 7s).

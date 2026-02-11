@@ -65,3 +65,18 @@ Add the provided logo graphic to the project, wire it up as the application's wi
 - Currently `main.py` only calls `app.setApplicationName("Foundry")` and `app.setOrganizationName("Foundry")` — no icon is set
 - BEAN-036 (Update About Dialog Text) should incorporate the logo when implementing the About dialog update — this bean should be done first
 - For runtime path resolution, use `Path(__file__).parent.parent / "resources" / "icons" / "foundry-logo.png"` or similar relative-to-package approach
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 2m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 2m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 158s).

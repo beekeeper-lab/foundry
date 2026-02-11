@@ -57,11 +57,13 @@ Add test coverage for the two missing Library Manager CRUD combinations so that 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | All tasks | team-lead | 1m | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | 3 |
+| **Total Tasks** | 1 |
 | **Total Duration** | 5m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 80s).

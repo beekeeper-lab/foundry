@@ -69,3 +69,18 @@ Create a `BuilderScreen` that assembles the existing wizard pages into a navigab
 - ExportScreen is in `foundry_app/ui/screens/export_screen.py` — already complete.
 - The generator orchestrator is in `foundry_app/services/generator.py` — accepts a CompositionSpec and library root path.
 - This is the most complex wiring bean because it involves multi-page state management, validation, and the generation pipeline trigger.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 6s).

@@ -60,3 +60,18 @@ Implement a `foundry-cli` command-line interface that supports non-interactive p
 - Generator API is ready in `foundry_app/services/generator.py`
 - Composition I/O in `foundry_app/io/composition_io.py`
 - Depends on BEAN-016 (models/IO) and BEAN-032 (generator), both Done
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 5s).

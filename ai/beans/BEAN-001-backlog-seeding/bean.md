@@ -49,3 +49,18 @@ Extend the seeder service to support a `beans` seed mode that creates `ai/beans/
 ## Notes
 
 This bean is about making Foundry generate the beans structure — the manual beans system (created in this dogfooding setup) serves as the reference implementation.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

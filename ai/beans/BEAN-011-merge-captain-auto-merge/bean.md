@@ -68,3 +68,18 @@ Depends on: BEAN-008 (Feature Branch Workflow), BEAN-009 (Push Hook Refinement),
 6. Report success to Team Lead
 
 The Merge Captain already exists as a persona in the library (`integrator-merge-captain`). This bean wires that persona into the automated workflow with specific auto-merge instructions.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

@@ -65,3 +65,18 @@ Add a `--category` (or `-c`) flag to the `/long-run` command that filters the ba
 - Depends on the category infrastructure from BEAN-014 work (categories in `_index.md` and each `bean.md`).
 - The category field is read from `_index.md` during backlog assessment, so no need to open each bean.md individually for filtering.
 - This bean should be run after the other agent finishes BEAN-014 to ensure the category field is stable.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

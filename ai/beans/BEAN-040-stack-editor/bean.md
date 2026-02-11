@@ -63,3 +63,18 @@ Add stack management capabilities to the Library Manager screen. Users can edit 
 - Depends on BEAN-037 (screen shell & tree) and BEAN-038 (markdown editor widget).
 - The 11 existing stacks show the common file patterns: conventions.md, testing.md, security.md, performance.md, packaging.md, etc. The starter template for a new file should follow the standardized format (Defaults table, Do/Don't, Common Pitfalls, Checklist, code examples).
 - Stack files are simpler than personas (flat list of .md files, no required structure), so this bean should be smaller than BEAN-039.
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | 9h 49m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | 9h 49m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 35366s).

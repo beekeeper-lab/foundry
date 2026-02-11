@@ -65,3 +65,18 @@ Implement a `generate_project()` function that orchestrates the full generation 
 - Stub functions for unimplemented services should return empty StageResult objects
 - The orchestrator follows the same functional, stateless pattern as other services
 - Pipeline order: validate → scaffold → compile → copy assets → seed → safety → diff report → manifest
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 19s).

@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-114 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-10 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-10 20:49 |
+| **Completed** | 2026-02-10 20:53 |
+| **Duration** | 4m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -70,7 +70,7 @@ Every Done bean has a computed duration in its telemetry section, derived from g
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 4m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |

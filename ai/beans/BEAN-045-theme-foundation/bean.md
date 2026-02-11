@@ -67,3 +67,18 @@ Create a centralized theme module (`foundry_app/ui/theme.py`) that defines the c
 - The palette should feel like a "precision workshop" or "modern forge" — confident, stable, not playful
 - Gold/brass accents are for focus and active states, not decoration — use sparingly
 - Existing modules should NOT be modified in this bean — only create the new theme module
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (single commit, no merge).

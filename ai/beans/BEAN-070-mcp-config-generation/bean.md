@@ -67,3 +67,18 @@ Create a service that generates `.claude/mcp.json` for generated projects based 
 - Consider reading Foundry's own `.claude/mcp.json` as a reference for the generated config
 - Start simple — a filesystem MCP server for all projects is a good baseline, with stack-specific servers as stretch goals
 - The MCP server catalog could later be managed through the Library Manager UI
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out |
+|---|------|-------|----------|-----------|------------|
+| 1 | All tasks | team-lead | < 1m | — | — |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 9s).

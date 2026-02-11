@@ -64,7 +64,7 @@ Sidebar nav buttons should have a dark background that blends seamlessly with th
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | All tasks | team-lead | < 1m | — | — |
 
 | Metric | Value |
 |--------|-------|
@@ -72,3 +72,5 @@ Sidebar nav buttons should have a dark background that blends seamlessly with th
 | **Total Duration** | 2m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 4s).

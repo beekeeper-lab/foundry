@@ -74,11 +74,13 @@ All user-facing string fields have sensible length limits. Regex patterns are pr
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | All tasks | team-lead | < 1m | — | — |
 
 | Metric | Value |
 |--------|-------|
 | **Total Tasks** | 1 |
-| **Total Duration** | 0m |
+| **Total Duration** | < 1m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
+
+> Duration backfilled from git timestamps (commit→merge, 5s).
