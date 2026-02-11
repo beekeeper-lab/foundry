@@ -190,13 +190,13 @@ class TestReplaceMetadataField:
 
 class TestFormatDuration:
     def test_zero_duration(self):
-        assert format_duration("2026-02-09 10:00", "2026-02-09 10:00") == "0m"
+        assert format_duration("2026-02-09 10:00", "2026-02-09 10:00") == "< 1m"
 
     def test_minutes_only(self):
         assert format_duration("2026-02-09 10:00", "2026-02-09 10:23") == "23m"
 
     def test_exactly_one_hour(self):
-        assert format_duration("2026-02-09 10:00", "2026-02-09 11:00") == "1h 0m"
+        assert format_duration("2026-02-09 10:00", "2026-02-09 11:00") == "1h"
 
     def test_hours_and_minutes(self):
         assert format_duration("2026-02-09 10:00", "2026-02-09 11:15") == "1h 15m"
@@ -204,12 +204,12 @@ class TestFormatDuration:
     def test_multi_hour(self):
         assert format_duration("2026-02-09 10:00", "2026-02-09 13:45") == "3h 45m"
 
-    def test_unparseable_returns_zero(self):
-        assert format_duration("garbage", "2026-02-09 10:00") == "0m"
+    def test_unparseable_returns_fallback(self):
+        assert format_duration("garbage", "2026-02-09 10:00") == "< 1m"
 
-    def test_reversed_returns_zero(self):
-        # Negative duration clamps to 0
-        assert format_duration("2026-02-09 11:00", "2026-02-09 10:00") == "0m"
+    def test_reversed_returns_fallback(self):
+        # Negative duration clamps to < 1m
+        assert format_duration("2026-02-09 11:00", "2026-02-09 10:00") == "< 1m"
 
 
 # ---------------------------------------------------------------------------
@@ -280,7 +280,9 @@ class TestHandleBeanFile:
         assert "Completed" in actions
         content = p.read_text()
         assert parse_metadata_field(content, "Started") == now
-        assert parse_metadata_field(content, "Duration") == "0m"
+        duration = parse_metadata_field(content, "Duration")
+        # Git-based duration if on a feature branch, else "< 1m" fallback
+        assert duration is not None and duration != SENTINEL
 
     def test_done_fills_total_tasks(self, tmp_path):
         p = tmp_path / "bean.md"
@@ -369,7 +371,7 @@ class TestHandleTaskFile:
         assert "Started" in actions
         assert "Completed" in actions
         content = p.read_text()
-        assert parse_metadata_field(content, "Duration") == "0m"
+        assert parse_metadata_field(content, "Duration") == "< 1m"
 
     def test_noop_on_pending(self, tmp_path):
         p = tmp_path / "task.md"

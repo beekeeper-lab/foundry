@@ -9,6 +9,10 @@ Stamps Started/Completed timestamps and computes Duration when status
 transitions are detected. Only overwrites fields whose value is the
 sentinel em-dash (—).
 
+When a bean is marked Done, duration is computed from git timestamps
+(first commit on the feature branch → now) for second-level precision.
+Falls back to Started/Completed metadata if git is unavailable.
+
 Reads hook input JSON from stdin, writes JSON message to stdout when
 a file is modified.
 """
@@ -17,8 +21,9 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 SENTINEL = "—"
@@ -63,24 +68,85 @@ def replace_metadata_field(content: str, field: str, value: str) -> str:
     return pattern.sub(rf"\g<1>{value}\3", content, count=1)
 
 
+def format_seconds(seconds: float) -> str:
+    """Format a duration in seconds to human-readable string.
+
+    Returns '< 1m' for <60s, 'Xm' for <1h, 'Xh Ym' for >=1h.
+    """
+    total_minutes = max(0, int(seconds // 60))
+    if total_minutes == 0:
+        return "< 1m"
+    if total_minutes < 60:
+        return f"{total_minutes}m"
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+    if minutes == 0:
+        return f"{hours}h"
+    return f"{hours}h {minutes}m"
+
+
 def format_duration(started: str, completed: str) -> str:
     """Compute human-readable duration between two timestamps.
 
-    Returns 'Xm' for <1h, 'Xh Ym' for >=1h. Returns '0m' on parse error.
+    Returns 'Xm' for <1h, 'Xh Ym' for >=1h. Returns '< 1m' on parse error.
     """
     try:
         dt_start = datetime.strptime(started.strip(), TIMESTAMP_FMT)
         dt_end = datetime.strptime(completed.strip(), TIMESTAMP_FMT)
         delta = dt_end - dt_start
-        total_minutes = max(0, int(delta.total_seconds() // 60))
+        return format_seconds(max(0, delta.total_seconds()))
     except (ValueError, TypeError):
-        return "0m"
+        return "< 1m"
 
-    if total_minutes < 60:
-        return f"{total_minutes}m"
-    hours = total_minutes // 60
-    minutes = total_minutes % 60
-    return f"{hours}h {minutes}m"
+
+def git_branch_duration() -> str | None:
+    """Compute duration from the first commit on the current feature branch.
+
+    Uses git to find the first commit on the current branch that isn't on
+    'test' or 'main', and computes elapsed time from that commit to now.
+    Returns a formatted duration string, or None if git data is unavailable.
+    """
+    try:
+        # Get current branch name
+        branch = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True, text=True, timeout=5,
+        ).stdout.strip()
+
+        if not branch or branch in ("main", "test"):
+            return None
+
+        # Find the merge base with test (or main as fallback)
+        for base in ("test", "main"):
+            result = subprocess.run(
+                ["git", "merge-base", base, "HEAD"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if result.returncode == 0:
+                merge_base = result.stdout.strip()
+                break
+        else:
+            return None
+
+        # Get timestamp of first commit after merge base
+        result = subprocess.run(
+            ["git", "log", "--format=%aI", "--reverse", f"{merge_base}..HEAD"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return None
+
+        first_commit_ts = result.stdout.strip().split("\n")[0]
+        dt_start = datetime.fromisoformat(first_commit_ts)
+        dt_now = datetime.now(timezone.utc)
+        # Ensure both are offset-aware for comparison
+        if dt_start.tzinfo is None:
+            dt_start = dt_start.replace(tzinfo=timezone.utc)
+        delta = (dt_now - dt_start).total_seconds()
+        return format_seconds(max(0, delta))
+
+    except Exception:
+        return None
 
 
 def count_done_tasks(content: str) -> int:
@@ -184,9 +250,11 @@ def handle_bean_file(path: Path, now: str) -> list[str]:
         content = replace_metadata_field(content, "Completed", now)
         actions.append("Completed")
 
-        duration = format_duration(cur_started, now)
         cur_duration = parse_metadata_field(content, "Duration")
         if cur_duration == SENTINEL:
+            # Prefer git-based duration (second-level precision) over
+            # Started→Completed metadata (minute-level, often 0m for fast beans)
+            duration = git_branch_duration() or format_duration(cur_started, now)
             content = replace_metadata_field(content, "Duration", duration)
             actions.append(f"Duration={duration}")
 
@@ -202,14 +270,17 @@ def handle_bean_file(path: Path, now: str) -> list[str]:
 
         total_dur_val = parse_metadata_field(content, "Total Duration")
         if total_dur_val == SENTINEL:
-            # Compute from Started/Completed
-            final_started = parse_metadata_field(content, "Started")
-            final_completed = parse_metadata_field(content, "Completed")
-            if (
-                final_started and final_started != SENTINEL
-                and final_completed and final_completed != SENTINEL
-            ):
-                total_dur = format_duration(final_started, final_completed)
+            # Prefer git-based duration; fall back to Started/Completed
+            total_dur = git_branch_duration()
+            if not total_dur:
+                final_started = parse_metadata_field(content, "Started")
+                final_completed = parse_metadata_field(content, "Completed")
+                if (
+                    final_started and final_started != SENTINEL
+                    and final_completed and final_completed != SENTINEL
+                ):
+                    total_dur = format_duration(final_started, final_completed)
+            if total_dur:
                 content = replace_metadata_field(
                     content, "Total Duration", total_dur
                 )

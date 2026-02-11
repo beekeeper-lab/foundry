@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-115 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-10 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-10 20:56 |
+| **Completed** | 2026-02-10 20:58 |
+| **Duration** | 2m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -73,7 +73,7 @@ When a bean completes (via /long-run worker or manual workflow), its telemetry s
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 2m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
