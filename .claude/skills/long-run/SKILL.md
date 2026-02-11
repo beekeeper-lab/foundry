@@ -149,7 +149,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    2. Decompose into tasks
    3. Execute the wave (BA → Architect → Developer → Tech-QA)
    4. Verify acceptance criteria
-   5. Update bean.md status to Done
+   5. Update bean.md status to Done (the PostToolUse telemetry hook auto-computes Duration from git timestamps)
    6. Commit on the feature branch
 
    STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition.
