@@ -57,9 +57,11 @@ class GenerationWorker(QThread):
                 len(manifest.all_warnings),
                 str(output_dir),
             )
-        except Exception as exc:
+        except Exception:
             logger.exception("Generation failed")
-            self.finished_err.emit(str(exc))
+            self.finished_err.emit(
+                "Generation failed. Check the log file for details."
+            )
 
     def _on_stage(self, stage_key: str, status: str, file_count: int) -> None:
         """Forward stage callbacks as Qt signals (thread-safe via queued connection)."""

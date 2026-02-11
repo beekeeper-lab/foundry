@@ -55,8 +55,13 @@ def icon_path(name: str) -> Path:
     return path
 
 
+_HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
 def _tint_svg(svg_bytes: bytes, color: str) -> bytes:
     """Replace stroke/fill color values in raw SVG bytes with *color*."""
+    if not _HEX_COLOR_RE.match(color):
+        raise ValueError(f"Invalid hex color: {color!r}")
     text = svg_bytes.decode("utf-8")
     text = re.sub(r'stroke="#[0-9a-fA-F]{6}"', f'stroke="{color}"', text)
     text = re.sub(r'fill="#[0-9a-fA-F]{6}"', f'fill="{color}"', text)

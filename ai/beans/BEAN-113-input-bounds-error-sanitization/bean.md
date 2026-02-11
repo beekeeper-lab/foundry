@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-113 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-10 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-10 |
+| **Completed** | 2026-02-10 20:45 |
+| **Duration** | 0m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -46,22 +46,23 @@ All user-facing string fields have sensible length limits. Regex patterns are pr
 
 ## Acceptance Criteria
 
-- [ ] `ProjectIdentity.name` with 201+ characters is rejected by Pydantic validation
-- [ ] `SafetyConfig` with an invalid regex in `secret_patterns` is rejected at parse time
-- [ ] `load_icon()` with a non-hex color string does not produce malformed SVG
-- [ ] Generation error dialog shows a generic message, not raw exception text
-- [ ] Full traceback is still available in the log file for debugging
-- [ ] All existing tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `ProjectIdentity.name` with 201+ characters is rejected by Pydantic validation
+- [x] `SafetyConfig` with an invalid regex in `secret_patterns` is rejected at parse time
+- [x] `load_icon()` with a non-hex color string does not produce malformed SVG
+- [x] Generation error dialog shows a generic message, not raw exception text
+- [x] Full traceback is still available in the log file for debugging (logger.exception)
+- [x] All existing tests pass (`uv run pytest`) — 430 passed
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Add max_length to string fields | Developer | — | Done |
+| 2 | Add regex pre-validation to SecretPolicy | Developer | — | Done |
+| 3 | Add hex color validation to icons.py | Developer | — | Done |
+| 4 | Sanitize error messages in generation_worker | Developer | — | Done |
+| 5 | Add security tests (20 tests) | Tech-QA | 1-4 | Done |
 
 ## Notes
 
@@ -77,7 +78,7 @@ All user-facing string fields have sensible length limits. Regex patterns are pr
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 0m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
