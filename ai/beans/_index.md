@@ -132,4 +132,4 @@
 | BEAN-108 | Library Manager — Hook Delete | App | Medium | Done | developer |
 | BEAN-109 | Library Manager — Missing CRUD Test Coverage | App | Medium | Done | developer |
 | BEAN-110 | Sidebar Nav Button Contrast Fix | App | High | Done | team-lead |
-| BEAN-111 | Wire Generate Button to Pipeline with Progress | App | High | Approved | — |
+| BEAN-111 | Wire Generate Button to Pipeline with Progress | App | High | Done | team-lead |
