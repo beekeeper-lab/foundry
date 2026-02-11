@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-116 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-10 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-10 20:59 |
+| **Completed** | 2026-02-10 21:00 |
+| **Duration** | 1m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -78,7 +78,7 @@ A `/telemetry-report` skill that parses all bean telemetry sections and produces
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 1m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
