@@ -19,10 +19,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from foundry_app.core.models import CompositionSpec
 from foundry_app.core.settings import FoundrySettings
 from foundry_app.ui import theme
+from foundry_app.ui.generation_worker import GenerationWorker
 from foundry_app.ui.icons import load_icon
 from foundry_app.ui.screens.builder_screen import BuilderScreen
+from foundry_app.ui.screens.generation_progress import GenerationProgressScreen
 from foundry_app.ui.screens.history_screen import HistoryScreen
 from foundry_app.ui.screens.library_manager import LibraryManagerScreen
 from foundry_app.ui.screens.settings_screen import SettingsScreen
@@ -252,6 +255,7 @@ class MainWindow(QMainWindow):
 
         # Index 0: Builder wizard
         self._builder_screen = BuilderScreen()
+        self._builder_screen.generate_requested.connect(self._on_generate_requested)
         self._stack.addWidget(self._builder_screen)
 
         # Index 1: Library Manager
@@ -266,6 +270,12 @@ class MainWindow(QMainWindow):
         self._settings_screen = SettingsScreen(settings=self._settings)
         self._settings_screen.settings_changed.connect(self._on_library_root_changed)
         self._stack.addWidget(self._settings_screen)
+
+        # Index 4: Generation progress (not in nav — shown programmatically)
+        self._progress_screen = GenerationProgressScreen()
+        self._progress_screen.back_requested.connect(self._on_back_to_builder)
+        self._stack.addWidget(self._progress_screen)
+        self._generation_worker: GenerationWorker | None = None
 
         root_layout.addWidget(sidebar)
         root_layout.addWidget(self._stack, stretch=1)
@@ -359,6 +369,10 @@ class MainWindow(QMainWindow):
     def settings_screen(self) -> SettingsScreen:
         return self._settings_screen
 
+    @property
+    def progress_screen(self) -> GenerationProgressScreen:
+        return self._progress_screen
+
     def replace_screen(self, index: int, widget: QWidget) -> None:
         """Replace a placeholder screen at *index* with a real widget."""
         old = self._stack.widget(index)
@@ -382,6 +396,50 @@ class MainWindow(QMainWindow):
         self._settings.sync()
         logger.info("MainWindow closed — geometry saved")
         super().closeEvent(event)
+
+    # -- Generation --------------------------------------------------------
+
+    def _on_generate_requested(self, spec: CompositionSpec) -> None:
+        """Handle generate button: switch to progress screen and start worker."""
+        lib_root = self._settings.library_root
+        if not lib_root:
+            logger.warning("No library root configured — cannot generate")
+            return
+
+        # Switch to progress screen and start spinner
+        self._progress_screen.start()
+        self._stack.setCurrentWidget(self._progress_screen)
+
+        # Launch generation on background thread
+        self._generation_worker = GenerationWorker(spec, lib_root, parent=self)
+        self._generation_worker.stage_progress.connect(self._on_stage_progress)
+        self._generation_worker.finished_ok.connect(self._on_generation_ok)
+        self._generation_worker.finished_err.connect(self._on_generation_err)
+        self._generation_worker.start()
+        logger.info("Generation worker started for project: %s", spec.project.name)
+
+    def _on_stage_progress(self, stage_key: str, status: str, file_count: int) -> None:
+        """Update progress screen with stage transitions."""
+        if status == "running":
+            self._progress_screen.mark_stage_running(stage_key)
+        elif status == "done":
+            self._progress_screen.mark_stage_done(stage_key, file_count)
+
+    def _on_generation_ok(self, total_files: int, warnings: int, output_path: str) -> None:
+        """Handle successful generation."""
+        self._progress_screen.set_output_path(output_path)
+        self._progress_screen.finish(total_files=total_files, warnings=warnings)
+        logger.info("Generation complete: %d files at %s", total_files, output_path)
+
+    def _on_generation_err(self, message: str) -> None:
+        """Handle generation failure."""
+        self._progress_screen.finish_with_error(message)
+        logger.error("Generation failed: %s", message)
+
+    def _on_back_to_builder(self) -> None:
+        """Return to the builder screen from the progress screen."""
+        self._stack.setCurrentIndex(0)
+        self._nav_buttons[0].setChecked(True)
 
     # -- Slots -------------------------------------------------------------
 

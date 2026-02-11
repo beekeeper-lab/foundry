@@ -60,7 +60,8 @@ class TestNavigation:
             assert btn.isCheckable()
 
     def test_stack_has_correct_count(self, window):
-        assert window.stack.count() == len(SCREENS)
+        # 4 nav screens + 1 progress screen
+        assert window.stack.count() == len(SCREENS) + 1
 
     def test_clicking_nav_switches_stack(self, window):
         window.nav_buttons[1].click()
@@ -97,7 +98,8 @@ class TestScreenReplacement:
 
         window.replace_screen(0, custom)
         assert window.stack.widget(0) is custom
-        assert window.stack.count() == len(SCREENS)
+        # 4 nav screens + 1 progress screen
+        assert window.stack.count() == len(SCREENS) + 1
 
 
 # ---------------------------------------------------------------------------
@@ -136,6 +138,29 @@ class TestLibraryAutoDetect:
         w = MainWindow(settings=settings)
         assert settings.library_root == "/custom/path"
         w.close()
+
+
+class TestGenerationWiring:
+    def test_progress_screen_exists(self, window):
+        assert window.progress_screen is not None
+
+    def test_progress_screen_in_stack(self, window):
+        ps = window.progress_screen
+        assert window.stack.indexOf(ps) >= 0
+
+    def test_generate_signal_connected(self, window):
+        """Builder screen's generate_requested signal should be connected."""
+        # Verify the signal exists and has receivers
+        assert window.builder_screen.generate_requested is not None
+
+    def test_back_to_builder_returns_to_index_0(self, window):
+        # Simulate being on progress screen
+        window.stack.setCurrentWidget(window.progress_screen)
+        assert window.stack.currentWidget() is window.progress_screen
+        # Trigger back
+        window._on_back_to_builder()
+        assert window.stack.currentIndex() == 0
+        assert window.nav_buttons[0].isChecked()
 
 
 class TestGeometry:

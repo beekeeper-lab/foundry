@@ -165,11 +165,14 @@ class GenerationProgressScreen(QWidget):
     generation_complete = Signal()
     # Emitted when generation fails
     generation_failed = Signal(str)
+    # Emitted when user clicks "Back to Builder"
+    back_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setStyleSheet(f"background-color: {BG_BASE};")
         self._start_time: float | None = None
+        self._output_path: str = ""
         self._stage_widgets: dict[str, StageStatusWidget] = {}
 
         layout = QVBoxLayout(self)
@@ -276,7 +279,39 @@ class GenerationProgressScreen(QWidget):
             }}
         """)
         self._open_btn.setVisible(False)
+        self._open_btn.clicked.connect(self._open_output_folder)
         layout.addWidget(self._open_btn)
+
+        # Output path display (hidden until complete)
+        self._path_label = QLabel("")
+        self._path_label.setStyleSheet(
+            f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
+            f" font-family: monospace;"
+        )
+        self._path_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        self._path_label.setVisible(False)
+        layout.addWidget(self._path_label)
+
+        # Back to Builder button (hidden until complete)
+        self._back_btn = QPushButton("Back to Builder")
+        self._back_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {BG_SURFACE};
+                color: {TEXT_PRIMARY};
+                border: 1px solid {BORDER_DEFAULT};
+                border-radius: {RADIUS_MD}px;
+                padding: {SPACE_MD}px {SPACE_XL}px;
+                font-size: {FONT_SIZE_MD}px;
+            }}
+            QPushButton:hover {{
+                background-color: {BG_INSET};
+            }}
+        """)
+        self._back_btn.setVisible(False)
+        self._back_btn.clicked.connect(self.back_requested.emit)
+        layout.addWidget(self._back_btn)
 
         layout.addStretch()
 
@@ -305,6 +340,20 @@ class GenerationProgressScreen(QWidget):
     def spinner(self) -> SpinnerWidget:
         return self._spinner
 
+    @property
+    def back_button(self) -> QPushButton:
+        return self._back_btn
+
+    @property
+    def path_label(self) -> QLabel:
+        return self._path_label
+
+    def set_output_path(self, path: str) -> None:
+        """Set the output folder path shown after generation."""
+        self._output_path = path
+        self._path_label.setText(f"Output: {path}")
+        self._path_label.setVisible(True)
+
     def start(self) -> None:
         """Mark the start of generation."""
         self._start_time = time.monotonic()
@@ -312,6 +361,9 @@ class GenerationProgressScreen(QWidget):
         self._log.clear()
         self._summary_label.setVisible(False)
         self._open_btn.setVisible(False)
+        self._path_label.setVisible(False)
+        self._back_btn.setVisible(False)
+        self._output_path = ""
         self._spinner.start()
         for w in self._stage_widgets.values():
             w._status = "pending"
@@ -367,6 +419,7 @@ class GenerationProgressScreen(QWidget):
         )
         self._summary_label.setVisible(True)
         self._open_btn.setVisible(True)
+        self._back_btn.setVisible(True)
         self._progress_bar.setValue(self._progress_bar.maximum())
         self._spinner.stop()
         self.append_log(
@@ -382,6 +435,7 @@ class GenerationProgressScreen(QWidget):
             f"color: {STATUS_ERROR}; font-size: {FONT_SIZE_MD}px;"
         )
         self._summary_label.setVisible(True)
+        self._back_btn.setVisible(True)
         self._spinner.stop()
         self.append_log(f"FAILED after {elapsed:.1f}s: {message}")
         self.generation_failed.emit(message)
@@ -406,3 +460,11 @@ class GenerationProgressScreen(QWidget):
         if self._start_time is None:
             return 0.0
         return time.monotonic() - self._start_time
+
+    def _open_output_folder(self) -> None:
+        """Open the output folder in the system file manager."""
+        if self._output_path:
+            from PySide6.QtCore import QUrl
+            from PySide6.QtGui import QDesktopServices
+
+            QDesktopServices.openUrl(QUrl.fromLocalFile(self._output_path))

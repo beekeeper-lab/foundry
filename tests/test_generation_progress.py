@@ -210,3 +210,58 @@ class TestSignals:
         screen.start()
         screen.finish_with_error("boom")
         assert received == ["boom"]
+
+    def test_back_requested_signal(self):
+        screen = GenerationProgressScreen()
+        received = []
+        screen.back_requested.connect(lambda: received.append(True))
+        screen.back_button.click()
+        assert received == [True]
+
+
+# ---------------------------------------------------------------------------
+# Output path & back button
+# ---------------------------------------------------------------------------
+
+
+class TestOutputPath:
+
+    def test_set_output_path_shows_label(self):
+        screen = GenerationProgressScreen()
+        screen.set_output_path("/tmp/my-project")
+        assert not screen.path_label.isHidden()
+        assert "/tmp/my-project" in screen.path_label.text()
+
+    def test_path_label_hidden_initially(self):
+        screen = GenerationProgressScreen()
+        assert screen.path_label.isHidden()
+
+    def test_start_hides_path_label(self):
+        screen = GenerationProgressScreen()
+        screen.set_output_path("/tmp/test")
+        screen.start()
+        assert screen.path_label.isHidden()
+
+    def test_back_button_hidden_initially(self):
+        screen = GenerationProgressScreen()
+        assert screen.back_button.isHidden()
+
+    def test_back_button_visible_after_finish(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish(total_files=5)
+        assert not screen.back_button.isHidden()
+
+    def test_back_button_visible_after_error(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish_with_error("Error")
+        assert not screen.back_button.isHidden()
+
+    def test_start_hides_back_button(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish(total_files=5)
+        assert not screen.back_button.isHidden()
+        screen.start()
+        assert screen.back_button.isHidden()

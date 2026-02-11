@@ -6,6 +6,7 @@ import logging
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -32,6 +33,9 @@ from foundry_app.services.seeder import seed_tasks
 from foundry_app.services.validator import run_pre_generation_validation
 
 logger = logging.getLogger(__name__)
+
+# Callback type: (stage_key, status, file_count) — status is "running" or "done"
+StageCallback = Callable[[str, str, int], None]
 
 
 # ---------------------------------------------------------------------------
@@ -160,36 +164,45 @@ def _run_pipeline(
     library_root: Path,
     output_dir: Path,
     overlay_plan: OverlayPlan | None = None,
+    stage_callback: StageCallback | None = None,
 ) -> dict[str, StageResult]:
     """Execute all pipeline stages in order and return per-stage results."""
     stages: dict[str, StageResult] = {}
 
+    def _run_stage(key: str, func, *args) -> None:
+        if stage_callback:
+            stage_callback(key, "running", 0)
+        result = func(*args)
+        stages[key] = result
+        if stage_callback:
+            stage_callback(key, "done", len(result.wrote))
+
     # Stage 1: Scaffold
-    stages["scaffold"] = scaffold_project(spec, output_dir)
+    _run_stage("scaffold", scaffold_project, spec, output_dir)
 
     # Stage 2: Compile member prompts
-    stages["compile"] = compile_project(spec, library, library_root, output_dir)
+    _run_stage("compile", compile_project, spec, library, library_root, output_dir)
 
     # Stage 3: Write agent files
-    stages["agent_writer"] = write_agents(spec, library, library_root, output_dir)
+    _run_stage("agent_writer", write_agents, spec, library, library_root, output_dir)
 
     # Stage 4: Copy assets
-    stages["copy_assets"] = copy_assets(spec, library, library_root, output_dir)
+    _run_stage("copy_assets", copy_assets, spec, library, library_root, output_dir)
 
     # Stage 5: Write MCP config
-    stages["mcp_config"] = write_mcp_config(spec, output_dir)
+    _run_stage("mcp_config", write_mcp_config, spec, output_dir)
 
     # Stage 6: Seed tasks (only if enabled)
     if spec.generation.seed_tasks:
-        stages["seed_tasks"] = seed_tasks(spec, output_dir)
+        _run_stage("seed_tasks", seed_tasks, spec, output_dir)
 
     # Stage 7: Write safety config
-    stages["safety"] = write_safety(spec, output_dir)
+    _run_stage("safety", write_safety, spec, output_dir)
 
     # Stage 8: Diff report (only if enabled)
     if spec.generation.write_diff_report:
         plan = overlay_plan if overlay_plan is not None else OverlayPlan()
-        stages["diff_report"] = write_diff_report(plan, output_dir)
+        _run_stage("diff_report", write_diff_report, plan, output_dir)
 
     return stages
 
@@ -202,6 +215,7 @@ def generate_project(
     overlay: bool = False,
     dry_run: bool = False,
     force: bool = False,
+    stage_callback: StageCallback | None = None,
 ) -> tuple[GenerationManifest, ValidationResult, OverlayPlan | None]:
     """Orchestrate the full project generation pipeline.
 
@@ -265,7 +279,10 @@ def generate_project(
             tmp_path = Path(tmp_dir)
 
             # Phase 1: Generate into temp directory
-            stages = _run_pipeline(composition, library, library_path, tmp_path)
+            stages = _run_pipeline(
+                composition, library, library_path, tmp_path,
+                stage_callback=stage_callback,
+            )
             manifest.stages = stages
 
             # Phase 2: Compare against target
@@ -292,7 +309,10 @@ def generate_project(
         )
     else:
         # Standard mode: write directly to output
-        stages = _run_pipeline(composition, library, library_path, output_dir)
+        stages = _run_pipeline(
+            composition, library, library_path, output_dir,
+            stage_callback=stage_callback,
+        )
         manifest.stages = stages
 
     # Write manifest file if enabled
