@@ -134,7 +134,7 @@
 | BEAN-110 | Sidebar Nav Button Contrast Fix | App | High | Done | team-lead |
 | BEAN-111 | Wire Generate Button to Pipeline with Progress | App | High | Done | team-lead |
 | BEAN-112 | Path Traversal Hardening | App | High | Done | team-lead |
-| BEAN-113 | Input Bounds & Error Sanitization | App | Medium | Approved | — |
+| BEAN-113 | Input Bounds & Error Sanitization | App | Medium | Done | team-lead |
 | BEAN-114 | Telemetry Backfill from Git History | Process | High | Approved | (unassigned) |
 | BEAN-115 | Live Telemetry Capture Fix | Process | High | Approved | (unassigned) |
 | BEAN-116 | Telemetry Summary Report Command | Process | Medium | Approved | (unassigned) |
