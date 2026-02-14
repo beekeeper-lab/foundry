@@ -156,8 +156,26 @@ cron jobs or automated pipelines like `/long-run`.
          curated sprint backlog and are pre-approved).
        - **Category:** Infer from content (App for code/test/UI changes,
          Process for workflow/agent changes, Infra for CI/CD/git changes).
-       - **Notes:** Include "Source: Trello card '[Card Name]'" and a link
-         to the card URL.
+       - **Notes:** Any additional context from comments or card metadata.
+         Do NOT include "Source: Trello card" here — use the Trello section.
+       - **Trello section:** Populate the `## Trello` section with full
+         metadata from the source card:
+         ```
+         ## Trello
+
+         | Field | Value |
+         |-------|-------|
+         | **Source** | Trello |
+         | **Workspace** | [workspace name] |
+         | **Board** | [board name] (ID: [board ID]) |
+         | **Source List** | [list name where card was found] |
+         | **Card ID** | [card ID] |
+         | **Card Name** | [card name] |
+         | **Card URL** | [card URL] |
+         ```
+         Get the workspace name from `mcp__trello__list_workspaces` or the
+         board info. The board ID and card ID are available from the API
+         responses. The card URL follows the format `https://trello.com/c/[shortLink]`.
 
     e. **Write the bean** — Create `ai/beans/BEAN-NNN-<slug>/bean.md` and
        append to `_index.md` immediately.

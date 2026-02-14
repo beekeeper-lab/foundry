@@ -49,6 +49,12 @@ What is the desired outcome when this bean is complete?
 
 (Any additional context, links, or discussion.)
 
+## Trello
+
+| Field | Value |
+|-------|-------|
+| **Source** | Manual |
+
 ## Telemetry
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |

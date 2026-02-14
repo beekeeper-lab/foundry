@@ -45,6 +45,7 @@ Creates a new bean in the project's beans backlog. Assigns the next sequential I
    - Created → today's date in `YYYY-MM-DD` format
    - Owner → `(unassigned)`
    - Problem Statement → from input or placeholder text
+   - Trello section → keep `Source: Manual` (the template default)
    Write the result to `ai/beans/BEAN-{NNN}-{slug}/bean.md`.
 
 7. **Update backlog index** -- Append a new row to the Backlog table in `ai/beans/_index.md`:
