@@ -1,34 +1,64 @@
 # Foundry
 
-**A desktop application and CLI for generating Claude Code project folders from reusable building blocks.**
+**A project factory for AI-assisted software teams.**
 
-Foundry is a project factory that combines **personas** (role definitions like Architect, Developer, QA) with **tech-stack packs** (language/framework best practices) to produce fully configured project directories — complete with `.claude/` sub-agents, compiled team member prompts, starter tasks, and safety hooks.
+Foundry is a desktop application and CLI that generates fully configured [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) project folders from reusable building blocks. It combines **personas** (role definitions like Architect, Developer, QA) with **tech-stack packs** (language/framework best practices) to produce self-contained project directories — complete with sub-agents, compiled team prompts, starter tasks, and safety hooks.
 
 Built with PySide6 (Qt for Python), Foundry provides both a visual desktop GUI and a headless CLI for batch automation.
 
 ---
 
+### Overview
+
+Foundry is a project factory for AI-assisted software teams. If you've ever set up a Claude Code project and spent hours writing agent prompts, defining team roles, configuring safety hooks, and scaffolding directory structures — only to do it all over again for the next project — Foundry eliminates that repetition entirely.
+
+The core idea is simple: the knowledge that makes an AI agent effective — how a developer should write code, how an architect should design systems, how a QA engineer should verify work — doesn't change from project to project. What changes is the tech stack, the domain, and the team composition. Foundry treats these as independent building blocks. Pick your roles, pick your stacks, set your safety posture, and Foundry compiles everything into a ready-to-go project folder with fully wired agents, starter tasks, and quality gates. No prompt engineering required.
+
+But Foundry isn't just a project generator — it's also the operating system for the team it creates. Work gets organized into "beans" (discrete units like features or bug fixes) that flow through a structured lifecycle: backlog, approval, decomposition into tasks, execution by specialized AI personas, verification, and merge. The whole process can run autonomously with a single command, or you can drive it step by step. It even syncs with Trello so stakeholders can manage priorities in a familiar tool while the AI team handles execution behind the scenes.
+
+The result is that standing up a new AI-powered project goes from a day of boilerplate to a few minutes of choices. And once the project is running, the team collaboration patterns — handoffs, quality checks, telemetry, traceability — are already baked in rather than reinvented every time.
+
+---
+
 ## Table of Contents
 
+**Concepts & Architecture**
 - [Why Foundry](#why-foundry)
-- [How It Works](#how-it-works)
-- [Installation](#installation)
-- [Running Foundry](#running-foundry)
-- [The GUI](#the-gui)
-- [The CLI](#the-cli)
-- [The Library](#the-library)
-- [Generated Project Structure](#generated-project-structure)
-- [Pipeline Stages](#pipeline-stages)
+- [Design Principles](#design-principles)
+- [Architecture Overview](#architecture-overview)
 - [Data Contracts](#data-contracts)
-- [Configuration](#configuration)
+- [The Compilation Model](#the-compilation-model)
+- [Generated Project Structure](#generated-project-structure)
+
+**The Building Block Library**
+- [Library Overview](#library-overview)
+- [Personas](#personas-13)
+- [Tech Stacks](#tech-stacks-11)
+- [Hook Packs](#hook-packs-5)
+- [Jinja2 Templating](#jinja2-templating)
+
+**Execution Model**
 - [AI Team & Beans Workflow](#ai-team--beans-workflow)
+- [Trello Integration](#trello-integration)
+
+**User Interfaces**
+- [The Desktop GUI](#the-desktop-gui)
+- [The CLI](#the-cli)
+
+**Automation**
 - [Skills & Commands Summary](#skills--commands-summary)
 - [Skills & Commands Reference](#skills--commands-reference)
+
+**Operations**
+- [Installation](#installation)
+- [Configuration](#configuration)
 - [Development](#development)
 - [Project Structure](#project-structure)
 - [License](#license)
 
 ---
+
+# Concepts & Architecture
 
 ## Why Foundry
 
@@ -47,73 +77,548 @@ The same Architect persona works equally well with a Python project, a React+Nod
 
 ---
 
-## How It Works
+## Design Principles
 
-1. **Curate a library** of personas, tech stacks, hook policies, and templates
-2. **Compose** a project spec by selecting which building blocks to include
-3. **Generate** a self-contained project folder with compiled agents, scaffolded structure, and starter tasks
-4. **Export** the folder to its final location and optionally initialize a git repo
+Foundry's architecture is guided by five core principles:
 
-The generated project is completely self-contained — no runtime dependency on Foundry or the library. You can move it anywhere, `git init`, and start working with Claude Code immediately.
+### Composition Over Configuration
 
----
+Teams are assembled by combining independent building blocks — not by configuring a monolithic template. A persona knows nothing about tech stacks; a stack knows nothing about roles. Foundry merges them at compile time, producing combinations that neither component could anticipate on its own. This makes the library open for extension without modifying existing blocks.
 
-## Installation
+### Self-Contained Output
 
-### Prerequisites
+Every generated project is a complete, standalone directory. There is no runtime dependency on Foundry, the library, or any external service. You can copy the output folder to another machine, `git init`, and start working with Claude Code immediately. The composition spec, generation manifest, and compiled prompts are all preserved inside the project for traceability and reproducibility.
 
-- Python 3.11 or later
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+### Deterministic Pipeline
 
-### Install with uv
+The generation pipeline runs the same named stages in the same order every time: Validate, Scaffold, Compile, Copy Assets, Seed. Each stage produces a typed result recording exactly which files were written and any warnings encountered. The full run is captured in a machine-readable manifest, making it possible to diff generations, audit changes, and reproduce results.
 
-```bash
-git clone https://github.com/beekeeper-lab/foundry.git
-cd foundry
-uv sync
-```
+### Contract-Driven Data Flow
 
-### Install with pip
+Three Pydantic models define the system's data boundaries. The **CompositionSpec** is the input contract (what the user wants). The **LibraryIndex** is the capability contract (what the library offers). The **GenerationManifest** is the output contract (what was produced). Every service in the pipeline operates on these contracts — not on raw files or ad-hoc dictionaries.
 
-```bash
-git clone https://github.com/beekeeper-lab/foundry.git
-cd foundry
-pip install -e .
-```
+### Human-in-the-Loop by Default
 
-### Dev dependencies (for running tests and linting)
-
-```bash
-uv sync --group dev
-```
+Foundry never assumes full autonomy. Beans require explicit human approval before execution. The `/long-run` command processes work autonomously but only touches pre-approved items. Trello integration imports cards as "Approved" because sprint backlog curation is the human gate. Every escalation point — scope ambiguity, conflicting requirements, architectural trade-offs — routes back to a human decision.
 
 ---
 
-## Running Foundry
+## Architecture Overview
 
-### Desktop GUI
+Foundry is organized into four layers, each with a clear responsibility boundary:
 
-```bash
-# Via installed entry point
-uv run foundry
-
-# Or as a Python module
-python -m foundry_app
+```
+┌─────────────────────────────────────────────────────────┐
+│                    User Interfaces                       │
+│  ┌─────────────────────┐  ┌──────────────────────────┐  │
+│  │   Desktop GUI        │  │   CLI (foundry-cli)      │  │
+│  │   (PySide6/Qt)       │  │   (argparse)             │  │
+│  └──────────┬──────────┘  └────────────┬─────────────┘  │
+├─────────────┴──────────────────────────┴────────────────┤
+│                    Service Layer                         │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐ │
+│  │Validator │ │Scaffolder│ │ Compiler │ │  Seeder    │ │
+│  └──────────┘ └──────────┘ └──────────┘ └────────────┘ │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐ │
+│  │Generator │ │Asset     │ │Safety    │ │Diff        │ │
+│  │(orchestr)│ │Copier    │ │Writer    │ │Reporter    │ │
+│  └──────────┘ └──────────┘ └──────────┘ └────────────┘ │
+├─────────────────────────────────────────────────────────┤
+│                    Core Layer                            │
+│  ┌──────────────────┐  ┌─────────────┐  ┌────────────┐ │
+│  │  Data Contracts   │  │  Settings   │  │  Logging   │ │
+│  │  (Pydantic)       │  │  (JSON)     │  │  (rotating)│ │
+│  └──────────────────┘  └─────────────┘  └────────────┘ │
+├─────────────────────────────────────────────────────────┤
+│                    Library Layer                          │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐ │
+│  │ Personas │ │  Stacks  │ │  Hooks   │ │ Templates  │ │
+│  │ (13)     │ │  (11)    │ │  (5)     │ │ (72)       │ │
+│  └──────────┘ └──────────┘ └──────────┘ └────────────┘ │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### CLI (headless)
+**User Interfaces** provide two entry points — a desktop GUI for interactive composition and a CLI for scripting and CI/CD. Both delegate to the same service layer.
 
-```bash
-# Via installed entry point
-uv run foundry-cli --help
+**Service Layer** contains the pipeline stages. The `Generator` orchestrates the flow: it calls the `Validator`, `Scaffolder`, `Compiler`, `AssetCopier`, `Seeder`, and `SafetyWriter` in sequence, collecting `StageResult` objects into a `GenerationManifest`. Each service is stateless and operates on the data contracts.
 
-# Or directly
-foundry-cli generate composition.yml --library ./ai-team-library
-```
+**Core Layer** defines the Pydantic data contracts (`CompositionSpec`, `LibraryIndex`, `GenerationManifest`), user settings, and structured logging with automatic rotation.
+
+**Library Layer** is a filesystem-based content store. The `LibraryIndexer` scans it at runtime to build the `LibraryIndex`. The library is never modified by the application — it is treated as a read-only asset catalog.
 
 ---
 
-## The GUI
+## Data Contracts
+
+Foundry's behavior is driven by three core data structures, all defined as Pydantic models in `foundry_app/core/models.py`.
+
+### CompositionSpec — The Input Contract
+
+The authoritative project specification, produced by the wizard or composition editor. Declares what the user wants: which personas, which stacks, what safety posture, and how to generate.
+
+```yaml
+project:
+  name: "My Project"
+  slug: "my-project"
+  output_root: "./generated-projects"
+  output_folder: "my-project"
+
+stacks:
+  - id: python
+    order: 10
+  - id: react
+    order: 20
+
+team:
+  personas:
+    - id: team-lead
+      include_agent: true
+      include_templates: false
+      strictness: standard
+    - id: developer
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: security-engineer
+      include_agent: true
+      include_templates: true
+      strictness: strict
+
+hooks:
+  posture: hardened
+  packs:
+    - id: pre-commit-lint
+      enabled: true
+      mode: enforcing
+    - id: security-scan
+      enabled: true
+      mode: enforcing
+
+generation:
+  seed_tasks: true
+  write_manifest: true
+  write_diff_report: true
+```
+
+### GenerationManifest — The Output Contract
+
+A machine-readable record of every generation run, stored in the generated project for traceability and diffing.
+
+```json
+{
+  "run_id": "2026-02-06T20-10-33Z",
+  "library_version": "abc1234",
+  "composition_snapshot": { "..." : "..." },
+  "stages": {
+    "scaffold": { "wrote": ["CLAUDE.md", ".claude/agents/developer.md"], "warnings": [] },
+    "compile": { "wrote": ["ai/generated/members/developer.md"], "warnings": [] },
+    "seed": { "wrote": ["ai/tasks/seeded-tasks.md"], "warnings": [] }
+  }
+}
+```
+
+### LibraryIndex — The Capability Contract
+
+A computed index built at runtime by scanning the library directory. Enumerates all available personas (with their component files and templates), stacks (with their convention docs), and hook packs. The GUI and CLI use this index to populate selection lists and validate composition references.
+
+---
+
+## The Compilation Model
+
+Foundry uses a deterministic, staged pipeline to transform a composition spec into a generated project:
+
+```
+CompositionSpec ──→ Validate ──→ Scaffold ──→ Compile ──→ Copy Assets ──→ Seed ──→ GenerationManifest
+                       │             │            │             │            │
+                       ▼             ▼            ▼             ▼            ▼
+                   Check refs    Create dirs   Merge prompts  Copy skills  Create tasks
+                   & schemas     & CLAUDE.md   via Jinja2     & hooks      & dependencies
+```
+
+### Pipeline Stages
+
+| Stage | Responsibility |
+|---|---|
+| **Validate** | Verifies composition completeness, checks that all referenced personas, stacks, and templates exist in the library, enforces strictness rules |
+| **Scaffold** | Creates the directory structure: `CLAUDE.md`, `.claude/agents/`, `ai/context/`, `ai/outputs/`, `ai/tasks/` |
+| **Compile** | Merges each persona's identity, outputs contract, and invocation prompts with the selected stack conventions and project context into a single compiled prompt per team member, rendered via Jinja2 |
+| **Copy Assets** | Copies skills, commands, and hook packs from the library into the generated project's `.claude/` directory |
+| **Seed** | Creates starter task lists with wave-based dependencies across roles (BA first, then Architect, then Developer, then QA) |
+
+Each stage produces a `StageResult` recording which files were written and any warnings. These are aggregated into the `GenerationManifest` at `ai/generated/manifest.json`.
+
+### Validation Strictness
+
+Three levels control how validation issues are treated:
+
+| Level | Behavior |
+|---|---|
+| **light** | Only fatal errors block generation |
+| **standard** | Errors block; warnings are reported but don't block |
+| **strict** | All warnings are promoted to errors |
+
+---
+
+## Generated Project Structure
+
+Every generated project is self-contained — no runtime dependency on Foundry or the library. The structure follows a consistent layout:
+
+```
+my-project/
+  CLAUDE.md                          # Project entry point for Claude Code
+  README.md                          # Basic project readme
+  .claude/
+    agents/                          # Sub-agent definitions (one per persona)
+      team-lead.md
+      developer.md
+      ...
+    skills/                          # Project-specific skills
+    commands/                        # Project-specific commands
+    hooks/                           # Hook policy files
+  ai/
+    context/
+      project.md                     # Project overview, team, stacks, conventions
+      stack.md                       # Stack context summary
+      decisions.md                   # Architecture decision records
+    team/
+      composition.yml                # The authoritative project spec (preserved)
+    generated/
+      members/                       # Compiled team member prompts
+        team-lead.md                 # Persona + stack + context merged
+        developer.md
+        ...
+      manifest.json                  # Generation metadata and file manifest
+      diff-report.md                 # Changes vs previous generation
+    outputs/
+      team-lead/                     # Output directory per role
+        README.md
+      developer/
+        README.md
+      ...
+    tasks/
+      seeded-tasks.md                # Starter task list with dependency waves
+```
+
+### Component Roles
+
+| Component | Purpose |
+|---|---|
+| **CLAUDE.md** | The first file Claude Code reads. Contains project context, team roster, stack conventions, hooks posture, and directory layout. |
+| **.claude/agents/** | Thin wrappers that point to the full compiled prompts in `ai/generated/members/`. Claude Code loads these as sub-agent definitions. |
+| **ai/generated/members/** | The compiled team member prompts. Each merges the persona's identity, outputs contract, invocation prompts, relevant stack conventions, and project context into a single comprehensive prompt. |
+| **ai/team/composition.yml** | The full composition spec, preserved in the project for traceability. |
+| **ai/outputs/** | Per-role output directories where each agent writes its deliverables. |
+| **ai/tasks/seeded-tasks.md** | Starter task list following a wave-based dependency model: BA first, then Architect, then Developer, then QA — with parallel lanes for Security, DevOps, Code Quality, and Docs. |
+
+---
+
+# The Building Block Library
+
+## Library Overview
+
+Foundry ships with a built-in library (`ai-team-library/`) containing a comprehensive set of building blocks ready to use. The library is a read-only content store — Foundry never modifies it. It is designed to be extended by adding new personas, stacks, or hook packs without changing existing ones.
+
+The library contains **207 markdown files** across **13 personas**, **11 tech stacks**, **72 templates**, and **5 hook packs**.
+
+---
+
+## Personas (13)
+
+Each persona includes four component files that together define the role's complete behavior:
+
+| File | Purpose |
+|---|---|
+| `persona.md` | Identity, operating principles, definition of done |
+| `outputs.md` | Deliverables contract — what artifacts the role produces and where they go |
+| `prompts.md` | Invocation playbook — how to invoke and interact with the role |
+| `templates/` | Forms and checklists the role fills out during execution |
+
+### Available Personas
+
+| Persona | Role |
+|---|---|
+| **team-lead** | Orchestration, scope control, task dependency management |
+| **ba** | Requirements, user stories, acceptance criteria |
+| **architect** | System design, ADRs, boundaries, contracts |
+| **developer** | Implementation, testing, code quality |
+| **tech-qa** | Verification, test charters, regression, traceability |
+| **code-quality-reviewer** | Readability, maintainability, ship/no-ship decisions |
+| **devops-release** | CI/CD, environments, deployments, rollbacks |
+| **security-engineer** | Threat modeling (STRIDE), secure design review, hardening |
+| **compliance-risk** | Regulatory constraints, auditability, evidence planning |
+| **researcher-librarian** | Research memos, decision matrices, source logs |
+| **technical-writer** | READMEs, runbooks, onboarding, ADR summaries |
+| **ux-ui-designer** | User flows, wireframes, component specs, accessibility |
+| **integrator-merge-captain** | Integration plans, conflict resolution, release notes |
+
+---
+
+## Tech Stacks (11)
+
+Each stack contains convention docs covering best practices, testing strategies, security patterns, and tooling. Stacks are technology-specific — they know nothing about roles. At compile time, the relevant stack docs are injected into each persona's compiled prompt.
+
+| Stack | Focus |
+|---|---|
+| **python** | Python conventions, packaging, testing, security |
+| **python-qt-pyside6** | Qt/PySide6 desktop app patterns |
+| **react** | React conventions, state management, accessibility |
+| **typescript** | TypeScript conventions, type safety, tooling |
+| **node** | Node.js backend, API design, testing |
+| **java** | Java conventions, architecture, testing |
+| **dotnet** | .NET architecture, conventions, testing |
+| **sql-dba** | Database design, query optimization, migrations |
+| **devops** | CI/CD pipelines, infrastructure, monitoring |
+| **security** | Security practices, threat modeling, hardening |
+| **clean-code** | Cross-cutting code quality principles |
+
+---
+
+## Hook Packs (5)
+
+Hook packs define safety guardrails that get installed into generated projects. Each pack supports three posture levels — **baseline**, **hardened**, and **regulated** — allowing teams to dial safety up or down based on their risk profile.
+
+| Hook Pack | Purpose |
+|---|---|
+| **hook-policy** | Base policy document defining posture levels |
+| **pre-commit-lint** | Enforce formatting and lint checks before commits |
+| **post-task-qa** | Quality gate after task completion |
+| **security-scan** | Security scanning policies |
+| **compliance-gate** | Regulatory compliance checks |
+
+---
+
+## Jinja2 Templating
+
+Library markdown files support Jinja2 template variables that get rendered at compile time, allowing library content to adapt to the specific project:
+
+| Variable | Description |
+|---|---|
+| `{{ project_name }}` | The project name from the composition spec |
+| `{{ stacks \| join(", ") }}` | Comma-separated list of selected stacks |
+| `{{ strictness }}` | The persona's strictness setting |
+| `{{ slug }}` | The project slug |
+
+Invalid Jinja2 syntax is handled gracefully — the raw text is preserved rather than crashing the pipeline.
+
+---
+
+# Execution Model
+
+## AI Team & Beans Workflow
+
+Beyond project generation, Foundry provides a structured execution framework that organizes work into **Beans** — discrete units of work (features, enhancements, bug fixes, or epics) that flow through a managed lifecycle.
+
+### The AI Team
+
+Five core personas collaborate through a structured workflow, each backed by a Claude Code sub-agent:
+
+| Persona | Agent | Responsibility |
+|---------|-------|----------------|
+| **Team Lead** | `.claude/agents/team-lead.md` | Orchestrates work, decomposes beans, assigns tasks, enforces quality gates |
+| **BA** | `.claude/agents/ba.md` | Requirements, user stories, acceptance criteria |
+| **Architect** | `.claude/agents/architect.md` | System design, ADRs, module boundaries |
+| **Developer** | `.claude/agents/developer.md` | Implementation, refactoring, code changes |
+| **Tech-QA** | `.claude/agents/tech-qa.md` | Test plans, test implementation, quality gates |
+
+### Bean Lifecycle
+
+Every bean progresses through four states:
+
+```
+Unapproved ──→ Approved ──→ In Progress ──→ Done
+    │              │              │              │
+    ▼              ▼              ▼              ▼
+  Human          Human        Team Lead      All criteria
+  creates        reviews      claims bean,    met, tests
+  via /new-bean  & approves   decomposes      green, merged
+                              into tasks      to test
+```
+
+1. **Unapproved** — A bean is created via `/new-bean` or `/backlog-refinement` and added to `ai/beans/_index.md`. It awaits human review and approval.
+2. **Approved** — The user reviews the bean (e.g., in Obsidian via `/review-beans`) and changes its status to `Approved`, signaling it is ready for execution.
+3. **In Progress** — The Team Lead claims the bean via `/pick-bean`, assigns ownership, creates a feature branch, and decomposes it into tasks. Personas execute tasks in dependency waves: BA, then Architect, then Developer, then Tech-QA.
+4. **Done** — All acceptance criteria pass, tests are green, lint is clean, and the bean is merged to the `test` branch.
+
+### Bean Directory Structure
+
+```
+ai/beans/
+  _index.md                          # Backlog index — all beans in one table
+  _bean-template.md                  # Template for new beans
+  BEAN-001-feature-name/
+    bean.md                          # Bean spec with metadata, acceptance criteria, telemetry
+    tasks/
+      01-ba-requirements.md          # Task files, one per assignment
+      02-architect-design.md
+      03-developer-implement.md
+      04-tech-qa-verify.md
+```
+
+### Task Execution Flow
+
+Each task follows a consistent pattern with built-in verification:
+
+1. Persona reads the task file and its inputs
+2. Persona records the `Started` timestamp and begins work
+3. Persona produces outputs in `ai/outputs/<persona>/`
+4. Team Lead runs `/close-loop` to verify outputs against acceptance criteria
+5. If pass: `/handoff` packages context for the next persona in the wave
+6. If fail: task is returned with specific, actionable feedback
+7. Task telemetry is recorded (duration, token usage)
+
+### Telemetry
+
+Every bean and task tracks timing and token consumption for cost analysis and velocity tracking:
+
+- **Bean level**: `Started`, `Completed`, `Duration` in the header metadata
+- **Task level**: `Started`, `Completed`, `Duration`, `Tokens` (format: `12,450 in / 3,200 out`)
+- **Summary**: Total tasks, total duration, total tokens in/out
+
+### Git Branching Model
+
+Foundry enforces a structured branching model with promotion gates:
+
+```
+main ← (deploy) ← test ← (merge-bean) ← bean/BEAN-NNN-slug
+```
+
+| Branch | Role |
+|---|---|
+| `bean/BEAN-NNN-<slug>` | Feature branch — one per bean, isolated work |
+| `test` | Integration branch — completed beans merge here via `/merge-bean` |
+| `main` | Release branch — `test` promotes here via `/deploy` (creates a PR, runs tests, merges) |
+
+No direct commits to `main`. Every change flows through the bean lifecycle.
+
+### Parallel Execution
+
+Use `/long-run --fast N` or `/spawn-bean --count N` to process multiple beans simultaneously:
+
+- Each parallel worker gets an isolated git worktree at `/tmp/foundry-worktree-BEAN-NNN/`
+- Workers run in separate tmux windows/panes
+- A dashboard in the main window tracks progress via status files
+- Completed beans are merged sequentially by the orchestrator
+
+---
+
+## Trello Integration
+
+Foundry integrates with Trello to bridge sprint planning with the agentic beans workflow. Cards in a Trello board flow automatically into the backlog as approved beans, get processed by the AI team, and move through Trello lists as work completes.
+
+### Setup
+
+Trello integration uses the [MCP Trello Server](https://www.npmjs.com/package/@delorenj/mcp-server-trello) and requires an API key and token.
+
+#### 1. Get Your Trello API Key
+
+1. Log in to Trello and visit the [Trello Power-Ups admin page](https://trello.com/power-ups/admin)
+2. Create a new Power-Up (or integration) — give it any name (e.g., "Foundry MCP")
+3. After creating it, you'll see your **API Key** on the Power-Up details page
+4. Copy the API key — you'll need it for both the config file and for generating a token
+
+#### 2. Generate a Trello Token
+
+1. With your API key in hand, visit the following URL in your browser (replace `YOUR_API_KEY`):
+   ```
+   https://trello.com/1/authorize?expiration=never&scope=read,write&response_type=token&key=YOUR_API_KEY
+   ```
+2. Trello will prompt you to grant access — click **Allow**
+3. Copy the token displayed on the resulting page
+
+#### 3. Configure Foundry
+
+Add the Trello MCP server to your `.mcp.json` file in the project root:
+
+```json
+{
+  "mcpServers": {
+    "trello": {
+      "command": "npx",
+      "args": ["-y", "@delorenj/mcp-server-trello"],
+      "env": {
+        "TRELLO_API_KEY": "your-api-key-here",
+        "TRELLO_TOKEN": "your-token-here"
+      }
+    }
+  }
+}
+```
+
+Replace `your-api-key-here` and `your-token-here` with the values from steps 1 and 2.
+
+> **Note:** The `.mcp.json` file is gitignored. Each developer configures their own credentials locally.
+
+#### 4. Set Up Your Trello Board
+
+Create a Trello board with these three lists (naming is flexible — underscores, hyphens, spaces, and case are all treated equivalently):
+
+| List | Purpose |
+|------|---------|
+| **Sprint_Backlog** | Cards queued for the next development cycle |
+| **In_Progress** | Cards currently being worked as beans |
+| **Completed** | Cards whose beans have been merged |
+
+Name the board to match your project directory (e.g., "Foundry") for automatic board selection, or use the `--board` flag to specify a board ID.
+
+### How It Works
+
+The Trello integration creates a bidirectional flow between Trello cards and the beans workflow:
+
+```
+Trello                              Foundry Beans
+─────────────────                   ─────────────────
+Sprint_Backlog ──── /trello-load ──→ Bean (Approved)
+       ↓                                  ↓
+  In_Progress        ← card moved ── /pick-bean (In Progress)
+       ↓                                  ↓
+                                     Team executes tasks
+       ↓                                  ↓
+   Completed         ← card moved ── /merge-bean (Done)
+```
+
+#### Importing Cards (`/trello-load`)
+
+The `/trello-load` command pulls cards from the **Sprint_Backlog** list and creates approved beans:
+
+1. Connects to Trello and auto-selects the board (matches project directory name, or uses `--board`)
+2. Fetches all cards from the **Sprint_Backlog** list
+3. For each card, reads the full description, checklists, and comments
+4. Creates a bean with status **Approved** (sprint backlog cards are considered pre-vetted)
+5. Maps card data to bean fields:
+   - Card name becomes the bean title
+   - Card description becomes the problem statement and goal
+   - Checklist items become acceptance criteria
+   - Label colors map to priority (red = High, yellow = Medium, green = Low)
+   - A source reference linking back to the Trello card is added to the bean's Notes
+6. Moves the card to **In_Progress** in Trello
+
+Use `--dry-run` to preview what would be imported without creating beans or moving cards.
+
+#### Automatic Sync in `/long-run`
+
+The `/long-run` command automatically invokes `/trello-load` before processing beans (Phase 0.5: Trello Sync). This means:
+
+- New sprint cards are imported at the start of every autonomous run
+- After a bean is merged to `test`, the corresponding Trello card is moved to **Completed**
+- The sync is best-effort — if Trello is unavailable or the sprint backlog is empty, processing continues normally
+
+#### Card Completion
+
+When a bean is merged (via `/merge-bean` or `/long-run`), Foundry checks the bean's Notes for a Trello source reference. If found, it automatically moves the matching card from **In_Progress** to **Completed** in Trello.
+
+### Typical Workflow
+
+1. **Product owner** creates cards in the Trello board's **Sprint_Backlog** list with descriptions, checklists, and labels
+2. **Developer** runs `/trello-load` (or `/long-run` which calls it automatically) to import cards as approved beans
+3. **AI team** processes beans through the standard lifecycle: pick, decompose, execute, verify, merge
+4. **Trello board** updates automatically — cards move to **In_Progress** on import and **Completed** on merge
+5. **Stakeholders** track progress in Trello without needing access to the codebase
+
+---
+
+# User Interfaces
+
+## The Desktop GUI
 
 Foundry's desktop interface uses a three-pane layout:
 
@@ -140,7 +645,7 @@ Collect decisions, generate a project, and export it.
 
 | Screen | Purpose |
 |---|---|
-| **New Project Wizard** | 6-step guided flow: Identity, Personas, Stacks, Architecture, Hooks & Safety, Review & Generate |
+| **New Project Wizard** | 4-step guided flow: Project, Team & Stack, Safety, Review & Generate |
 | **Composition Editor** | Power-edit `composition.yml` with synchronized Form and YAML views |
 | **Generate** | Run the pipeline, watch stage progress, inspect the generation manifest |
 | **Export** | Copy/move the project to its final destination with pre-export validation |
@@ -166,7 +671,7 @@ Collect decisions, generate a project, and export it.
 
 ## The CLI
 
-The `foundry-cli` command provides headless access to the full pipeline for scripting and CI/CD integration.
+The `foundry-cli` command provides headless access to the full generation pipeline for scripting and CI/CD integration. It shares the same service layer as the GUI — both interfaces produce identical output for the same inputs.
 
 ### Commands
 
@@ -226,334 +731,11 @@ Shows the diff report comparing the current generation against any previous run.
 
 ---
 
-## The Library
-
-Foundry ships with a built-in library (`ai-team-library/`) containing a comprehensive set of building blocks ready to use.
-
-### Personas (13)
-
-Each persona includes four components: `persona.md` (identity + principles), `outputs.md` (deliverables contract), `prompts.md` (invocation playbook), and `templates/` (forms the role fills out).
-
-| Persona | Role |
-|---|---|
-| **team-lead** | Orchestration, scope control, task dependency management |
-| **ba** | Requirements, user stories, acceptance criteria |
-| **architect** | System design, ADRs, boundaries, contracts |
-| **developer** | Implementation, testing, code quality |
-| **tech-qa** | Verification, test charters, regression, traceability |
-| **code-quality-reviewer** | Readability, maintainability, ship/no-ship decisions |
-| **devops-release** | CI/CD, environments, deployments, rollbacks |
-| **security-engineer** | Threat modeling (STRIDE), secure design review, hardening |
-| **compliance-risk** | Regulatory constraints, auditability, evidence planning |
-| **researcher-librarian** | Research memos, decision matrices, source logs |
-| **technical-writer** | READMEs, runbooks, onboarding, ADR summaries |
-| **ux-ui-designer** | User flows, wireframes, component specs, accessibility |
-| **integrator-merge-captain** | Integration plans, conflict resolution, release notes |
-
-### Tech Stacks (11)
-
-Each stack contains convention docs covering best practices, testing strategies, security patterns, and tooling.
-
-| Stack | Focus |
-|---|---|
-| **python** | Python conventions, packaging, testing, security |
-| **python-qt-pyside6** | Qt/PySide6 desktop app patterns |
-| **react** | React conventions, state management, accessibility |
-| **typescript** | TypeScript conventions, type safety, tooling |
-| **node** | Node.js backend, API design, testing |
-| **java** | Java conventions, architecture, testing |
-| **dotnet** | .NET architecture, conventions, testing |
-| **sql-dba** | Database design, query optimization, migrations |
-| **devops** | CI/CD pipelines, infrastructure, monitoring |
-| **security** | Security practices, threat modeling, hardening |
-| **clean-code** | Cross-cutting code quality principles |
-
-### Hook Packs (5)
-
-Hook packs define safety guardrails for generated projects.
-
-| Hook Pack | Purpose |
-|---|---|
-| **hook-policy** | Base policy document defining posture levels |
-| **pre-commit-lint** | Enforce formatting and lint checks before commits |
-| **post-task-qa** | Quality gate after task completion |
-| **security-scan** | Security scanning policies |
-| **compliance-gate** | Regulatory compliance checks |
-
-### Library Templates with Jinja2
-
-Library markdown files support Jinja2 template variables that get rendered at compile time:
-
-- `{{ project_name }}` — The project name from the composition spec
-- `{{ stacks | join(", ") }}` — Comma-separated list of selected stacks
-- `{{ strictness }}` — The persona's strictness setting
-- `{{ slug }}` — The project slug
-
-Invalid Jinja2 syntax is handled gracefully — the raw text is preserved rather than crashing.
-
----
-
-## Generated Project Structure
-
-When Foundry generates a project, it creates a self-contained directory with this structure:
-
-```
-my-project/
-  CLAUDE.md                          # Project entry point for Claude Code
-  README.md                          # Basic project readme
-  .claude/
-    agents/                          # Sub-agent definitions (one per persona)
-      team-lead.md
-      developer.md
-      ...
-    skills/                          # Project-specific skills
-    commands/                        # Project-specific commands
-    hooks/                           # Hook policy files
-  ai/
-    context/
-      project.md                     # Project overview, team, stacks, conventions
-      stack.md                       # Stack context summary
-      decisions.md                   # Architecture decision records
-    team/
-      composition.yml                # The authoritative project spec
-    generated/
-      members/                       # Compiled team member prompts
-        team-lead.md                 # Persona + stack + context merged
-        developer.md
-        ...
-      manifest.json                  # Generation metadata and file manifest
-      diff-report.md                 # Changes vs previous generation (if enabled)
-    outputs/
-      team-lead/                     # Output directory per role
-        README.md
-      developer/
-        README.md
-      ...
-    tasks/
-      seeded-tasks.md                # Starter task list with dependency waves
-```
-
-### What Each Part Does
-
-- **CLAUDE.md** — The first file Claude Code reads. Contains project context, team members, stacks, hooks posture, and directory layout.
-- **.claude/agents/** — Thin wrappers that point to the full compiled prompts in `ai/generated/members/`. Claude Code uses these as sub-agent definitions.
-- **ai/generated/members/** — The compiled team member prompts. Each file merges the persona's identity, outputs contract, invocation prompts, relevant stack conventions, and project context into a single comprehensive prompt.
-- **ai/team/composition.yml** — The full composition spec, preserved in the project for traceability.
-- **ai/outputs/** — Per-role output directories where each agent writes its deliverables.
-- **ai/tasks/seeded-tasks.md** — Starter task list following a wave-based dependency model: BA first, then Architect, then Dev, then QA — with parallel lanes for Security, DevOps, Code Quality, and Docs.
-
----
-
-## Pipeline Stages
-
-Foundry uses a deterministic pipeline with named stages:
-
-| Stage | Verb | What It Does |
-|---|---|---|
-| **Validate** | check | Verifies composition completeness, library references, template paths, stack/persona existence |
-| **Scaffold** | create | Builds the directory structure: CLAUDE.md, .claude/agents/, ai/context/, ai/outputs/, ai/tasks/ |
-| **Compile** | generate | Merges persona + stack + project context into compiled member prompts via Jinja2 rendering |
-| **Seed** | populate | Creates starter task lists with wave-based dependencies across roles |
-| **Export** | handoff | Copies/moves the project to its final location, optionally runs `git init` |
-
-Each stage produces a `StageResult` recording which files were written and any warnings encountered. These results are aggregated into a `GenerationManifest` stored at `ai/generated/manifest.json`.
-
-### Validation Strictness
-
-Three levels control how validation issues are treated:
-
-| Level | Behavior |
-|---|---|
-| **light** | Only fatal errors block generation |
-| **standard** | Errors block; warnings are reported but don't block |
-| **strict** | All warnings are promoted to errors |
-
----
-
-## Data Contracts
-
-Foundry's behavior is driven by three core data structures, all defined as Pydantic models.
-
-### CompositionSpec (`composition.yml`)
-
-The authoritative project specification produced by the wizard or composition editor.
-
-```yaml
-project:
-  name: "My Project"
-  slug: "my-project"
-  output_root: "./generated-projects"
-  output_folder: "my-project"
-
-stacks:
-  - id: python
-    order: 10
-  - id: react
-    order: 20
-
-team:
-  personas:
-    - id: team-lead
-      include_agent: true
-      include_templates: false
-      strictness: standard
-    - id: developer
-      include_agent: true
-      include_templates: true
-      strictness: standard
-    - id: security-engineer
-      include_agent: true
-      include_templates: true
-      strictness: strict
-
-hooks:
-  posture: hardened
-  packs:
-    - id: pre-commit-lint
-      enabled: true
-      mode: enforcing
-    - id: security-scan
-      enabled: true
-      mode: enforcing
-
-generation:
-  seed_tasks: true
-  write_manifest: true
-  write_diff_report: true
-```
-
-### GenerationManifest (`manifest.json`)
-
-A machine-readable record of every generation run, stored in the generated project.
-
-```json
-{
-  "run_id": "2026-02-06T20-10-33Z",
-  "library_version": "abc1234",
-  "composition_snapshot": { ... },
-  "stages": {
-    "scaffold": { "wrote": ["CLAUDE.md", ".claude/agents/developer.md", ...], "warnings": [] },
-    "compile": { "wrote": ["ai/generated/members/developer.md", ...], "warnings": [] },
-    "seed": { "wrote": ["ai/tasks/seeded-tasks.md"], "warnings": [] }
-  }
-}
-```
-
-### LibraryIndex
-
-A computed index built at runtime by scanning the library directory. Lists all available personas (with their files and templates), stacks (with their convention docs), and hook packs.
-
----
-
-## Configuration
-
-### Settings File
-
-Foundry stores persistent settings at `~/.config/foundry/settings.json`:
-
-| Setting | Description | Default |
-|---|---|---|
-| `library_root` | Path to ai-team-library | `./ai-team-library` |
-| `workspace_root` | Default output directory for generated projects | `./generated-projects` |
-| `editor_font_family` | Font for the markdown editor | `monospace` |
-| `editor_font_size` | Font size for the editor | `12` |
-| `editor_tab_width` | Tab width in the editor | `4` |
-| `validation_strictness` | Default strictness level | `standard` |
-| `git_auto_init` | Auto-initialize git in exported projects | `false` |
-
-### Logging
-
-Foundry writes structured logs to `~/.local/share/foundry/logs/foundry.log` with automatic rotation (5 MB max, 3 backups). The CLI uses file-only logging; the GUI additionally shows warnings on the console.
-
----
-
-## AI Team & Beans Workflow
-
-Foundry includes a built-in AI team collaboration framework that organizes work into **Beans** — discrete units of work (features, enhancements, bug fixes, or epics).
-
-### The AI Team
-
-Five core personas collaborate through a structured workflow:
-
-| Persona | Agent | Responsibility |
-|---------|-------|----------------|
-| **Team Lead** | `.claude/agents/team-lead.md` | Orchestrates work, decomposes beans, assigns tasks, enforces quality gates |
-| **BA** | `.claude/agents/ba.md` | Requirements, user stories, acceptance criteria |
-| **Architect** | `.claude/agents/architect.md` | System design, ADRs, module boundaries |
-| **Developer** | `.claude/agents/developer.md` | Implementation, refactoring, code changes |
-| **Tech-QA** | `.claude/agents/tech-qa.md` | Test plans, test implementation, quality gates |
-
-### Bean Lifecycle
-
-```
-Unapproved → Approved → In Progress → Done
-```
-
-1. **Unapproved** — A bean is created via `/new-bean` or `/backlog-refinement` and added to `ai/beans/_index.md`. It awaits human review and approval.
-2. **Approved** — The user reviews the bean (e.g., in Obsidian via `/review-beans`) and changes its status to `Approved`, signaling it is ready for execution.
-3. **In Progress** — The Team Lead claims the bean via `/pick-bean`, assigns ownership, creates a feature branch, and decomposes it into tasks. Personas execute tasks in dependency waves: BA → Architect → Developer → Tech-QA.
-4. **Done** — All acceptance criteria pass, tests are green, lint is clean, and the bean is merged
-
-### Bean Directory Structure
-
-```
-ai/beans/
-  _index.md                          # Backlog index — all beans in one table
-  _bean-template.md                  # Template for new beans
-  BEAN-001-feature-name/
-    bean.md                          # Bean spec with metadata, acceptance criteria, telemetry
-    tasks/
-      01-ba-requirements.md          # Task files, one per assignment
-      02-architect-design.md
-      03-developer-implement.md
-      04-tech-qa-verify.md
-```
-
-### Task Execution Flow
-
-Each task follows this pattern:
-
-1. Persona reads the task file and its inputs
-2. Persona records the `Started` timestamp and begins work
-3. Persona produces outputs in `ai/outputs/<persona>/`
-4. Team Lead runs `/close-loop` to verify outputs against acceptance criteria
-5. If pass: `/handoff` packages context for the next persona
-6. If fail: task is returned with specific feedback
-7. Task telemetry is recorded (duration, token usage)
-
-### Telemetry
-
-Every bean and task tracks timing and token consumption:
-
-- **Bean level**: `Started`, `Completed`, `Duration` in the header metadata
-- **Task level**: `Started`, `Completed`, `Duration`, `Tokens` (format: `12,450 in / 3,200 out`)
-- **Summary**: Total tasks, total duration, total tokens in/out
-
-### Git Branching Model
-
-```
-main ← (deploy) ← test ← (merge-bean) ← bean/BEAN-NNN-slug
-```
-
-- Every bean gets its own feature branch: `bean/BEAN-NNN-<slug>`
-- Completed beans merge to `test` via `/merge-bean`
-- `test` promotes to `main` via `/deploy` (creates a PR, runs tests, merges)
-- No direct commits to `main`
-
-### Parallel Execution
-
-Use `/long-run --fast N` or `/spawn-bean --count N` to process multiple beans simultaneously:
-
-- Each parallel worker gets an isolated git worktree at `/tmp/foundry-worktree-BEAN-NNN/`
-- Workers run in separate tmux windows/panes
-- A dashboard in the main window tracks progress via status files
-- Completed beans are merged sequentially by the orchestrator
-
----
+# Automation
 
 ## Skills & Commands Summary
 
-Foundry provides **23 skills** and **25 commands** for Claude Code automation. Skills contain the full implementation logic (in `.claude/skills/<name>/SKILL.md`). Commands are the slash-command triggers (in `.claude/commands/<name>.md`) that invoke skills.
+Foundry provides a comprehensive set of Claude Code skills and commands that automate every phase of the development lifecycle. Skills contain the full implementation logic (in `.claude/skills/<name>/SKILL.md`). Commands are the slash-command triggers (in `.claude/commands/<name>.md`) that invoke skills.
 
 ### Quick Reference
 
@@ -565,7 +747,7 @@ Foundry provides **23 skills** and **25 commands** for Claude Code automation. S
 | `/build-traceability` | Quality | Map acceptance criteria to test cases; identify coverage gaps |
 | `/close-loop` | Quality | Verify task outputs against acceptance criteria; record telemetry |
 | `/compile-team` | Generation | Resolve persona/stack references; produce unified CLAUDE.md |
-| `/deploy` | Deployment | Promote `test` → `main` (or current branch → `test`) via PR with tests and release notes |
+| `/deploy` | Deployment | Promote `test` to `main` (or current branch to `test`) via PR with tests and release notes |
 | `/handoff` | Workflow | Package artifacts and context for the next persona in the wave |
 | `/long-run` | Execution | Autonomous backlog processing — pick, decompose, execute, merge, loop |
 | `/merge-bean` | Integration | Merge a bean's feature branch into `test` with conflict detection |
@@ -583,6 +765,8 @@ Foundry provides **23 skills** and **25 commands** for Claude Code automation. S
 | `/review-beans` | Planning | Generate MOC and open Obsidian for bean review and approval |
 | `/spawn-bean` | Execution | Spawn parallel tmux workers for concurrent bean processing |
 | `/status-report` | Reporting | Generate a progress summary with blockers, velocity, and next steps |
+| `/telemetry-report` | Reporting | Generate telemetry summary across beans and tasks |
+| `/trello-load` | Integration | Import Trello sprint backlog cards as approved beans |
 | `/validate-config` | Quality | Check secrets hygiene, env vars, and config schemas |
 | `/validate-repo` | Quality | Structural health check: folders, files, links, stack-specific tooling |
 
@@ -761,7 +945,7 @@ Generates an initial set of tasks from project objectives, assigns them to perso
 4. Assigns a primary persona per task
 5. Links dependencies (blockers before dependents)
 6. Priority-ranks with strict ordering (no ties)
-7. Generates task files with acceptance criteria and telemetry fields (`Started`, `Completed`, `Duration`, `Tokens` initialized to `—`)
+7. Generates task files with acceptance criteria and telemetry fields
 
 **Produces:** Task files, dependency graph (Mermaid), assignment summary
 
@@ -1057,6 +1241,30 @@ Creates the standard project folder structure from a composition spec.
 
 ### Execution & Deployment
 
+#### `/trello-load` — Import Trello Sprint Backlog
+
+Imports cards from a Trello board's Sprint_Backlog list and creates approved beans in the backlog.
+
+```
+/trello-load [--board <id>] [--dry-run]
+```
+
+**Options:**
+- `--board` — Trello board ID (auto-selects by project name if omitted)
+- `--dry-run` — Preview imports without creating beans or moving cards
+
+**What it does:**
+1. Connects to Trello MCP and verifies health
+2. Auto-selects board (matches project directory name, or uses `--board`)
+3. Finds Sprint_Backlog and In_Progress lists (flexible name matching)
+4. For each card: reads description, checklists, comments
+5. Creates a bean with `Approved` status, mapped fields, and Trello source reference
+6. Moves the card to In_Progress in Trello
+
+**Produces:** Approved beans in `ai/beans/`, updated `_index.md`, cards moved in Trello
+
+---
+
 #### `/long-run` — Autonomous Backlog Processing
 
 Puts the Team Lead into autonomous mode, processing beans from the backlog until none remain.
@@ -1069,7 +1277,7 @@ Puts the Team Lead into autonomous mode, processing beans from the backlog until
 - `--fast N` — Run N beans in parallel using tmux windows and git worktrees
 - `--category` — Only process beans matching: `App`, `Process`, or `Infra`
 
-**Sequential mode** (default): Pick → decompose → execute wave → verify → commit → merge → loop
+**Sequential mode** (default): Pick, decompose, execute wave, verify, commit, merge, loop.
 
 **Parallel mode** (`--fast N`):
 1. Selects up to N independent beans
@@ -1169,7 +1377,89 @@ Pulls the latest code and launches the Foundry desktop app.
 
 ---
 
+# Operations
+
+## Installation
+
+### Prerequisites
+
+- Python 3.11 or later
+- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+
+### Install with uv
+
+```bash
+git clone https://github.com/beekeeper-lab/foundry.git
+cd foundry
+uv sync
+```
+
+### Install with pip
+
+```bash
+git clone https://github.com/beekeeper-lab/foundry.git
+cd foundry
+pip install -e .
+```
+
+### Running Foundry
+
+```bash
+# Desktop GUI
+uv run foundry
+
+# CLI
+uv run foundry-cli --help
+
+# As a Python module
+python -m foundry_app
+```
+
+### Dev dependencies (for running tests and linting)
+
+```bash
+uv sync --group dev
+```
+
+---
+
+## Configuration
+
+### Settings File
+
+Foundry stores persistent settings at `~/.config/foundry/settings.json`:
+
+| Setting | Description | Default |
+|---|---|---|
+| `library_root` | Path to ai-team-library | `./ai-team-library` |
+| `workspace_root` | Default output directory for generated projects | `./generated-projects` |
+| `editor_font_family` | Font for the markdown editor | `monospace` |
+| `editor_font_size` | Font size for the editor | `12` |
+| `editor_tab_width` | Tab width in the editor | `4` |
+| `validation_strictness` | Default strictness level | `standard` |
+| `git_auto_init` | Auto-initialize git in exported projects | `false` |
+
+### Logging
+
+Foundry writes structured logs to `~/.local/share/foundry/logs/foundry.log` with automatic rotation (5 MB max, 3 backups). The CLI uses file-only logging; the GUI additionally shows warnings on the console.
+
+---
+
 ## Development
+
+### Tech Stack
+
+| Component | Technology |
+|---|---|
+| **Language** | Python 3.11+ (running 3.14.2) |
+| **GUI Framework** | PySide6 (Qt for Python) |
+| **Data Validation** | Pydantic |
+| **Template Engine** | Jinja2 |
+| **Config Format** | YAML (PyYAML) / JSON |
+| **Build Backend** | hatchling |
+| **Package Manager** | uv |
+| **Linter** | ruff (line-length 100, target py311, select E/F/I/W) |
+| **Tests** | pytest |
 
 ### Run tests
 
@@ -1177,7 +1467,7 @@ Pulls the latest code and launches the Foundry desktop app.
 uv run pytest
 ```
 
-The test suite includes 1235 tests covering the full pipeline, data contracts, IO layer, validation, CLI, and service modules.
+The test suite covers the full pipeline, data contracts, IO layer, validation, CLI, and service modules.
 
 ### Lint
 
@@ -1239,8 +1529,8 @@ foundry/
       widgets/
         branded_empty_state.py         # Empty state placeholder
         markdown_editor.py             # Source + preview editor
-  ai-team-library/                     # Bundled building-block library (do not modify)
-    personas/                          # 14 role definitions
+  ai-team-library/                     # Bundled building-block library (read-only)
+    personas/                          # 13 role definitions
     stacks/                            # 11 tech-stack packs
     workflows/                         # Pipeline + task taxonomy docs
     claude/
@@ -1254,10 +1544,10 @@ foundry/
     handoffs/                          # Handoff packets between personas
   .claude/                             # Claude Code configuration
     agents/                            # 5 agent definitions
-    skills/                            # 22 skill definitions
-    commands/                          # 24 command definitions
+    skills/                            # Skill definitions
+    commands/                          # Command definitions
     hooks/                             # Git/operation hooks
-  tests/                               # 1235 tests across 32 files
+  tests/                               # Test suite
   examples/                            # 4 example composition YAML files
   resources/
     icons/                             # App icons
