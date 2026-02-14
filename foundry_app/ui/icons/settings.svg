@@ -1,4 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="12" r="3"/>
-  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="56" viewBox="0 0 240 56">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1A2140"></stop>
+      <stop offset="1" stop-color="#121A33"></stop>
+    </linearGradient>
+  </defs>
+
+  <rect x="1" y="1" width="238" height="54" rx="14" fill="url(#bg)" stroke="#2A335F" stroke-width="2"></rect>
+
+  <!-- icon: sliders -->
+  <rect x="16" y="16" width="24" height="24" rx="6" fill="#0E1630" stroke="#D0D7FF" stroke-width="2"></rect>
+  <path d="M22 22h12M22 28h12M22 34h12" stroke="#D0D7FF" stroke-width="2" stroke-linecap="round"></path>
+  <circle cx="26" cy="22" r="2.2" fill="#E0B54A"></circle>
+  <circle cx="32" cy="28" r="2.2" fill="#E0B54A"></circle>
+  <circle cx="28" cy="34" r="2.2" fill="#E0B54A"></circle>
+
+  <!-- text -->
+  <text x="56" y="26" fill="#F3F6FF" font-family="Inter, Segoe UI, Arial" font-size="16" font-weight="700">
+    Settings
+  </text>
+  <text x="56" y="44" fill="#A9B3D6" font-family="Inter, Segoe UI, Arial" font-size="12" font-weight="500">
+    Appearance &amp; behavior
+  </text>
 </svg>

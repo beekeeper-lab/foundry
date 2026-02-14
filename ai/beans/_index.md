@@ -140,3 +140,4 @@
 | BEAN-116 | Telemetry Summary Report Command | Process | Medium | Done | team-lead |
 | BEAN-117 | End-to-End Project Generation Test | App | High | Done | team-lead |
 | BEAN-118 | Team Persona Agent Verification Test | App | High | Done | team-lead |
+| BEAN-119 | Full Agentic Infrastructure Export | App | High | Done | team-lead |

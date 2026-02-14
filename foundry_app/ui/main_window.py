@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QFont, QKeySequence, QShortcut
+from PySide6.QtCore import QByteArray, QSize, Qt
+from PySide6.QtGui import QFont, QImage, QKeySequence, QPainter, QPixmap, QShortcut
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QButtonGroup,
     QHBoxLayout,
@@ -41,31 +42,26 @@ QMainWindow {{{{
     background-color: {theme.BG_BASE};
 }}}}
 
-/* Sidebar — darker recessed panel, control-room feel */
+/* Sidebar — darker recessed panel, matches SVG button backgrounds */
 #sidebar {{{{
-    background-color: {theme.BG_INSET};
+    background-color: #121A33;
     border-right: 1px solid {theme.BORDER_DEFAULT};
 }}}}
 
-/* Nav buttons — icon-over-text, large targets */
+/* Nav buttons — full SVG button graphics */
 #sidebar QToolButton {{{{
     background-color: transparent;
     border: none;
     border-left: 3px solid transparent;
-    color: {theme.TEXT_PRIMARY};
-    font-size: {theme.FONT_SIZE_SM}px;
-    padding: {theme.SPACE_MD}px {theme.SPACE_SM}px;
-    margin: 2px 0;
-    text-align: center;
+    padding: 0;
+    margin: 0;
 }}}}
 #sidebar QToolButton:hover {{{{
-    background-color: {theme.BG_BASE};
-    color: {theme.ACCENT_PRIMARY_HOVER};
+    background-color: transparent;
+    border-left: 3px solid {theme.ACCENT_PRIMARY_HOVER};
 }}}}
 #sidebar QToolButton:checked {{{{
-    background-color: {theme.BG_OVERLAY};
-    color: {theme.ACCENT_PRIMARY};
-    font-weight: {theme.FONT_WEIGHT_BOLD};
+    background-color: transparent;
     border-left: 3px solid {theme.ACCENT_PRIMARY};
 }}}}
 #sidebar QToolButton:focus {{{{
@@ -78,15 +74,17 @@ QMainWindow {{{{
 
 /* Sidebar footer — version & info */
 #sidebar-footer {{{{
-    border-top: 1px solid {theme.BORDER_SUBTLE};
+    background-color: transparent;
+    border-top: 1px solid #2A335F;
     padding: {theme.SPACE_SM}px {theme.SPACE_LG}px;
 }}}}
 #sidebar-footer QLabel {{{{
+    background-color: transparent;
     color: {theme.TEXT_DISABLED};
     font-size: {theme.FONT_SIZE_XS}px;
 }}}}
 #sidebar-footer QPushButton {{{{
-    background: transparent;
+    background-color: transparent;
     border: none;
     color: {theme.TEXT_DISABLED};
     font-size: {theme.FONT_SIZE_XS}px;
@@ -94,6 +92,7 @@ QMainWindow {{{{
     padding: {theme.SPACE_XS}px 0;
 }}}}
 #sidebar-footer QPushButton:hover {{{{
+    background-color: transparent;
     color: {theme.ACCENT_PRIMARY_HOVER};
 }}}}
 
@@ -200,9 +199,10 @@ class MainWindow(QMainWindow):
         sidebar_layout.setSpacing(0)
 
         nav_container = QWidget()
+        nav_container.setStyleSheet("background-color: transparent;")
         nav_layout = QVBoxLayout(nav_container)
         nav_layout.setContentsMargins(0, theme.SPACE_LG, 0, theme.SPACE_SM)
-        nav_layout.setSpacing(0)
+        nav_layout.setSpacing(4)
 
         self._nav_buttons: list[QToolButton] = []
         self._nav_group = QButtonGroup(self)
@@ -212,18 +212,35 @@ class MainWindow(QMainWindow):
             btn = QToolButton()
             btn.setText(label)
             btn.setToolButtonStyle(
-                Qt.ToolButtonStyle.ToolButtonTextUnderIcon
+                Qt.ToolButtonStyle.ToolButtonIconOnly
             )
-            btn.setIconSize(QSize(36, 36))
             btn.setCheckable(True)
             btn.setProperty("class", "nav-button")
-            btn.setFixedHeight(72)
-            btn.setSizePolicy(btn.sizePolicy())
-            btn.setMinimumWidth(180)
-            try:
-                btn.setIcon(load_icon(icon_name, color=theme.TEXT_SECONDARY, size=36))
-            except FileNotFoundError:
-                logger.warning("Icon not found for nav: %s", icon_name)
+
+            # Load the full SVG button graphic
+            svg_path = Path(__file__).parent / "icons" / f"{icon_name}.svg"
+            if svg_path.is_file():
+                svg_bytes = svg_path.read_bytes()
+                renderer = QSvgRenderer(QByteArray(svg_bytes))
+                image = QImage(200, 56, QImage.Format.Format_ARGB32_Premultiplied)
+                image.fill(0)  # fully transparent
+                painter = QPainter(image)
+                renderer.render(painter)
+                painter.end()
+                btn.setIcon(QPixmap.fromImage(image))
+                btn.setIconSize(QSize(200, 56))
+            else:
+                btn.setToolButtonStyle(
+                    Qt.ToolButtonStyle.ToolButtonTextUnderIcon
+                )
+                btn.setIconSize(QSize(36, 36))
+                try:
+                    btn.setIcon(load_icon(icon_name, color=theme.TEXT_SECONDARY, size=36))
+                except FileNotFoundError:
+                    logger.warning("Icon not found for nav: %s", icon_name)
+
+            btn.setFixedHeight(60)
+            btn.setMinimumWidth(200)
             self._nav_buttons.append(btn)
             self._nav_group.addButton(btn, i)
             nav_layout.addWidget(btn)
@@ -234,8 +251,15 @@ class MainWindow(QMainWindow):
         # --- Sidebar footer: version + about ---
         footer = QWidget()
         footer.setObjectName("sidebar-footer")
+        footer.setStyleSheet(
+            "QWidget { background-color: transparent; }"
+            f" QPushButton {{ background-color: transparent; border: none;"
+            f" color: {theme.TEXT_DISABLED}; font-size: {theme.FONT_SIZE_XS}px;"
+            f" padding: {theme.SPACE_XS}px 0; }}"
+            f" QPushButton:hover {{ color: {theme.ACCENT_PRIMARY_HOVER}; }}"
+        )
         footer_layout = QHBoxLayout(footer)
-        footer_layout.setContentsMargins(0, 0, 0, 0)
+        footer_layout.setContentsMargins(theme.SPACE_LG, theme.SPACE_SM, 0, theme.SPACE_SM)
         footer_layout.setSpacing(theme.SPACE_XS)
 
         from foundry_app import __version__

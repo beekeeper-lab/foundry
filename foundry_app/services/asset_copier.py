@@ -16,6 +16,9 @@ _GLOBAL_ASSET_DIRS = [
     ("claude/commands", ".claude/commands"),
     ("claude/hooks", ".claude/hooks"),
     ("claude/skills", ".claude/skills"),
+    ("claude/settings", ".claude"),
+    ("process/beans", "ai/beans"),
+    ("process/context", "ai/context"),
 ]
 
 
@@ -113,31 +116,49 @@ def _copy_directory_files(
     wrote: list[str],
     warnings: list[str],
 ) -> None:
-    """Copy all files from src_dir to dest_dir, overlay-safe."""
+    """Copy all files from src_dir to dest_dir recursively, overlay-safe.
+
+    Recurses into subdirectories (e.g. skill folders like ``long-run/SKILL.md``)
+    while preserving the directory structure.  Skips ``__pycache__`` directories.
+    """
     if not src_dir.is_dir():
         logger.debug("Source directory does not exist, skipping: %s", src_dir)
         return
 
     dest_dir.mkdir(parents=True, exist_ok=True)
 
-    for src_file in sorted(src_dir.iterdir()):
-        if src_file.is_symlink():
-            warnings.append(f"Skipping symlink: {src_file.name}")
-            continue
-        if not src_file.is_file():
+    for src_entry in sorted(src_dir.iterdir()):
+        if src_entry.is_symlink():
+            warnings.append(f"Skipping symlink: {src_entry.name}")
             continue
 
-        dest_file = dest_dir / src_file.name
+        # Recurse into subdirectories
+        if src_entry.is_dir():
+            if src_entry.name == "__pycache__":
+                continue
+            _copy_directory_files(
+                src_entry,
+                dest_dir / src_entry.name,
+                out_root,
+                wrote,
+                warnings,
+            )
+            continue
+
+        if not src_entry.is_file():
+            continue
+
+        dest_file = dest_dir / src_entry.name
         rel_path = str(dest_file.relative_to(out_root))
 
         if dest_file.exists():
-            if filecmp.cmp(str(src_file), str(dest_file), shallow=False):
+            if filecmp.cmp(str(src_entry), str(dest_file), shallow=False):
                 logger.debug("File already exists (identical), skipping: %s", rel_path)
             else:
                 warnings.append(f"File already exists with different content: {rel_path}")
                 logger.warning("File conflict, skipping: %s", rel_path)
             continue
 
-        shutil.copy2(src_file, dest_file)
+        shutil.copy2(src_entry, dest_file)
         wrote.append(rel_path)
         logger.info("Copied asset: %s", rel_path)

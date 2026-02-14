@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QProgressBar,
     QPushButton,
+    QScrollArea,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -175,7 +176,18 @@ class GenerationProgressScreen(QWidget):
         self._output_path: str = ""
         self._stage_widgets: dict[str, StageStatusWidget] = {}
 
-        layout = QVBoxLayout(self)
+        # Scroll area so content is accessible in small windows
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setStyleSheet(f"background-color: {BG_BASE};")
+        outer.addWidget(scroll)
+
+        container = QWidget()
+        scroll.setWidget(container)
+        layout = QVBoxLayout(container)
         layout.setContentsMargins(SPACE_XXL, SPACE_XL, SPACE_XXL, SPACE_XL)
         layout.setSpacing(SPACE_LG)
 
@@ -235,7 +247,7 @@ class GenerationProgressScreen(QWidget):
 
         self._log = QTextEdit()
         self._log.setReadOnly(True)
-        self._log.setFixedHeight(120)
+        self._log.setFixedHeight(80)
         self._log.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {BG_INSET};
@@ -260,6 +272,7 @@ class GenerationProgressScreen(QWidget):
         # Open project button (hidden until complete)
         self._open_btn = QPushButton("Open Project Folder")
         self._open_btn.setToolTip("Open the generated project directory")
+        self._open_btn.setMinimumHeight(44)
         self._open_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ACCENT_PRIMARY};
@@ -269,6 +282,7 @@ class GenerationProgressScreen(QWidget):
                 padding: {SPACE_MD}px {SPACE_XL}px;
                 font-size: {FONT_SIZE_MD}px;
                 font-weight: {FONT_WEIGHT_BOLD};
+                min-height: 36px;
             }}
             QPushButton:hover {{
                 background-color: {ACCENT_PRIMARY_HOVER};
@@ -296,6 +310,7 @@ class GenerationProgressScreen(QWidget):
 
         # Back to Builder button (hidden until complete)
         self._back_btn = QPushButton("Back to Builder")
+        self._back_btn.setMinimumHeight(44)
         self._back_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {BG_SURFACE};
@@ -304,6 +319,7 @@ class GenerationProgressScreen(QWidget):
                 border-radius: {RADIUS_MD}px;
                 padding: {SPACE_MD}px {SPACE_XL}px;
                 font-size: {FONT_SIZE_MD}px;
+                min-height: 36px;
             }}
             QPushButton:hover {{
                 background-color: {BG_INSET};
