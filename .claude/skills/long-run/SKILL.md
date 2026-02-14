@@ -31,6 +31,15 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
    - If on any other branch or the working tree is dirty: display "⚠ /long-run requires a clean working tree on the `test` branch. Current branch: `<branch>`. Please switch to `test` and retry." Then stop.
 0b. **Check mode** — If `fast` input is provided, go to **Parallel Mode** (below). Otherwise, continue with sequential mode (Phase 1).
 
+### Phase 0.5: Trello Sync
+
+0c. **Import sprint backlog from Trello** — Invoke `/trello-load` to pull any
+    cards from the Trello Sprint_Backlog list into the beans backlog. This runs
+    non-interactively (auto-selects board, creates beans with Approved status,
+    moves processed cards to In_Progress on Trello). If the Trello MCP server
+    is unavailable or Sprint_Backlog is empty, log the result and continue —
+    this step is best-effort and must not block the run.
+
 ### Phase 1: Backlog Assessment
 
 1. **Read the backlog index** — Parse `ai/beans/_index.md` to get all beans and their statuses.
@@ -86,6 +95,18 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
     - Checkout `test`, pull latest, merge `bean/BEAN-NNN-<slug>` with `--no-ff`, push.
     - If merge conflicts occur: report the conflicts, abort the merge, leave the bean on its feature branch, and stop the loop.
     - If merge succeeds: update `_index.md` to set the bean's status to `Done`, commit the index update on `test`, and push.
+17b. **Move Trello card to Completed** — After a successful merge, update the
+    source Trello card if one exists:
+    a. Check the bean's Notes section for a "Source: Trello card" reference.
+    b. If found, call `mcp__trello__get_lists` to find the In_Progress and
+       Completed lists (using the same flexible name matching as `/trello-load`).
+    c. Call `mcp__trello__get_cards_by_list_id` on the In_Progress list.
+    d. Find the card whose name matches the bean title or the card name from
+       the Notes reference (case-insensitive, flexible matching).
+    e. Call `mcp__trello__move_card` to move the card to the Completed list.
+    f. Log the move: `Trello: Moved "[Card Name]" → Completed`
+    g. If no matching card is found, or the Trello MCP is unavailable, log a
+       warning and continue — this is best-effort and must not block the run.
 18. **Stay on test** — Remain on the `test` branch (do not switch to `main`).
 19. **Report progress** — Print the **Completion Summary** from the Team Lead Communication Template: bean title, task counts, branch name, files changed, notes, and remaining backlog status.
 
@@ -105,6 +126,12 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 2. **Check tmux** — Verify `$TMUX` environment variable is set.
    - If not set: display "Parallel mode requires tmux. Please restart Claude Code inside a tmux session and re-run `/long-run --fast N`." Then exit.
    - If set: proceed.
+
+### Parallel Phase 1.5: Trello Sync
+
+1b. **Import sprint backlog from Trello** — Same as sequential Phase 0.5:
+    invoke `/trello-load` non-interactively. Best-effort; do not block on
+    failure.
 
 ### Parallel Phase 2: Backlog Assessment
 
@@ -174,6 +201,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
     - Sync before merging: `git fetch origin && git pull origin test` — worktrees push to the remote, so the orchestrator's local `test` may be behind.
     - Merge the bean: run `/merge-bean NNN` from the main repo (merges feature branch into `test`).
     - Update `_index.md` on `test`: set the bean's status to `Done`. Commit and push. (The orchestrator is the sole writer of `_index.md`.)
+    - Move the Trello card to Completed (same logic as sequential step 17b — check bean Notes for Trello source, find matching card in In_Progress list, move to Completed). Best-effort; do not block on failure.
     - Re-read the backlog for newly unblocked beans.
     - If an independent actionable bean exists, update `_index.md` to mark it `In Progress`, commit, create a new worktree, write its status file, and spawn a new worker window using the same launcher script pattern.
     - If no more beans, do not spawn.
@@ -244,3 +272,5 @@ On error in parallel mode: a single worker failure does not stop other workers. 
 - Bean workflow at `ai/context/bean-workflow.md`
 - Individual bean files at `ai/beans/BEAN-NNN-<slug>/bean.md`
 - Git repository in a clean state (no uncommitted changes)
+- Trello MCP server (optional — used for `/trello-load` sync and card completion; best-effort)
+- `/trello-load` skill for sprint backlog import

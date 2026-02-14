@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from foundry_app.core.models import (
     CompositionSpec,
     GenerationOptions,
@@ -18,6 +20,7 @@ from foundry_app.core.models import (
     Strictness,
     TeamConfig,
 )
+from foundry_app.io.composition_io import load_composition
 from foundry_app.services.generator import (
     _apply_overlay_plan,
     _compare_trees,
@@ -970,3 +973,125 @@ class TestEdgeCases:
         )
 
         assert overlay_plan is None
+
+
+# ---------------------------------------------------------------------------
+# End-to-end: real library, real composition YAML
+# ---------------------------------------------------------------------------
+
+# Resolve repo root relative to this test file
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_EXAMPLE_YAML = _REPO_ROOT / "examples" / "small-python-team.yml"
+_LIBRARY_ROOT = _REPO_ROOT / "ai-team-library"
+
+_E2E_AVAILABLE = _EXAMPLE_YAML.is_file() and _LIBRARY_ROOT.is_dir()
+
+
+@pytest.mark.skipif(not _E2E_AVAILABLE, reason="ai-team-library or example YAML not present")
+class TestEndToEnd:
+    """Full pipeline run against the real ai-team-library."""
+
+    @pytest.fixture()
+    def generated_project(self, tmp_path: Path):
+        """Load small-python-team.yml, run the full pipeline, return (output_dir, manifest)."""
+        spec = load_composition(_EXAMPLE_YAML)
+        output_dir = tmp_path / spec.project.slug
+
+        manifest, validation, _ = generate_project(
+            spec,
+            _LIBRARY_ROOT,
+            output_root=output_dir,
+        )
+
+        assert validation.is_valid, f"Validation failed: {validation.errors}"
+        return output_dir, manifest, spec
+
+    # -- Structural checks --------------------------------------------------
+
+    def test_output_directory_created(self, generated_project):
+        output_dir, _, _ = generated_project
+        assert output_dir.is_dir()
+
+    def test_claude_md_exists_and_nonempty(self, generated_project):
+        output_dir, _, _ = generated_project
+        claude_md = output_dir / "CLAUDE.md"
+        assert claude_md.is_file()
+        assert claude_md.stat().st_size > 0
+
+    def test_manifest_json_exists(self, generated_project):
+        output_dir, _, _ = generated_project
+        manifest_file = output_dir / "manifest.json"
+        assert manifest_file.is_file()
+
+    def test_settings_json_exists(self, generated_project):
+        output_dir, _, _ = generated_project
+        settings = output_dir / ".claude" / "settings.json"
+        assert settings.is_file()
+        assert settings.stat().st_size > 0
+
+    def test_agent_files_exist_for_each_persona(self, generated_project):
+        output_dir, _, spec = generated_project
+        agents_dir = output_dir / ".claude" / "agents"
+        assert agents_dir.is_dir()
+        for persona in spec.team.personas:
+            agent_file = agents_dir / f"{persona.id}.md"
+            assert agent_file.is_file(), f"Missing agent file for persona: {persona.id}"
+            assert agent_file.stat().st_size > 0
+
+    def test_no_extra_agent_files(self, generated_project):
+        output_dir, _, spec = generated_project
+        agents_dir = output_dir / ".claude" / "agents"
+        expected_ids = {p.id for p in spec.team.personas}
+        actual_files = {f.stem for f in agents_dir.glob("*.md")}
+        extra = actual_files - expected_ids
+        assert not extra, f"Unexpected agent files: {extra}"
+
+    def test_seed_tasks_created(self, generated_project):
+        output_dir, _, _ = generated_project
+        # small-python-team.yml has seed_tasks: true
+        tasks_dir = output_dir / "ai" / "tasks"
+        assert tasks_dir.is_dir()
+
+    # -- Deep content checks ------------------------------------------------
+
+    def test_claude_md_contains_persona_sections(self, generated_project):
+        output_dir, _, spec = generated_project
+        claude_md = (output_dir / "CLAUDE.md").read_text(encoding="utf-8")
+        for persona in spec.team.personas:
+            assert persona.id in claude_md, (
+                f"CLAUDE.md missing reference to persona: {persona.id}"
+            )
+
+    def test_claude_md_contains_stack_content(self, generated_project):
+        output_dir, _, spec = generated_project
+        claude_md = (output_dir / "CLAUDE.md").read_text(encoding="utf-8").lower()
+        for stack in spec.stacks:
+            assert stack.id in claude_md, (
+                f"CLAUDE.md missing reference to stack: {stack.id}"
+            )
+
+    def test_manifest_json_valid_structure(self, generated_project):
+        output_dir, _, _ = generated_project
+        manifest_file = output_dir / "manifest.json"
+        data = json.loads(manifest_file.read_text(encoding="utf-8"))
+        assert "stages" in data
+        assert "generated_at" in data
+        assert isinstance(data["stages"], dict)
+
+    def test_manifest_records_pipeline_stages(self, generated_project):
+        _, manifest, _ = generated_project
+        expected_stages = {"scaffold", "compile", "safety"}
+        present = set(manifest.stages.keys())
+        missing = expected_stages - present
+        assert not missing, f"Manifest missing stages: {missing}"
+
+    def test_agent_files_reference_persona_names(self, generated_project):
+        output_dir, _, spec = generated_project
+        agents_dir = output_dir / ".claude" / "agents"
+        for persona in spec.team.personas:
+            agent_file = agents_dir / f"{persona.id}.md"
+            content = agent_file.read_text(encoding="utf-8").lower()
+            # The persona id (e.g. "team-lead") or a human form should appear
+            assert persona.id.replace("-", " ") in content or persona.id in content, (
+                f"Agent file {agent_file.name} does not reference persona {persona.id}"
+            )

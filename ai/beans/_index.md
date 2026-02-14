@@ -138,3 +138,5 @@
 | BEAN-114 | Telemetry Backfill from Git History | Process | High | Done | team-lead |
 | BEAN-115 | Live Telemetry Capture Fix | Process | High | Done | team-lead |
 | BEAN-116 | Telemetry Summary Report Command | Process | Medium | Done | team-lead |
+| BEAN-117 | End-to-End Project Generation Test | App | High | Done | team-lead |
+| BEAN-118 | Team Persona Agent Verification Test | App | High | Done | team-lead |

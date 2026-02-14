@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from foundry_app.core.models import (
     CompositionSpec,
     LibraryIndex,
@@ -307,4 +309,84 @@ class TestWriteAgents:
 
         result = write_agents(spec, index, lib_root, output)
 
+        assert result.warnings == []
+
+
+# ---------------------------------------------------------------------------
+# Team agent verification — real library, multiple personas
+# ---------------------------------------------------------------------------
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_LIBRARY_ROOT = _REPO_ROOT / "ai-team-library"
+_EXAMPLE_YAML = _REPO_ROOT / "examples" / "small-python-team.yml"
+
+_TEAM_TEST_AVAILABLE = _LIBRARY_ROOT.is_dir() and _EXAMPLE_YAML.is_file()
+
+
+@pytest.mark.skipif(not _TEAM_TEST_AVAILABLE, reason="ai-team-library not present")
+class TestTeamAgentVerification:
+    """Verify agent files match the team composition using the real library."""
+
+    @pytest.fixture()
+    def team_output(self, tmp_path: Path):
+        """Run write_agents with the real library for small-python-team personas."""
+        from foundry_app.io.composition_io import load_composition
+        from foundry_app.services.library_indexer import build_library_index
+
+        spec = load_composition(_EXAMPLE_YAML)
+        index = build_library_index(_LIBRARY_ROOT)
+        output = tmp_path / "output"
+        output.mkdir()
+
+        result = write_agents(spec, index, _LIBRARY_ROOT, output)
+        return output, result, spec
+
+    def test_one_agent_file_per_persona(self, team_output):
+        output, _, spec = team_output
+        agents_dir = output / ".claude" / "agents"
+        expected_ids = {p.id for p in spec.team.personas}
+        actual_files = {f.stem for f in agents_dir.glob("*.md")}
+        assert actual_files == expected_ids
+
+    def test_agent_count_matches_persona_count(self, team_output):
+        output, _, spec = team_output
+        agents_dir = output / ".claude" / "agents"
+        agent_files = list(agents_dir.glob("*.md"))
+        assert len(agent_files) == len(spec.team.personas)
+
+    def test_no_extra_agent_files(self, team_output):
+        output, _, spec = team_output
+        agents_dir = output / ".claude" / "agents"
+        expected_ids = {p.id for p in spec.team.personas}
+        actual_files = {f.stem for f in agents_dir.glob("*.md")}
+        extra = actual_files - expected_ids
+        assert not extra, f"Unexpected agent files: {extra}"
+
+    def test_no_missing_agent_files(self, team_output):
+        output, _, spec = team_output
+        agents_dir = output / ".claude" / "agents"
+        expected_ids = {p.id for p in spec.team.personas}
+        actual_files = {f.stem for f in agents_dir.glob("*.md")}
+        missing = expected_ids - actual_files
+        assert not missing, f"Missing agent files for personas: {missing}"
+
+    def test_each_agent_references_persona_name(self, team_output):
+        output, _, spec = team_output
+        agents_dir = output / ".claude" / "agents"
+        for persona in spec.team.personas:
+            agent_file = agents_dir / f"{persona.id}.md"
+            content = agent_file.read_text(encoding="utf-8").lower()
+            readable = persona.id.replace("-", " ")
+            assert readable in content or persona.id in content, (
+                f"Agent {agent_file.name} does not reference persona '{persona.id}'"
+            )
+
+    def test_all_agent_files_nonempty(self, team_output):
+        output, _, _ = team_output
+        agents_dir = output / ".claude" / "agents"
+        for agent_file in agents_dir.glob("*.md"):
+            assert agent_file.stat().st_size > 0, f"Agent file is empty: {agent_file.name}"
+
+    def test_no_warnings_for_real_library(self, team_output):
+        _, result, _ = team_output
         assert result.warnings == []
