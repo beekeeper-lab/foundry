@@ -144,4 +144,4 @@
 | BEAN-120 | Telemetry Table Population & Duration Tracking | Process | High | Done | team-lead |
 | BEAN-121 | Token Usage Capture via JSONL Parsing | Process | High | Done | team-lead |
 | BEAN-122 | Structured Trello Linkage in Bean Template | Process | High | Done | team-lead |
-| BEAN-123 | Project Slug Output Folder Test | App | Medium | In Progress | team-lead |
+| BEAN-123 | Project Slug Output Folder Test | App | Medium | Done | team-lead |
