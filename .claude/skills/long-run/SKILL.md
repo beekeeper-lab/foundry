@@ -97,16 +97,20 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
     - If merge succeeds: update `_index.md` to set the bean's status to `Done`, commit the index update on `test`, and push.
 17b. **Move Trello card to Completed** — After a successful merge, update the
     source Trello card if one exists:
-    a. Check the bean's Notes section for a "Source: Trello card" reference.
-    b. If found, call `mcp__trello__get_lists` to find the In_Progress and
-       Completed lists (using the same flexible name matching as `/trello-load`).
-    c. Call `mcp__trello__get_cards_by_list_id` on the In_Progress list.
-    d. Find the card whose name matches the bean title or the card name from
-       the Notes reference (case-insensitive, flexible matching).
-    e. Call `mcp__trello__move_card` to move the card to the Completed list.
-    f. Log the move: `Trello: Moved "[Card Name]" → Completed`
-    g. If no matching card is found, or the Trello MCP is unavailable, log a
-       warning and continue — this is best-effort and must not block the run.
+    a. Read the bean's `## Trello` section. Parse the metadata table for
+       the **Source** field.
+    b. If Source is `Manual` (or the section is missing), skip — no Trello
+       card to move.
+    c. If Source is `Trello`, read the **Card ID** and **Board** fields
+       from the Trello section. Extract the board ID from the Board field
+       (format: "Board Name (ID: abc123)").
+    d. Call `mcp__trello__get_lists` with the board ID to find the
+       Completed list (using flexible name matching as `/trello-load`).
+    e. Call `mcp__trello__move_card` with the Card ID and the Completed
+       list ID. This is a direct API call — no fuzzy name matching needed.
+    f. Log the move: `Trello: Moved "[Card Name]" → Completed (card [Card ID])`
+    g. If the Trello MCP is unavailable or the move fails, log a warning
+       and continue — this is best-effort and must not block the run.
 18. **Stay on test** — Remain on the `test` branch (do not switch to `main`).
 19. **Report progress** — Print the **Completion Summary** from the Team Lead Communication Template: bean title, task counts, branch name, files changed, notes, and remaining backlog status.
 
@@ -201,7 +205,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
     - Sync before merging: `git fetch origin && git pull origin test` — worktrees push to the remote, so the orchestrator's local `test` may be behind.
     - Merge the bean: run `/merge-bean NNN` from the main repo (merges feature branch into `test`).
     - Update `_index.md` on `test`: set the bean's status to `Done`. Commit and push. (The orchestrator is the sole writer of `_index.md`.)
-    - Move the Trello card to Completed (same logic as sequential step 17b — check bean Notes for Trello source, find matching card in In_Progress list, move to Completed). Best-effort; do not block on failure.
+    - Move the Trello card to Completed (same logic as sequential step 17b — read the bean's Trello section, use Card ID for direct API call to move to Completed). Best-effort; do not block on failure.
     - Re-read the backlog for newly unblocked beans.
     - If an independent actionable bean exists, update `_index.md` to mark it `In Progress`, commit, create a new worktree, write its status file, and spawn a new worker window using the same launcher script pattern.
     - If no more beans, do not spawn.

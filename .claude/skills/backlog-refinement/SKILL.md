@@ -96,6 +96,7 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
      - **Acceptance Criteria:** Concrete, testable checklist items
      - **Priority:** As agreed in the dialogue
      - **Dependencies:** Noted in the Notes section, referencing other beans **by title** (not ID) for beans in the same batch that haven't been created yet, or by ID for beans that already exist
+     - **Trello section:** Set `Source: Manual` (these beans are created from user input, not Trello cards)
    d. **Append to `_index.md`** immediately after creating the bean.md.
    e. **Record the assigned ID** so subsequent beans in this batch can reference it by ID.
 

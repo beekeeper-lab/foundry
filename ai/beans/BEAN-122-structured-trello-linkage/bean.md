@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-122 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-14 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-14 14:28 |
+| **Completed** | 2026-02-14 14:32 |
+| **Duration** | 4m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -41,25 +41,26 @@ Every bean has a dedicated `## Trello` section with structured fields (workspace
 
 ## Acceptance Criteria
 
-- [ ] Bean template has a `## Trello` section between Notes and Telemetry
-- [ ] Trello section for Trello-sourced beans contains: Workspace, Board Name, Board ID, Source List, Card ID, Card Name, Card URL
-- [ ] Trello section for non-Trello beans shows `Source: Manual`
-- [ ] `/trello-load` populates all Trello fields when creating beans from cards
-- [ ] `/long-run` uses Card ID from the Trello section (not fuzzy name matching from Notes) to move cards to Completed
-- [ ] `/backlog-refinement` sets `Source: Manual` when creating beans
-- [ ] `/new-bean` sets `Source: Manual` in the Trello section
-- [ ] Library bean template (`ai-team-library/process/beans/_bean-template.md`) is updated
-- [ ] All existing tests pass
-- [ ] Lint clean
+- [x] Bean template has a `## Trello` section between Notes and Telemetry
+- [x] Trello section for Trello-sourced beans contains: Workspace, Board Name, Board ID, Source List, Card ID, Card Name, Card URL
+- [x] Trello section for non-Trello beans shows `Source: Manual`
+- [x] `/trello-load` populates all Trello fields when creating beans from cards
+- [x] `/long-run` uses Card ID from the Trello section (not fuzzy name matching from Notes) to move cards to Completed
+- [x] `/backlog-refinement` sets `Source: Manual` when creating beans
+- [x] `/new-bean` sets `Source: Manual` in the Trello section
+- [x] Library bean template (`ai-team-library/process/beans/_bean-template.md`) is updated
+- [x] All existing tests pass
+- [x] Lint clean
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Add Trello section to bean templates | developer | — | Done |
+| 2 | Update /trello-load to populate Trello section | developer | 1 | Done |
+| 3 | Update /long-run to use structured Trello data | developer | 1 | Done |
+| 4 | Update /backlog-refinement and /new-bean skills | developer | 1 | Done |
+| 5 | Verify with test and lint | tech-qa | 2,3,4 | Done |
 
 ## Notes
 
@@ -93,11 +94,15 @@ Every bean has a dedicated `## Trello` section with structured fields (workspace
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Add Trello section to bean templates | developer | 1m | 11 | 223 |
+| 2 | Update /trello-load to populate Trello section | developer | < 1m | 1,660 | 26,930 |
+| 3 | Update /long-run to use structured Trello data | developer | < 1m | 1,666 | 26,936 |
+| 4 | Update /backlog-refinement and /new-bean skills | developer | < 1m | 1,674 | 26,946 |
+| 5 | Verify with test and lint | tech-qa | < 1m | 1,682 | 26,978 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
+| **Total Tasks** | 5 |
+| **Total Duration** | 3m |
+| **Total Tokens In** | 6,693 |
+| **Total Tokens Out** | 108,013 |

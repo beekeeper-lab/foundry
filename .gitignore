@@ -27,6 +27,9 @@ build/
 .env
 .mcp.json
 
+# Telemetry watermarks (ephemeral, per-session)
+.telemetry.json
+
 # OS
 .DS_Store
 Thumbs.db
