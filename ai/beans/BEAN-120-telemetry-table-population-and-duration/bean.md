@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-120 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-14 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-14 14:06 |
+| **Completed** | 2026-02-14 14:16 |
+| **Duration** | 10m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -38,24 +38,23 @@ Every completed bean has a fully populated Telemetry table where each row matche
 
 ## Acceptance Criteria
 
-- [ ] When tasks are decomposed (Tasks table filled in bean.md), the Telemetry table auto-populates with matching rows (#, Task name, Owner, empty Duration/Tokens)
-- [ ] When a task file's status changes to Done, the corresponding Telemetry table row gets its Duration filled in (from Started→Completed in the task file)
-- [ ] Total Tasks in the summary table equals the number of per-task rows
-- [ ] Total Duration in the summary table equals the sum of per-task durations
-- [ ] Running `/long-run` on a test bean produces a fully populated Telemetry table
-- [ ] The hook handles tasks added after initial decomposition (new rows appended)
-- [ ] The hook does not overwrite already-filled Telemetry rows
-- [ ] All existing tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check`)
+- [x] When tasks are decomposed (Tasks table filled in bean.md), the Telemetry table auto-populates with matching rows (#, Task name, Owner, empty Duration/Tokens)
+- [x] When a task file's status changes to Done, the corresponding Telemetry table row gets its Duration filled in (from Started→Completed in the task file)
+- [x] Total Tasks in the summary table equals the number of per-task rows
+- [x] Total Duration in the summary table equals the sum of per-task durations
+- [x] Running `/long-run` on a test bean produces a fully populated Telemetry table
+- [x] The hook handles tasks added after initial decomposition (new rows appended)
+- [x] The hook does not overwrite already-filled Telemetry rows
+- [x] All existing tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Add telemetry table sync to telemetry-stamp.py | developer | — | Done |
+| 2 | Add per-task duration fill on task Done | developer | 1 | Done |
+| 3 | Verify with test and lint | tech-qa | 2 | Done |
 
 ## Notes
 
@@ -73,11 +72,13 @@ Every completed bean has a fully populated Telemetry table where each row matche
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Add telemetry table sync to telemetry-stamp.py | developer | — | — | — |
+| 2 | Add per-task duration fill on task Done | developer | < 1m | — | — |
+| 3 | Verify with test and lint | tech-qa | < 1m | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 1m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |

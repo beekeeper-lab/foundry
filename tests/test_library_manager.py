@@ -3034,7 +3034,7 @@ class TestTemplateUpdate:
         screen.set_library_root(lib)
         _select_shared_template(screen, "CLAUDE.md.j2")
         screen.editor_widget.editor.setPlainText("changed")
-    return None
+        return None
 
 
 class TestWorkflowUpdate:
