@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push *)",
+      "Read(**)",
+      "Edit(ai/**)"
+    ],
+    "deny": [
+      "Bash(git push origin main)",
+      "Bash(git push origin master)",
+      "Bash(git push * main)",
+      "Bash(git push * master)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git branch -D *)",
+      "Bash(git branch -d *)",
+      "Bash(sudo *)",
+      "Read(/etc/**)",
+      "Edit(/etc/**)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Read(**/credentials*)",
+      "Read(**/secrets*)",
+      "Edit(**/credentials*)",
+      "Edit(**/secrets*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -r *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean -f *)",
+      "Bash(git clean -fd *)"
+    ],
+    "defaultMode": "acceptEdits"
+  }
+}
