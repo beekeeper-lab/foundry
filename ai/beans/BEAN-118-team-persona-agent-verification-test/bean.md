@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-118 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-13 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-14 |
+| **Completed** | 2026-02-14 00:05 |
+| **Duration** | < 1m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -36,13 +36,13 @@ A test that generates a project from a composition spec, then inspects the gener
 
 ## Acceptance Criteria
 
-- [ ] Test exists that loads a composition spec with multiple personas
-- [ ] Test runs the agent writer (or full pipeline) and produces agent files in the output directory
-- [ ] Test asserts one agent `.md` file per persona in the composition
-- [ ] Test asserts each agent file contains the correct persona name reference
-- [ ] Test asserts no extra or missing agent files relative to the composition
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Test exists that loads a composition spec with multiple personas
+- [x] Test runs the agent writer (or full pipeline) and produces agent files in the output directory
+- [x] Test asserts one agent `.md` file per persona in the composition
+- [x] Test asserts each agent file contains the correct persona name reference
+- [x] Test asserts no extra or missing agent files relative to the composition
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
@@ -67,7 +67,7 @@ A test that generates a project from a composition spec, then inspects the gener
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
