@@ -23,6 +23,10 @@ build/
 # Obsidian
 .obsidian/
 
+# Secrets
+.env
+.mcp.json
+
 # OS
 .DS_Store
 Thumbs.db
