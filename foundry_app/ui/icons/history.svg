@@ -1,4 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="12" r="9"/>
-  <polyline points="12,7 12,12 16,14"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="56" viewBox="0 0 240 56">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1A2140"></stop>
+      <stop offset="1" stop-color="#121A33"></stop>
+    </linearGradient>
+  </defs>
+
+  <rect x="1" y="1" width="238" height="54" rx="14" fill="url(#bg)" stroke="#2A335F" stroke-width="2"></rect>
+
+  <!-- icon: clock -->
+  <circle cx="28" cy="28" r="14" fill="#0E1630" stroke="#8CE99A" stroke-width="2"></circle>
+  <path d="M28 20v9l6 3" stroke="#8CE99A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+
+  <!-- text -->
+  <text x="56" y="26" fill="#F3F6FF" font-family="Inter, Segoe UI, Arial" font-size="16" font-weight="700">
+    History
+  </text>
+  <text x="56" y="44" fill="#A9B3D6" font-family="Inter, Segoe UI, Arial" font-size="12" font-weight="500">
+    View previous generations
+  </text>
 </svg>

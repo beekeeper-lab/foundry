@@ -1,4 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="56" viewBox="0 0 240 56">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1A2140"></stop>
+      <stop offset="1" stop-color="#121A33"></stop>
+    </linearGradient>
+  </defs>
+
+  <rect x="1" y="1" width="238" height="54" rx="14" fill="url(#bg)" stroke="#2A335F" stroke-width="2"></rect>
+
+  <!-- icon: book -->
+  <rect x="16" y="14" width="24" height="28" rx="4" fill="#0E1630" stroke="#6FA8FF" stroke-width="2"></rect>
+  <path d="M24 19h10M24 24h10M24 29h10" stroke="#6FA8FF" stroke-width="2" stroke-linecap="round"></path>
+
+  <!-- text -->
+  <text x="56" y="26" fill="#F3F6FF" font-family="Inter, Segoe UI, Arial" font-size="16" font-weight="700">
+    Library
+  </text>
+  <text x="56" y="44" fill="#A9B3D6" font-family="Inter, Segoe UI, Arial" font-size="12" font-weight="500">
+    Manage templates &amp; configs
+  </text>
 </svg>

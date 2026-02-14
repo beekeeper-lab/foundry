@@ -65,6 +65,8 @@ def _tint_svg(svg_bytes: bytes, color: str) -> bytes:
     text = svg_bytes.decode("utf-8")
     text = re.sub(r'stroke="#[0-9a-fA-F]{6}"', f'stroke="{color}"', text)
     text = re.sub(r'fill="#[0-9a-fA-F]{6}"', f'fill="{color}"', text)
+    text = re.sub(r'stroke="currentColor"', f'stroke="{color}"', text)
+    text = re.sub(r'fill="currentColor"', f'fill="{color}"', text)
     return text.encode("utf-8")
 
 
