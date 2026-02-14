@@ -149,6 +149,225 @@ def git_branch_duration() -> str | None:
         return None
 
 
+def parse_duration_to_seconds(dur: str) -> int | None:
+    """Parse a duration string like '< 1m', '5m', '1h 30m' to seconds."""
+    dur = dur.strip()
+    if dur == "< 1m":
+        return 30  # approximate
+    m = re.match(r"^(?:(\d+)h)?\s*(?:(\d+)m)?$", dur)
+    if m and (m.group(1) or m.group(2)):
+        hours = int(m.group(1) or 0)
+        minutes = int(m.group(2) or 0)
+        return hours * 3600 + minutes * 60
+    return None
+
+
+def parse_tasks_table(content: str) -> list[tuple[str, str, str]]:
+    """Parse the Tasks table in a bean.md.
+
+    Returns list of (num, task_name, owner) for rows with non-empty task names.
+    """
+    rows: list[tuple[str, str, str]] = []
+    in_tasks = False
+    separator_seen = False
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("## Tasks"):
+            in_tasks = True
+            continue
+        if in_tasks and stripped.startswith("##"):
+            break
+        if not in_tasks:
+            continue
+        if not stripped.startswith("|"):
+            if separator_seen and stripped and not stripped.startswith(">"):
+                break
+            continue
+        if re.match(r"^\|[\s\-|]+\|$", stripped):
+            separator_seen = True
+            continue
+        if not separator_seen:
+            continue
+        cells = [c.strip() for c in stripped.split("|")]
+        cells = [c for c in cells if c]
+        if len(cells) >= 3 and cells[1]:
+            rows.append((cells[0], cells[1], cells[2]))
+    return rows
+
+
+def find_telemetry_table(content: str) -> tuple[int, int, list[str]]:
+    """Find the per-task Telemetry table in a bean.md.
+
+    Returns (first_data_line_idx, last_data_line_idx+1, data_row_lines).
+    Returns (-1, -1, []) if not found.
+    """
+    lines = content.splitlines()
+    in_telemetry = False
+    separator_idx = -1
+    data_rows: list[tuple[int, str]] = []
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("## Telemetry"):
+            in_telemetry = True
+            continue
+        if in_telemetry and stripped.startswith("##"):
+            break
+        if not in_telemetry:
+            continue
+        # Identify the per-task header (has "Duration" — the summary table has "Metric")
+        if stripped.startswith("|") and "Duration" in stripped and "Task" in stripped:
+            continue
+        if separator_idx < 0 and re.match(r"^\|[\s\-|]+\|$", stripped):
+            separator_idx = i
+            continue
+        if separator_idx >= 0 and stripped.startswith("|"):
+            # Stop at the summary table (has "Metric" or bold fields)
+            if "**" in stripped or "Metric" in stripped:
+                break
+            data_rows.append((i, stripped))
+        elif separator_idx >= 0 and not stripped.startswith("|"):
+            if stripped:
+                break
+
+    if separator_idx < 0:
+        return -1, -1, []
+
+    if not data_rows:
+        return separator_idx + 1, separator_idx + 1, []
+
+    return data_rows[0][0], data_rows[-1][0] + 1, [row for _, row in data_rows]
+
+
+def telemetry_row_nums(rows: list[str]) -> set[str]:
+    """Extract task numbers from telemetry table rows."""
+    nums: set[str] = set()
+    for row in rows:
+        cells = [c.strip() for c in row.split("|")]
+        cells = [c for c in cells if c]
+        if cells and cells[0] and cells[0] not in ("", SENTINEL):
+            nums.add(cells[0])
+    return nums
+
+
+def is_empty_template_row(row: str) -> bool:
+    """Check if a telemetry row is the empty template row."""
+    cells = [c.strip() for c in row.split("|")]
+    cells = [c for c in cells if c]
+    return all(not c or c == SENTINEL for c in cells[1:])
+
+
+def sync_telemetry_table(content: str) -> tuple[str, list[str]]:
+    """Sync the Telemetry per-task table with the Tasks table.
+
+    Adds rows for tasks not yet in the Telemetry table.
+    Returns (new_content, actions_taken).
+    """
+    tasks = parse_tasks_table(content)
+    if not tasks:
+        return content, []
+
+    lines = content.splitlines()
+    first_data, end_data, existing_rows = find_telemetry_table(content)
+    if first_data < 0:
+        return content, []
+
+    # If only an empty template row exists, treat it as no existing data
+    has_only_template = (
+        len(existing_rows) == 1 and is_empty_template_row(existing_rows[0])
+    )
+    existing_nums = set() if has_only_template else telemetry_row_nums(existing_rows)
+
+    new_rows: list[str] = []
+    actions: list[str] = []
+    for num, name, owner in tasks:
+        if num not in existing_nums:
+            new_rows.append(f"| {num} | {name} | {owner} | {SENTINEL} | {SENTINEL} | {SENTINEL} |")
+            actions.append(f"Telem row {num}")
+
+    if not new_rows:
+        return content, []
+
+    if has_only_template:
+        # Replace the empty template row with real data
+        lines[first_data:end_data] = new_rows
+    else:
+        # Append after existing rows
+        for idx, row in enumerate(new_rows):
+            lines.insert(end_data + idx, row)
+
+    return "\n".join(lines), actions
+
+
+def update_telemetry_row_duration(
+    content: str, task_num: str, duration: str,
+) -> tuple[str, bool]:
+    """Update the Duration column of a specific telemetry row.
+
+    Returns (new_content, changed).
+    """
+    lines = content.splitlines()
+    in_telemetry = False
+    separator_seen = False
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("## Telemetry"):
+            in_telemetry = True
+            continue
+        if in_telemetry and stripped.startswith("##"):
+            break
+        if not in_telemetry:
+            continue
+        if re.match(r"^\|[\s\-|]+\|$", stripped):
+            separator_seen = True
+            continue
+        if not separator_seen or not stripped.startswith("|"):
+            continue
+        if "**" in stripped or "Metric" in stripped:
+            break
+
+        cells = [c.strip() for c in stripped.split("|")]
+        cells = [c for c in cells if c]
+        if cells and cells[0] == task_num and len(cells) >= 4:
+            if cells[3] == SENTINEL:
+                cells[3] = duration
+                lines[i] = "| " + " | ".join(cells) + " |"
+                return "\n".join(lines), True
+
+    return content, False
+
+
+def sum_telemetry_durations(content: str) -> str | None:
+    """Sum per-task durations from the Telemetry table."""
+    _, _, rows = find_telemetry_table(content)
+    total_seconds = 0
+    found_any = False
+
+    for row in rows:
+        cells = [c.strip() for c in row.split("|")]
+        cells = [c for c in cells if c]
+        if len(cells) >= 4:
+            dur = cells[3]
+            if dur and dur != SENTINEL:
+                secs = parse_duration_to_seconds(dur)
+                if secs is not None:
+                    total_seconds += secs
+                    found_any = True
+
+    if not found_any:
+        return None
+    return format_seconds(total_seconds)
+
+
+def extract_task_number(filename: str) -> str | None:
+    """Extract task number from a task filename like '01-developer-slug.md'."""
+    m = re.match(r"^(\d+)-", filename)
+    if m:
+        return str(int(m.group(1)))
+    return None
+
+
 def count_done_tasks(content: str) -> int:
     """Count rows with 'Done' status in the Tasks table of a bean.md.
 
@@ -270,8 +489,11 @@ def handle_bean_file(path: Path, now: str) -> list[str]:
 
         total_dur_val = parse_metadata_field(content, "Total Duration")
         if total_dur_val == SENTINEL:
-            # Prefer git-based duration; fall back to Started/Completed
-            total_dur = git_branch_duration()
+            # Prefer sum of per-task durations; fall back to git; then
+            # Started/Completed
+            total_dur = sum_telemetry_durations(content)
+            if not total_dur:
+                total_dur = git_branch_duration()
             if not total_dur:
                 final_started = parse_metadata_field(content, "Started")
                 final_completed = parse_metadata_field(content, "Completed")
@@ -285,6 +507,10 @@ def handle_bean_file(path: Path, now: str) -> list[str]:
                     content, "Total Duration", total_dur
                 )
                 actions.append(f"Total Duration={total_dur}")
+
+    # Sync telemetry table with tasks table (add missing rows)
+    content, sync_actions = sync_telemetry_table(content)
+    actions.extend(sync_actions)
 
     if content != original:
         path.write_text(content, encoding="utf-8")
@@ -326,6 +552,24 @@ def handle_task_file(path: Path, now: str) -> list[str]:
             duration = format_duration(cur_started, now)
             content = replace_metadata_field(content, "Duration", duration)
             actions.append(f"Duration={duration}")
+
+        # Propagate per-task duration to bean.md telemetry table
+        task_num = extract_task_number(path.name)
+        if task_num:
+            final_dur = parse_metadata_field(content, "Duration")
+            if final_dur and final_dur != SENTINEL:
+                bean_path = path.parent.parent / "bean.md"
+                if bean_path.exists():
+                    try:
+                        bean_content = bean_path.read_text(encoding="utf-8")
+                        bean_content, changed = update_telemetry_row_duration(
+                            bean_content, task_num, final_dur,
+                        )
+                        if changed:
+                            bean_path.write_text(bean_content, encoding="utf-8")
+                            actions.append(f"Bean telem row {task_num}")
+                    except Exception:
+                        pass  # Best-effort; don't fail the task stamp
 
     if content != original:
         path.write_text(content, encoding="utf-8")
