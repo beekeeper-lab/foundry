@@ -68,7 +68,8 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 10. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in `ai/beans/BEAN-NNN-<slug>/tasks/`:
     - Name: `01-<owner>-<slug>.md`, `02-<owner>-<slug>.md`, etc.
     - Follow the wave: BA → Architect → Developer → Tech-QA.
-    - Skip roles when not needed (e.g., skip BA/Architect for markdown-only beans).
+    - **Tech QA is mandatory for all `App` and `Infra` category beans.** Only skip Tech QA for `Process`-only beans that modify no code (e.g., documentation updates, workflow changes). Tech QA provides independent validation — the Team Lead must not self-verify Developer work.
+    - BA and Architect may be skipped when not needed (e.g., skip BA/Architect for simple test or markdown-only beans). Document skip reasons in the bean's Notes section.
     - Each task file includes: Owner, Depends On, Goal, Inputs, Acceptance Criteria, Definition of Done.
 11. **Update bean task table** — Fill in the Tasks table in `bean.md` with the created tasks.
 
@@ -81,7 +82,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
     - On completion, run the `/close-loop` telemetry recording: record `Completed` timestamp, compute `Duration`, prompt for token self-report, and update the bean's Telemetry per-task table row.
     - Update the task status to `Done` in the task file and the bean's task table.
     - Reprint the **Header Block + Task Progress Table** after each status change.
-13. **Skip inapplicable roles** — If a role has no meaningful contribution for a bean (e.g., Architect for a documentation-only bean), skip it. Document the skip reason in the bean's Notes section.
+13. **Skip inapplicable roles** — BA and Architect may be skipped when they have no meaningful contribution (e.g., Architect for a simple test bean). Document the skip reason in the bean's Notes section. **Tech QA must never be skipped for `App` or `Infra` beans** — it provides independent verification that the Developer's work meets acceptance criteria, tests pass, and lint is clean.
 
 ### Phase 5: Verification & Closure
 
