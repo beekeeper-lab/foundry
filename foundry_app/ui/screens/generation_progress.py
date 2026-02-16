@@ -59,7 +59,9 @@ logger = logging.getLogger(__name__)
 PIPELINE_STAGES = [
     ("scaffold", "Scaffold directories"),
     ("compile", "Compile prompts"),
+    ("agent_writer", "Write agent files"),
     ("copy_assets", "Copy assets"),
+    ("mcp_config", "Write MCP config"),
     ("seed_tasks", "Seed tasks"),
     ("safety", "Write safety config"),
     ("diff_report", "Generate diff report"),
