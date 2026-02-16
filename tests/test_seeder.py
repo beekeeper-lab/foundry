@@ -126,6 +126,88 @@ class TestDetailedMode:
         assert "tech-qa" in content
         assert "Create test plan template" in content
 
+    def test_code_quality_reviewer_tasks(self, tmp_path: Path):
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="code-quality-reviewer")]),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
+        )
+        seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        assert "code-quality-reviewer" in content
+        assert "Define code review standards" in content
+
+    def test_devops_release_tasks(self, tmp_path: Path):
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="devops-release")]),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
+        )
+        seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        assert "devops-release" in content
+        assert "CI/CD pipeline" in content
+
+    def test_security_engineer_tasks(self, tmp_path: Path):
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="security-engineer")]),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
+        )
+        seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        assert "security-engineer" in content
+        assert "threat model" in content
+
+    def test_compliance_risk_tasks(self, tmp_path: Path):
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="compliance-risk")]),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
+        )
+        seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        assert "compliance-risk" in content
+        assert "regulatory requirements" in content
+
+    def test_researcher_librarian_tasks(self, tmp_path: Path):
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="researcher-librarian")]),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
+        )
+        seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        assert "researcher-librarian" in content
+        assert "decision matrix" in content
+
+    def test_technical_writer_tasks(self, tmp_path: Path):
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="technical-writer")]),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
+        )
+        seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        assert "technical-writer" in content
+        assert "README" in content
+
+    def test_ux_ui_designer_tasks(self, tmp_path: Path):
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="ux-ui-designer")]),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
+        )
+        seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        assert "ux-ui-designer" in content
+        assert "wireframes" in content
+
+    def test_integrator_merge_captain_tasks(self, tmp_path: Path):
+        spec = _make_spec(
+            team=TeamConfig(
+                personas=[PersonaSelection(id="integrator-merge-captain")]
+            ),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
+        )
+        seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        assert "integrator-merge-captain" in content
+        assert "branch strategy" in content
+
     def test_detailed_has_multiple_tasks_per_persona(self, tmp_path: Path):
         spec = _make_spec(
             team=TeamConfig(personas=[PersonaSelection(id="developer")]),
@@ -237,44 +319,77 @@ class TestEdgeCases:
 # ---------------------------------------------------------------------------
 
 
+_ALL_PERSONA_IDS = [
+    "team-lead",
+    "ba",
+    "architect",
+    "developer",
+    "tech-qa",
+    "code-quality-reviewer",
+    "devops-release",
+    "security-engineer",
+    "compliance-risk",
+    "researcher-librarian",
+    "technical-writer",
+    "ux-ui-designer",
+    "integrator-merge-captain",
+]
+
+
 class TestAllPersonas:
 
     def test_full_team_detailed(self, tmp_path: Path):
         spec = _make_spec(
-            team=TeamConfig(personas=[
-                PersonaSelection(id="team-lead"),
-                PersonaSelection(id="ba"),
-                PersonaSelection(id="architect"),
-                PersonaSelection(id="developer"),
-                PersonaSelection(id="tech-qa"),
-            ]),
+            team=TeamConfig(
+                personas=[PersonaSelection(id=pid) for pid in _ALL_PERSONA_IDS]
+            ),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
+        )
+        result = seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        # 3 tasks per persona × 13 personas = 39 tasks
+        task_lines = [
+            l for l in content.splitlines()
+            if l.startswith("| ") and not l.startswith("| #") and not l.startswith("|---")
+        ]
+        assert len(task_lines) == 39
+        assert result.warnings == []
+
+    def test_full_team_kickoff(self, tmp_path: Path):
+        spec = _make_spec(
+            team=TeamConfig(
+                personas=[PersonaSelection(id=pid) for pid in _ALL_PERSONA_IDS]
+            ),
+            generation=GenerationOptions(seed_mode=SeedMode.KICKOFF),
+        )
+        result = seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        # 1 task per persona × 13 personas = 13 tasks
+        task_lines = [
+            l for l in content.splitlines()
+            if l.startswith("| ") and not l.startswith("| #") and not l.startswith("|---")
+        ]
+        assert len(task_lines) == 13
+        assert result.warnings == []
+
+    def test_all_personas_present_in_output(self, tmp_path: Path):
+        spec = _make_spec(
+            team=TeamConfig(
+                personas=[PersonaSelection(id=pid) for pid in _ALL_PERSONA_IDS]
+            ),
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
         content = _read_index(tmp_path)
-        # 3 tasks per persona × 5 personas = 15 tasks
-        task_lines = [
-            l for l in content.splitlines()
-            if l.startswith("| ") and not l.startswith("| #") and not l.startswith("|---")
-        ]
-        assert len(task_lines) == 15
+        for persona_id in _ALL_PERSONA_IDS:
+            assert persona_id in content, f"Missing tasks for persona '{persona_id}'"
 
-    def test_full_team_kickoff(self, tmp_path: Path):
+    def test_no_warnings_for_any_library_persona(self, tmp_path: Path):
         spec = _make_spec(
-            team=TeamConfig(personas=[
-                PersonaSelection(id="team-lead"),
-                PersonaSelection(id="ba"),
-                PersonaSelection(id="architect"),
-                PersonaSelection(id="developer"),
-                PersonaSelection(id="tech-qa"),
-            ]),
-            generation=GenerationOptions(seed_mode=SeedMode.KICKOFF),
+            team=TeamConfig(
+                personas=[PersonaSelection(id=pid) for pid in _ALL_PERSONA_IDS]
+            ),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
-        seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
-        # 1 task per persona × 5 personas = 5 tasks
-        task_lines = [
-            l for l in content.splitlines()
-            if l.startswith("| ") and not l.startswith("| #") and not l.startswith("|---")
-        ]
-        assert len(task_lines) == 5
+        result = seed_tasks(spec, tmp_path)
+        assert result.warnings == [], f"Unexpected warnings: {result.warnings}"

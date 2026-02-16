@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-129 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-15 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-16 00:00 |
+| **Completed** | 2026-02-16 |
+| **Duration** | <1h |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -42,22 +42,21 @@ Every persona in the library has seed task templates in the seeder so that any t
 
 ## Acceptance Criteria
 
-- [ ] All 13 personas have seed task templates in the seeder
-- [ ] Each new persona has at least 2 meaningful starter tasks
-- [ ] No "No seed task templates" warnings are emitted for any library persona
-- [ ] Seeder tests cover all 13 personas
-- [ ] Generated `ai/tasks/_index.md` includes tasks for all selected personas
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] All 13 personas have seed task templates in the seeder
+- [x] Each new persona has at least 2 meaningful starter tasks
+- [x] No "No seed task templates" warnings are emitted for any library persona
+- [x] Seeder tests cover all 13 personas
+- [x] Generated `ai/tasks/_index.md` includes tasks for all selected personas
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Add seed task templates for 8 missing personas | developer | — | Done |
+| 2 | Update seeder tests for all 13 personas | tech-qa | T001 | Done |
+| 3 | Final verification — full test suite and lint | tech-qa | T002 | Done |
 
 ## Notes
 
@@ -68,11 +67,13 @@ Every persona in the library has seed task templates in the seeder so that any t
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Add seed task templates for 8 missing personas | developer | — | — | — |
+| 2 | Update seeder tests for all 13 personas | tech-qa | — | — | — |
+| 3 | Final verification — full test suite and lint | tech-qa | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | < 1m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |

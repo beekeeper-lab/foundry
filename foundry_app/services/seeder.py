@@ -44,6 +44,46 @@ _DETAILED_TASKS: dict[str, list[str]] = {
         "Set up CI test pipeline configuration",
         "Define quality gates and coverage thresholds",
     ],
+    "code-quality-reviewer": [
+        "Define code review standards and style guidelines",
+        "Create pull request review checklist template",
+        "Establish ship/no-ship criteria and quality bar",
+    ],
+    "devops-release": [
+        "Set up CI/CD pipeline configuration and build scripts",
+        "Define deployment environments and promotion strategy",
+        "Create release runbook and rollback procedures",
+    ],
+    "security-engineer": [
+        "Conduct initial threat model for the application",
+        "Review architecture for security risks and attack surfaces",
+        "Define security requirements and hardening checklist",
+    ],
+    "compliance-risk": [
+        "Identify applicable regulatory requirements and controls",
+        "Create compliance evidence tracking matrix",
+        "Document data classification and handling procedures",
+    ],
+    "researcher-librarian": [
+        "Survey technology options and create decision matrix",
+        "Build initial knowledge base with project references",
+        "Produce research memo on key architectural trade-offs",
+    ],
+    "technical-writer": [
+        "Create project README and getting-started guide",
+        "Define documentation structure and style conventions",
+        "Draft initial API documentation outline",
+    ],
+    "ux-ui-designer": [
+        "Map user workflows and create information architecture",
+        "Produce wireframes for primary screens and interactions",
+        "Define UX acceptance criteria for first milestone",
+    ],
+    "integrator-merge-captain": [
+        "Define branch strategy and merge workflow",
+        "Set up integration validation checks",
+        "Create release notes template and changelog format",
+    ],
 }
 
 _KICKOFF_TASKS: dict[str, list[str]] = {
@@ -61,6 +101,30 @@ _KICKOFF_TASKS: dict[str, list[str]] = {
     ],
     "tech-qa": [
         "Create test plan and quality gates",
+    ],
+    "code-quality-reviewer": [
+        "Define code review standards and PR checklist",
+    ],
+    "devops-release": [
+        "Set up CI/CD pipeline and deployment strategy",
+    ],
+    "security-engineer": [
+        "Conduct initial threat model and security review",
+    ],
+    "compliance-risk": [
+        "Identify regulatory requirements and controls",
+    ],
+    "researcher-librarian": [
+        "Survey technology options and build knowledge base",
+    ],
+    "technical-writer": [
+        "Create project README and documentation structure",
+    ],
+    "ux-ui-designer": [
+        "Map user workflows and produce initial wireframes",
+    ],
+    "integrator-merge-captain": [
+        "Define branch strategy and merge workflow",
     ],
 }
 
