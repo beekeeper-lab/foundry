@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-126 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-15 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-16 00:00 |
+| **Completed** | 2026-02-16 00:25 |
+| **Duration** | 25m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -48,10 +48,10 @@ Generated projects get a `.claude/settings.json` with proper Claude Code native 
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Design hook pack → native hook mapping | architect | — | Done |
+| 2 | Rewrite safety writer with native hook format | developer | 1 | Done |
+| 3 | Rewrite safety writer tests | tech-qa | 2 | Done |
+| 4 | Full test suite & lint verification | tech-qa | 3 | Done |
 
 ## Notes
 
@@ -64,11 +64,14 @@ Generated projects get a `.claude/settings.json` with proper Claude Code native 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Design hook pack → native hook mapping | architect | — | — | — |
+| 2 | Rewrite safety writer with native hook format | developer | — | — | — |
+| 3 | Rewrite safety writer tests | tech-qa | — | — | — |
+| 4 | Full test suite & lint verification | tech-qa | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 4 |
+| **Total Duration** | 25m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
