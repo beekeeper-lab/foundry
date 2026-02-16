@@ -55,6 +55,11 @@ class TestStandardStructure:
         scaffold_project(_make_spec(), output)
         assert (output / ".claude" / "hooks").is_dir()
 
+    def test_creates_claude_skills_dir(self, tmp_path: Path):
+        output = tmp_path / "my-project"
+        scaffold_project(_make_spec(), output)
+        assert (output / ".claude" / "skills").is_dir()
+
     def test_creates_ai_context_dir(self, tmp_path: Path):
         output = tmp_path / "my-project"
         scaffold_project(_make_spec(), output)
@@ -83,6 +88,7 @@ class TestStandardStructure:
             ".claude/agents",
             ".claude/commands",
             ".claude/hooks",
+            ".claude/skills",
             "ai/context",
             "ai/outputs",
             "ai/beans",
@@ -176,8 +182,8 @@ class TestStageResult:
             team=TeamConfig(personas=[PersonaSelection(id="developer")]),
         )
         result = scaffold_project(spec, output)
-        # root + 3 .claude dirs + 4 ai dirs + 1 persona dir = 9
-        assert len(result.wrote) == 9
+        # root + 4 .claude dirs + 4 ai dirs + 1 persona dir = 10
+        assert len(result.wrote) == 10
 
 
 # ---------------------------------------------------------------------------

@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-127 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Low |
 | **Created** | 2026-02-15 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-16 00:00 |
+| **Completed** | 2026-02-16 00:05 |
+| **Duration** | 5m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -32,19 +32,18 @@ The scaffold service creates `.claude/skills/` alongside the other `.claude/` su
 
 ## Acceptance Criteria
 
-- [ ] `.claude/skills/` is created by the scaffold service
-- [ ] Scaffold test verifies the skills directory exists in the output
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `.claude/skills/` is created by the scaffold service
+- [x] Scaffold test verifies the skills directory exists in the output
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Add `.claude/skills/` to scaffold service | developer | — | Done |
+| 2 | Update scaffold tests for skills directory | tech-qa | T001 | Done |
+| 3 | Verify lint and tests pass | tech-qa | T001, T002 | Done |
 
 ## Notes
 
@@ -55,11 +54,13 @@ The scaffold service creates `.claude/skills/` alongside the other `.claude/` su
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Add `.claude/skills/` to scaffold service | developer | — | — | — |
+| 2 | Update scaffold tests for skills directory | tech-qa | — | — | — |
+| 3 | Verify lint and tests pass | tech-qa | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 5m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |

@@ -14,6 +14,7 @@ _CLAUDE_DIRS = [
     ".claude/agents",
     ".claude/commands",
     ".claude/hooks",
+    ".claude/skills",
 ]
 
 _AI_DIRS = [
@@ -31,7 +32,7 @@ def scaffold_project(
     """Create the directory skeleton for a generated Claude Code project.
 
     Creates the standard directory tree based on the composition spec:
-    - ``.claude/`` subdirectories (agents, commands, hooks)
+    - ``.claude/`` subdirectories (agents, commands, hooks, skills)
     - ``ai/`` subdirectories (context, outputs, beans, tasks)
     - Per-persona output directories under ``ai/outputs/``
 
