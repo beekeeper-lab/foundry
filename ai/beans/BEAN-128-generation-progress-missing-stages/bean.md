@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-128 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Low |
 | **Created** | 2026-02-15 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-16 18:10 |
+| **Completed** | 2026-02-16 18:13 |
+| **Duration** | 3m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -42,10 +42,10 @@ The generation progress screen shows all 8 pipeline stages so users can see prog
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add missing pipeline stages to progress UI | Developer | — | Done |
+| 2 | Verify fix, tests, and lint | Tech QA | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> BA/Architect skipped — no requirements ambiguity or design decisions for this simple list addition.
 
 ## Notes
 
@@ -58,11 +58,12 @@ The generation progress screen shows all 8 pipeline stages so users can see prog
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out |
 |---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| 1 | Add missing pipeline stages to progress UI | Developer | — | — | — | — |
+| 2 | Verify fix, tests, and lint | Tech QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 3m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
