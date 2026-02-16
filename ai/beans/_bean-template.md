@@ -57,9 +57,9 @@ What is the desired outcome when this bean is complete?
 
 ## Telemetry
 
-| # | Task | Owner | Duration | Tokens In | Tokens Out |
-|---|------|-------|----------|-----------|------------|
-| 1 |      |       |          |           |            |
+| # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
+|---|------|-------|----------|-----------|------------|------|
+| 1 |      |       |          |           |            |      |
 
 | Metric | Value |
 |--------|-------|
@@ -67,3 +67,4 @@ What is the desired outcome when this bean is complete?
 | **Total Duration** | — |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
+| **Total Cost** | — |

@@ -151,4 +151,4 @@
 | BEAN-127 | Scaffold Skills Directory | App | Low | Done | team-lead |
 | BEAN-128 | Generation Progress UI — Missing Stages | App | Low | Approved | (unassigned) |
 | BEAN-129 | Seeder Templates for All Personas | App | Medium | Done | team-lead |
-| BEAN-130 | Telemetry Cost Estimation | Process | Medium | Approved | (unassigned) |
+| BEAN-130 | Telemetry Cost Estimation | Process | Medium | In Progress | team-lead |

@@ -29,9 +29,73 @@ from pathlib import Path
 SENTINEL = "—"
 TIMESTAMP_FMT = "%Y-%m-%d %H:%M"
 
+# Fallback pricing if config file is missing or unparseable
+DEFAULT_INPUT_RATE = 0.000015   # $15/MTok
+DEFAULT_OUTPUT_RATE = 0.000075  # $75/MTok
+
 # Patterns to match bean and task files (relative paths from repo root)
 BEAN_RE = re.compile(r"ai/beans/BEAN-\d+-[^/]+/bean\.md$")
 TASK_RE = re.compile(r"ai/beans/BEAN-\d+-[^/]+/tasks/.*\.md$")
+
+
+def read_pricing() -> tuple[float, float]:
+    """Read token pricing from ai/context/token-pricing.md.
+
+    Returns (input_rate, output_rate) in dollars per token.
+    Falls back to defaults if the file is missing or unparseable.
+    """
+    try:
+        # Try relative to cwd first, then search upward for the repo root
+        candidates = [
+            Path.cwd() / "ai" / "context" / "token-pricing.md",
+        ]
+        # Also try from the script's location (hooks are in .claude/hooks/)
+        script_dir = Path(__file__).resolve().parent
+        repo_root = script_dir.parent.parent  # .claude/hooks/ -> repo root
+        candidates.append(repo_root / "ai" / "context" / "token-pricing.md")
+
+        content = None
+        for path in candidates:
+            if path.exists():
+                content = path.read_text(encoding="utf-8")
+                break
+
+        if content is None:
+            return DEFAULT_INPUT_RATE, DEFAULT_OUTPUT_RATE
+
+        input_rate = DEFAULT_INPUT_RATE
+        output_rate = DEFAULT_OUTPUT_RATE
+
+        for line in content.splitlines():
+            if "**Input Rate**" in line:
+                m = re.search(r"\$([0-9.]+)\s+per token", line)
+                if m:
+                    input_rate = float(m.group(1))
+            elif "**Output Rate**" in line:
+                m = re.search(r"\$([0-9.]+)\s+per token", line)
+                if m:
+                    output_rate = float(m.group(1))
+
+        return input_rate, output_rate
+
+    except Exception:
+        return DEFAULT_INPUT_RATE, DEFAULT_OUTPUT_RATE
+
+
+def compute_cost(tokens_in: int, tokens_out: int) -> float:
+    """Compute dollar cost from token counts using config rates."""
+    input_rate, output_rate = read_pricing()
+    return (tokens_in * input_rate) + (tokens_out * output_rate)
+
+
+def format_cost(cost: float) -> str:
+    """Format a dollar cost for display.
+
+    Returns '$X.XX' for amounts >= $0.01, '< $0.01' for smaller amounts.
+    """
+    if cost < 0.01:
+        return "< $0.01"
+    return f"${cost:.2f}"
 
 
 def now_stamp() -> str:
@@ -282,7 +346,11 @@ def sync_telemetry_table(content: str) -> tuple[str, list[str]]:
     actions: list[str] = []
     for num, name, owner in tasks:
         if num not in existing_nums:
-            new_rows.append(f"| {num} | {name} | {owner} | {SENTINEL} | {SENTINEL} | {SENTINEL} |")
+            row = (
+                f"| {num} | {name} | {owner}"
+                f" | {SENTINEL} | {SENTINEL} | {SENTINEL} | {SENTINEL} |"
+            )
+            new_rows.append(row)
             actions.append(f"Telem row {num}")
 
     if not new_rows:
@@ -492,7 +560,7 @@ def format_tokens(count: int) -> str:
 def update_telemetry_row_tokens(
     content: str, task_num: str, tokens_in: str, tokens_out: str,
 ) -> tuple[str, bool]:
-    """Update Tokens In and Tokens Out columns of a specific telemetry row.
+    """Update Tokens In, Tokens Out, and Cost columns of a telemetry row.
 
     Returns (new_content, changed).
     """
@@ -527,7 +595,20 @@ def update_telemetry_row_tokens(
             if cells[5] == SENTINEL:
                 cells[5] = tokens_out
                 changed = True
+            # Compute and write Cost column (index 6) if tokens were written
             if changed:
+                try:
+                    tin = int(tokens_in.replace(",", ""))
+                    tout = int(tokens_out.replace(",", ""))
+                    cost = compute_cost(tin, tout)
+                    cost_str = format_cost(cost)
+                except (ValueError, TypeError):
+                    cost_str = SENTINEL
+                # Ensure row has 7 columns (add Cost if missing)
+                while len(cells) < 7:
+                    cells.append(SENTINEL)
+                if cells[6] == SENTINEL:
+                    cells[6] = cost_str
                 lines[i] = "| " + " | ".join(cells) + " |"
                 return "\n".join(lines), True
 
@@ -566,6 +647,48 @@ def sum_telemetry_tokens(content: str) -> tuple[str | None, str | None]:
     if not found_any:
         return None, None
     return format_tokens(total_in), format_tokens(total_out)
+
+
+def sum_telemetry_costs(content: str) -> str | None:
+    """Sum per-task cost values from the Telemetry table.
+
+    Returns formatted total cost string, or None if no cost data.
+    """
+    _, _, rows = find_telemetry_table(content)
+    total_cost = 0.0
+    found_any = False
+
+    for row in rows:
+        cells = [c.strip() for c in row.split("|")]
+        cells = [c for c in cells if c]
+        if len(cells) >= 7:
+            cost_str = cells[6]
+            if cost_str and cost_str != SENTINEL and cost_str != "< $0.01":
+                # Parse "$X.XX" format
+                m = re.match(r"^\$([0-9.]+)$", cost_str)
+                if m:
+                    total_cost += float(m.group(1))
+                    found_any = True
+            elif cost_str == "< $0.01":
+                # Count as ~$0.005
+                total_cost += 0.005
+                found_any = True
+
+    if not found_any:
+        # Fall back: compute from token totals if available
+        tok_in_str, tok_out_str = sum_telemetry_tokens(content)
+        if tok_in_str and tok_out_str:
+            try:
+                tin = int(tok_in_str.replace(",", ""))
+                tout = int(tok_out_str.replace(",", ""))
+                total_cost = compute_cost(tin, tout)
+                found_any = True
+            except (ValueError, TypeError):
+                pass
+
+    if not found_any:
+        return None
+    return format_cost(total_cost)
 
 
 def count_done_tasks(content: str) -> int:
@@ -723,6 +846,16 @@ def handle_bean_file(path: Path, now: str) -> list[str]:
                     content, "Total Tokens Out", tok_out_sum,
                 )
                 actions.append(f"Total Tokens Out={tok_out_sum}")
+
+        # Fill Total Cost
+        total_cost_val = parse_metadata_field(content, "Total Cost")
+        if total_cost_val == SENTINEL:
+            total_cost = sum_telemetry_costs(content)
+            if total_cost:
+                content = replace_metadata_field(
+                    content, "Total Cost", total_cost,
+                )
+                actions.append(f"Total Cost={total_cost}")
 
     # Sync telemetry table with tasks table (add missing rows)
     content, sync_actions = sync_telemetry_table(content)
