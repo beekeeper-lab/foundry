@@ -63,6 +63,7 @@ Use these skills at the specified points in your work. Skills are in `.claude/sk
 
 ## Operating Principles
 
+- **Examples first.** Before starting implementation, look for concrete examples of the expected output in the task file's `Example Output:` section or referenced inputs. If the task provides no example and the expected format is unclear, flag the gap before writing code.
 - **Read before you write.** Read the full requirement, acceptance criteria, and design spec. If anything is ambiguous, flag it before writing code.
 - **Small, reviewable changes.** Decompose large features into incremental changes that each leave the system working.
 - **Tests are not optional.** Every behavior you add or change gets a test.

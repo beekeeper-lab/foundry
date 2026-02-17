@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-150 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-17 04:07 |
+| **Completed** | 2026-02-17 04:09 |
+| **Duration** | 2m |
 | **Owner** | (unassigned) |
 | **Category** | Process |
 
@@ -33,19 +33,20 @@ Establish an "examples-first" principle in the bean workflow where each task inc
 
 ## Acceptance Criteria
 
-- [ ] Examples-first principle is documented
-- [ ] Task template or guidance includes a place for examples
-- [ ] Agent instructions reference the principle
-- [ ] Documentation is clear and actionable
+- [x] Examples-first principle is documented
+- [x] Task template or guidance includes a place for examples
+- [x] Agent instructions reference the principle
+- [x] Documentation is clear and actionable
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add Examples-First principle to workflow and agent docs | Developer | — | Done |
+| 2 | Verify Examples-First documentation | Tech-QA | Task 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default)
+> Bottleneck check: no contention — sequential 2-task wave, no shared resource conflicts
 
 ## Notes
 
@@ -66,12 +67,13 @@ Establish an "examples-first" principle in the bean workflow where each task inc
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add Examples-First principle to workflow and agent docs | Developer | < 1m | 9 | 1,169 | $0.09 |
+| 2 | Verify Examples-First documentation | Tech-QA | < 1m | 8 | 461 | $0.03 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 17 |
+| **Total Tokens Out** | 1,630 |
+| **Total Cost** | $0.12 |
