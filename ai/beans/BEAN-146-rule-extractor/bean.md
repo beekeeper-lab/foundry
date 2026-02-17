@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-146 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-17 04:01 |
+| **Completed** | 2026-02-17 04:05 |
+| **Duration** | 4m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -33,20 +33,20 @@ Create a rule extraction process that captures recurring patterns, anti-patterns
 
 ## Acceptance Criteria
 
-- [ ] Rule extraction process is documented
-- [ ] Process specifies how to identify and capture recurring patterns
-- [ ] Storage location for extracted rules is defined
-- [ ] Post-bean review step is added to workflow
-- [ ] Documentation is clear and actionable
+- [x] Rule extraction process is documented
+- [x] Process specifies how to identify and capture recurring patterns
+- [x] Storage location for extracted rules is defined
+- [x] Post-bean review step is added to workflow
+- [x] Documentation is clear and actionable
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add rule extraction step to bean closure | developer | — | Done |
+| 2 | Verify documentation quality | tech-qa | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default)
 
 ## Notes
 
@@ -67,12 +67,13 @@ Create a rule extraction process that captures recurring patterns, anti-patterns
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add rule extraction step to bean closure | developer | — | — | — | — |
+| 2 | Verify documentation quality | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 4m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

@@ -84,6 +84,11 @@ Use these skills at the specified points in the workflow. Skills are in `.claude
 7. Update bean status to `Done` in both `bean.md` and `_index.md`
 8. Use `/status-report` to produce a final summary (include telemetry in the summary)
 9. Note any follow-up beans spawned during execution
+10. **Extract rules** — Review the bean's execution for reusable knowledge:
+    - **Patterns:** Techniques or approaches that worked well and should be repeated
+    - **Anti-patterns:** Mistakes, rework, or friction points to avoid next time
+    - **Lessons learned:** Surprising discoveries, edge cases, or workflow improvements
+    - Record findings in `MEMORY.md` (concise entries) or create/update a topic file in the auto-memory directory for detailed notes. Skip this step if the bean produced no novel insights.
 
 ## Project Context
 

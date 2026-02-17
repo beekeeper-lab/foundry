@@ -218,7 +218,12 @@ Once the VDD gate passes (all acceptance criteria verified with evidence):
 1. Update bean status to `Done`
 2. Update `ai/beans/_index.md`
 3. Note any follow-up beans spawned during execution
-4. **Merge feature branch to `test`** using `/merge-bean` (Merge Captain). This step is mandatory — a bean is not fully closed until its branch has been merged to `test` and tests pass on the integrated branch
+4. **Extract rules** — Review the bean's execution for reusable knowledge:
+   - **Patterns:** Techniques or approaches that worked well and should be repeated
+   - **Anti-patterns:** Mistakes, rework, or friction points to avoid next time
+   - **Lessons learned:** Surprising discoveries, edge cases, or workflow improvements
+   - Record findings in `MEMORY.md` (concise entries) or create/update a topic file in the auto-memory directory for detailed notes. Skip this step if the bean produced no novel insights.
+5. **Merge feature branch to `test`** using `/merge-bean` (Merge Captain). This step is mandatory — a bean is not fully closed until its branch has been merged to `test` and tests pass on the integrated branch
 
 ## Branch Strategy
 
