@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-155 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-17 05:10 |
+| **Completed** | 2026-02-17 05:13 |
+| **Duration** | 3m |
+| **Owner** | team-lead |
 | **Category** | Infra |
 
 ## Problem Statement
@@ -33,19 +33,19 @@ Create a test (manual or scripted procedure) that validates the full Trello card
 
 ## Acceptance Criteria
 
-- [ ] Test procedure is documented with step-by-step instructions
-- [ ] Expected Trello card state at each bean lifecycle stage is defined
-- [ ] Procedure covers: import, in-progress transition, and completion transition
-- [ ] Any gaps between expected and actual behavior are identified
+- [x] Test procedure is documented with step-by-step instructions
+- [x] Expected Trello card state at each bean lifecycle stage is defined
+- [x] Procedure covers: import, in-progress transition, and completion transition
+- [x] Any gaps between expected and actual behavior are identified
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Document Trello lifecycle test procedure | developer | — | Done |
+| 2 | Tech-QA review | tech-qa | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default)
 
 ## Notes
 
@@ -66,12 +66,13 @@ Create a test (manual or scripted procedure) that validates the full Trello card
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Document Trello lifecycle test procedure | developer | 1m | 757,652 | 132 | $1.24 |
+| 2 | Tech-QA review | tech-qa | < 1m | 447,193 | 287 | $0.74 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 1,204,845 |
+| **Total Tokens Out** | 419 |
+| **Total Cost** | $1.98 |
