@@ -105,7 +105,33 @@ The Team Lead reviews the backlog (`ai/beans/_index.md`) and picks beans to work
 5. **Claim the bean** — update Status to `In Progress` and set Owner in both `bean.md` and `_index.md`. This is the lock.
 6. Update the index table
 
-### 4. Decomposition
+### 4. Molecularity Gate
+
+Before decomposition, the Team Lead checks that the bean is appropriately sized ("molecular"). A molecular bean represents a single, atomic unit of change.
+
+**Molecularity criteria — a bean SHOULD:**
+
+- **Single concern:** Address one problem, feature, or change — not bundle unrelated work
+- **Limited blast radius:** Touch no more than 5 files (excluding generated files, tests, and index updates)
+- **One-session scope:** Be completable in a single work session (2-task default wave: Developer → Tech-QA)
+- **Independent verifiability:** Have acceptance criteria that can be verified without waiting for other beans
+- **Clear boundaries:** Have In Scope and Out of Scope that don't overlap with other active beans
+
+**If a bean exceeds these criteria**, flag it for decomposition:
+
+1. Identify the independent sub-concerns within the bean
+2. Split into smaller beans — each addressing exactly one concern
+3. Link the new beans via dependencies in their Notes sections
+4. Defer the original bean (status `Deferred`) and note the replacement beans, or delete it if fully replaced
+
+**Common signals a bean is too large:**
+
+- The scope section lists multiple unrelated deliverables
+- Acceptance criteria span different subsystems or categories (e.g., app code + process docs)
+- Decomposition would produce 4+ tasks or require 3+ personas
+- The bean title uses "and" to join distinct concepts (e.g., "Add auth and redesign settings")
+
+### 5. Decomposition
 
 The Team Lead breaks each picked bean into tasks:
 
@@ -164,7 +190,7 @@ Each task file should include:
 - **Inputs:** What the owner needs to read
 - **Definition of Done:** Concrete checklist
 
-### 5. Execution
+### 6. Execution
 
 Each persona claims their task(s) in dependency order:
 
@@ -198,7 +224,7 @@ When a task's verification checks fail, the executing persona applies a structur
 
 **Reporting:** Record the iteration count and outcome in the task file's status update. Example: `Status: Done (2 iterations)` or `Status: Blocked (3 iterations, escalated)`.
 
-### 6. Verification (VDD Gate)
+### 7. Verification (VDD Gate)
 
 The Team Lead applies the **Verification-Driven Development (VDD) gate** before closing any bean. See `ai/context/vdd-policy.md` for the full policy.
 
@@ -211,7 +237,7 @@ The Team Lead applies the **Verification-Driven Development (VDD) gate** before 
 4. For each acceptance criterion, confirm evidence is concrete, reproducible, and current
 5. Flag any gaps for rework — a bean that fails the VDD gate stays In Progress
 
-### 7. Closure
+### 8. Closure
 
 Once the VDD gate passes (all acceptance criteria verified with evidence):
 

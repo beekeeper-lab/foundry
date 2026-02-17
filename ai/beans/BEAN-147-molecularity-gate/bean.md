@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-147 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-17 04:01 |
+| **Completed** | 2026-02-17 04:03 |
+| **Duration** | 2m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -33,19 +33,19 @@ Add a molecularity gate to the bean creation or refinement process that ensures 
 
 ## Acceptance Criteria
 
-- [ ] Molecularity criteria are defined and documented
-- [ ] Gate/check is added to the bean creation or refinement process
-- [ ] Guidance for decomposing oversized beans is provided
-- [ ] Documentation is clear and actionable
+- [x] Molecularity criteria are defined and documented
+- [x] Gate/check is added to the bean creation or refinement process
+- [x] Guidance for decomposing oversized beans is provided
+- [x] Documentation is clear and actionable
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add molecularity gate to workflow docs | Developer | — | Done |
+| 2 | Verify documentation quality and completeness | Tech-QA | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default — no ambiguous requirements), Architect (default — no new subsystems or APIs)
 
 ## Notes
 
@@ -66,12 +66,13 @@ Add a molecularity gate to the bean creation or refinement process that ensures 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add molecularity gate to workflow docs | Developer | < 1m | 42 | 2,934 | $0.22 |
+| 2 | Verify documentation quality and completeness | Tech-QA | < 1m | 56 | 3,756 | $0.28 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 98 |
+| **Total Tokens Out** | 6,690 |
+| **Total Cost** | $0.50 |

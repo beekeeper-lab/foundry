@@ -72,6 +72,13 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
    - Split beans that are too large or merge beans that are too small
    - Add details to scope and acceptance criteria
    - Identify new dependencies
+   - **Apply the molecularity gate** to each proposed bean (see `ai/context/bean-workflow.md` §4). Flag any bean that violates the criteria:
+     - Addresses more than one concern
+     - Would touch more than 5 files (excluding tests/generated/index files)
+     - Would require 4+ tasks or 3+ personas to complete
+     - Has acceptance criteria spanning different subsystems or categories
+     - Uses "and" to join distinct concepts in the title
+   - For flagged beans, propose splitting them and explain which concerns would become separate beans
    - Present the updated breakdown and ask follow-up questions if needed
 
    Continue until the user confirms the breakdown is complete. Look for signals like:
