@@ -172,7 +172,7 @@ Pick BEAN-NNN (slug) using /pick-bean NNN, then execute the full bean lifecycle 
 
 You are running in an ISOLATED GIT WORKTREE. Your feature branch (bean/BEAN-NNN-slug) is already checked out.
 - Do NOT create or checkout branches — you are already on the correct feature branch.
-- Do NOT run /merge-bean — the orchestrator handles merging after you finish.
+- Do NOT run /internal:merge-bean — the orchestrator handles merging after you finish.
 - Do NOT checkout main or test — this will fail in a worktree if those branches are checked out elsewhere.
 
 STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition:
@@ -191,10 +191,10 @@ STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at 
 - CRITICAL: If you encounter a blocker requiring human input, set status to "blocked" with a clear message explaining what you need, then STOP and wait.
 
 Bean lifecycle:
-1. Decompose into tasks using /seed-tasks
+1. Decompose into tasks using /internal:seed-tasks
 2. Execute each task through the appropriate team persona
 3. Use /close-loop after each task to verify acceptance criteria
-4. Use /handoff between persona transitions
+4. Use /internal:handoff between persona transitions
 5. Run tests (uv run pytest) and lint (uv run ruff check foundry_app/) before closing
 6. Commit all changes on the feature branch
 7. Use /status-report to produce final summary
@@ -224,13 +224,13 @@ STATUS FILE PROTOCOL — You MUST update your status file at every transition:
 - CRITICAL: If you encounter a blocker requiring human input, set status to "blocked" with a clear message explaining what you need, then STOP and wait.
 
 Bean lifecycle:
-1. Decompose into tasks using /seed-tasks
+1. Decompose into tasks using /internal:seed-tasks
 2. Execute each task through the appropriate team persona
 3. Use /close-loop after each task to verify acceptance criteria
-4. Use /handoff between persona transitions
+4. Use /internal:handoff between persona transitions
 5. Run tests (uv run pytest) and lint (uv run ruff check foundry_app/) before closing
 6. Commit all changes on the feature branch
-7. Use /merge-bean to merge into test
+7. Use /internal:merge-bean to merge into test
 8. Use /status-report to produce final summary
 Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
 ```
@@ -288,7 +288,7 @@ When a worker has `status: blocked`:
 When a worker's status changes to `done` (or its window/pane closes):
 
 1. **Remove the worktree**: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
-2. **Merge the bean**: Run `/merge-bean NNN` from the main repo to merge the feature branch into `test`.
+2. **Merge the bean**: Run `/internal:merge-bean NNN` from the main repo to merge the feature branch into `test`.
 3. **Spawn replacement**: If actionable beans remain in the backlog, create a new worktree + launcher for the next bean and spawn a replacement worker.
 
 This ensures merges happen sequentially from the main repo (avoiding the worktree limitation where `test` can't be checked out from a worktree if it's in use elsewhere).
@@ -318,7 +318,7 @@ Workers clean up automatically:
 - **Wide mode** (`--wide`): all workers share one window as tiled panes — ideal for large monitors where you can see all workers at once
 - **Git worktrees** provide isolation: each worker gets its own working directory at `/tmp/foundry-worktree-BEAN-NNN/`. No branch collisions, no file stomping between workers.
 - **Pre-assignment** eliminates race conditions: when using `--count N`, the orchestrator selects all beans upfront and creates worktrees before spawning. No stagger delay needed.
-- **Orchestrator merges**: Workers do NOT run `/merge-bean`. The orchestrator handles merging sequentially after each worker completes, since worktrees cannot checkout `test` if it's checked out elsewhere.
+- **Orchestrator merges**: Workers do NOT run `/internal:merge-bean`. The orchestrator handles merging sequentially after each worker completes, since worktrees cannot checkout `test` if it's checked out elsewhere.
 - **`uv` in worktrees**: Each worktree auto-creates its own `.venv` on first `uv run` — works seamlessly.
 - Child agents work fully autonomously — no user input needed for normal flow
 - Workers auto-close when done — no manual cleanup needed (both windows and panes)

@@ -66,7 +66,7 @@ The objectives file should contain numbered or bulleted objectives, each with en
 |-------|-------|------------|
 | `ObjectivesFileNotFound` | The objectives file does not exist at the expected path | Provide the correct path or create `./ai/objectives.md` |
 | `NoObjectivesParsed` | The file was found but no objectives could be extracted | Ensure objectives are listed as numbered or bulleted items |
-| `NoTeamComposition` | Neither `composition.yml` nor compiled `CLAUDE.md` found | Run `/compile-team` first or provide a composition file |
+| `NoTeamComposition` | Neither `composition.yml` nor compiled `CLAUDE.md` found | Run `/internal:compile-team` first or provide a composition file |
 | `UnassignableTask` | A task category does not map to any persona in the team | Add the missing persona to the composition or manually assign the task |
 | `TaxonomyParseError` | The task taxonomy file is malformed | Check `workflows/task-taxonomy.md` for formatting issues |
 

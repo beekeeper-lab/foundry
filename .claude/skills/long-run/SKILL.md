@@ -33,7 +33,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 
 ### Phase 0.5: Trello Sync
 
-0c. **Import sprint backlog from Trello** — Invoke `/trello-load` to pull any
+0c. **Import sprint backlog from Trello** — Invoke `/internal:trello-load` to pull any
     cards from the Trello Sprint_Backlog list into the beans backlog. This runs
     non-interactively (auto-selects board, creates beans with Approved status,
     moves processed cards to In_Progress on Trello). If the Trello MCP server
@@ -93,7 +93,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 
 ### Phase 5.5: Merge Captain
 
-17. **Merge to test branch and update index** — Execute the `/merge-bean` skill to merge the feature branch into `test`:
+17. **Merge to test branch and update index** — Execute the `/internal:merge-bean` skill to merge the feature branch into `test`:
     - Checkout `test`, pull latest, merge `bean/BEAN-NNN-<slug>` with `--no-ff`, push.
     - If merge conflicts occur: report the conflicts, abort the merge, leave the bean on its feature branch, and stop the loop.
     - If merge succeeds: update `_index.md` to set the bean's status to `Done`, commit the index update on `test`, and push.
@@ -107,7 +107,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
        from the Trello section. Extract the board ID from the Board field
        (format: "Board Name (ID: abc123)").
     d. Call `mcp__trello__get_lists` with the board ID to find the
-       Completed list (using flexible name matching as `/trello-load`).
+       Completed list (using flexible name matching as `/internal:trello-load`).
     e. Call `mcp__trello__move_card` with the Card ID and the Completed
        list ID. This is a direct API call — no fuzzy name matching needed.
     f. Log the move: `Trello: Moved "[Card Name]" → Completed (card [Card ID])`
@@ -136,7 +136,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 ### Parallel Phase 1.5: Trello Sync
 
 1b. **Import sprint backlog from Trello** — Same as sequential Phase 0.5:
-    invoke `/trello-load` non-interactively. Best-effort; do not block on
+    invoke `/internal:trello-load` non-interactively. Best-effort; do not block on
     failure.
 
 ### Parallel Phase 2: Backlog Assessment
@@ -149,7 +149,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
 5. **Select independent beans** — From the actionable set, select up to N beans that have no unmet inter-bean dependencies. Beans that depend on other pending or in-progress beans are queued, not parallelized.
 6. **Update bean statuses** — For each selected bean, update `_index.md` to set status to `In Progress` and owner to `team-lead`. Commit this index update on `test` before spawning workers. (Workers will update their own `bean.md` independently; they must NOT touch `_index.md`.)
-7. **Write initial status files** — For each selected bean, create a status file at `/tmp/foundry-worker-BEAN-NNN.status` with `status: starting`. This allows the dashboard to track the worker immediately. See the Status File Protocol in `/spawn-bean` for the full file format and status values (`starting`, `decomposing`, `running`, `blocked`, `error`, `done`).
+7. **Write initial status files** — For each selected bean, create a status file at `/tmp/foundry-worker-BEAN-NNN.status` with `status: starting`. This allows the dashboard to track the worker immediately. See the Status File Protocol in `/internal:spawn-bean` for the full file format and status values (`starting`, `decomposing`, `running`, `blocked`, `error`, `done`).
 8. **Create worktrees and spawn workers** — For each selected bean, create an isolated git worktree, then create a launcher script and open a tmux child window:
    ```bash
    WORKTREE_DIR="/tmp/foundry-worktree-BEAN-NNN"
@@ -174,7 +174,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
    You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.
    - Do NOT create or checkout branches.
-   - Do NOT run /merge-bean — the orchestrator handles merging after you finish.
+   - Do NOT run /internal:merge-bean — the orchestrator handles merging after you finish.
    - Do NOT checkout main or test.
    - Do NOT edit _index.md — the orchestrator is the sole writer of the backlog index.
 
@@ -186,7 +186,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    6. Commit on the feature branch
 
    STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition.
-   See /spawn-bean command for full status file format and update rules."
+   See /internal:spawn-bean command for full status file format and update rules."
    SCRIPT_EOF
    chmod +x "$LAUNCHER"
    tmux new-window -n "bean-NNN" "bash $LAUNCHER; rm -f $LAUNCHER"
@@ -196,7 +196,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
 ### Parallel Phase 4: Dashboard Monitoring
 
-10. **Enter dashboard loop** — The main window displays a live dashboard by reading worker status files. See `/spawn-bean` Step 4 for the full dashboard specification. The loop runs every ~30 seconds:
+10. **Enter dashboard loop** — The main window displays a live dashboard by reading worker status files. See `/internal:spawn-bean` Step 4 for the full dashboard specification. The loop runs every ~30 seconds:
     - Read all `/tmp/foundry-worker-*.status` files and parse key-value pairs.
     - Render a dashboard table with progress bars (█/░), percentage (tasks_done/tasks_total), and color-coded status emoji.
     - Alert on `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no status file update for 5+ minutes).
@@ -205,7 +205,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 12. **Merge, update index, and assign next bean** — When a worker completes:
     - Remove the worktree: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
     - Sync before merging: `git fetch origin && git pull origin test` — worktrees push to the remote, so the orchestrator's local `test` may be behind.
-    - Merge the bean: run `/merge-bean NNN` from the main repo (merges feature branch into `test`).
+    - Merge the bean: run `/internal:merge-bean NNN` from the main repo (merges feature branch into `test`).
     - Update `_index.md` on `test`: set the bean's status to `Done`. Commit and push. (The orchestrator is the sole writer of `_index.md`.)
     - Move the Trello card to Completed (same logic as sequential step 17b — read the bean's Trello section, use Card ID for direct API call to move to Completed). Best-effort; do not block on failure.
     - Re-read the backlog for newly unblocked beans.
@@ -278,5 +278,5 @@ On error in parallel mode: a single worker failure does not stop other workers. 
 - Bean workflow at `ai/context/bean-workflow.md`
 - Individual bean files at `ai/beans/BEAN-NNN-<slug>/bean.md`
 - Git repository in a clean state (no uncommitted changes)
-- Trello MCP server (optional — used for `/trello-load` sync and card completion; best-effort)
-- `/trello-load` skill for sprint backlog import
+- Trello MCP server (optional — used for `/internal:trello-load` sync and card completion; best-effort)
+- `/internal:trello-load` skill for sprint backlog import

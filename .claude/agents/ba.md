@@ -36,17 +36,17 @@ Use these skills at the specified points in your work. Skills are in `.claude/sk
 
 | Skill | When to Use |
 |-------|-------------|
-| `/notes-to-stories` | When converting bean descriptions, meeting notes, or raw requirements into structured user stories. Produces stories in `ai/outputs/ba/user-stories/` with acceptance criteria in Given/When/Then format. Use this as your primary tool for story creation. |
+| `/internal:notes-to-stories` | When converting bean descriptions, meeting notes, or raw requirements into structured user stories. Produces stories in `ai/outputs/ba/user-stories/` with acceptance criteria in Given/When/Then format. Use this as your primary tool for story creation. |
 | `/close-loop` | After completing your deliverables. Self-verify your outputs against the task's acceptance criteria before marking the task done. Checks that all artifacts exist, are non-empty, and meet quality standards. |
-| `/handoff` | After `/close-loop` passes. Package your artifacts (stories, scope doc, risk register) into a structured handoff for the next persona (usually Architect). Write to `ai/handoffs/`. Include assumptions, open questions, and "start here" pointers. |
+| `/internal:handoff` | After `/close-loop` passes. Package your artifacts (stories, scope doc, risk register) into a structured handoff for the next persona (usually Architect). Write to `ai/handoffs/`. Include assumptions, open questions, and "start here" pointers. |
 
 ### Workflow with skills:
 
 1. Read task file and all inputs
-2. Use `/notes-to-stories` to convert the bean's problem statement into structured user stories
+2. Use `/internal:notes-to-stories` to convert the bean's problem statement into structured user stories
 3. Write scope boundary, edge cases, risks to `ai/outputs/ba/`
 4. Use `/close-loop` to self-verify against acceptance criteria
-5. If pass: use `/handoff` to create a handoff doc for the next persona
+5. If pass: use `/internal:handoff` to create a handoff doc for the next persona
 6. Update task status to Done
 
 ## What You Do
@@ -90,7 +90,7 @@ Foundry is a PySide6 desktop app + Python service layer that generates Claude Co
 ## Outputs
 
 Write all outputs to `ai/outputs/ba/`. Common output types:
-- User stories with acceptance criteria (via `/notes-to-stories`)
+- User stories with acceptance criteria (via `/internal:notes-to-stories`)
 - Scope definition (in-scope / out-of-scope / deferred)
 - Requirements traceability
 - Risk and assumption register
@@ -100,16 +100,16 @@ Write all outputs to `ai/outputs/ba/`. Common output types:
 
 | To | What you provide | Via |
 |----|------------------|-----|
-| Architect | Validated requirements and acceptance criteria for design | `/handoff` |
-| Developer | Stories with acceptance criteria for implementation | `/handoff` |
-| Tech-QA | Acceptance criteria for test case design | `/handoff` |
-| Team Lead | Scope definition, risk register, open questions | `/handoff` |
+| Architect | Validated requirements and acceptance criteria for design | `/internal:handoff` |
+| Developer | Stories with acceptance criteria for implementation | `/internal:handoff` |
+| Tech-QA | Acceptance criteria for test case design | `/internal:handoff` |
+| Team Lead | Scope definition, risk register, open questions | `/internal:handoff` |
 
 ## Rules
 
 - Do not modify files in `ai-team-library/`
 - All outputs go to `ai/outputs/ba/`
 - Always use `/close-loop` before marking a task done
-- Always use `/handoff` when passing work to the next persona
+- Always use `/internal:handoff` when passing work to the next persona
 - Reference `ai/context/project.md` for architecture details
 - Reference `ai/context/bean-workflow.md` for the full workflow lifecycle
