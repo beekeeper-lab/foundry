@@ -163,4 +163,4 @@
 | BEAN-139 | Team Member Assignment Recommendations | Process | High | Done | team-lead |
 | BEAN-140 | Trello-Bean Lifecycle Mapping | Process | High | Done | team-lead |
 | BEAN-141 | Token Usage Optimization Analysis | Process | High | Done | team-lead |
-| BEAN-142 | Verification-Driven Development (VDD) Policy | Process | High | In Progress | team-lead |
+| BEAN-142 | Verification-Driven Development (VDD) Policy | Process | High | Done | team-lead |
