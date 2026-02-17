@@ -130,6 +130,42 @@ Before decomposition, the Team Lead checks that the bean is appropriately sized 
 - Acceptance criteria span different subsystems or categories (e.g., app code + process docs)
 - Decomposition would produce 4+ tasks or require 3+ personas
 - The bean title uses "and" to join distinct concepts (e.g., "Add auth and redesign settings")
+- The bean exceeds the Blast Radius Budget (see below)
+
+#### Blast Radius Budget
+
+The **Blast Radius Budget** sets quantitative guardrails on the scope of a single bean. It complements the qualitative molecularity criteria above with measurable limits.
+
+**Metrics:**
+
+| Metric | Description | Guideline Threshold |
+|--------|-------------|-------------------|
+| **Files changed** | Number of source files added or modified (excluding tests, generated files, and index files) | ≤ 10 files |
+| **Systems touched** | Number of distinct system boundaries crossed (e.g., UI, service layer, data layer, CI/CD, docs) | ≤ 1 system boundary |
+| **Lines modified** | Net lines added + modified + deleted across all changed files | ≤ 300 lines |
+
+**System boundaries** are defined as distinct functional areas:
+- `foundry_app/ui/` — UI layer
+- `foundry_app/core/`, `foundry_app/services/` — service/core layer
+- `foundry_app/io/` — I/O layer
+- `tests/` — test suite (excluded from file count but counts as a boundary if non-test code also changes)
+- `ai/` — AI team workspace (process/docs)
+- `.claude/` — Claude Code configuration
+- CI/CD, build, and deployment configs
+
+**How to apply:**
+
+1. **During refinement** — When proposing beans, estimate the blast radius. If a bean is likely to exceed any threshold, flag it for splitting before approval.
+2. **During decomposition** — Before creating tasks, the Team Lead reviews the bean scope against the budget. If the planned changes exceed a threshold, decompose the bean into smaller units.
+3. **During execution** — If a bean's actual changes exceed the budget mid-flight, the Developer or Team Lead should pause and evaluate whether the bean should be split. Minor threshold breaches (up to 20% over) are acceptable if documented in the bean's Notes section with justification.
+
+**Flagging protocol:**
+
+When a bean exceeds the blast radius budget:
+1. Add a note to the bean: `> ⚠ Blast radius exceeded: [metric] is [value] (threshold: [limit])`
+2. Evaluate whether the excess is justified (tightly coupled changes that cannot be split) or indicates the bean should be decomposed
+3. If decomposition is warranted, follow the standard splitting process above
+4. If the excess is justified, document the reason and proceed
 
 ### 5. Decomposition
 
