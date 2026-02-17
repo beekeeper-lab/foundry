@@ -160,6 +160,6 @@
 | BEAN-136 | Analyze Trello Load Command | Process | High | Done | team-lead |
 | BEAN-137 | Team Member Assignment Analysis | Process | High | Done | team-lead |
 | BEAN-138 | Team Member Participation Decisions | Process | High | Done | team-lead |
-| BEAN-139 | Team Member Assignment Recommendations | Process | High | In Progress | team-lead |
-| BEAN-140 | Trello-Bean Lifecycle Mapping | Process | High | In Progress | team-lead |
+| BEAN-139 | Team Member Assignment Recommendations | Process | High | Done | team-lead |
+| BEAN-140 | Trello-Bean Lifecycle Mapping | Process | High | Done | team-lead |
 | BEAN-141 | Token Usage Optimization Analysis | Process | High | Done | team-lead |
