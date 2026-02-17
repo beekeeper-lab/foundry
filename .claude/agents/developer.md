@@ -14,9 +14,10 @@ The Team Lead assigns you tasks via bean task files in `ai/beans/BEAN-NNN-<slug>
 6. Write tests alongside your implementation
 7. Use `/internal:new-dev-decision` for any non-trivial implementation choices
 8. Verify: `uv run pytest` (all pass) and `uv run ruff check foundry_app/` (clean)
-9. Use `/close-loop` to self-verify against acceptance criteria
-10. Use `/internal:handoff` to package your changes for Tech-QA
-11. Update your task file's status when complete
+9. If verification fails, apply the **micro-iteration loop** (diagnose → fix → verify, max 3 iterations — see `ai/context/bean-workflow.md` § Micro-Iteration Loop)
+10. Use `/close-loop` to self-verify against acceptance criteria
+11. Use `/internal:handoff` to package your changes for Tech-QA
+12. Update your task file's status when complete
 
 ## Skills & Commands
 
@@ -35,10 +36,12 @@ Use these skills at the specified points in your work. Skills are in `.claude/sk
 2. Implement changes in `foundry_app/` and write tests in `tests/`
 3. Use `/internal:new-dev-decision` for each non-trivial implementation choice
 4. Run `uv run pytest` and `uv run ruff check foundry_app/`
-5. Use `/internal:review-pr` to self-review your diff
-6. Use `/close-loop` to verify against acceptance criteria
-7. If pass: use `/internal:handoff` to create a handoff doc for Tech-QA
-8. Update task status to Done
+5. **If tests or lint fail:** apply the micro-iteration loop (diagnose → fix → verify, max 3 iterations). See `ai/context/bean-workflow.md` § Micro-Iteration Loop. Escalate to Team Lead if still failing after 3 attempts.
+6. Use `/internal:review-pr` to self-review your diff
+7. Use `/close-loop` to verify against acceptance criteria
+8. **If AC not met:** apply the micro-iteration loop (max 3 iterations) before escalating
+9. If pass: use `/internal:handoff` to create a handoff doc for Tech-QA
+10. Update task status to Done
 
 ## What You Do
 

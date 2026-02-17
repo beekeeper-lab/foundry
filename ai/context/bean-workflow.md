@@ -151,8 +151,33 @@ Each persona claims their task(s) in dependency order:
 
 1. Read the task file and all referenced inputs
 2. Produce the required outputs in `ai/outputs/<persona>/`
-3. Update the task file with completion status
-4. Create a handoff note for downstream tasks if needed
+3. Apply the **micro-iteration loop** if verification fails (see below)
+4. Update the task file with completion status
+5. Create a handoff note for downstream tasks if needed
+
+#### Micro-Iteration Loop
+
+When a task's verification checks fail, the executing persona applies a structured fix-verify cycle before marking the task done.
+
+**Entry conditions** — enter the loop when any of the following occur:
+- `uv run pytest` reports test failures
+- `uv run ruff check foundry_app/` reports lint errors
+- `/close-loop` identifies an unmet acceptance criterion
+- Self-review (`/internal:review-pr`) flags a blocking issue
+
+**Loop steps:**
+1. **Diagnose** — identify the specific failure (test name, lint rule, or criterion)
+2. **Fix** — make the minimal change to address the failure
+3. **Verify** — re-run the failing check (`pytest`, `ruff`, or `/close-loop`)
+4. **Check exit conditions** — if all checks pass, exit the loop; otherwise repeat
+
+**Exit conditions:**
+- All tests pass, lint is clean, and acceptance criteria are met → **exit, mark task done**
+- Max iterations reached (3 attempts) → **stop and escalate to Team Lead** with a summary of what was tried and what still fails
+
+**Max iterations:** 3. After 3 fix-verify cycles without full resolution, the persona must stop iterating and escalate. The escalation note should include: (1) which checks still fail, (2) what was attempted in each iteration, (3) a hypothesis for the root cause.
+
+**Reporting:** Record the iteration count and outcome in the task file's status update. Example: `Status: Done (2 iterations)` or `Status: Blocked (3 iterations, escalated)`.
 
 ### 6. Verification (VDD Gate)
 
