@@ -175,3 +175,5 @@
 | BEAN-151 | Context Diet | Process | High | Done | team-lead |
 | BEAN-152 | Blast Radius Budget | Process | High | Done | team-lead |
 | BEAN-153 | Long-Run Continuous Assignment Loop | Process | High | Done | team-lead |
+| BEAN-154 | Trello Test | Infra | Medium | In Progress | team-lead |
+| BEAN-155 | Trello Lifecycle E2E Test | Infra | Medium | Approved | (unassigned) |
