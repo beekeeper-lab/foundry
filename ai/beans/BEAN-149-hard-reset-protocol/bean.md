@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-149 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-17 04:07 |
+| **Completed** | 2026-02-17 04:09 |
+| **Duration** | <5m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -33,20 +33,21 @@ Define a hard reset protocol that provides step-by-step instructions for cleanly
 
 ## Acceptance Criteria
 
-- [ ] Hard reset protocol is documented
-- [ ] Covers common failure states (stalled worker, merge conflict, corrupted worktree)
-- [ ] Step-by-step recovery procedures are provided
-- [ ] Pre/post reset verification checklist is included
-- [ ] Documentation is clear and actionable
+- [x] Hard reset protocol is documented
+- [x] Covers common failure states (stalled worker, merge conflict, corrupted worktree)
+- [x] Step-by-step recovery procedures are provided
+- [x] Pre/post reset verification checklist is included
+- [x] Documentation is clear and actionable
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Write hard reset protocol document | Developer | — | Done |
+| 2 | Review hard reset protocol | Tech-QA | Task 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default)
+> Bottleneck check: sequential dependency is correct — Tech-QA reviews Developer output
 
 ## Notes
 
@@ -67,12 +68,13 @@ Define a hard reset protocol that provides step-by-step instructions for cleanly
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Write hard reset protocol document | Developer | 1m | 11 | 2,914 | $0.22 |
+| 2 | Review hard reset protocol | Tech-QA | < 1m | 5 | 30 | < $0.01 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 16 |
+| **Total Tokens Out** | 2,944 |
+| **Total Cost** | $0.23 |
