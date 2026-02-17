@@ -67,13 +67,13 @@ Create a rule extraction process that captures recurring patterns, anti-patterns
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 | Add rule extraction step to bean closure | developer | — | — | — | — |
-| 2 | Verify documentation quality | tech-qa | — | — | — | — |
+| 1 | Add rule extraction step to bean closure | developer | 2m | n/a | n/a | n/a |
+| 2 | Verify documentation quality | tech-qa | 2m | n/a | n/a | n/a |
 
 | Metric | Value |
 |--------|-------|
 | **Total Tasks** | 2 |
 | **Total Duration** | 4m |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tokens In** | n/a (parallel worker, no JSONL) |
+| **Total Tokens Out** | n/a (parallel worker, no JSONL) |
+| **Total Cost** | n/a (parallel worker, no JSONL) |
