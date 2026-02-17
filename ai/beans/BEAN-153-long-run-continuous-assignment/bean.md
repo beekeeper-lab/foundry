@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-153 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-17 04:34 |
+| **Completed** | 2026-02-17 04:39 |
+| **Duration** | 5m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -50,10 +50,11 @@ After this bean is complete, `/long-run --fast N` continuously processes the ent
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Rewrite spawn-bean dashboard loop | Developer | — | Done |
+| 2 | Update long-run parallel sections | Developer | 1 | Done |
+| 3 | Verify spec consistency | Tech-QA | 1, 2 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default)
 
 ## Notes
 
@@ -72,12 +73,14 @@ After this bean is complete, `/long-run --fast N` continuously processes the ent
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Rewrite spawn-bean dashboard loop | Developer | 1m | 9 | 2,799 | $0.21 |
+| 2 | Update long-run parallel sections | Developer | 1m | 16 | 3,637 | $0.27 |
+| 3 | Verify spec consistency | Tech-QA | < 1m | 7 | 278 | $0.02 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 2m |
+| **Total Tokens In** | 32 |
+| **Total Tokens Out** | 6,714 |
+| **Total Cost** | $0.50 |
