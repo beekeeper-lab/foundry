@@ -164,13 +164,13 @@
 | BEAN-140 | Trello-Bean Lifecycle Mapping | Process | High | Done | team-lead |
 | BEAN-141 | Token Usage Optimization Analysis | Process | High | Done | team-lead |
 | BEAN-142 | Verification-Driven Development (VDD) Policy | Process | High | Done | team-lead |
-| BEAN-143 | Downstream Gate | Process | High | In Progress | team-lead |
-| BEAN-144 | Bottleneck Check | Process | High | In Progress | team-lead |
-| BEAN-145 | Micro-Iteration Loop | Process | High | In Progress | team-lead |
-| BEAN-146 | Rule Extractor | Process | High | In Progress | team-lead |
-| BEAN-147 | Molecularity Gate | Process | High | In Progress | team-lead |
-| BEAN-148 | Comprehension Gate | Process | High | Approved | (unassigned) |
-| BEAN-149 | Hard Reset Protocol | Process | High | Approved | (unassigned) |
-| BEAN-150 | Examples-First | Process | High | Approved | (unassigned) |
-| BEAN-151 | Context Diet | Process | High | Approved | (unassigned) |
-| BEAN-152 | Blast Radius Budget | Process | High | Approved | (unassigned) |
+| BEAN-143 | Downstream Gate | Process | High | Done | team-lead |
+| BEAN-144 | Bottleneck Check | Process | High | Done | team-lead |
+| BEAN-145 | Micro-Iteration Loop | Process | High | Done | team-lead |
+| BEAN-146 | Rule Extractor | Process | High | Done | team-lead |
+| BEAN-147 | Molecularity Gate | Process | High | Done | team-lead |
+| BEAN-148 | Comprehension Gate | Process | High | In Progress | team-lead |
+| BEAN-149 | Hard Reset Protocol | Process | High | In Progress | team-lead |
+| BEAN-150 | Examples-First | Process | High | In Progress | team-lead |
+| BEAN-151 | Context Diet | Process | High | In Progress | team-lead |
+| BEAN-152 | Blast Radius Budget | Process | High | In Progress | team-lead |
