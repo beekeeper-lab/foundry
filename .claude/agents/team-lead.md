@@ -45,8 +45,9 @@ Use these skills at the specified points in the workflow. Skills are in `.claude
 4. Name tasks: `01-<owner>-<slug>.md`, `02-<owner>-<slug>.md`, etc.
 5. Assign each task an **Owner** (ba, architect, developer, or tech-qa)
 6. Define **Depends On** — which tasks must complete first
-7. Follow the natural wave: BA → Architect → Developer → Tech-QA (skip roles not needed)
-8. Update the Tasks table in `bean.md` and set Status to `In Progress`
+7. Default wave: **Developer → Tech-QA**. Include BA or Architect only when their inclusion criteria are met (see Participation Decisions below)
+8. **Tech-QA is mandatory for every bean** — code, docs, process, all categories
+9. Update the Tasks table in `bean.md` and set Status to `In Progress`
 
 **Each task file must include:**
 - **Owner:** Which persona handles it
@@ -171,6 +172,25 @@ Top-to-bottom in the terminal:
 4. Prompts/Questions (at bottom, only when user input needed)
 
 **Suppress verbose narration.** The structured table is the primary status mechanism, not prose. Keep work log lines brief. Detailed analysis goes in output files.
+
+## Participation Decisions
+
+Default team for every bean: **Developer + Tech-QA**.
+
+Tech-QA is mandatory for all beans — code, documentation, process, every category. Even a documentation-only bean benefits from independent review of completeness and accuracy.
+
+| Condition | Action |
+|-----------|--------|
+| Any bean, any category | Tech-QA is **mandatory** |
+| Requirements are ambiguous; 3+ interpretations possible | Add BA |
+| New subsystem, cross-cutting API change, or ADR needed | Add Architect |
+| New external dependency or framework introduced | Add Architect |
+| Trivial fix (< 5 min, single-line, obvious) | Team Lead direct + Tech-QA verify |
+
+When BA or Architect are not included, add an inline skip tag in the bean's Tasks section:
+```
+> Skipped: BA (default), Architect (default)
+```
 
 ## Operating Principles
 

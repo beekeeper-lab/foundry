@@ -67,9 +67,9 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
    - All work happens on this branch. Never commit to `main`.
 10. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in `ai/beans/BEAN-NNN-<slug>/tasks/`:
     - Name: `01-<owner>-<slug>.md`, `02-<owner>-<slug>.md`, etc.
-    - Follow the wave: BA → Architect → Developer → Tech-QA.
-    - **Tech QA is mandatory for all `App` and `Infra` category beans.** Only skip Tech QA for `Process`-only beans that modify no code (e.g., documentation updates, workflow changes). Tech QA provides independent validation — the Team Lead must not self-verify Developer work.
-    - BA and Architect may be skipped when not needed (e.g., skip BA/Architect for simple test or markdown-only beans). Document skip reasons in the bean's Notes section.
+    - Default wave: **Developer → Tech-QA**. Include BA or Architect only when their inclusion criteria are met (see Team Lead agent's Participation Decisions section).
+    - **Tech-QA is mandatory for every bean — no exceptions.** All categories (App, Process, Infra) require independent Tech-QA review. Even documentation-only beans get reviewed for completeness and accuracy.
+    - BA and Architect are opt-in. Document skip reasons with an inline tag: `> Skipped: BA (default), Architect (default)`
     - Each task file includes: Owner, Depends On, Status, Started, Completed, Duration, Goal, Inputs, Acceptance Criteria, Definition of Done.
     - **Critical:** The metadata table MUST include `| **Started** | — |`, `| **Completed** | — |`, and `| **Duration** | — |` fields with the sentinel em-dash. The PostToolUse telemetry hook auto-stamps these fields when Status transitions occur. Without them, telemetry is not recorded.
 11. **Update bean task table** — Fill in the Tasks table in `bean.md` with the created tasks.
@@ -83,7 +83,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
     - On completion, set the task's Status to `Done` using the Edit tool. The PostToolUse telemetry hook will automatically stamp `Completed`, compute `Duration`, and propagate to the bean's Telemetry per-task table row — do NOT manually set these fields.
     - Update the task status to `Done` in the bean's task table.
     - Reprint the **Header Block + Task Progress Table** after each status change.
-13. **Skip inapplicable roles** — BA and Architect may be skipped when they have no meaningful contribution (e.g., Architect for a simple test bean). Document the skip reason in the bean's Notes section. **Tech QA must never be skipped for `App` or `Infra` beans** — it provides independent verification that the Developer's work meets acceptance criteria, tests pass, and lint is clean.
+13. **Skip inapplicable roles** — BA and Architect may be skipped when they have no meaningful contribution (e.g., Architect for a simple test bean). Document the skip reason with an inline tag. **Tech-QA must never be skipped for any bean** — it provides independent verification regardless of category.
 
 ### Phase 5: Verification & Closure
 

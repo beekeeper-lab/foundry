@@ -112,13 +112,35 @@ The Team Lead breaks each picked bean into tasks:
 1. Read the bean's problem statement, goal, and acceptance criteria
 2. Create task files in `BEAN-NNN-<slug>/tasks/` with sequential numbering
 3. Assign each task an owner (persona) and define dependencies
-4. Follow the natural wave: BA → Architect → Developer → Tech-QA
-5. Skip personas that aren't needed for a given bean
+4. Default decomposition: **Developer → Tech-QA**. Add BA or Architect only when their inclusion criteria are met (see below)
+5. **Tech-QA is mandatory for every bean** — no exceptions, regardless of category
 6. Bean status is already `In Progress` from the picking step
+
+#### Inclusion Criteria for Optional Personas
+
+**BA — include when:**
+- Requirements are ambiguous with 3+ valid interpretations
+- The bean involves user-facing behavior that needs formal acceptance criteria elaboration
+- Stakeholder trade-offs need to be documented before implementation
+
+**Architect — include when:**
+- The bean creates a new subsystem, module, or package
+- The change modifies public APIs or data models used by 3+ modules
+- A new external dependency or framework is being introduced
+- An ADR (Architecture Decision Record) is needed
+
+When BA or Architect are not included, note the reason with an inline skip tag:
+```
+> Skipped: BA (default), Architect (default)
+```
 
 Each task file should include:
 - **Owner:** Which persona handles it
 - **Depends on:** Which tasks must complete first
+- **Status:** Current status (Pending, In Progress, Done)
+- **Started:** — (auto-stamped by telemetry hook)
+- **Completed:** — (auto-stamped by telemetry hook)
+- **Duration:** — (auto-computed by telemetry hook)
 - **Goal:** What this task produces
 - **Inputs:** What the owner needs to read
 - **Definition of Done:** Concrete checklist
