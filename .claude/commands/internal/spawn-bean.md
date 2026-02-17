@@ -190,6 +190,12 @@ STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at 
 - Update after: picking the bean (decomposing), decomposing tasks (running, set tasks_total), completing each task (increment tasks_done), hitting a blocker (blocked + message), errors (error + message), and completion (done).
 - CRITICAL: If you encounter a blocker requiring human input, set status to "blocked" with a clear message explaining what you need, then STOP and wait.
 
+CONTEXT DIET — Minimize context consumption:
+- Read only the files listed in each task's Inputs. Do not read files speculatively.
+- Never re-read a file already in context unless it may have changed.
+- Use targeted reads (offset/limit) for large files. Use Grep/Glob before reading.
+- See bean-workflow.md §6a for the full context diet policy.
+
 Bean lifecycle:
 1. Decompose into tasks using /internal:seed-tasks
 2. Execute each task through the appropriate team persona
@@ -222,6 +228,12 @@ STATUS FILE PROTOCOL — You MUST update your status file at every transition:
   SF_EOF
 - Update after: picking the bean (decomposing), decomposing tasks (running, set tasks_total), completing each task (increment tasks_done), hitting a blocker (blocked + message), errors (error + message), and completion (done).
 - CRITICAL: If you encounter a blocker requiring human input, set status to "blocked" with a clear message explaining what you need, then STOP and wait.
+
+CONTEXT DIET — Minimize context consumption:
+- Read only the files listed in each task's Inputs. Do not read files speculatively.
+- Never re-read a file already in context unless it may have changed.
+- Use targeted reads (offset/limit) for large files. Use Grep/Glob before reading.
+- See bean-workflow.md §6a for the full context diet policy.
 
 Bean lifecycle:
 1. Decompose into tasks using /internal:seed-tasks

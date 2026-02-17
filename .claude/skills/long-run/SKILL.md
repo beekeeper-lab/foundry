@@ -178,6 +178,10 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    - Do NOT checkout main or test.
    - Do NOT edit _index.md — the orchestrator is the sole writer of the backlog index.
 
+   CONTEXT DIET — Read only what each task's Inputs list. No speculative reads.
+   Never re-read files already in context. Use targeted reads for large files.
+   See bean-workflow.md §6a for the full policy.
+
    1. Update bean.md status to In Progress
    2. Decompose into tasks
    3. Execute the wave (Developer → Tech-QA default; include BA/Architect per criteria)

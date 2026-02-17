@@ -297,7 +297,38 @@ When a task's verification checks fail, the executing persona applies a structur
 
 **Reporting:** Record the iteration count and outcome in the task file's status update. Example: `Status: Done (2 iterations)` or `Status: Blocked (3 iterations, escalated)`.
 
-### 8. Verification (VDD Gate)
+### 8. Context Diet
+
+Workers MUST minimize context consumption during execution. Every file read and every prompt line costs tokens and shrinks the available context window. Follow these rules:
+
+**Core principles:**
+
+1. **Read only what the task requires.** The task file lists its Inputs — read those. Do not speculatively read files "for background."
+2. **Never re-read a file you already have in context.** If you read `bean.md` during decomposition, do not read it again during execution unless it may have changed (multi-agent scenario).
+3. **Use targeted reads.** When you need a specific section of a large file, use offset/limit parameters. Do not read a 300-line file to find a 10-line section.
+4. **Keep prompts focused.** When delegating to a persona, include only the task-relevant context — not the full bean history, not the full backlog, not the full workflow spec.
+5. **Prefer Grep/Glob over exploratory reads.** When searching for something, use search tools first to locate it, then read only the relevant file.
+
+**Essential vs. optional context by task type:**
+
+| Task Type | Essential (always read) | Optional (read only if needed) |
+|-----------|------------------------|-------------------------------|
+| **App — Developer** | Task file, source files being modified, relevant test files | bean.md (already summarized in task), other module source, full project.md |
+| **App — Tech-QA** | Task file, developer's changed files, existing tests | Full module source, architecture docs |
+| **Process — Developer** | Task file, document being modified, referenced docs | Full bean-workflow.md (use targeted reads), other process docs |
+| **Process — Tech-QA** | Task file, developer's changed documents | Full workflow spec (use targeted reads) |
+| **Infra — Developer** | Task file, config/script being modified | Full hook policy, all hook files |
+| **Infra — Tech-QA** | Task file, developer's changed configs | Other infra configs |
+
+**Anti-patterns to avoid:**
+
+- Reading `_index.md` repeatedly during task execution (only needed during picking)
+- Reading all agent persona files when only one persona is active
+- Reading `bean-workflow.md` in full when you only need one section
+- Including the full project architecture in every task prompt
+- Re-reading files after trivial edits just to "verify" (use the edit tool's feedback instead)
+
+### 9. Verification (VDD Gate)
 
 The Team Lead applies the **Verification-Driven Development (VDD) gate** before closing any bean. See `ai/context/vdd-policy.md` for the full policy.
 
