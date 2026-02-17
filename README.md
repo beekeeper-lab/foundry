@@ -243,7 +243,7 @@ CompositionSpec ──→ Validate ──→ Scaffold ──→ Compile ──�
 | **Scaffold** | Creates the directory structure: `CLAUDE.md`, `.claude/agents/`, `ai/context/`, `ai/outputs/`, `ai/tasks/` |
 | **Compile** | Merges each persona's identity, outputs contract, and invocation prompts with the selected stack conventions and project context into a single compiled prompt per team member, rendered via Jinja2 |
 | **Copy Assets** | Copies skills, commands, and hook packs from the library into the generated project's `.claude/` directory |
-| **Seed** | Creates starter task lists with wave-based dependencies across roles (BA first, then Architect, then Developer, then QA) |
+| **Seed** | Creates starter task lists with wave-based dependencies. Default wave: Developer → Tech-QA. BA and Architect included only when specific criteria are met. |
 
 Each stage produces a `StageResult` recording which files were written and any warnings. These are aggregated into the `GenerationManifest` at `ai/generated/manifest.json`.
 
@@ -308,7 +308,7 @@ my-project/
 | **ai/generated/members/** | The compiled team member prompts. Each merges the persona's identity, outputs contract, invocation prompts, relevant stack conventions, and project context into a single comprehensive prompt. |
 | **ai/team/composition.yml** | The full composition spec, preserved in the project for traceability. |
 | **ai/outputs/** | Per-role output directories where each agent writes its deliverables. |
-| **ai/tasks/seeded-tasks.md** | Starter task list following a wave-based dependency model: BA first, then Architect, then Developer, then QA — with parallel lanes for Security, DevOps, Code Quality, and Docs. |
+| **ai/tasks/seeded-tasks.md** | Starter task list following a wave-based dependency model: Developer → Tech-QA (default), with BA and Architect included when criteria are met. Parallel lanes for Security, DevOps, Code Quality, and Docs. |
 
 ---
 
@@ -436,7 +436,7 @@ Unapproved ──→ Approved ──→ In Progress ──→ Done
 
 1. **Unapproved** — A bean is created via `/new-bean` or `/backlog-refinement` and added to `ai/beans/_index.md`. It awaits human review and approval.
 2. **Approved** — The user reviews the bean (e.g., in Obsidian via `/review-beans`) and changes its status to `Approved`, signaling it is ready for execution.
-3. **In Progress** — The Team Lead claims the bean via `/pick-bean`, assigns ownership, creates a feature branch, and decomposes it into tasks. Personas execute tasks in dependency waves: BA, then Architect, then Developer, then Tech-QA.
+3. **In Progress** — The Team Lead claims the bean via `/pick-bean`, assigns ownership, creates a feature branch, and decomposes it into tasks. Default wave: Developer → Tech-QA. BA and Architect are included only when their criteria are met (see `ai/context/bean-workflow.md`). Tech-QA is mandatory for every bean.
 4. **Done** — All acceptance criteria pass, tests are green, lint is clean, and the bean is merged to the `test` branch.
 
 ### Bean Directory Structure

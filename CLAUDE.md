@@ -32,7 +32,7 @@ A **Bean** is a unit of work (feature, enhancement, bug fix, or epic). Beans liv
 1. Create a bean from `ai/beans/_bean-template.md` (status: `Unapproved`)
 2. User reviews and approves beans (status: `Approved`)
 3. Team Lead picks approved beans from the backlog (`ai/beans/_index.md`)
-4. Team Lead decomposes into tasks with owners and dependencies
+4. Team Lead decomposes into tasks. Default wave: Developer → Tech-QA. BA and Architect are opt-in when criteria are met. Tech-QA is mandatory for every bean.
 5. Each persona claims tasks, produces outputs, creates handoffs
 6. Team Lead verifies outputs against acceptance criteria
 7. Bean marked Done

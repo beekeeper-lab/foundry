@@ -180,7 +180,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
    1. Update bean.md status to In Progress
    2. Decompose into tasks
-   3. Execute the wave (BA → Architect → Developer → Tech-QA)
+   3. Execute the wave (Developer → Tech-QA default; include BA/Architect per criteria)
    4. Verify acceptance criteria
    5. Update bean.md status to Done (the PostToolUse telemetry hook auto-computes Duration from git timestamps)
    6. Commit on the feature branch
