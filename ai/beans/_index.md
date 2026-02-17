@@ -169,8 +169,8 @@
 | BEAN-145 | Micro-Iteration Loop | Process | High | Done | team-lead |
 | BEAN-146 | Rule Extractor | Process | High | Done | team-lead |
 | BEAN-147 | Molecularity Gate | Process | High | Done | team-lead |
-| BEAN-148 | Comprehension Gate | Process | High | In Progress | team-lead |
-| BEAN-149 | Hard Reset Protocol | Process | High | In Progress | team-lead |
-| BEAN-150 | Examples-First | Process | High | In Progress | team-lead |
-| BEAN-151 | Context Diet | Process | High | In Progress | team-lead |
-| BEAN-152 | Blast Radius Budget | Process | High | In Progress | team-lead |
+| BEAN-148 | Comprehension Gate | Process | High | Done | team-lead |
+| BEAN-149 | Hard Reset Protocol | Process | High | Done | team-lead |
+| BEAN-150 | Examples-First | Process | High | Done | team-lead |
+| BEAN-151 | Context Diet | Process | High | Done | team-lead |
+| BEAN-152 | Blast Radius Budget | Process | High | Done | team-lead |
