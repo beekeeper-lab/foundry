@@ -19,6 +19,9 @@ _mod = importlib.import_module("telemetry-stamp")
 
 parse_metadata_field = _mod.parse_metadata_field
 replace_metadata_field = _mod.replace_metadata_field
+add_metadata_field = _mod.add_metadata_field
+ensure_metadata_field = _mod.ensure_metadata_field
+needs_stamp = _mod.needs_stamp
 format_duration = _mod.format_duration
 count_done_tasks = _mod.count_done_tasks
 count_total_tasks = _mod.count_total_tasks
@@ -112,6 +115,21 @@ def make_bean(
     )
 
 
+TASK_MINIMAL_TEMPLATE = """\
+# Task 01: Test Task
+
+| Field | Value |
+|-------|-------|
+| **Owner** | developer |
+| **Depends On** | — |
+| **Status** | {status} |
+
+## Goal
+
+Test task goal.
+"""
+
+
 def make_task(
     status="Pending",
     started=SENTINEL,
@@ -124,6 +142,88 @@ def make_task(
         completed=completed,
         duration=duration,
     )
+
+
+def make_task_minimal(status="Pending"):
+    """Create a task file WITHOUT Started/Completed/Duration fields."""
+    return TASK_MINIMAL_TEMPLATE.format(status=status)
+
+
+# ---------------------------------------------------------------------------
+# TestNeedsStamp
+# ---------------------------------------------------------------------------
+
+
+class TestNeedsStamp:
+    def test_none_needs_stamp(self):
+        assert needs_stamp(None) is True
+
+    def test_sentinel_needs_stamp(self):
+        assert needs_stamp(SENTINEL) is True
+
+    def test_date_only_needs_stamp(self):
+        assert needs_stamp("2026-02-16") is True
+
+    def test_full_timestamp_no_stamp(self):
+        assert needs_stamp("2026-02-16 19:03") is False
+
+    def test_duration_no_stamp(self):
+        assert needs_stamp("5m") is False
+
+    def test_less_than_1m_no_stamp(self):
+        assert needs_stamp("< 1m") is False
+
+
+# ---------------------------------------------------------------------------
+# TestAddMetadataField
+# ---------------------------------------------------------------------------
+
+
+class TestAddMetadataField:
+    def test_adds_field_after_last_row(self):
+        content = "| Field | Value |\n|-------|-------|\n| **Status** | Done |"
+        result = add_metadata_field(content, "Started", "2026-02-16 10:00")
+        assert "| **Started** | 2026-02-16 10:00 |" in result
+        lines = result.splitlines()
+        assert lines[-1] == "| **Started** | 2026-02-16 10:00 |"
+
+    def test_adds_field_with_sentinel(self):
+        content = "| Field | Value |\n|-------|-------|\n| **Status** | Done |"
+        result = add_metadata_field(content, "Duration", SENTINEL)
+        assert f"| **Duration** | {SENTINEL} |" in result
+
+    def test_no_table_returns_unchanged(self):
+        content = "# No table here\nJust text."
+        result = add_metadata_field(content, "Started", "now")
+        assert result == content
+
+
+# ---------------------------------------------------------------------------
+# TestEnsureMetadataField
+# ---------------------------------------------------------------------------
+
+
+class TestEnsureMetadataField:
+    def test_adds_missing_field(self):
+        content = "| Field | Value |\n|-------|-------|\n| **Status** | Done |"
+        result = ensure_metadata_field(content, "Started")
+        assert f"| **Started** | {SENTINEL} |" in result
+
+    def test_no_duplicate_if_exists(self):
+        content = (
+            "| Field | Value |\n|-------|-------|\n"
+            f"| **Status** | Done |\n| **Started** | {SENTINEL} |"
+        )
+        result = ensure_metadata_field(content, "Started")
+        assert result == content
+
+    def test_no_duplicate_with_value(self):
+        content = (
+            "| Field | Value |\n|-------|-------|\n"
+            "| **Status** | Done |\n| **Started** | 2026-02-16 10:00 |"
+        )
+        result = ensure_metadata_field(content, "Started")
+        assert result == content
 
 
 # ---------------------------------------------------------------------------
@@ -391,6 +491,58 @@ class TestHandleTaskFile:
         actions = handle_task_file(p, "2026-02-09 14:00")
         assert actions == []
         assert p.read_text() == original
+
+    def test_minimal_task_in_progress_adds_and_stamps_started(self, tmp_path):
+        """Task file without Started/Completed/Duration fields still gets stamped."""
+        p = tmp_path / "01-dev-test.md"
+        p.write_text(make_task_minimal(status="In Progress"))
+        now = "2026-02-09 14:00"
+        actions = handle_task_file(p, now)
+        assert "Started" in actions
+        content = p.read_text()
+        assert parse_metadata_field(content, "Started") == now
+        # Fields should now exist
+        assert parse_metadata_field(content, "Completed") == SENTINEL
+        assert parse_metadata_field(content, "Duration") == SENTINEL
+
+    def test_minimal_task_done_adds_and_stamps_all(self, tmp_path):
+        """Task file without telemetry fields gets fields added and stamped on Done."""
+        p = tmp_path / "01-dev-test.md"
+        p.write_text(make_task_minimal(status="Done"))
+        now = "2026-02-09 14:00"
+        actions = handle_task_file(p, now)
+        assert "Started" in actions
+        assert "Completed" in actions
+        content = p.read_text()
+        assert parse_metadata_field(content, "Started") == now
+        assert parse_metadata_field(content, "Completed") == now
+        assert parse_metadata_field(content, "Duration") is not None
+
+
+# ---------------------------------------------------------------------------
+# TestHandleBeanFileDateOnly
+# ---------------------------------------------------------------------------
+
+
+class TestHandleBeanFileDateOnly:
+    """Test that date-only Started values are treated as needing stamp."""
+
+    def test_date_only_started_gets_restamped_on_done(self, tmp_path):
+        """Bean with Started='2026-02-16' (no time) gets proper timestamp on Done."""
+        p = tmp_path / "bean.md"
+        p.write_text(make_bean(
+            status="Done",
+            started="2026-02-16",  # date-only, missing HH:MM
+            task1_status="Done",
+            task2_status="Done",
+        ))
+        now = "2026-02-16 19:03"
+        actions = handle_bean_file(p, now)
+        assert "Started" in actions
+        assert "Completed" in actions
+        content = p.read_text()
+        # Started should now have time component
+        assert parse_metadata_field(content, "Started") == now
 
 
 # ---------------------------------------------------------------------------

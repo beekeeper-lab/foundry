@@ -58,7 +58,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 
 ### Phase 3: Bean Execution
 
-7. **Pick the bean** — Update status to `In Progress` in `bean.md`. Update `_index.md` to set status to `In Progress` and owner to `team-lead`. (In sequential mode the orchestrator is also the worker, so both updates happen here.)
+7. **Pick the bean** — Update status to `In Progress` in `bean.md` using the Edit tool (the telemetry hook auto-stamps `Started` — do NOT manually set it). Update `_index.md` to set status to `In Progress` and owner to `team-lead`. (In sequential mode the orchestrator is also the worker, so both updates happen here.)
 8. **Ensure test branch exists** — Check if `test` branch exists locally. If not, create it: `git checkout -b test main && git checkout -`.
 9. **Create feature branch** — Create and checkout the feature branch (mandatory for every bean):
    - Branch name: `bean/BEAN-NNN-<slug>` (derived from the bean directory name)
@@ -70,17 +70,18 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
     - Follow the wave: BA → Architect → Developer → Tech-QA.
     - **Tech QA is mandatory for all `App` and `Infra` category beans.** Only skip Tech QA for `Process`-only beans that modify no code (e.g., documentation updates, workflow changes). Tech QA provides independent validation — the Team Lead must not self-verify Developer work.
     - BA and Architect may be skipped when not needed (e.g., skip BA/Architect for simple test or markdown-only beans). Document skip reasons in the bean's Notes section.
-    - Each task file includes: Owner, Depends On, Goal, Inputs, Acceptance Criteria, Definition of Done.
+    - Each task file includes: Owner, Depends On, Status, Started, Completed, Duration, Goal, Inputs, Acceptance Criteria, Definition of Done.
+    - **Critical:** The metadata table MUST include `| **Started** | — |`, `| **Completed** | — |`, and `| **Duration** | — |` fields with the sentinel em-dash. The PostToolUse telemetry hook auto-stamps these fields when Status transitions occur. Without them, telemetry is not recorded.
 11. **Update bean task table** — Fill in the Tasks table in `bean.md` with the created tasks.
 
 ### Phase 4: Wave Execution
 
 12. **Execute tasks in dependency order** — For each task:
-    - Record the `Started` timestamp (`YYYY-MM-DD HH:MM`) in the task file metadata when beginning execution.
+    - Set the task's Status to `In Progress` using the Edit tool. The PostToolUse telemetry hook will automatically stamp `Started` with the current timestamp — do NOT manually set Started.
     - Read the task file and all referenced inputs.
     - Perform the work as the assigned persona.
-    - On completion, run the `/close-loop` telemetry recording: record `Completed` timestamp, compute `Duration`, prompt for token self-report, and update the bean's Telemetry per-task table row.
-    - Update the task status to `Done` in the task file and the bean's task table.
+    - On completion, set the task's Status to `Done` using the Edit tool. The PostToolUse telemetry hook will automatically stamp `Completed`, compute `Duration`, and propagate to the bean's Telemetry per-task table row — do NOT manually set these fields.
+    - Update the task status to `Done` in the bean's task table.
     - Reprint the **Header Block + Task Progress Table** after each status change.
 13. **Skip inapplicable roles** — BA and Architect may be skipped when they have no meaningful contribution (e.g., Architect for a simple test bean). Document the skip reason in the bean's Notes section. **Tech QA must never be skipped for `App` or `Infra` beans** — it provides independent verification that the Developer's work meets acceptance criteria, tests pass, and lint is clean.
 
