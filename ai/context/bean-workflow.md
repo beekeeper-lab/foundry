@@ -188,7 +188,54 @@ Each task file should include:
 - **Duration:** — (auto-computed by telemetry hook)
 - **Goal:** What this task produces
 - **Inputs:** What the owner needs to read
+- **Example Output:** A concrete example of the expected output format (see below)
 - **Definition of Done:** Concrete checklist
+
+#### Examples-First Principle
+
+Every task should include or reference a concrete example of the expected output format. Abstract instructions alone can be ambiguous — examples eliminate guesswork and improve first-attempt quality.
+
+**When creating tasks, the Team Lead should:**
+
+1. Include an `Example Output:` section in the task file showing what the deliverable looks like
+2. Use one of these approaches depending on the task type:
+   - **Inline snippet** — paste a short example directly in the task file (best for small outputs like config entries, function signatures, or doc sections)
+   - **File reference** — point to an existing file that follows the expected pattern (e.g., "Follow the format of `tasks/01-developer-feature-branch-updates.md`")
+   - **Pattern description** — describe the structure when the output is too large to inline (e.g., "A pytest test file with one test class, using `tmp_path` fixtures, following `tests/test_scaffold.py` as a model")
+
+**Example — task for adding a workflow section:**
+
+```markdown
+## Example Output
+
+The new section in `bean-workflow.md` should follow this format:
+
+#### Section Title
+
+Brief description of the concept.
+
+**When to apply:**
+- Bullet point criteria
+
+**How to apply:**
+1. Numbered steps
+```
+
+**Example — task for adding a Python function:**
+
+```markdown
+## Example Output
+
+The new function should follow this pattern:
+
+def validate_example(spec: CompositionSpec) -> StageResult:
+    """One-line description."""
+    result = StageResult()
+    # validation logic
+    return result
+```
+
+**If no example is available**, note it explicitly: `> Example Output: No existing pattern — define format in this task's Goal section.` This signals to the executor that they should flag any format ambiguity before starting.
 
 ### 6. Execution
 
