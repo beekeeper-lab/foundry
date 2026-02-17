@@ -41,14 +41,15 @@ Use these skills at the specified points in the workflow. Skills are in `.claude
 
 **Decomposing a bean into tasks:**
 1. Read the bean's Problem Statement, Goal, and Acceptance Criteria
-2. Use `/internal:seed-tasks` to help structure the task breakdown
-3. Create numbered task files in `ai/beans/BEAN-NNN-<slug>/tasks/`
-4. Name tasks: `01-<owner>-<slug>.md`, `02-<owner>-<slug>.md`, etc.
-5. Assign each task an **Owner** (ba, architect, developer, or tech-qa)
-6. Define **Depends On** — which tasks must complete first
-7. Default wave: **Developer → Tech-QA**. Include BA or Architect only when their inclusion criteria are met (see Participation Decisions below)
-8. **Tech-QA is mandatory for every bean** — code, docs, process, all categories
-9. Update the Tasks table in `bean.md` and set Status to `In Progress`
+2. **Bottleneck Check** — before creating tasks, scan for sequential dependencies, shared resource contention, and parallelization opportunities. See `ai/context/bean-workflow.md` "Bottleneck Check" for the full checklist. Record findings in the bean's Tasks section.
+3. Use `/internal:seed-tasks` to help structure the task breakdown
+4. Create numbered task files in `ai/beans/BEAN-NNN-<slug>/tasks/`
+5. Name tasks: `01-<owner>-<slug>.md`, `02-<owner>-<slug>.md`, etc.
+6. Assign each task an **Owner** (ba, architect, developer, or tech-qa)
+7. Define **Depends On** — which tasks must complete first
+8. Default wave: **Developer → Tech-QA**. Include BA or Architect only when their inclusion criteria are met (see Participation Decisions below)
+9. **Tech-QA is mandatory for every bean** — code, docs, process, all categories
+10. Update the Tasks table in `bean.md` and set Status to `In Progress`
 
 **Each task file must include:**
 - **Owner:** Which persona handles it

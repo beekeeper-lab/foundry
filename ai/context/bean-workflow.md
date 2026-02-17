@@ -110,11 +110,30 @@ The Team Lead reviews the backlog (`ai/beans/_index.md`) and picks beans to work
 The Team Lead breaks each picked bean into tasks:
 
 1. Read the bean's problem statement, goal, and acceptance criteria
-2. Create task files in `BEAN-NNN-<slug>/tasks/` with sequential numbering
-3. Assign each task an owner (persona) and define dependencies
-4. Default decomposition: **Developer → Tech-QA**. Add BA or Architect only when their inclusion criteria are met (see below)
-5. **Tech-QA is mandatory for every bean** — no exceptions, regardless of category
-6. Bean status is already `In Progress` from the picking step
+2. **Bottleneck Check** — before creating tasks, identify and mitigate potential bottlenecks (see below)
+3. Create task files in `BEAN-NNN-<slug>/tasks/` with sequential numbering
+4. Assign each task an owner (persona) and define dependencies
+5. Default decomposition: **Developer → Tech-QA**. Add BA or Architect only when their inclusion criteria are met (see below)
+6. **Tech-QA is mandatory for every bean** — no exceptions, regardless of category
+7. Bean status is already `In Progress` from the picking step
+
+#### Bottleneck Check
+
+Before creating tasks, the Team Lead scans for three categories of bottleneck:
+
+| Category | What to look for | Mitigation |
+|----------|-----------------|------------|
+| **Sequential dependencies** | Tasks that form a long chain where each waits on the previous one | Break chains by isolating independent subtasks that can run in parallel |
+| **Shared resource contention** | Multiple tasks editing the same file, branch, or index | Sequence conflicting writes explicitly; split files if possible; assign one owner per shared resource |
+| **Parallelization opportunities** | Tasks assumed sequential that have no real data dependency | Restructure the task graph so independent tasks run concurrently |
+
+**How to apply:**
+
+1. Draft the initial task list and dependency graph
+2. Check each dependency edge: is it a true data dependency or just a habit?
+3. Flag any shared files that multiple tasks will write to — assign clear ownership or sequence the writes
+4. If the task chain is longer than 3 sequential steps, look for subtasks that can be extracted and run in parallel
+5. Record findings as a brief note in the bean's Tasks section (e.g., `> Bottleneck check: no contention found` or `> Bottleneck check: tasks 02 and 03 parallelized — no shared inputs`)
 
 #### Inclusion Criteria for Optional Personas
 
