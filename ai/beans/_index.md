@@ -177,3 +177,4 @@
 | BEAN-153 | Long-Run Continuous Assignment Loop | Process | High | Done | team-lead |
 | BEAN-154 | Trello Test | Infra | Medium | Done | team-lead |
 | BEAN-155 | Trello Lifecycle E2E Test | Infra | Medium | Done | team-lead |
+| BEAN-156 | AI Code Review Anti-Patterns | App | Medium | In Progress | team-lead |
