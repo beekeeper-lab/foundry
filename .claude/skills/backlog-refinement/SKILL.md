@@ -78,6 +78,11 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
      - Would require 4+ tasks or 3+ personas to complete
      - Has acceptance criteria spanning different subsystems or categories
      - Uses "and" to join distinct concepts in the title
+   - **Apply the blast radius budget** to each proposed bean (see `ai/context/bean-workflow.md` §4 "Blast Radius Budget"). Estimate and flag any bean that is likely to exceed:
+     - **≤ 10 files** changed (excluding tests, generated files, and index files)
+     - **≤ 1 system boundary** crossed (e.g., UI + service layer = 2 boundaries)
+     - **≤ 300 lines** modified (net adds + modifications + deletions)
+   - For beans exceeding the blast radius budget, propose splitting by system boundary or concern and explain the decomposition
    - For flagged beans, propose splitting them and explain which concerns would become separate beans
    - Present the updated breakdown and ask follow-up questions if needed
 
