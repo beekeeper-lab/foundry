@@ -40,7 +40,7 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
    - A one-line description
    - An initial priority guess (based on context clues)
    - Any obvious dependencies on other proposed beans or existing work
-   - **Do NOT assign bean IDs yet.** Use working titles only (e.g., "Theme Foundation", "Sidebar Restyle"). IDs are assigned at creation time in Phase 3.
+   - **Do NOT assign bean IDs yet.** Use working titles only (e.g., "Theme Foundation", "Sidebar Restyle"). IDs are assigned at creation time in Phase 4.
 
 ### Phase 2: Dialogue
 
@@ -54,7 +54,7 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
 
    Let me ask some questions to refine these.
    ```
-   **No bean IDs in this list.** IDs are assigned during creation (Phase 3).
+   **No bean IDs in this list.** IDs are assigned during creation (Phase 4).
 
 6. **Ask clarifying questions** -- For each proposed bean (or for the set as a whole), ask about areas that are unclear or need user input:
    - **Priority:** "How important is [X] relative to [Y]? Should it be High, Medium, or Low?"
@@ -72,6 +72,18 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
    - Split beans that are too large or merge beans that are too small
    - Add details to scope and acceptance criteria
    - Identify new dependencies
+   - **Apply the molecularity gate** to each proposed bean (see `ai/context/bean-workflow.md` §4). Flag any bean that violates the criteria:
+     - Addresses more than one concern
+     - Would touch more than 5 files (excluding tests/generated/index files)
+     - Would require 4+ tasks or 3+ personas to complete
+     - Has acceptance criteria spanning different subsystems or categories
+     - Uses "and" to join distinct concepts in the title
+   - **Apply the blast radius budget** to each proposed bean (see `ai/context/bean-workflow.md` §4 "Blast Radius Budget"). Estimate and flag any bean that is likely to exceed:
+     - **≤ 10 files** changed (excluding tests, generated files, and index files)
+     - **≤ 1 system boundary** crossed (e.g., UI + service layer = 2 boundaries)
+     - **≤ 300 lines** modified (net adds + modifications + deletions)
+   - For beans exceeding the blast radius budget, propose splitting by system boundary or concern and explain the decomposition
+   - For flagged beans, propose splitting them and explain which concerns would become separate beans
    - Present the updated breakdown and ask follow-up questions if needed
 
    Continue until the user confirms the breakdown is complete. Look for signals like:
@@ -80,11 +92,35 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
    - "That's right"
    - Explicit approval of the bean list
 
-### Phase 3: Creation
+### Phase 3: Downstream Gate
 
-8. **Check for dry run** -- If `dry_run` is true, skip creation and go to step 11.
+8. **Identify downstream impact** -- Before creating beans, review each agreed-upon bean and list the downstream systems likely impacted by the change. Common downstream systems:
+   - **Tests** — existing test suites that may need updates or could break
+   - **CI** — continuous integration pipelines or checks
+   - **Build** — build configuration, dependencies, or packaging
+   - **Deployment** — deployment scripts, environments, or infrastructure
+   - **Docs** — documentation files, READMEs, or inline docs
+   - **Migrations** — data migrations, schema changes, or config migrations
+   - **Monitoring** — logging, alerts, or observability
 
-9. **Create each bean (deferred ID assignment)** -- For each agreed-upon bean:
+   For each impacted system, state an explicit verification command. Present to the user:
+   ```
+   Downstream impact for "[Bean Title]":
+
+   | System | Impact | Verification Command |
+   |--------|--------|---------------------|
+   | Tests  | [what changes/breaks] | `uv run pytest tests/test_affected.py` |
+   | Docs   | [what needs updating] | `grep -r "old_term" docs/` |
+   ...
+   ```
+
+9. **Flag missing verifications** -- If a bean impacts a downstream system but no verification command exists or can be defined, flag it as a gap. The gap **must** be resolved before proceeding to creation — either by adding the verification to the bean's acceptance criteria or by explicitly scoping it out with justification.
+
+### Phase 4: Creation
+
+10. **Check for dry run** -- If `dry_run` is true, skip creation and go to step 14.
+
+11. **Create each bean (deferred ID assignment)** -- For each agreed-upon bean:
 
    **For each bean, in sequence (not parallel):**
    a. **Re-read `ai/beans/_index.md`** to get the current max ID. Another agent may have added beans since your last read or since the previous bean in this batch.
@@ -102,16 +138,16 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
 
    **Important:** Each bean must be fully written (directory + bean.md + index entry) before starting the next one. This ensures each new bean sees the correct max ID. Cross-references within the batch should be updated to use the actual assigned IDs after all beans are created.
 
-10. **Fix cross-references** -- After all beans are created, do a single pass to update any bean.md files that referenced other beans in the batch by title. Replace title references with the actual BEAN-NNN IDs now that they're known.
+12. **Fix cross-references** -- After all beans are created, do a single pass to update any bean.md files that referenced other beans in the batch by title. Replace title references with the actual BEAN-NNN IDs now that they're known.
 
-11. **Handle duplicates** -- If a proposed bean closely matches an existing bean:
+13. **Handle duplicates** -- If a proposed bean closely matches an existing bean:
     - Warn the user: "This looks similar to BEAN-NNN ([title]). Create it anyway?"
     - If the user says yes, create it
     - If the user says no, skip it
 
-### Phase 4: Summary
+### Phase 5: Summary
 
-12. **Present results** -- Show a summary table of all created (or proposed, if dry run) beans:
+14. **Present results** -- Show a summary table of all created (or proposed, if dry run) beans:
     ```
     Created N beans:
 

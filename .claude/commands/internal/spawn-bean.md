@@ -190,6 +190,12 @@ STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at 
 - Update after: picking the bean (decomposing), decomposing tasks (running, set tasks_total), completing each task (increment tasks_done), hitting a blocker (blocked + message), errors (error + message), and completion (done).
 - CRITICAL: If you encounter a blocker requiring human input, set status to "blocked" with a clear message explaining what you need, then STOP and wait.
 
+CONTEXT DIET — Minimize context consumption:
+- Read only the files listed in each task's Inputs. Do not read files speculatively.
+- Never re-read a file already in context unless it may have changed.
+- Use targeted reads (offset/limit) for large files. Use Grep/Glob before reading.
+- See bean-workflow.md §6a for the full context diet policy.
+
 Bean lifecycle:
 1. Decompose into tasks using /internal:seed-tasks
 2. Execute each task through the appropriate team persona
@@ -223,6 +229,12 @@ STATUS FILE PROTOCOL — You MUST update your status file at every transition:
 - Update after: picking the bean (decomposing), decomposing tasks (running, set tasks_total), completing each task (increment tasks_done), hitting a blocker (blocked + message), errors (error + message), and completion (done).
 - CRITICAL: If you encounter a blocker requiring human input, set status to "blocked" with a clear message explaining what you need, then STOP and wait.
 
+CONTEXT DIET — Minimize context consumption:
+- Read only the files listed in each task's Inputs. Do not read files speculatively.
+- Never re-read a file already in context unless it may have changed.
+- Use targeted reads (offset/limit) for large files. Use Grep/Glob before reading.
+- See bean-workflow.md §6a for the full context diet policy.
+
 Bean lifecycle:
 1. Decompose into tasks using /internal:seed-tasks
 2. Execute each task through the appropriate team persona
@@ -241,16 +253,80 @@ Work autonomously until the bean is Done. Do not ask for user input unless you e
 
 After all workers are spawned, the main window enters a **dashboard monitoring loop**. This runs in the orchestrator's Claude session (the one that ran `/spawn-bean`).
 
-**Dashboard loop:**
+**Dashboard loop — continuous assignment:**
 
-1. Read all `/tmp/foundry-worker-*.status` files.
-2. For each file, parse the key-value pairs.
-3. Compute progress percentage: `tasks_done / tasks_total * 100` (show 0% if `tasks_total` is 0).
-4. Check for stale workers: if `updated` timestamp is older than 5 minutes and status is `running`, mark as `🟡 Stale` in the display.
-5. Render the dashboard table (see format below).
-6. If any worker has `status: blocked`, display an alert with the message and which window to switch to.
-7. If all workers show `status: done` or their status files are gone (window closed), report completion and exit the loop.
-8. Wait ~30 seconds, then repeat from step 1.
+The orchestrator runs a persistent loop that monitors workers, merges completed beans, and spawns replacements until the backlog is exhausted. **Every step below runs on every iteration** — this is the core loop, not a one-time sequence.
+
+1. **Read all status files** — Read all `/tmp/foundry-worker-*.status` files. For each file, parse the key-value pairs.
+2. **Process completed workers** — For each status file showing `status: done` (or whose tmux window has closed) that has not yet been merged:
+   a. **Remove the worktree**: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
+   b. **Sync before merging**: `git fetch origin && git pull origin test` — worktrees push to the remote, so the orchestrator's local `test` may be behind.
+   c. **Merge the bean**: Run `/internal:merge-bean NNN` from the main repo to merge the feature branch into `test`.
+   d. **Update `_index.md`**: Set the bean's status to `Done` on `test`. Commit and push. (The orchestrator is the sole writer of `_index.md`.)
+   e. **Move Trello card** if applicable (same logic as long-run step 17b — best-effort, do not block on failure).
+   f. **Mark this worker as merged** in the orchestrator's internal tracking so it is not re-processed on the next iteration.
+3. **Assign replacement workers** — After processing all completed workers, **re-read `_index.md` fresh** (do NOT use a pre-computed queue — the backlog may have changed due to merges or newly-approved beans). For each merged worker slot that has no replacement:
+   a. Find the next bean with status `Approved` that has no unmet inter-bean dependencies.
+   b. If found: update `_index.md` to mark it `In Progress` with owner `team-lead`. Commit and push.
+   c. Create a new worktree, write an initial status file, create a launcher script, and spawn a new tmux window (or pane in `--wide` mode) using the same pattern as Step 2/2b.
+   d. If no approved unblocked bean exists, do not spawn — the slot stays empty.
+4. **Compute progress** — For each active worker, compute `tasks_done / tasks_total * 100` (show 0% if `tasks_total` is 0).
+5. **Check for stale workers** — If a worker's `updated` timestamp is older than 5 minutes and its status is `running`, mark as `🟡 Stale` in the display.
+6. **Render the dashboard table** — See format below.
+7. **Alert on blocked workers** — If any worker has `status: blocked`, display an alert with the `message` text and which tmux window to switch to.
+8. **Check exit condition** — Exit the loop if **both** conditions are true:
+   a. All workers are done (all status files show `done` and have been merged, or all tmux windows have closed), AND
+   b. No approved beans remain in `_index.md` (the fresh re-read from step 3 found nothing).
+   If either condition is false, continue looping.
+9. **Sleep ~30 seconds** — Then go back to step 1.
+
+**Reference implementation — bash polling loop:**
+
+If the agent struggles to maintain the prose loop above, it can execute this concrete bash loop as a fallback. The orchestrator should run this in a Bash tool call with a long timeout:
+
+```bash
+# Continuous assignment polling loop — run from the orchestrator's main window
+MERGED=""  # Space-separated list of already-merged bean labels
+
+while true; do
+  # Step 1: Read status files
+  ACTIVE=0
+  ALL_DONE=true
+
+  for sf in /tmp/foundry-worker-BEAN-*.status; do
+    [ -f "$sf" ] || continue
+    BEAN_LABEL=$(grep '^bean:' "$sf" | awk '{print $2}')
+    STATUS=$(grep '^status:' "$sf" | awk '{print $2}')
+
+    # Step 2: Process completed workers
+    if [ "$STATUS" = "done" ] && ! echo "$MERGED" | grep -qw "$BEAN_LABEL"; then
+      echo ">>> $BEAN_LABEL finished — merging..."
+      BEAN_NUM=$(echo "$BEAN_LABEL" | sed 's/BEAN-0*//')
+      WORKTREE="/tmp/foundry-worktree-${BEAN_LABEL}"
+      git worktree remove --force "$WORKTREE" 2>/dev/null
+      git fetch origin && git pull origin test
+      # Merge is handled by the orchestrator's Claude session via /internal:merge-bean
+      echo "MERGE_NEEDED: $BEAN_NUM"
+      MERGED="$MERGED $BEAN_LABEL"
+    elif [ "$STATUS" != "done" ]; then
+      ALL_DONE=false
+      ACTIVE=$((ACTIVE + 1))
+    fi
+  done
+
+  # Step 8: Check exit condition
+  APPROVED=$(grep -c '| Approved |' ai/beans/_index.md 2>/dev/null || echo 0)
+  if [ "$ALL_DONE" = true ] && [ "$APPROVED" -eq 0 ]; then
+    echo ">>> All workers done, no approved beans remain. Exiting."
+    break
+  fi
+
+  echo "--- Active: $ACTIVE | Approved remaining: $APPROVED | $(date +%H:%M:%S) ---"
+  sleep 30
+done
+```
+
+Note: The bash snippet handles status reading and exit detection. The actual merge (`/internal:merge-bean`) and replacement spawning (worktree creation + tmux window) must be done by the orchestrator's Claude session between iterations, since they require skill invocations and index edits. The snippet signals `MERGE_NEEDED: NNN` for each bean that needs merging — the orchestrator processes these signals.
 
 **Dashboard display format:**
 
@@ -283,20 +359,9 @@ When a worker has `status: blocked`:
 - Below the table, print a prominent alert: `⚠  N worker(s) need attention`
 - Include the window switch shortcut so the user can jump there immediately
 
-**Worker completion — orchestrator merge:**
+**Why merges happen from the main repo:** Worktrees cannot checkout `test` if it's checked out elsewhere. The orchestrator merges sequentially from the main repo, ensuring no branch conflicts.
 
-When a worker's status changes to `done` (or its window/pane closes):
-
-1. **Remove the worktree**: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
-2. **Merge the bean**: Run `/internal:merge-bean NNN` from the main repo to merge the feature branch into `test`.
-3. **Spawn replacement**: If actionable beans remain in the backlog, create a new worktree + launcher for the next bean and spawn a replacement worker.
-
-This ensures merges happen sequentially from the main repo (avoiding the worktree limitation where `test` can't be checked out from a worktree if it's in use elsewhere).
-
-**Dashboard exit conditions:**
-- All status files show `done` and all merges complete → print completion summary, clean up status files, exit
-- All worker windows/panes have closed → print completion summary, clean up any remaining status files, exit
-- User interrupts → exit cleanly (status files remain for inspection)
+**User interrupts:** If the user presses Ctrl-C, exit cleanly. Status files remain in `/tmp/` for inspection. Worktrees can be cleaned up manually with `git worktree remove --force` and `git worktree prune`.
 
 ### Step 5: Cleanup
 

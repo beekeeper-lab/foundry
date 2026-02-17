@@ -105,16 +105,97 @@ The Team Lead reviews the backlog (`ai/beans/_index.md`) and picks beans to work
 5. **Claim the bean** — update Status to `In Progress` and set Owner in both `bean.md` and `_index.md`. This is the lock.
 6. Update the index table
 
-### 4. Decomposition
+### 4. Molecularity Gate
+
+Before decomposition, the Team Lead checks that the bean is appropriately sized ("molecular"). A molecular bean represents a single, atomic unit of change.
+
+**Molecularity criteria — a bean SHOULD:**
+
+- **Single concern:** Address one problem, feature, or change — not bundle unrelated work
+- **Limited blast radius:** Touch no more than 5 files (excluding generated files, tests, and index updates)
+- **One-session scope:** Be completable in a single work session (2-task default wave: Developer → Tech-QA)
+- **Independent verifiability:** Have acceptance criteria that can be verified without waiting for other beans
+- **Clear boundaries:** Have In Scope and Out of Scope that don't overlap with other active beans
+
+**If a bean exceeds these criteria**, flag it for decomposition:
+
+1. Identify the independent sub-concerns within the bean
+2. Split into smaller beans — each addressing exactly one concern
+3. Link the new beans via dependencies in their Notes sections
+4. Defer the original bean (status `Deferred`) and note the replacement beans, or delete it if fully replaced
+
+**Common signals a bean is too large:**
+
+- The scope section lists multiple unrelated deliverables
+- Acceptance criteria span different subsystems or categories (e.g., app code + process docs)
+- Decomposition would produce 4+ tasks or require 3+ personas
+- The bean title uses "and" to join distinct concepts (e.g., "Add auth and redesign settings")
+- The bean exceeds the Blast Radius Budget (see below)
+
+#### Blast Radius Budget
+
+The **Blast Radius Budget** sets quantitative guardrails on the scope of a single bean. It complements the qualitative molecularity criteria above with measurable limits.
+
+**Metrics:**
+
+| Metric | Description | Guideline Threshold |
+|--------|-------------|-------------------|
+| **Files changed** | Number of source files added or modified (excluding tests, generated files, and index files) | ≤ 10 files |
+| **Systems touched** | Number of distinct system boundaries crossed (e.g., UI, service layer, data layer, CI/CD, docs) | ≤ 1 system boundary |
+| **Lines modified** | Net lines added + modified + deleted across all changed files | ≤ 300 lines |
+
+**System boundaries** are defined as distinct functional areas:
+- `foundry_app/ui/` — UI layer
+- `foundry_app/core/`, `foundry_app/services/` — service/core layer
+- `foundry_app/io/` — I/O layer
+- `tests/` — test suite (excluded from file count but counts as a boundary if non-test code also changes)
+- `ai/` — AI team workspace (process/docs)
+- `.claude/` — Claude Code configuration
+- CI/CD, build, and deployment configs
+
+**How to apply:**
+
+1. **During refinement** — When proposing beans, estimate the blast radius. If a bean is likely to exceed any threshold, flag it for splitting before approval.
+2. **During decomposition** — Before creating tasks, the Team Lead reviews the bean scope against the budget. If the planned changes exceed a threshold, decompose the bean into smaller units.
+3. **During execution** — If a bean's actual changes exceed the budget mid-flight, the Developer or Team Lead should pause and evaluate whether the bean should be split. Minor threshold breaches (up to 20% over) are acceptable if documented in the bean's Notes section with justification.
+
+**Flagging protocol:**
+
+When a bean exceeds the blast radius budget:
+1. Add a note to the bean: `> ⚠ Blast radius exceeded: [metric] is [value] (threshold: [limit])`
+2. Evaluate whether the excess is justified (tightly coupled changes that cannot be split) or indicates the bean should be decomposed
+3. If decomposition is warranted, follow the standard splitting process above
+4. If the excess is justified, document the reason and proceed
+
+### 5. Decomposition
 
 The Team Lead breaks each picked bean into tasks:
 
 1. Read the bean's problem statement, goal, and acceptance criteria
-2. Create task files in `BEAN-NNN-<slug>/tasks/` with sequential numbering
-3. Assign each task an owner (persona) and define dependencies
-4. Default decomposition: **Developer → Tech-QA**. Add BA or Architect only when their inclusion criteria are met (see below)
-5. **Tech-QA is mandatory for every bean** — no exceptions, regardless of category
-6. Bean status is already `In Progress` from the picking step
+2. **Bottleneck Check** — before creating tasks, identify and mitigate potential bottlenecks (see below)
+3. Create task files in `BEAN-NNN-<slug>/tasks/` with sequential numbering
+4. Assign each task an owner (persona) and define dependencies
+5. Default decomposition: **Developer → Tech-QA**. Add BA or Architect only when their inclusion criteria are met (see below)
+6. **Tech-QA is mandatory for every bean** — no exceptions, regardless of category
+7. Bean status is already `In Progress` from the picking step
+
+#### Bottleneck Check
+
+Before creating tasks, the Team Lead scans for three categories of bottleneck:
+
+| Category | What to look for | Mitigation |
+|----------|-----------------|------------|
+| **Sequential dependencies** | Tasks that form a long chain where each waits on the previous one | Break chains by isolating independent subtasks that can run in parallel |
+| **Shared resource contention** | Multiple tasks editing the same file, branch, or index | Sequence conflicting writes explicitly; split files if possible; assign one owner per shared resource |
+| **Parallelization opportunities** | Tasks assumed sequential that have no real data dependency | Restructure the task graph so independent tasks run concurrently |
+
+**How to apply:**
+
+1. Draft the initial task list and dependency graph
+2. Check each dependency edge: is it a true data dependency or just a habit?
+3. Flag any shared files that multiple tasks will write to — assign clear ownership or sequence the writes
+4. If the task chain is longer than 3 sequential steps, look for subtasks that can be extracted and run in parallel
+5. Record findings as a brief note in the bean's Tasks section (e.g., `> Bottleneck check: no contention found` or `> Bottleneck check: tasks 02 and 03 parallelized — no shared inputs`)
 
 #### Inclusion Criteria for Optional Personas
 
@@ -143,18 +224,147 @@ Each task file should include:
 - **Duration:** — (auto-computed by telemetry hook)
 - **Goal:** What this task produces
 - **Inputs:** What the owner needs to read
+- **Example Output:** A concrete example of the expected output format (see below)
 - **Definition of Done:** Concrete checklist
 
-### 5. Execution
+#### Examples-First Principle
+
+Every task should include or reference a concrete example of the expected output format. Abstract instructions alone can be ambiguous — examples eliminate guesswork and improve first-attempt quality.
+
+**When creating tasks, the Team Lead should:**
+
+1. Include an `Example Output:` section in the task file showing what the deliverable looks like
+2. Use one of these approaches depending on the task type:
+   - **Inline snippet** — paste a short example directly in the task file (best for small outputs like config entries, function signatures, or doc sections)
+   - **File reference** — point to an existing file that follows the expected pattern (e.g., "Follow the format of `tasks/01-developer-feature-branch-updates.md`")
+   - **Pattern description** — describe the structure when the output is too large to inline (e.g., "A pytest test file with one test class, using `tmp_path` fixtures, following `tests/test_scaffold.py` as a model")
+
+**Example — task for adding a workflow section:**
+
+```markdown
+## Example Output
+
+The new section in `bean-workflow.md` should follow this format:
+
+#### Section Title
+
+Brief description of the concept.
+
+**When to apply:**
+- Bullet point criteria
+
+**How to apply:**
+1. Numbered steps
+```
+
+**Example — task for adding a Python function:**
+
+```markdown
+## Example Output
+
+The new function should follow this pattern:
+
+def validate_example(spec: CompositionSpec) -> StageResult:
+    """One-line description."""
+    result = StageResult()
+    # validation logic
+    return result
+```
+
+**If no example is available**, note it explicitly: `> Example Output: No existing pattern — define format in this task's Goal section.` This signals to the executor that they should flag any format ambiguity before starting.
+
+### 6. Comprehension Gate
+
+Before implementation begins, each persona must demonstrate understanding of the codebase area they will modify. This prevents implementations that conflict with established patterns, introduce redundancy, or miss important context.
+
+**When it applies:** Every task that modifies or creates files in the codebase (code, configuration, documentation). Pure review tasks (e.g., Tech-QA verification) are exempt.
+
+**Comprehension criteria — the persona must understand:**
+
+- **Existing patterns:** How similar functionality is currently implemented (naming conventions, data flow, error handling)
+- **Module boundaries:** Which modules own the relevant functionality and how they interact
+- **Constraints:** Any project rules, architectural decisions (ADRs), or conventions that apply to the area
+- **Impact surface:** What other files or features could be affected by the change
+
+**How to demonstrate comprehension:**
+
+Before writing any implementation code, the persona writes a brief **comprehension note** in their task file or output directory (`ai/outputs/<persona>/`). The note must include:
+
+1. **Area summary** (2-3 sentences) — what the relevant code area does and how it is structured
+2. **Patterns identified** — key patterns, conventions, or idioms used in that area (bullet list)
+3. **Constraints noted** — relevant rules, ADRs, or project conventions that apply
+4. **Approach alignment** — how the planned implementation fits within the existing patterns
+
+**Format:** Add a `## Comprehension Note` section to the task file before updating its status to `In Progress`, or write a separate file at `ai/outputs/<persona>/comprehension-BEAN-NNN.md`.
+
+**Gate check:** The comprehension note must exist before implementation work begins. If a persona skips this step, Tech-QA should flag it during review.
+
+### 7. Execution
 
 Each persona claims their task(s) in dependency order:
 
 1. Read the task file and all referenced inputs
 2. Produce the required outputs in `ai/outputs/<persona>/`
-3. Update the task file with completion status
-4. Create a handoff note for downstream tasks if needed
+3. Apply the **micro-iteration loop** if verification fails (see below)
+4. Update the task file with completion status
+5. Create a handoff note for downstream tasks if needed
 
-### 6. Verification (VDD Gate)
+#### Micro-Iteration Loop
+
+When a task's verification checks fail, the executing persona applies a structured fix-verify cycle before marking the task done.
+
+**Entry conditions** — enter the loop when any of the following occur:
+- `uv run pytest` reports test failures
+- `uv run ruff check foundry_app/` reports lint errors
+- `/close-loop` identifies an unmet acceptance criterion
+- Self-review (`/internal:review-pr`) flags a blocking issue
+
+**Loop steps:**
+1. **Diagnose** — identify the specific failure (test name, lint rule, or criterion)
+2. **Fix** — make the minimal change to address the failure
+3. **Verify** — re-run the failing check (`pytest`, `ruff`, or `/close-loop`)
+4. **Check exit conditions** — if all checks pass, exit the loop; otherwise repeat
+
+**Exit conditions:**
+- All tests pass, lint is clean, and acceptance criteria are met → **exit, mark task done**
+- Max iterations reached (3 attempts) → **stop and escalate to Team Lead** with a summary of what was tried and what still fails
+
+**Max iterations:** 3. After 3 fix-verify cycles without full resolution, the persona must stop iterating and escalate. The escalation note should include: (1) which checks still fail, (2) what was attempted in each iteration, (3) a hypothesis for the root cause.
+
+**Reporting:** Record the iteration count and outcome in the task file's status update. Example: `Status: Done (2 iterations)` or `Status: Blocked (3 iterations, escalated)`.
+
+### 8. Context Diet
+
+Workers MUST minimize context consumption during execution. Every file read and every prompt line costs tokens and shrinks the available context window. Follow these rules:
+
+**Core principles:**
+
+1. **Read only what the task requires.** The task file lists its Inputs — read those. Do not speculatively read files "for background."
+2. **Never re-read a file you already have in context.** If you read `bean.md` during decomposition, do not read it again during execution unless it may have changed (multi-agent scenario).
+3. **Use targeted reads.** When you need a specific section of a large file, use offset/limit parameters. Do not read a 300-line file to find a 10-line section.
+4. **Keep prompts focused.** When delegating to a persona, include only the task-relevant context — not the full bean history, not the full backlog, not the full workflow spec.
+5. **Prefer Grep/Glob over exploratory reads.** When searching for something, use search tools first to locate it, then read only the relevant file.
+
+**Essential vs. optional context by task type:**
+
+| Task Type | Essential (always read) | Optional (read only if needed) |
+|-----------|------------------------|-------------------------------|
+| **App — Developer** | Task file, source files being modified, relevant test files | bean.md (already summarized in task), other module source, full project.md |
+| **App — Tech-QA** | Task file, developer's changed files, existing tests | Full module source, architecture docs |
+| **Process — Developer** | Task file, document being modified, referenced docs | Full bean-workflow.md (use targeted reads), other process docs |
+| **Process — Tech-QA** | Task file, developer's changed documents | Full workflow spec (use targeted reads) |
+| **Infra — Developer** | Task file, config/script being modified | Full hook policy, all hook files |
+| **Infra — Tech-QA** | Task file, developer's changed configs | Other infra configs |
+
+**Anti-patterns to avoid:**
+
+- Reading `_index.md` repeatedly during task execution (only needed during picking)
+- Reading all agent persona files when only one persona is active
+- Reading `bean-workflow.md` in full when you only need one section
+- Including the full project architecture in every task prompt
+- Re-reading files after trivial edits just to "verify" (use the edit tool's feedback instead)
+
+### 9. Verification (VDD Gate)
 
 The Team Lead applies the **Verification-Driven Development (VDD) gate** before closing any bean. See `ai/context/vdd-policy.md` for the full policy.
 
@@ -167,14 +377,19 @@ The Team Lead applies the **Verification-Driven Development (VDD) gate** before 
 4. For each acceptance criterion, confirm evidence is concrete, reproducible, and current
 5. Flag any gaps for rework — a bean that fails the VDD gate stays In Progress
 
-### 7. Closure
+### 9. Closure
 
 Once the VDD gate passes (all acceptance criteria verified with evidence):
 
 1. Update bean status to `Done`
 2. Update `ai/beans/_index.md`
 3. Note any follow-up beans spawned during execution
-4. **Merge feature branch to `test`** using `/merge-bean` (Merge Captain). This step is mandatory — a bean is not fully closed until its branch has been merged to `test` and tests pass on the integrated branch
+4. **Extract rules** — Review the bean's execution for reusable knowledge:
+   - **Patterns:** Techniques or approaches that worked well and should be repeated
+   - **Anti-patterns:** Mistakes, rework, or friction points to avoid next time
+   - **Lessons learned:** Surprising discoveries, edge cases, or workflow improvements
+   - Record findings in `MEMORY.md` (concise entries) or create/update a topic file in the auto-memory directory for detailed notes. Skip this step if the bean produced no novel insights.
+5. **Merge feature branch to `test`** using `/merge-bean` (Merge Captain). This step is mandatory — a bean is not fully closed until its branch has been merged to `test` and tests pass on the integrated branch
 
 ## Branch Strategy
 
