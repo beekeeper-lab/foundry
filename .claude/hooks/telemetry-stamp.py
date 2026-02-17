@@ -132,6 +132,44 @@ def replace_metadata_field(content: str, field: str, value: str) -> str:
     return pattern.sub(rf"\g<1>{value}\3", content, count=1)
 
 
+def add_metadata_field(content: str, field: str, value: str) -> str:
+    """Add a new metadata field row to the first markdown table in content.
+
+    Inserts | **Field** | value | after the last row of the first metadata table.
+    Returns content unchanged if no table is found.
+    """
+    lines = content.splitlines()
+    last_row_idx = -1
+    separator_seen = False
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("|") and re.match(r"^\|[\s\-|]+\|$", stripped):
+            separator_seen = True
+            continue
+        if separator_seen and stripped.startswith("|"):
+            last_row_idx = i
+        elif separator_seen and not stripped.startswith("|"):
+            break
+
+    if last_row_idx < 0:
+        return content
+
+    new_row = f"| **{field}** | {value} |"
+    lines.insert(last_row_idx + 1, new_row)
+    return "\n".join(lines)
+
+
+def ensure_metadata_field(content: str, field: str, default: str = SENTINEL) -> str:
+    """Ensure a metadata field exists, adding it if missing.
+
+    Returns content unchanged if the field already exists.
+    """
+    if parse_metadata_field(content, field) is not None:
+        return content
+    return add_metadata_field(content, field, default)
+
+
 def format_seconds(seconds: float) -> str:
     """Format a duration in seconds to human-readable string.
 
@@ -436,11 +474,35 @@ def extract_task_number(filename: str) -> str | None:
     return None
 
 
+def find_git_toplevel() -> Path | None:
+    """Find the git top-level directory (handles worktrees).
+
+    In a worktree, git rev-parse --show-toplevel returns the worktree root.
+    git rev-parse --git-common-dir returns the path to the shared .git dir,
+    which is inside the main repo.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-common-dir"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode == 0:
+            git_common = Path(result.stdout.strip())
+            if not git_common.is_absolute():
+                git_common = (Path.cwd() / git_common).resolve()
+            # .git dir is usually at <repo>/.git
+            return git_common.parent
+    except Exception:
+        pass
+    return None
+
+
 def find_session_jsonl() -> Path | None:
     """Find the JSONL conversation file for the current Claude Code session.
 
     Looks in ~/.claude/projects/<project-hash>/ for the most recently
     modified .jsonl file (excluding subagents/).
+    Handles git worktrees by also checking the main repo's project hash.
     Returns the path, or None if not found.
     """
     try:
@@ -448,26 +510,43 @@ def find_session_jsonl() -> Path | None:
         if not claude_dir.exists():
             return None
 
-        # Find the project directory matching the current working directory
+        # Build candidate project directory paths
+        candidate_dirs: list[Path] = []
+
+        # 1. Current working directory hash
         cwd_hash = str(Path.cwd()).replace("/", "-")
-        # Claude Code uses the path with leading slash replaced by dash
-        if cwd_hash.startswith("-"):
-            pass  # already has leading dash
-        else:
+        if not cwd_hash.startswith("-"):
             cwd_hash = "-" + cwd_hash
+        candidate_dirs.append(claude_dir / cwd_hash)
 
-        project_dir = claude_dir / cwd_hash
-        if not project_dir.exists():
-            # Try all project dirs, use the one containing recent .jsonl
-            candidates = []
-            for d in claude_dir.iterdir():
-                if d.is_dir() and not d.name.startswith("."):
-                    candidates.append(d)
-            if not candidates:
-                return None
-            project_dir = max(candidates, key=lambda d: d.stat().st_mtime)
+        # 2. Git main repo hash (for worktree support)
+        main_repo = find_git_toplevel()
+        if main_repo and main_repo != Path.cwd():
+            repo_hash = str(main_repo).replace("/", "-")
+            if not repo_hash.startswith("-"):
+                repo_hash = "-" + repo_hash
+            candidate_dirs.append(claude_dir / repo_hash)
 
-        # Find most recently modified .jsonl file (not in subagents/)
+        # Try each candidate directory
+        for project_dir in candidate_dirs:
+            if not project_dir.exists():
+                continue
+            jsonl_files = [
+                f for f in project_dir.iterdir()
+                if f.is_file() and f.suffix == ".jsonl"
+            ]
+            if jsonl_files:
+                return max(jsonl_files, key=lambda f: f.stat().st_mtime)
+
+        # Fallback: use the most recently modified project dir
+        candidates = []
+        for d in claude_dir.iterdir():
+            if d.is_dir() and not d.name.startswith("."):
+                candidates.append(d)
+        if not candidates:
+            return None
+        project_dir = max(candidates, key=lambda d: d.stat().st_mtime)
+
         jsonl_files = [
             f for f in project_dir.iterdir()
             if f.is_file() and f.suffix == ".jsonl"
@@ -477,7 +556,9 @@ def find_session_jsonl() -> Path | None:
 
         return max(jsonl_files, key=lambda f: f.stat().st_mtime)
 
-    except Exception:
+    except Exception as e:
+        print(f"telemetry-stamp: session JSONL search failed: {e}",
+              file=sys.stderr)
         return None
 
 
@@ -762,6 +843,20 @@ def count_total_tasks(content: str) -> int:
     return count
 
 
+def needs_stamp(value: str | None) -> bool:
+    """Check if a metadata field needs stamping.
+
+    Returns True if the value is the sentinel em-dash, None (missing), or
+    a date-only string missing the time component.
+    """
+    if value is None or value == SENTINEL:
+        return True
+    # Date-only format like "2026-02-16" — missing HH:MM
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", value.strip()):
+        return True
+    return False
+
+
 def handle_bean_file(path: Path, now: str) -> list[str]:
     """Process a bean.md file for telemetry stamping.
 
@@ -771,20 +866,24 @@ def handle_bean_file(path: Path, now: str) -> list[str]:
     original = content
     actions = []
 
+    # Ensure telemetry fields exist in the metadata table
+    for field in ("Started", "Completed", "Duration"):
+        content = ensure_metadata_field(content, field)
+
     status = parse_metadata_field(content, "Status")
     started = parse_metadata_field(content, "Started")
     completed = parse_metadata_field(content, "Completed")
 
-    # Status = "In Progress" + Started = sentinel → stamp Started
-    if status and status.lower() == "in progress" and started == SENTINEL:
+    # Status = "In Progress" + Started needs stamp → stamp Started
+    if status and status.lower() == "in progress" and needs_stamp(started):
         content = replace_metadata_field(content, "Started", now)
         actions.append("Started")
 
-    # Status = "Done" + Completed = sentinel → stamp Completed + Duration
-    if status and status.lower() == "done" and completed == SENTINEL:
-        # If Started is also sentinel, stamp it too
+    # Status = "Done" + Completed needs stamp → stamp Completed + Duration
+    if status and status.lower() == "done" and needs_stamp(completed):
+        # If Started also needs stamp, stamp it too
         cur_started = parse_metadata_field(content, "Started")
-        if cur_started == SENTINEL:
+        if needs_stamp(cur_started):
             content = replace_metadata_field(content, "Started", now)
             cur_started = now
             actions.append("Started")
@@ -793,7 +892,7 @@ def handle_bean_file(path: Path, now: str) -> list[str]:
         actions.append("Completed")
 
         cur_duration = parse_metadata_field(content, "Duration")
-        if cur_duration == SENTINEL:
+        if needs_stamp(cur_duration):
             # Prefer git-based duration (second-level precision) over
             # Started→Completed metadata (minute-level, often 0m for fast beans)
             duration = git_branch_duration() or format_duration(cur_started, now)
@@ -876,6 +975,10 @@ def handle_task_file(path: Path, now: str) -> list[str]:
     original = content
     actions = []
 
+    # Ensure telemetry fields exist in the metadata table
+    for field in ("Started", "Completed", "Duration"):
+        content = ensure_metadata_field(content, field)
+
     status = parse_metadata_field(content, "Status")
     started = parse_metadata_field(content, "Started")
     completed = parse_metadata_field(content, "Completed")
@@ -883,8 +986,8 @@ def handle_task_file(path: Path, now: str) -> list[str]:
     bean_dir = path.parent.parent  # ai/beans/BEAN-NNN-slug/
     task_num = extract_task_number(path.name)
 
-    # Status = "In Progress" + Started = sentinel → stamp Started
-    if status and status.lower() == "in progress" and started == SENTINEL:
+    # Status = "In Progress" + Started needs stamp → stamp Started
+    if status and status.lower() == "in progress" and needs_stamp(started):
         content = replace_metadata_field(content, "Started", now)
         actions.append("Started")
 
@@ -896,13 +999,22 @@ def handle_task_file(path: Path, now: str) -> list[str]:
                     tok_in, tok_out = sum_session_tokens(jsonl_path)
                     save_watermark(bean_dir, task_num, tok_in, tok_out)
                     actions.append(f"Watermark task {task_num}")
-            except Exception:
-                pass  # Best-effort
+                else:
+                    print(
+                        f"telemetry-stamp: no session JSONL found for watermark"
+                        f" (cwd={Path.cwd()})",
+                        file=sys.stderr,
+                    )
+            except Exception as e:
+                print(
+                    f"telemetry-stamp: watermark save failed: {e}",
+                    file=sys.stderr,
+                )
 
-    # Status = "Done" + Completed = sentinel → stamp Completed + Duration
-    if status and status.lower() == "done" and completed == SENTINEL:
+    # Status = "Done" + Completed needs stamp → stamp Completed + Duration
+    if status and status.lower() == "done" and needs_stamp(completed):
         cur_started = parse_metadata_field(content, "Started")
-        if cur_started == SENTINEL:
+        if needs_stamp(cur_started):
             content = replace_metadata_field(content, "Started", now)
             cur_started = now
             actions.append("Started")
@@ -911,7 +1023,7 @@ def handle_task_file(path: Path, now: str) -> list[str]:
         actions.append("Completed")
 
         cur_duration = parse_metadata_field(content, "Duration")
-        if cur_duration == SENTINEL:
+        if needs_stamp(cur_duration):
             duration = format_duration(cur_started, now)
             content = replace_metadata_field(content, "Duration", duration)
             actions.append(f"Duration={duration}")
@@ -939,8 +1051,17 @@ def handle_task_file(path: Path, now: str) -> list[str]:
                         delta_out = cur_out
                     tok_in_str = format_tokens(delta_in)
                     tok_out_str = format_tokens(delta_out)
-            except Exception:
-                pass  # Best-effort
+                else:
+                    print(
+                        f"telemetry-stamp: no session JSONL found for token"
+                        f" delta (cwd={Path.cwd()})",
+                        file=sys.stderr,
+                    )
+            except Exception as e:
+                print(
+                    f"telemetry-stamp: token delta failed: {e}",
+                    file=sys.stderr,
+                )
 
             if bean_path.exists():
                 try:
@@ -968,8 +1089,11 @@ def handle_task_file(path: Path, now: str) -> list[str]:
 
                     if changed_any:
                         bean_path.write_text(bean_content, encoding="utf-8")
-                except Exception:
-                    pass  # Best-effort; don't fail the task stamp
+                except Exception as e:
+                    print(
+                        f"telemetry-stamp: bean telemetry update failed: {e}",
+                        file=sys.stderr,
+                    )
 
     if content != original:
         path.write_text(content, encoding="utf-8")
