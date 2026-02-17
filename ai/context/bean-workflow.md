@@ -190,7 +190,33 @@ Each task file should include:
 - **Inputs:** What the owner needs to read
 - **Definition of Done:** Concrete checklist
 
-### 6. Execution
+### 6. Comprehension Gate
+
+Before implementation begins, each persona must demonstrate understanding of the codebase area they will modify. This prevents implementations that conflict with established patterns, introduce redundancy, or miss important context.
+
+**When it applies:** Every task that modifies or creates files in the codebase (code, configuration, documentation). Pure review tasks (e.g., Tech-QA verification) are exempt.
+
+**Comprehension criteria — the persona must understand:**
+
+- **Existing patterns:** How similar functionality is currently implemented (naming conventions, data flow, error handling)
+- **Module boundaries:** Which modules own the relevant functionality and how they interact
+- **Constraints:** Any project rules, architectural decisions (ADRs), or conventions that apply to the area
+- **Impact surface:** What other files or features could be affected by the change
+
+**How to demonstrate comprehension:**
+
+Before writing any implementation code, the persona writes a brief **comprehension note** in their task file or output directory (`ai/outputs/<persona>/`). The note must include:
+
+1. **Area summary** (2-3 sentences) — what the relevant code area does and how it is structured
+2. **Patterns identified** — key patterns, conventions, or idioms used in that area (bullet list)
+3. **Constraints noted** — relevant rules, ADRs, or project conventions that apply
+4. **Approach alignment** — how the planned implementation fits within the existing patterns
+
+**Format:** Add a `## Comprehension Note` section to the task file before updating its status to `In Progress`, or write a separate file at `ai/outputs/<persona>/comprehension-BEAN-NNN.md`.
+
+**Gate check:** The comprehension note must exist before implementation work begins. If a persona skips this step, Tech-QA should flag it during review.
+
+### 7. Execution
 
 Each persona claims their task(s) in dependency order:
 
@@ -224,7 +250,7 @@ When a task's verification checks fail, the executing persona applies a structur
 
 **Reporting:** Record the iteration count and outcome in the task file's status update. Example: `Status: Done (2 iterations)` or `Status: Blocked (3 iterations, escalated)`.
 
-### 7. Verification (VDD Gate)
+### 8. Verification (VDD Gate)
 
 The Team Lead applies the **Verification-Driven Development (VDD) gate** before closing any bean. See `ai/context/vdd-policy.md` for the full policy.
 
@@ -237,7 +263,7 @@ The Team Lead applies the **Verification-Driven Development (VDD) gate** before 
 4. For each acceptance criterion, confirm evidence is concrete, reproducible, and current
 5. Flag any gaps for rework — a bean that fails the VDD gate stays In Progress
 
-### 8. Closure
+### 9. Closure
 
 Once the VDD gate passes (all acceptance criteria verified with evidence):
 

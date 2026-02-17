@@ -10,14 +10,15 @@ The Team Lead assigns you tasks via bean task files in `ai/beans/BEAN-NNN-<slug>
 2. Read the parent `bean.md` for full problem context
 3. Read BA requirements and Architect design specs referenced in your task's Inputs
 4. Check **Depends On** — do not start until upstream tasks are complete
-5. Implement the changes in the codebase
-6. Write tests alongside your implementation
-7. Use `/internal:new-dev-decision` for any non-trivial implementation choices
-8. Verify: `uv run pytest` (all pass) and `uv run ruff check foundry_app/` (clean)
-9. If verification fails, apply the **micro-iteration loop** (diagnose → fix → verify, max 3 iterations — see `ai/context/bean-workflow.md` § Micro-Iteration Loop)
-10. Use `/close-loop` to self-verify against acceptance criteria
-11. Use `/internal:handoff` to package your changes for Tech-QA
-12. Update your task file's status when complete
+5. **Comprehension Gate** — before implementing, read the relevant codebase area and write a brief comprehension note summarizing existing patterns, module boundaries, constraints, and how your approach aligns. Add a `## Comprehension Note` section to your task file or write to `ai/outputs/developer/comprehension-BEAN-NNN.md`. See `ai/context/bean-workflow.md` § Comprehension Gate.
+6. Implement the changes in the codebase
+7. Write tests alongside your implementation
+8. Use `/internal:new-dev-decision` for any non-trivial implementation choices
+9. Verify: `uv run pytest` (all pass) and `uv run ruff check foundry_app/` (clean)
+10. If verification fails, apply the **micro-iteration loop** (diagnose → fix → verify, max 3 iterations — see `ai/context/bean-workflow.md` § Micro-Iteration Loop)
+11. Use `/close-loop` to self-verify against acceptance criteria
+12. Use `/internal:handoff` to package your changes for Tech-QA
+13. Update your task file's status when complete
 
 ## Skills & Commands
 
@@ -33,15 +34,16 @@ Use these skills at the specified points in your work. Skills are in `.claude/sk
 ### Workflow with skills:
 
 1. Read task file, bean context, BA requirements, and Architect design spec
-2. Implement changes in `foundry_app/` and write tests in `tests/`
-3. Use `/internal:new-dev-decision` for each non-trivial implementation choice
-4. Run `uv run pytest` and `uv run ruff check foundry_app/`
-5. **If tests or lint fail:** apply the micro-iteration loop (diagnose → fix → verify, max 3 iterations). See `ai/context/bean-workflow.md` § Micro-Iteration Loop. Escalate to Team Lead if still failing after 3 attempts.
-6. Use `/internal:review-pr` to self-review your diff
-7. Use `/close-loop` to verify against acceptance criteria
-8. **If AC not met:** apply the micro-iteration loop (max 3 iterations) before escalating
-9. If pass: use `/internal:handoff` to create a handoff doc for Tech-QA
-10. Update task status to Done
+2. **Comprehension Gate** — read the relevant codebase area and write a comprehension note before implementing (see `ai/context/bean-workflow.md` § Comprehension Gate)
+3. Implement changes in `foundry_app/` and write tests in `tests/`
+4. Use `/internal:new-dev-decision` for each non-trivial implementation choice
+5. Run `uv run pytest` and `uv run ruff check foundry_app/`
+6. **If tests or lint fail:** apply the micro-iteration loop (diagnose → fix → verify, max 3 iterations). See `ai/context/bean-workflow.md` § Micro-Iteration Loop. Escalate to Team Lead if still failing after 3 attempts.
+7. Use `/internal:review-pr` to self-review your diff
+8. Use `/close-loop` to verify against acceptance criteria
+9. **If AC not met:** apply the micro-iteration loop (max 3 iterations) before escalating
+10. If pass: use `/internal:handoff` to create a handoff doc for Tech-QA
+11. Update task status to Done
 
 ## What You Do
 
