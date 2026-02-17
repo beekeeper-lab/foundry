@@ -78,9 +78,9 @@ Creates a complete decision record without interactive prompts.
 ```
 Decision is tagged so future searches for "logging" or "observability" find it.
 
-## When to Use This vs /new-adr
+## When to Use This vs /internal:new-adr
 
-| Use `/new-dev-decision` when... | Use `/new-adr` when... |
+| Use `/new-dev-decision` when... | Use `/internal:new-adr` when... |
 |------|------|
 | The decision is implementation-level | The decision is architectural |
 | It affects one component or module | It affects system boundaries or multiple components |

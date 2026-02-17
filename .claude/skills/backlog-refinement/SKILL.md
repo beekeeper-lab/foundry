@@ -2,7 +2,7 @@
 
 ## Description
 
-Turns raw ideas, feature descriptions, or broad vision text into one or more well-formed beans through an iterative dialogue. The Team Lead analyzes the input to identify distinct units of work, asks clarifying questions to understand scope and priority, then creates properly-formed beans using `/new-bean`. This is the primary intake mechanism for getting new work into the backlog.
+Turns raw ideas, feature descriptions, or broad vision text into one or more well-formed beans through an iterative dialogue. The Team Lead analyzes the input to identify distinct units of work, asks clarifying questions to understand scope and priority, then creates properly-formed beans using `/internal:new-bean`. This is the primary intake mechanism for getting new work into the backlog.
 
 ## Trigger
 
@@ -121,14 +121,14 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
     | BEAN-013 | [Title] | Medium | BEAN-012 |
     ...
 
-    Run `/bean-status` to see the full backlog.
+    Run `/show-backlog` to see the full backlog.
     ```
 
 ## Outputs
 
 | Output | Type | Description |
 |--------|------|-------------|
-| new_beans | Markdown files | One or more `bean.md` files created via `/new-bean` |
+| new_beans | Markdown files | One or more `bean.md` files created via `/internal:new-bean` |
 | updated_index | Markdown file | `_index.md` updated with all new beans |
 | summary | Console text | Table of created beans with IDs, titles, priorities, and dependencies |
 
@@ -149,10 +149,10 @@ Turns raw ideas, feature descriptions, or broad vision text into one or more wel
 | `EmptyInput` | No text provided by the user | Ask the user to describe what they want to build or change |
 | `DuplicateBean` | Proposed bean matches an existing bean title or problem | Warn user and ask for explicit approval to create or skip |
 | `UserAbort` | User decides to cancel | Exit without creating any beans; no changes to the backlog |
-| `BacklogMissing` | `_index.md` does not exist | Create it first with `/new-bean` or check project setup |
+| `BacklogMissing` | `_index.md` does not exist | Create it first with `/internal:new-bean` or check project setup |
 
 ## Dependencies
 
 - Backlog index at `ai/beans/_index.md`
 - Bean template at `ai/beans/_bean-template.md`
-- `/new-bean` skill for creating individual beans
+- `/internal:new-bean` skill for creating individual beans

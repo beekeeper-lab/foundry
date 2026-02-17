@@ -50,7 +50,7 @@ All arguments are optional with sensible defaults.
 
 | Error | Cause | Resolution |
 |-------|-------|------------|
-| `StoriesDirNotFound` | Stories directory does not exist | Check the path or run `/notes-to-stories` first |
+| `StoriesDirNotFound` | Stories directory does not exist | Check the path or run `/internal:notes-to-stories` first |
 | `NoStoriesFound` | No story files in the directory | Create stories before building traceability |
 | `NoCriteriaFound` | Stories lack parseable acceptance criteria | Add acceptance criteria to story files |
 
