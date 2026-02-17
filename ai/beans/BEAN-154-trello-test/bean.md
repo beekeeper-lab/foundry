@@ -35,7 +35,7 @@ Process this test card through the full bean lifecycle to verify the Trello impo
 
 - [x] Bean was created from Trello card import
 - [x] Bean processes through full lifecycle (In Progress → Done)
-- [ ] Trello card is moved to Completed list after bean closure
+- [x] Trello card is moved to Completed list after bean closure
 
 ## Tasks
 
