@@ -199,6 +199,14 @@ class TestSecretPolicy:
         assert s.scan_for_secrets is True
         assert s.block_on_secret is True
 
+    @pytest.mark.parametrize("position", [0, 1, 2])
+    def test_validate_secret_patterns_reports_correct_index(self, position):
+        valid = r"(?i)api_key"
+        invalid = "[invalid"
+        patterns = [valid] * position + [invalid] + [valid] * (2 - position)
+        with pytest.raises(ValidationError, match=rf"secret_patterns\[{position}\]"):
+            SecretPolicy(secret_patterns=patterns)
+
 
 class TestDestructiveOpsPolicy:
     def test_defaults(self):

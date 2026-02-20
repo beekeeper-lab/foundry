@@ -33,38 +33,46 @@ Safely merges a bean's feature branch into the `test` integration branch. Handle
    - **Total Tokens Out:** sum all Tokens Out values. Format result with commas.
    - Write the computed totals to the bean's Telemetry summary table (replacing `—` placeholders).
    - If telemetry data is missing or incomplete, fill what is available and note gaps.
-4. **Derive feature branch name** — Extract from the bean directory name: `bean/BEAN-NNN-<slug>`.
-5. **Verify feature branch exists** — Run `git branch --list bean/BEAN-NNN-<slug>`.
+4. **Populate Changes section** — Generate a git diff summary and write it to the bean's `## Changes` section:
+   - Ensure you are on the feature branch: `git checkout bean/BEAN-NNN-<slug>`.
+   - Run `git diff --stat main...HEAD` to get the file-level change summary against the base branch.
+   - Parse the output into a markdown table with columns `File` and `Lines` (e.g., `+25 −3`).
+   - Add a **Total** row summing all insertions and deletions.
+   - Replace the placeholder `## Changes` section in `bean.md` with the populated table.
+   - If the bean's `bean.md` does not have a `## Changes` section, insert one before `## Notes`.
+   - Stage and commit the updated `bean.md`: `git add bean.md && git commit -m "Populate Changes section for BEAN-NNN"`.
+5. **Derive feature branch name** — Extract from the bean directory name: `bean/BEAN-NNN-<slug>`.
+6. **Verify feature branch exists** — Run `git branch --list bean/BEAN-NNN-<slug>`.
    - If not found: report `BranchNotFound` error and exit.
 
 ### Phase 2: Prepare Target
 
-6. **Checkout target branch** — `git checkout test` (or specified target).
+7. **Checkout target branch** — `git checkout test` (or specified target).
    - If the target branch doesn't exist locally, create it: `git checkout -b test`.
-7. **Pull latest** — `git pull origin test`.
+8. **Pull latest** — `git pull origin test`.
    - If the remote branch doesn't exist yet (first merge), skip pull.
 
 ### Phase 3: Merge
 
-8. **Merge feature branch** — `git merge bean/BEAN-NNN-<slug> --no-ff`.
+9. **Merge feature branch** — `git merge bean/BEAN-NNN-<slug> --no-ff`.
    - The `--no-ff` flag preserves a merge commit even if fast-forward is possible, making the merge visible in history.
-9. **Check merge result**:
-   - **Clean merge**: proceed to Phase 4.
-   - **Conflict**: go to Conflict Handling (below).
+10. **Check merge result**:
+    - **Clean merge**: proceed to Phase 4.
+    - **Conflict**: go to Conflict Handling (below).
 
 ### Phase 4: Push & Cleanup
 
-10. **Push to remote** — `git push origin test`.
+11. **Push to remote** — `git push origin test`.
     - If push fails (e.g., another worker pushed first), pull and retry once.
-11. **Delete feature branch** — `git branch -d bean/BEAN-NNN-<slug>`.
+12. **Delete feature branch** — `git branch -d bean/BEAN-NNN-<slug>`.
     - If the branch is also on the remote: `git push origin --delete bean/BEAN-NNN-<slug>`.
     - If delete fails (e.g., worktree reference), log a warning but continue.
-12. **Return to main** — `git checkout main`.
-13. **Report success** — Output: bean title, feature branch name (deleted), target branch, merge commit hash, and telemetry summary totals.
+13. **Return to main** — `git checkout main`.
+14. **Report success** — Output: bean title, feature branch name (deleted), target branch, merge commit hash, and telemetry summary totals.
 
 ### Conflict Handling
 
-If step 9 detects merge conflicts:
+If step 10 detects merge conflicts:
 
 1. **List conflicting files** — Report each file with conflicts.
 2. **Abort the merge** — `git merge --abort` to restore the target branch to its pre-merge state.

@@ -27,20 +27,21 @@ After a bean has been verified and committed on its feature branch, the Merge Ca
 ## Process
 
 1. **Validate bean status** — Read `bean.md` and confirm status is `Done`. If not Done, report error and stop.
-2. **Identify feature branch** — Derive branch name `bean/BEAN-NNN-<slug>` from the bean directory name.
-3. **Verify feature branch exists** — Run `git branch --list bean/BEAN-NNN-<slug>`. If it doesn't exist, report error and stop.
-4. **Checkout target branch** — `git checkout test` (or specified target).
-5. **Pull latest** — `git pull origin test` to get any work merged by other workers since the last pull.
-6. **Merge feature branch** — `git merge bean/BEAN-NNN-<slug> --no-ff` (no fast-forward to preserve the merge commit).
-7. **Check for conflicts** — If the merge has conflicts:
+2. **Populate Changes section** — On the feature branch, run `git diff --stat main...HEAD` to generate a file-level change summary. Parse the output into a markdown table (File, Lines columns) and write it to the `## Changes` section in `bean.md`. Commit the update before proceeding.
+3. **Identify feature branch** — Derive branch name `bean/BEAN-NNN-<slug>` from the bean directory name.
+4. **Verify feature branch exists** — Run `git branch --list bean/BEAN-NNN-<slug>`. If it doesn't exist, report error and stop.
+5. **Checkout target branch** — `git checkout test` (or specified target).
+6. **Pull latest** — `git pull origin test` to get any work merged by other workers since the last pull.
+7. **Merge feature branch** — `git merge bean/BEAN-NNN-<slug> --no-ff` (no fast-forward to preserve the merge commit).
+8. **Check for conflicts** — If the merge has conflicts:
    - Report the conflicting files.
    - Abort the merge: `git merge --abort`.
    - Return to the feature branch: `git checkout bean/BEAN-NNN-<slug>`.
    - Stop with a clear message listing the conflicts for manual resolution.
-8. **Push to target** — `git push origin test`.
-9. **Delete feature branch** — `git branch -d bean/BEAN-NNN-<slug>`. If also on remote, `git push origin --delete bean/BEAN-NNN-<slug>`.
-10. **Return to main** — `git checkout main`.
-11. **Report success** — Output: bean title, feature branch (deleted), target branch, merge commit hash.
+9. **Push to target** — `git push origin test`.
+10. **Delete feature branch** — `git branch -d bean/BEAN-NNN-<slug>`. If also on remote, `git push origin --delete bean/BEAN-NNN-<slug>`.
+11. **Return to main** — `git checkout main`.
+12. **Report success** — Output: bean title, feature branch (deleted), target branch, merge commit hash.
 
 ## Output
 

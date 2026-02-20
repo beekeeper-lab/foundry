@@ -7,11 +7,14 @@ from pydantic import ValidationError
 
 from foundry_app.core.models import (
     CompositionSpec,
+    GenerationOptions,
     HookPackSelection,
     PersonaSelection,
     ProjectIdentity,
     StackSelection,
+    TeamConfig,
 )
+from foundry_app.services.generator import generate_project
 
 
 # ---------------------------------------------------------------------------
@@ -163,6 +166,33 @@ class TestGeneratorContainment:
                 project=ProjectIdentity(name="test", slug="test"),
                 team={"personas": [{"id": "../../admin"}]},
             )
+
+    def test_runtime_containment_rejects_traversal_bypassing_model(self, tmp_path):
+        """Runtime ValueError fires even when Pydantic model validation is bypassed.
+
+        Uses model_construct() to skip validators, proving the generator's
+        runtime containment check is an independent defense-in-depth layer.
+        """
+        safe_root = tmp_path / "safe"
+        safe_root.mkdir()
+
+        # Bypass Pydantic validators — model_construct() skips field validation,
+        # allowing a traversal path that would normally be rejected.
+        project = ProjectIdentity.model_construct(
+            name="evil",
+            slug="evil",
+            output_root=str(safe_root),
+            output_folder="../../escape",
+        )
+        spec = CompositionSpec.model_construct(
+            project=project,
+            stacks=[],
+            team=TeamConfig(),
+            generation=GenerationOptions(),
+        )
+
+        with pytest.raises(ValueError, match="Refusing to generate"):
+            generate_project(spec, library_root=tmp_path / "lib")
 
     def test_safe_composition_accepted(self):
         """A valid composition should be accepted."""

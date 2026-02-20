@@ -1,40 +1,38 @@
-# BEAN-NNN: Title
+# BEAN-165: Test Card from Trello-Add Skill
 
 | Field | Value |
 |-------|-------|
-| **Bean ID** | BEAN-NNN |
-| **Status** | Unapproved |
-| **Priority** | Medium |
-| **Created** | YYYY-MM-DD |
+| **Bean ID** | BEAN-165 |
+| **Status** | Approved |
+| **Priority** | Low |
+| **Created** | 2026-02-20 |
 | **Started** | — |
 | **Completed** | — |
 | **Duration** | — |
 | **Owner** | (unassigned) |
-| **Category** | (App \| Process \| Infra) |
+| **Category** | Infra |
 
 ## Problem Statement
 
-What problem does this bean solve? Why does it matter?
+A test card was created via the trello-add skill to verify Trello integration. This bean validates end-to-end Trello card lifecycle.
 
 ## Goal
 
-What is the desired outcome when this bean is complete?
+Verify the Trello integration pipeline works correctly by processing this test card through the full bean lifecycle.
 
 ## Scope
 
 ### In Scope
-- Item 1
-- Item 2
+- Process this test card through the bean lifecycle
+- Validate Trello card moves to Completed on bean closure
 
 ### Out of Scope
-- Item 1
+- No code changes required
 
 ## Acceptance Criteria
 
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [ ] Bean processed through full lifecycle
+- [ ] Trello card moved to Completed list
 
 ## Tasks
 
@@ -55,13 +53,18 @@ What is the desired outcome when this bean is complete?
 
 ## Notes
 
-(Any additional context, links, or discussion.)
+This bean was auto-created from a Trello test card with no description.
 
 ## Trello
 
 | Field | Value |
 |-------|-------|
-| **Source** | Manual |
+| **Source** | Trello |
+| **Board** | Foundry (ID: 698e9e614a5e03d0ed57f638) |
+| **Source List** | Sprint_Backlog |
+| **Card ID** | 6998426b275715a0f9f336ff |
+| **Card Name** | Test card from trello-add skill |
+| **Card URL** | https://trello.com/c/Mw10Flje/36-test-card-from-trello-add-skill |
 
 ## Telemetry
 

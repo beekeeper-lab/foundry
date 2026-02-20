@@ -179,3 +179,15 @@
 | BEAN-155 | Trello Lifecycle E2E Test | Infra | Medium | Done | team-lead |
 | BEAN-156 | AI Code Review Anti-Patterns | App | Medium | Done | team-lead |
 | BEAN-157 | Test Generator Stage Callback Contract | App | High | Done | team-lead |
+| BEAN-158 | Test Generator Runtime Path-Traversal Containment | App | Medium | Done | team-lead |
+| BEAN-159 | Test Seeder Task Numbering Is Gapless with Mixed Personas | App | Medium | Done | team-lead |
+| BEAN-160 | Test SecretPolicy Reports Correct Index for Invalid Regex | App | Medium | Done | team-lead |
+| BEAN-161 | Test save_composition Excludes None Fields from YAML Output | App | Medium | Done | team-lead |
+| BEAN-162 | Bean Change Summary Section | Process | Medium | Done | team-lead |
+| BEAN-163 | Fix Open Project Folder Button | App | High | Done | team-lead |
+| BEAN-164 | Review and Prune Generated CLAUDE.md | App | High | Done | team-lead |
+| BEAN-165 | Test Card from Trello-Add Skill | Infra | Low | Approved | (unassigned) |
+| BEAN-166 | Foundry Kit — Shared Config Architecture Spec | Process | High | In Progress | team-lead |
+| BEAN-167 | ISO 9000 Certification Tech Stack | App | Medium | Approved | (unassigned) |
+| BEAN-168 | Tech Stack Options Review & Expansion | App | Medium | Approved | (unassigned) |
+| BEAN-169 | SOX Compliance Tech Stack | App | Medium | Approved | (unassigned) |

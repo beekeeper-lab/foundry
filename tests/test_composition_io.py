@@ -133,6 +133,17 @@ class TestSaveComposition:
         save_composition(spec, str(out))
         assert out.exists()
 
+    def test_save_excludes_none_fields_from_yaml(self, tmp_path):
+        """save_composition with safety=None must not write a 'safety' key."""
+        spec = CompositionSpec(
+            project=ProjectIdentity(name="NoSafety", slug="no-safety"),
+            safety=None,
+        )
+        out = tmp_path / "none-check.yml"
+        save_composition(spec, out)
+        raw = yaml.safe_load(out.read_text(encoding="utf-8"))
+        assert "safety" not in raw
+
     def test_save_produces_valid_yaml(self, tmp_path):
         spec = _make_spec()
         out = tmp_path / "comp.yml"

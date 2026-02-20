@@ -304,6 +304,25 @@ class TestEdgeCases:
         for i, line in enumerate(task_lines, 1):
             assert line.startswith(f"| {i} |")
 
+    def test_gapless_numbering_with_mixed_personas(self, tmp_path: Path):
+        """Task numbers are contiguous 1..N even when unknown personas are in the team."""
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="unknown-role"),
+                PersonaSelection(id="architect"),
+            ]),
+            generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
+        )
+        seed_tasks(spec, tmp_path)
+        content = _read_index(tmp_path)
+        task_lines = [
+            l for l in content.splitlines()
+            if l.startswith("| ") and not l.startswith("| #") and not l.startswith("|---")
+        ]
+        numbers = [int(l.split("|")[1].strip()) for l in task_lines]
+        assert numbers == list(range(1, len(numbers) + 1))
+
     def test_existing_directory_not_error(self, tmp_path: Path):
         (tmp_path / "ai" / "tasks").mkdir(parents=True)
         result = seed_tasks(_make_spec(), tmp_path)
