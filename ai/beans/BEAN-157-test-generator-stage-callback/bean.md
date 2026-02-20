@@ -1,8 +1,8 @@
-# BEAN-142: Test Generator Stage Callback Contract
+# BEAN-157: Test Generator Stage Callback Contract
 
 | Field | Value |
 |-------|-------|
-| **Bean ID** | BEAN-142 |
+| **Bean ID** | BEAN-157 |
 | **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-19 |

@@ -56,12 +56,12 @@ is required without verification.
 | Error | Cause | Resolution |
 |-------|-------|------------|
 | `StoriesDirNotFound` | Stories directory does not exist | Check the path; ensure stories have been created |
-| `NoStoriesFound` | Stories directory exists but contains no story files | Run `/notes-to-stories` first to create stories |
+| `NoStoriesFound` | Stories directory exists but contains no story files | Run `/internal:notes-to-stories` first to create stories |
 | `NoCriteriaFound` | Stories exist but none contain parseable acceptance criteria | Add acceptance criteria to the story files |
 | `TestsDirNotFound` | Tests directory does not exist | Create test cases first or specify a different path |
 
 ## Dependencies
 
-- User stories with acceptance criteria (produced by the BA persona or `/notes-to-stories` skill)
+- User stories with acceptance criteria (produced by the BA persona or `/internal:notes-to-stories` skill)
 - Test cases (produced by the Tech-QA persona)
 - No external tooling required; this skill operates on markdown files

@@ -163,4 +163,19 @@
 | BEAN-139 | Team Member Assignment Recommendations | Process | High | Done | team-lead |
 | BEAN-140 | Trello-Bean Lifecycle Mapping | Process | High | Done | team-lead |
 | BEAN-141 | Token Usage Optimization Analysis | Process | High | Done | team-lead |
-| BEAN-142 | Test Generator Stage Callback Contract | App | High | Done | team-lead |
+| BEAN-142 | Verification-Driven Development (VDD) Policy | Process | High | Done | team-lead |
+| BEAN-143 | Downstream Gate | Process | High | Done | team-lead |
+| BEAN-144 | Bottleneck Check | Process | High | Done | team-lead |
+| BEAN-145 | Micro-Iteration Loop | Process | High | Done | team-lead |
+| BEAN-146 | Rule Extractor | Process | High | Done | team-lead |
+| BEAN-147 | Molecularity Gate | Process | High | Done | team-lead |
+| BEAN-148 | Comprehension Gate | Process | High | Done | team-lead |
+| BEAN-149 | Hard Reset Protocol | Process | High | Done | team-lead |
+| BEAN-150 | Examples-First | Process | High | Done | team-lead |
+| BEAN-151 | Context Diet | Process | High | Done | team-lead |
+| BEAN-152 | Blast Radius Budget | Process | High | Done | team-lead |
+| BEAN-153 | Long-Run Continuous Assignment Loop | Process | High | Done | team-lead |
+| BEAN-154 | Trello Test | Infra | Medium | Done | team-lead |
+| BEAN-155 | Trello Lifecycle E2E Test | Infra | Medium | Done | team-lead |
+| BEAN-156 | AI Code Review Anti-Patterns | App | Medium | Done | team-lead |
+| BEAN-157 | Test Generator Stage Callback Contract | App | High | Done | team-lead |

@@ -45,7 +45,7 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 8. **Verify acceptance criteria** — Check every criterion in the bean's AC list. Run tests and lint if applicable.
 9. **Close the bean** — Update status to `Done` in `bean.md`. (The orchestrator updates `_index.md` after the merge — see step 11.)
 10. **Commit on feature branch** — Stage all changed files and commit with message: `BEAN-NNN: <title>`. The commit goes on the `bean/BEAN-NNN-<slug>` branch.
-11. **Merge to test and update index** — Execute `/merge-bean` to merge the feature branch into `test`: checkout test, pull latest, merge with `--no-ff`, push. Then update `_index.md` on `test` to set the bean's status to `Done`, commit, and push. If merge conflicts occur, report and stop. *(In parallel mode, workers do NOT merge or edit `_index.md` — the orchestrator handles both after each worker completes.)*
+11. **Merge to test and update index** — Execute `/internal:merge-bean` to merge the feature branch into `test`: checkout test, pull latest, merge with `--no-ff`, push. Then update `_index.md` on `test` to set the bean's status to `Done`, commit, and push. If merge conflicts occur, report and stop. *(In parallel mode, workers do NOT merge or edit `_index.md` — the orchestrator handles both after each worker completes.)*
 12. **Stay on test** — Remain on the `test` branch (do not switch to `main`).
 13. **Report progress** — Summarize what was completed: bean title, tasks executed, branch name, merge commit, files changed.
 14. **Loop** — Go back to step 1. Continue until no actionable beans remain. When complete, display: `⚠ Work is on the test branch. Run /deploy to promote to main.`
@@ -127,7 +127,7 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
 
    You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.
    - Do NOT create or checkout branches.
-   - Do NOT run /merge-bean — the orchestrator handles merging after you finish.
+   - Do NOT run /internal:merge-bean — the orchestrator handles merging after you finish.
    - Do NOT checkout main or test.
    - Do NOT edit _index.md — the orchestrator is the sole writer of the backlog index.
 
@@ -139,32 +139,34 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
    6. Commit on the feature branch
 
    STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition.
-   See /spawn-bean command for full status file format and update rules."
+   See /internal:spawn-bean command for full status file format and update rules."
    SCRIPT_EOF
    chmod +x "$LAUNCHER"
    tmux new-window -n "bean-NNN" "bash $LAUNCHER; rm -f $LAUNCHER"
    ```
-   The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits. No stagger delay needed — worktrees provide full isolation. Worker prompts include the status file protocol from `/spawn-bean` (status values: starting, decomposing, running, blocked, error, done).
+   The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits. No stagger delay needed — worktrees provide full isolation. Worker prompts include the status file protocol from `/internal:spawn-bean` (status values: starting, decomposing, running, blocked, error, done).
 3. The main window remains the orchestrator — it does not process beans itself.
 
 **Bean assignment rules:**
 - Only assign beans that have no unmet dependencies on other in-progress or pending beans.
 - If fewer than N independent beans are available, spawn only as many workers as there are beans.
-- As a worker completes its bean (its window disappears or status file shows `done`):
-  1. Remove the worktree: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
-  2. Merge the bean: run `/merge-bean NNN` from the main repo
-  3. Update `_index.md` on `test`: set the bean's status to `Done`, commit, and push. (The orchestrator is the sole writer of `_index.md`.)
-  4. Check for newly-unblocked beans and spawn a new worker with a fresh worktree for the next one.
+- Never assign the same bean to multiple workers.
+- The main window orchestrates only — it does not process beans itself.
 
-**Progress monitoring — dashboard loop:**
+**Progress monitoring — continuous assignment dashboard loop:**
 
-The main window enters a dashboard loop after spawning workers. See `/spawn-bean` Step 4 for the full dashboard specification. Summary:
+After spawning the initial batch of workers, the main window enters a **persistent dashboard loop** that runs until the backlog is exhausted. This is the mechanism that keeps assigning beans — it is not just a passive monitor. See `/internal:spawn-bean` Step 4 for the full specification. **Every iteration** of the loop performs these steps:
 
-- Read all `/tmp/foundry-worker-*.status` files every ~30 seconds.
-- Render a dashboard table showing each bean's progress bar, percentage (tasks_done/tasks_total), and color-coded status.
-- Alert on `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no update for 5+ minutes).
-- When a worker finishes and beans remain, spawn a replacement worker for the next unblocked bean.
-- When all workers are done and no actionable beans remain, report completion, clean up status files (`rm -f /tmp/foundry-worker-*.status`), run `git worktree prune` to clean up any stale worktree references, and exit.
+1. **Read** all `/tmp/foundry-worker-*.status` files.
+2. **Process completed workers** — For each worker showing `status: done` that hasn't been merged: remove the worktree, sync (`git fetch && git pull`), run `/internal:merge-bean`, update `_index.md` to `Done`, commit and push.
+3. **Assign replacements** — **Re-read `_index.md` fresh** (not a pre-computed queue). For each empty worker slot, find the next `Approved` unblocked bean. If found: mark it `In Progress` in `_index.md`, create a worktree, spawn a new tmux window.
+4. **Render** the dashboard table with progress bars, percentages, and color-coded status.
+5. **Alert** on `blocked` (🔴) and `stale` (🟡, no update for 5+ minutes) workers.
+6. **Check exit** — Exit only when **both**: all workers are done/merged, AND no approved beans remain in `_index.md`.
+7. **Sleep ~30 seconds**, then repeat from step 1.
+
+The loop runs indefinitely until the backlog is exhausted. There is no maximum bean limit — user can Ctrl-C to stop early.
+
 - To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
 
 | Flag | Default | Description |

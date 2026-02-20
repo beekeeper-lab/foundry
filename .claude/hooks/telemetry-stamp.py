@@ -30,28 +30,28 @@ SENTINEL = "—"
 TIMESTAMP_FMT = "%Y-%m-%d %H:%M"
 
 # Fallback pricing if config file is missing or unparseable
-DEFAULT_INPUT_RATE = 0.000015   # $15/MTok
-DEFAULT_OUTPUT_RATE = 0.000075  # $75/MTok
+DEFAULT_INPUT_RATE = 0.000015          # $15/MTok
+DEFAULT_CACHE_CREATION_RATE = 0.00001875  # $18.75/MTok
+DEFAULT_CACHE_READ_RATE = 0.0000015    # $1.50/MTok
+DEFAULT_OUTPUT_RATE = 0.000075         # $75/MTok
 
 # Patterns to match bean and task files (relative paths from repo root)
 BEAN_RE = re.compile(r"ai/beans/BEAN-\d+-[^/]+/bean\.md$")
 TASK_RE = re.compile(r"ai/beans/BEAN-\d+-[^/]+/tasks/.*\.md$")
 
 
-def read_pricing() -> tuple[float, float]:
+def read_pricing() -> tuple[float, float, float, float]:
     """Read token pricing from ai/context/token-pricing.md.
 
-    Returns (input_rate, output_rate) in dollars per token.
-    Falls back to defaults if the file is missing or unparseable.
+    Returns (input_rate, cache_creation_rate, cache_read_rate, output_rate)
+    in dollars per token. Falls back to defaults if the file is missing.
     """
     try:
-        # Try relative to cwd first, then search upward for the repo root
         candidates = [
             Path.cwd() / "ai" / "context" / "token-pricing.md",
         ]
-        # Also try from the script's location (hooks are in .claude/hooks/)
         script_dir = Path(__file__).resolve().parent
-        repo_root = script_dir.parent.parent  # .claude/hooks/ -> repo root
+        repo_root = script_dir.parent.parent
         candidates.append(repo_root / "ai" / "context" / "token-pricing.md")
 
         content = None
@@ -61,31 +61,49 @@ def read_pricing() -> tuple[float, float]:
                 break
 
         if content is None:
-            return DEFAULT_INPUT_RATE, DEFAULT_OUTPUT_RATE
+            return (DEFAULT_INPUT_RATE, DEFAULT_CACHE_CREATION_RATE,
+                    DEFAULT_CACHE_READ_RATE, DEFAULT_OUTPUT_RATE)
 
         input_rate = DEFAULT_INPUT_RATE
+        cache_creation_rate = DEFAULT_CACHE_CREATION_RATE
+        cache_read_rate = DEFAULT_CACHE_READ_RATE
         output_rate = DEFAULT_OUTPUT_RATE
 
         for line in content.splitlines():
+            m = re.search(r"\$([0-9.]+)\s+per token", line)
+            if not m:
+                continue
+            rate = float(m.group(1))
             if "**Input Rate**" in line:
-                m = re.search(r"\$([0-9.]+)\s+per token", line)
-                if m:
-                    input_rate = float(m.group(1))
+                input_rate = rate
+            elif "**Cache Creation Rate**" in line:
+                cache_creation_rate = rate
+            elif "**Cache Read Rate**" in line:
+                cache_read_rate = rate
             elif "**Output Rate**" in line:
-                m = re.search(r"\$([0-9.]+)\s+per token", line)
-                if m:
-                    output_rate = float(m.group(1))
+                output_rate = rate
 
-        return input_rate, output_rate
+        return input_rate, cache_creation_rate, cache_read_rate, output_rate
 
     except Exception:
-        return DEFAULT_INPUT_RATE, DEFAULT_OUTPUT_RATE
+        return (DEFAULT_INPUT_RATE, DEFAULT_CACHE_CREATION_RATE,
+                DEFAULT_CACHE_READ_RATE, DEFAULT_OUTPUT_RATE)
 
 
-def compute_cost(tokens_in: int, tokens_out: int) -> float:
-    """Compute dollar cost from token counts using config rates."""
-    input_rate, output_rate = read_pricing()
-    return (tokens_in * input_rate) + (tokens_out * output_rate)
+def compute_cost(tokens_in: int, tokens_out: int,
+                  cache_creation: int = 0, cache_read: int = 0) -> float:
+    """Compute dollar cost from token counts using config rates.
+
+    tokens_in is the combined total (non-cached + cache_creation + cache_read).
+    Cache tokens are subtracted from tokens_in before applying the base input
+    rate, then charged at their own tier rates.
+    """
+    input_rate, cache_creation_rate, cache_read_rate, output_rate = read_pricing()
+    non_cached_in = max(0, tokens_in - cache_creation - cache_read)
+    return (non_cached_in * input_rate
+            + cache_creation * cache_creation_rate
+            + cache_read * cache_read_rate
+            + tokens_out * output_rate)
 
 
 def format_cost(cost: float) -> str:
@@ -562,15 +580,22 @@ def find_session_jsonl() -> Path | None:
         return None
 
 
-def sum_session_tokens(jsonl_path: Path) -> tuple[int, int]:
-    """Sum cumulative input and output tokens from a JSONL conversation file.
+def sum_session_tokens(jsonl_path: Path) -> tuple[int, int, int, int]:
+    """Sum cumulative tokens from a JSONL conversation file.
 
-    Parses all assistant messages and sums their usage.input_tokens and
-    usage.output_tokens fields.
-    Returns (total_input, total_output).
+    Parses all assistant messages and sums token usage across all tiers:
+    - input_tokens: non-cached input
+    - cache_creation_input_tokens: tokens written to prompt cache
+    - cache_read_input_tokens: tokens read from prompt cache
+    - output_tokens: output
+
+    Returns (total_input, total_output, total_cache_creation, total_cache_read).
+    Total input includes all three input tiers (input + cache_creation + cache_read).
     """
     total_in = 0
     total_out = 0
+    total_cache_creation = 0
+    total_cache_read = 0
     try:
         with jsonl_path.open("r", encoding="utf-8") as f:
             for line in f:
@@ -585,10 +610,16 @@ def sum_session_tokens(jsonl_path: Path) -> tuple[int, int]:
                     continue
                 usage = msg.get("message", {}).get("usage", {})
                 total_in += usage.get("input_tokens", 0)
+                total_cache_creation += usage.get(
+                    "cache_creation_input_tokens", 0)
+                total_cache_read += usage.get(
+                    "cache_read_input_tokens", 0)
                 total_out += usage.get("output_tokens", 0)
     except Exception:
         pass
-    return total_in, total_out
+    # Total input = all three input tiers combined
+    combined_in = total_in + total_cache_creation + total_cache_read
+    return combined_in, total_out, total_cache_creation, total_cache_read
 
 
 def watermark_path(bean_dir: Path) -> Path:
@@ -598,6 +629,7 @@ def watermark_path(bean_dir: Path) -> Path:
 
 def save_watermark(
     bean_dir: Path, task_num: str, tokens_in: int, tokens_out: int,
+    cache_creation: int = 0, cache_read: int = 0,
 ) -> None:
     """Save a token watermark for a task start."""
     wm_path = watermark_path(bean_dir)
@@ -609,15 +641,18 @@ def save_watermark(
             data = {}
     data[f"task_{task_num}_start_in"] = tokens_in
     data[f"task_{task_num}_start_out"] = tokens_out
+    data[f"task_{task_num}_start_cc"] = cache_creation
+    data[f"task_{task_num}_start_cr"] = cache_read
     wm_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
 def load_watermark(
     bean_dir: Path, task_num: str,
-) -> tuple[int, int] | None:
+) -> tuple[int, int, int, int] | None:
     """Load a token watermark for a task.
 
-    Returns (start_tokens_in, start_tokens_out) or None if not found.
+    Returns (start_tokens_in, start_tokens_out, cache_creation, cache_read)
+    or None if not found. Old watermarks without cache fields default to 0.
     """
     wm_path = watermark_path(bean_dir)
     if not wm_path.exists():
@@ -627,7 +662,11 @@ def load_watermark(
         key_in = f"task_{task_num}_start_in"
         key_out = f"task_{task_num}_start_out"
         if key_in in data and key_out in data:
-            return data[key_in], data[key_out]
+            return (
+                data[key_in], data[key_out],
+                data.get(f"task_{task_num}_start_cc", 0),
+                data.get(f"task_{task_num}_start_cr", 0),
+            )
     except (json.JSONDecodeError, OSError):
         pass
     return None
@@ -640,6 +679,7 @@ def format_tokens(count: int) -> str:
 
 def update_telemetry_row_tokens(
     content: str, task_num: str, tokens_in: str, tokens_out: str,
+    cache_creation: int = 0, cache_read: int = 0,
 ) -> tuple[str, bool]:
     """Update Tokens In, Tokens Out, and Cost columns of a telemetry row.
 
@@ -681,7 +721,7 @@ def update_telemetry_row_tokens(
                 try:
                     tin = int(tokens_in.replace(",", ""))
                     tout = int(tokens_out.replace(",", ""))
-                    cost = compute_cost(tin, tout)
+                    cost = compute_cost(tin, tout, cache_creation, cache_read)
                     cost_str = format_cost(cost)
                 except (ValueError, TypeError):
                     cost_str = SENTINEL
@@ -996,8 +1036,9 @@ def handle_task_file(path: Path, now: str) -> list[str]:
             try:
                 jsonl_path = find_session_jsonl()
                 if jsonl_path:
-                    tok_in, tok_out = sum_session_tokens(jsonl_path)
-                    save_watermark(bean_dir, task_num, tok_in, tok_out)
+                    tok_in, tok_out, cc, cr = sum_session_tokens(jsonl_path)
+                    save_watermark(bean_dir, task_num, tok_in, tok_out,
+                                   cc, cr)
                     actions.append(f"Watermark task {task_num}")
                 else:
                     print(
@@ -1036,19 +1077,26 @@ def handle_task_file(path: Path, now: str) -> list[str]:
             # Compute token delta from watermark
             tok_in_str = None
             tok_out_str = None
+            delta_cc = 0
+            delta_cr = 0
             try:
                 jsonl_path = find_session_jsonl()
                 if jsonl_path:
                     wm = load_watermark(bean_dir, task_num)
-                    cur_in, cur_out = sum_session_tokens(jsonl_path)
+                    cur_in, cur_out, cur_cc, cur_cr = sum_session_tokens(
+                        jsonl_path)
                     if wm:
-                        start_in, start_out = wm
+                        start_in, start_out, start_cc, start_cr = wm
                         delta_in = max(0, cur_in - start_in)
                         delta_out = max(0, cur_out - start_out)
+                        delta_cc = max(0, cur_cc - start_cc)
+                        delta_cr = max(0, cur_cr - start_cr)
                     else:
                         # No watermark — use full session tokens as fallback
                         delta_in = cur_in
                         delta_out = cur_out
+                        delta_cc = cur_cc
+                        delta_cr = cur_cr
                     tok_in_str = format_tokens(delta_in)
                     tok_out_str = format_tokens(delta_out)
                 else:
@@ -1079,6 +1127,7 @@ def handle_task_file(path: Path, now: str) -> list[str]:
                     if tok_in_str and tok_out_str:
                         bean_content, changed = update_telemetry_row_tokens(
                             bean_content, task_num, tok_in_str, tok_out_str,
+                            delta_cc, delta_cr,
                         )
                         if changed:
                             changed_any = True

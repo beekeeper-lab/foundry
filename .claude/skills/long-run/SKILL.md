@@ -33,7 +33,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 
 ### Phase 0.5: Trello Sync
 
-0c. **Import sprint backlog from Trello** — Invoke `/trello-load` to pull any
+0c. **Import sprint backlog from Trello** — Invoke `/internal:trello-load` to pull any
     cards from the Trello Sprint_Backlog list into the beans backlog. This runs
     non-interactively (auto-selects board, creates beans with Approved status,
     moves processed cards to In_Progress on Trello). If the Trello MCP server
@@ -93,7 +93,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 
 ### Phase 5.5: Merge Captain
 
-17. **Merge to test branch and update index** — Execute the `/merge-bean` skill to merge the feature branch into `test`:
+17. **Merge to test branch and update index** — Execute the `/internal:merge-bean` skill to merge the feature branch into `test`:
     - Checkout `test`, pull latest, merge `bean/BEAN-NNN-<slug>` with `--no-ff`, push.
     - If merge conflicts occur: report the conflicts, abort the merge, leave the bean on its feature branch, and stop the loop.
     - If merge succeeds: update `_index.md` to set the bean's status to `Done`, commit the index update on `test`, and push.
@@ -107,7 +107,7 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
        from the Trello section. Extract the board ID from the Board field
        (format: "Board Name (ID: abc123)").
     d. Call `mcp__trello__get_lists` with the board ID to find the
-       Completed list (using flexible name matching as `/trello-load`).
+       Completed list (using flexible name matching as `/internal:trello-load`).
     e. Call `mcp__trello__move_card` with the Card ID and the Completed
        list ID. This is a direct API call — no fuzzy name matching needed.
     f. Log the move: `Trello: Moved "[Card Name]" → Completed (card [Card ID])`
@@ -136,7 +136,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 ### Parallel Phase 1.5: Trello Sync
 
 1b. **Import sprint backlog from Trello** — Same as sequential Phase 0.5:
-    invoke `/trello-load` non-interactively. Best-effort; do not block on
+    invoke `/internal:trello-load` non-interactively. Best-effort; do not block on
     failure.
 
 ### Parallel Phase 2: Backlog Assessment
@@ -149,7 +149,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
 5. **Select independent beans** — From the actionable set, select up to N beans that have no unmet inter-bean dependencies. Beans that depend on other pending or in-progress beans are queued, not parallelized.
 6. **Update bean statuses** — For each selected bean, update `_index.md` to set status to `In Progress` and owner to `team-lead`. Commit this index update on `test` before spawning workers. (Workers will update their own `bean.md` independently; they must NOT touch `_index.md`.)
-7. **Write initial status files** — For each selected bean, create a status file at `/tmp/foundry-worker-BEAN-NNN.status` with `status: starting`. This allows the dashboard to track the worker immediately. See the Status File Protocol in `/spawn-bean` for the full file format and status values (`starting`, `decomposing`, `running`, `blocked`, `error`, `done`).
+7. **Write initial status files** — For each selected bean, create a status file at `/tmp/foundry-worker-BEAN-NNN.status` with `status: starting`. This allows the dashboard to track the worker immediately. See the Status File Protocol in `/internal:spawn-bean` for the full file format and status values (`starting`, `decomposing`, `running`, `blocked`, `error`, `done`).
 8. **Create worktrees and spawn workers** — For each selected bean, create an isolated git worktree, then create a launcher script and open a tmux child window:
    ```bash
    WORKTREE_DIR="/tmp/foundry-worktree-BEAN-NNN"
@@ -174,9 +174,13 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
    You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.
    - Do NOT create or checkout branches.
-   - Do NOT run /merge-bean — the orchestrator handles merging after you finish.
+   - Do NOT run /internal:merge-bean — the orchestrator handles merging after you finish.
    - Do NOT checkout main or test.
    - Do NOT edit _index.md — the orchestrator is the sole writer of the backlog index.
+
+   CONTEXT DIET — Read only what each task's Inputs list. No speculative reads.
+   Never re-read files already in context. Use targeted reads for large files.
+   See bean-workflow.md §6a for the full policy.
 
    1. Update bean.md status to In Progress
    2. Decompose into tasks
@@ -186,7 +190,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    6. Commit on the feature branch
 
    STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition.
-   See /spawn-bean command for full status file format and update rules."
+   See /internal:spawn-bean command for full status file format and update rules."
    SCRIPT_EOF
    chmod +x "$LAUNCHER"
    tmux new-window -n "bean-NNN" "bash $LAUNCHER; rm -f $LAUNCHER"
@@ -194,31 +198,37 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits (no bare shell left behind). The launcher script self-deletes after use. No stagger delay needed — worktrees provide full isolation.
 9. **Record worker assignments** — Track which window name maps to which bean, worktree path, and status file.
 
-### Parallel Phase 4: Dashboard Monitoring
+### Parallel Phase 4: Continuous Assignment Dashboard Loop
 
-10. **Enter dashboard loop** — The main window displays a live dashboard by reading worker status files. See `/spawn-bean` Step 4 for the full dashboard specification. The loop runs every ~30 seconds:
-    - Read all `/tmp/foundry-worker-*.status` files and parse key-value pairs.
-    - Render a dashboard table with progress bars (█/░), percentage (tasks_done/tasks_total), and color-coded status emoji.
-    - Alert on `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no status file update for 5+ minutes).
-    - Cross-reference with `tmux list-windows` to detect closed windows (worker exited).
-11. **Report completions** — As each worker finishes (status file shows `done` or window disappears), report in the dashboard.
-12. **Merge, update index, and assign next bean** — When a worker completes:
-    - Remove the worktree: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
-    - Sync before merging: `git fetch origin && git pull origin test` — worktrees push to the remote, so the orchestrator's local `test` may be behind.
-    - Merge the bean: run `/merge-bean NNN` from the main repo (merges feature branch into `test`).
-    - Update `_index.md` on `test`: set the bean's status to `Done`. Commit and push. (The orchestrator is the sole writer of `_index.md`.)
-    - Move the Trello card to Completed (same logic as sequential step 17b — read the bean's Trello section, use Card ID for direct API call to move to Completed). Best-effort; do not block on failure.
-    - Re-read the backlog for newly unblocked beans.
-    - If an independent actionable bean exists, update `_index.md` to mark it `In Progress`, commit, create a new worktree, write its status file, and spawn a new worker window using the same launcher script pattern.
-    - If no more beans, do not spawn.
-    - To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
+The main window enters a **persistent dashboard loop** that monitors workers, merges completed beans, and spawns replacements until the backlog is exhausted. This is the mechanism that keeps assigning beans — it is not just a passive monitor. See `/internal:spawn-bean` Step 4 for the full specification with a concrete bash reference snippet.
+
+**Every iteration** of the loop performs these steps:
+
+10. **Read status files** — Read all `/tmp/foundry-worker-*.status` files and parse key-value pairs. Cross-reference with `tmux list-windows` to detect closed windows.
+11. **Process completed workers** — For each status file showing `status: done` (or whose tmux window has closed) that has not yet been merged:
+    a. Remove the worktree: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
+    b. Sync before merging: `git fetch origin && git pull origin test`
+    c. Merge the bean: run `/internal:merge-bean NNN` from the main repo.
+    d. Update `_index.md` on `test`: set the bean's status to `Done`. Commit and push.
+    e. Move the Trello card to Completed (same logic as sequential step 17b). Best-effort; do not block on failure.
+    f. Mark this worker as merged in the orchestrator's tracking.
+12. **Assign replacement workers** — **Re-read `_index.md` fresh** (do NOT use a pre-computed queue — the backlog may have changed). For each merged worker slot with no replacement:
+    a. Find the next bean with status `Approved` that has no unmet inter-bean dependencies.
+    b. If found: update `_index.md` to mark it `In Progress`, commit and push, create a new worktree, write its status file, and spawn a new tmux window using the same launcher script pattern.
+    c. If no approved unblocked bean exists, leave the slot empty.
+13. **Render dashboard** — Display progress bars (█/░), percentages (tasks_done/tasks_total), and color-coded status emoji.
+14. **Alert** — Flag `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no update for 5+ minutes).
+15. **Check exit condition** — Exit the loop only when **both**: all workers are done/merged, AND no approved beans remain in `_index.md`. If either condition is false, continue.
+16. **Sleep ~30 seconds** — Then go back to step 10.
+
+The loop runs indefinitely until the backlog is exhausted. There is no maximum bean limit. To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`.
 
 ### Parallel Phase 5: Completion
 
-13. **Check termination** — When all workers are done (status files show `done` or all windows closed) and no actionable beans remain, exit the dashboard loop.
-14. **Final report** — Output: total beans processed, parallel vs sequential breakdown, all branch names created, remaining backlog status. End with: `⚠ Work is on the test branch. Run /deploy to promote to main.`
-15. **Cleanup** — Remove status files: `rm -f /tmp/foundry-worker-*.status`. Run `git worktree prune` to clean up any stale worktree references.
-16. **Sync local branches** — Worktrees pushed to the remote, so the original repo's refs are stale. Bring them up to date:
+17. **Exit reached** — All workers are done/merged and no approved beans remain.
+18. **Final report** — Output: total beans processed, parallel vs sequential breakdown, all branch names created, remaining backlog status. End with: `⚠ Work is on the test branch. Run /deploy to promote to main.`
+19. **Cleanup** — Remove status files: `rm -f /tmp/foundry-worker-*.status`. Run `git worktree prune` to clean up any stale worktree references.
+20. **Sync local branches** — Worktrees pushed to the remote, so the original repo's refs are stale. Bring them up to date:
     - `git fetch origin && git pull origin test` (the orchestrator is already on `test`).
     - If local `main` is behind `origin/main`: `git branch -f main origin/main`.
     - This ensures the repo that launched `/long-run` has current refs when the user resumes work.
@@ -278,5 +288,5 @@ On error in parallel mode: a single worker failure does not stop other workers. 
 - Bean workflow at `ai/context/bean-workflow.md`
 - Individual bean files at `ai/beans/BEAN-NNN-<slug>/bean.md`
 - Git repository in a clean state (no uncommitted changes)
-- Trello MCP server (optional — used for `/trello-load` sync and card completion; best-effort)
-- `/trello-load` skill for sprint backlog import
+- Trello MCP server (optional — used for `/internal:trello-load` sync and card completion; best-effort)
+- `/internal:trello-load` skill for sprint backlog import
