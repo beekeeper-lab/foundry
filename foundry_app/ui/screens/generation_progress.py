@@ -481,7 +481,21 @@ class GenerationProgressScreen(QWidget):
 
     def _open_output_folder(self) -> None:
         """Open the output folder in the system file manager."""
-        if self._output_path:
+        if not self._output_path:
+            return
+
+        import subprocess
+        import sys
+
+        try:
+            if sys.platform == "win32":
+                subprocess.Popen(["explorer", self._output_path])
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", self._output_path])
+            else:
+                subprocess.Popen(["xdg-open", self._output_path])
+        except OSError:
+            # Fallback to Qt method if subprocess fails
             from PySide6.QtCore import QUrl
             from PySide6.QtGui import QDesktopServices
 

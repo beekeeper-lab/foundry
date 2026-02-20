@@ -1,5 +1,7 @@
 """Tests for foundry_app.ui.screens.generation_progress — progress screen."""
 
+from unittest.mock import MagicMock, patch
+
 from PySide6.QtWidgets import QApplication
 
 from foundry_app.ui.screens.generation_progress import (
@@ -265,3 +267,62 @@ class TestOutputPath:
         assert not screen.back_button.isHidden()
         screen.start()
         assert screen.back_button.isHidden()
+
+
+# ---------------------------------------------------------------------------
+# Open Project Folder
+# ---------------------------------------------------------------------------
+
+
+class TestOpenOutputFolder:
+
+    def test_noop_when_no_output_path(self):
+        screen = GenerationProgressScreen()
+        with patch("subprocess.Popen") as mock_popen:
+            screen._open_output_folder()
+            mock_popen.assert_not_called()
+
+    def test_linux_uses_xdg_open(self):
+        screen = GenerationProgressScreen()
+        screen.set_output_path("/tmp/test-project")
+        with (
+            patch("subprocess.Popen") as mock_popen,
+            patch("sys.platform", "linux"),
+        ):
+            screen._open_output_folder()
+            mock_popen.assert_called_once_with(["xdg-open", "/tmp/test-project"])
+
+    def test_macos_uses_open(self):
+        screen = GenerationProgressScreen()
+        screen.set_output_path("/tmp/test-project")
+        with (
+            patch("subprocess.Popen") as mock_popen,
+            patch("sys.platform", "darwin"),
+        ):
+            screen._open_output_folder()
+            mock_popen.assert_called_once_with(["open", "/tmp/test-project"])
+
+    def test_windows_uses_explorer(self):
+        screen = GenerationProgressScreen()
+        screen.set_output_path("C:\\Users\\test\\project")
+        with (
+            patch("subprocess.Popen") as mock_popen,
+            patch("sys.platform", "win32"),
+        ):
+            screen._open_output_folder()
+            mock_popen.assert_called_once_with(["explorer", "C:\\Users\\test\\project"])
+
+    def test_fallback_to_qt_on_oserror(self):
+        screen = GenerationProgressScreen()
+        screen.set_output_path("/tmp/test-project")
+        mock_desktop = MagicMock()
+        with (
+            patch("subprocess.Popen", side_effect=OSError("not found")),
+            patch("sys.platform", "linux"),
+            patch(
+                "PySide6.QtGui.QDesktopServices.openUrl",
+                mock_desktop,
+            ),
+        ):
+            screen._open_output_folder()
+            mock_desktop.assert_called_once()

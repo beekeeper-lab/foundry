@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-163 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 20:11 |
+| **Completed** | 2026-02-20 20:14 |
+| **Duration** | 3m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -34,21 +34,22 @@ Investigate the Open Project Folder button implementation, identify why it fails
 
 ## Acceptance Criteria
 
-- [ ] Open Project Folder button opens the generated project directory in the system file manager
-- [ ] Works on Linux (tested with `xdg-open` fallback)
-- [ ] Cross-platform logic handles macOS (`open`) and Windows (`explorer`) as well
-- [ ] Graceful error handling if no file manager is available
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Open Project Folder button opens the generated project directory in the system file manager
+- [x] Works on Linux (tested with `xdg-open` fallback)
+- [x] Cross-platform logic handles macOS (`open`) and Windows (`explorer`) as well
+- [x] Graceful error handling if no file manager is available
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Fix open folder to use subprocess | Developer | — | Done |
+| 2 | Test open folder fix | Tech-QA | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default)
+> Bottleneck check: no contention — sequential Developer → Tech-QA wave, single file modified.
 
 ## Notes
 
@@ -69,12 +70,13 @@ User reported this on Arch Linux. Check if `QDesktopServices.openUrl()` is being
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Fix open folder to use subprocess | Developer | < 1m | 1,489,281 | 2,243 | $3.70 |
+| 2 | Test open folder fix | Tech-QA | < 1m | 1,978,028 | 3,470 | $4.72 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 3,467,309 |
+| **Total Tokens Out** | 5,713 |
+| **Total Cost** | $8.42 |
