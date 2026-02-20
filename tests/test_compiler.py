@@ -14,6 +14,11 @@ from foundry_app.core.models import (
 )
 from foundry_app.services.compiler import (
     _build_context,
+    _build_persona_name_map,
+    _filter_collaboration_table,
+    _filter_defer_references,
+    _filter_persona_references,
+    _resolve_persona_name,
     _substitute,
     compile_project,
 )
@@ -1107,3 +1112,429 @@ class TestFullIntegration:
 
         # Warning for missing stack
         assert any("missing-stack" in w for w in result.warnings)
+
+
+# ---------------------------------------------------------------------------
+# Persona name map
+# ---------------------------------------------------------------------------
+
+
+class TestBuildPersonaNameMap:
+
+    def test_extracts_name_from_header(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Persona: Developer\n\nContent"},
+        })
+        name_map = _build_persona_name_map(index)
+        assert name_map == {"Developer": "developer"}
+
+    def test_handles_multiple_personas(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Persona: Developer"},
+            "architect": {"persona.md": "# Persona: Architect"},
+        })
+        name_map = _build_persona_name_map(index)
+        assert name_map["Developer"] == "developer"
+        assert name_map["Architect"] == "architect"
+
+    def test_handles_slash_in_name(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "tech-qa": {"persona.md": "# Persona: Tech-QA / Test Engineer"},
+        })
+        name_map = _build_persona_name_map(index)
+        assert name_map["Tech-QA / Test Engineer"] == "tech-qa"
+
+    def test_handles_alternative_name(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "technical-writer": {
+                "persona.md": "# Persona: Technical Writer / Doc Owner",
+            },
+        })
+        name_map = _build_persona_name_map(index)
+        assert name_map["Technical Writer / Doc Owner"] == "technical-writer"
+
+    def test_skips_persona_without_persona_md(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "developer": {"outputs.md": "# Outputs only"},
+        })
+        name_map = _build_persona_name_map(index)
+        assert name_map == {}
+
+    def test_skips_persona_without_header(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "No header here"},
+        })
+        name_map = _build_persona_name_map(index)
+        assert name_map == {}
+
+
+# ---------------------------------------------------------------------------
+# Resolve persona name
+# ---------------------------------------------------------------------------
+
+
+class TestResolvePersonaName:
+
+    def test_exact_match(self):
+        name_to_id = {"Developer": "developer", "Architect": "architect"}
+        assert _resolve_persona_name("Developer", name_to_id) == "developer"
+
+    def test_short_form_match(self):
+        name_to_id = {"Technical Writer / Doc Owner": "technical-writer"}
+        assert _resolve_persona_name("Technical Writer", name_to_id) == "technical-writer"
+
+    def test_no_match_returns_none(self):
+        name_to_id = {"Developer": "developer"}
+        assert _resolve_persona_name("Stakeholders", name_to_id) is None
+
+    def test_strips_whitespace(self):
+        name_to_id = {"Developer": "developer"}
+        assert _resolve_persona_name("  Developer  ", name_to_id) == "developer"
+
+    def test_slash_in_name_exact_match(self):
+        name_to_id = {"Compliance / Risk Analyst": "compliance-risk"}
+        assert _resolve_persona_name("Compliance / Risk Analyst", name_to_id) == "compliance-risk"
+
+
+# ---------------------------------------------------------------------------
+# Filter collaboration table
+# ---------------------------------------------------------------------------
+
+
+class TestFilterCollaborationTable:
+
+    def test_removes_non_selected_personas(self):
+        text = (
+            "## Collaboration & Handoffs\n"
+            "\n"
+            "| Collaborator | Pattern |\n"
+            "|---|---|\n"
+            "| Developer | Code stuff |\n"
+            "| Architect | Design stuff |\n"
+        )
+        name_to_id = {"Developer": "developer", "Architect": "architect"}
+        result = _filter_collaboration_table(text, {"developer"}, name_to_id)
+        assert "Developer" in result
+        assert "Architect" not in result
+
+    def test_keeps_unknown_entities(self):
+        text = (
+            "## Collaboration & Handoffs\n"
+            "\n"
+            "| Collaborator | Pattern |\n"
+            "|---|---|\n"
+            "| Stakeholders | Business decisions |\n"
+            "| Developer | Code stuff |\n"
+        )
+        name_to_id = {"Developer": "developer"}
+        result = _filter_collaboration_table(text, set(), name_to_id)
+        assert "Stakeholders" in result
+        assert "Developer" not in result
+
+    def test_drops_entire_section_when_empty(self):
+        text = (
+            "## Collaboration & Handoffs\n"
+            "\n"
+            "| Collaborator | Pattern |\n"
+            "|---|---|\n"
+            "| Developer | Code stuff |\n"
+            "| Architect | Design stuff |\n"
+            "\n"
+            "## Next Section"
+        )
+        name_to_id = {"Developer": "developer", "Architect": "architect"}
+        result = _filter_collaboration_table(text, set(), name_to_id)
+        assert "Collaboration" not in result
+        assert "## Next Section" in result
+
+    def test_preserves_text_before_and_after_table(self):
+        text = (
+            "Some text before.\n"
+            "\n"
+            "## Collaboration & Handoffs\n"
+            "\n"
+            "| Collaborator | Pattern |\n"
+            "|---|---|\n"
+            "| Developer | Code stuff |\n"
+            "\n"
+            "Some text after."
+        )
+        name_to_id = {"Developer": "developer"}
+        result = _filter_collaboration_table(text, {"developer"}, name_to_id)
+        assert "Some text before." in result
+        assert "Some text after." in result
+        assert "Developer" in result
+
+    def test_handles_short_form_names(self):
+        text = (
+            "## Collaboration & Handoffs\n"
+            "\n"
+            "| Collaborator | Pattern |\n"
+            "|---|---|\n"
+            "| Technical Writer | Doc stuff |\n"
+            "| Developer | Code stuff |\n"
+        )
+        name_to_id = {
+            "Technical Writer / Doc Owner": "technical-writer",
+            "Developer": "developer",
+        }
+        result = _filter_collaboration_table(
+            text, {"technical-writer"}, name_to_id,
+        )
+        assert "Technical Writer" in result
+        assert "Developer" not in result
+
+    def test_no_collaboration_section(self):
+        text = "# Persona: Developer\n\nJust content, no collab table."
+        result = _filter_collaboration_table(text, set(), {})
+        assert result == text
+
+    def test_all_personas_selected(self):
+        text = (
+            "## Collaboration & Handoffs\n"
+            "\n"
+            "| Collaborator | Pattern |\n"
+            "|---|---|\n"
+            "| Developer | Code stuff |\n"
+            "| Architect | Design stuff |\n"
+        )
+        name_to_id = {"Developer": "developer", "Architect": "architect"}
+        result = _filter_collaboration_table(
+            text, {"developer", "architect"}, name_to_id,
+        )
+        assert "Developer" in result
+        assert "Architect" in result
+
+
+# ---------------------------------------------------------------------------
+# Filter defer references
+# ---------------------------------------------------------------------------
+
+
+class TestFilterDeferReferences:
+
+    def test_removes_defer_for_non_selected(self):
+        text = "- Write code (defer to Developer)"
+        name_to_id = {"Developer": "developer"}
+        result = _filter_defer_references(text, set(), name_to_id)
+        assert result == "- Write code"
+
+    def test_keeps_defer_for_selected(self):
+        text = "- Write docs (defer to Technical Writer)"
+        name_to_id = {"Technical Writer / Doc Owner": "technical-writer"}
+        result = _filter_defer_references(
+            text, {"technical-writer"}, name_to_id,
+        )
+        assert "(defer to Technical Writer)" in result
+
+    def test_removes_defer_with_extra_text(self):
+        text = "- Make decisions (defer to Architect; break ties only when needed)"
+        name_to_id = {"Architect": "architect"}
+        result = _filter_defer_references(text, set(), name_to_id)
+        assert result == "- Make decisions"
+
+    def test_keeps_unknown_entities(self):
+        text = "- Report to stakeholders (defer to Stakeholders)"
+        result = _filter_defer_references(text, set(), {})
+        assert "(defer to Stakeholders)" in result
+
+    def test_multiple_defer_references(self):
+        text = (
+            "- Write code (defer to Developer)\n"
+            "- Write docs (defer to Technical Writer)\n"
+            "- Design UI (defer to UX Designer)"
+        )
+        name_to_id = {
+            "Developer": "developer",
+            "Technical Writer / Doc Owner": "technical-writer",
+            "UX Designer": "ux-designer",
+        }
+        result = _filter_defer_references(
+            text, {"technical-writer"}, name_to_id,
+        )
+        assert "- Write code\n" in result
+        assert "(defer to Technical Writer)" in result
+        assert "- Design UI" in result
+        assert "(defer to UX Designer)" not in result
+
+
+# ---------------------------------------------------------------------------
+# Filter persona references (combined)
+# ---------------------------------------------------------------------------
+
+
+class TestFilterPersonaReferences:
+
+    def test_filters_both_table_and_defer(self):
+        text = (
+            "**Does not:**\n"
+            "- Write code (defer to Developer)\n"
+            "- Write docs (defer to Technical Writer)\n"
+            "\n"
+            "## Collaboration & Handoffs\n"
+            "\n"
+            "| Collaborator | Pattern |\n"
+            "|---|---|\n"
+            "| Developer | Code stuff |\n"
+            "| Technical Writer | Doc stuff |\n"
+        )
+        name_to_id = {
+            "Developer": "developer",
+            "Technical Writer / Doc Owner": "technical-writer",
+        }
+        result = _filter_persona_references(
+            text, {"technical-writer"}, name_to_id,
+        )
+        # Defer: Developer removed, Technical Writer kept
+        assert "- Write code\n" in result
+        assert "(defer to Technical Writer)" in result
+        # Table: Developer removed, Technical Writer kept
+        assert "| Technical Writer" in result
+        lines = result.split("\n")
+        assert not any("| Developer" in line for line in lines)
+
+
+# ---------------------------------------------------------------------------
+# compile_project — persona reference filtering (integration)
+# ---------------------------------------------------------------------------
+
+
+class TestCompilePersonaFiltering:
+
+    def _persona_with_collab(self, name: str, collabs: list[str]) -> str:
+        """Build a persona.md with a Collaboration & Handoffs table."""
+        rows = "\n".join(
+            f"| {c} | Works with {c} |" for c in collabs
+        )
+        return (
+            f"# Persona: {name}\n\n"
+            f"Content for {name}.\n\n"
+            f"## Collaboration & Handoffs\n\n"
+            f"| Collaborator | Pattern |\n"
+            f"|---|---|\n"
+            f"{rows}\n"
+        )
+
+    def test_filters_non_selected_from_collab_table(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "team-lead": {
+                "persona.md": self._persona_with_collab(
+                    "Team Lead", ["Developer", "Architect", "Tech-QA"],
+                ),
+            },
+            "developer": {"persona.md": "# Persona: Developer\n\nDev content."},
+            "architect": {"persona.md": "# Persona: Architect\n\nArch content."},
+            "tech-qa": {"persona.md": "# Persona: Tech-QA\n\nQA content."},
+        })
+        # Only select team-lead and developer — architect and tech-qa not selected
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="team-lead"),
+            PersonaSelection(id="developer"),
+        ]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        # Developer should be in the collab table
+        assert "| Developer" in content
+        # Architect and Tech-QA should NOT be in the collab table
+        assert "| Architect" not in content
+        assert "| Tech-QA" not in content
+
+    def test_filters_defer_references_in_compiled_output(self, tmp_path: Path):
+        output = tmp_path / "project"
+        persona_md = (
+            "# Persona: Team Lead\n\n"
+            "**Does not:**\n"
+            "- Write code (defer to Developer)\n"
+            "- Write docs (defer to Technical Writer)\n"
+        )
+        index, lib_root = _make_library(tmp_path, personas={
+            "team-lead": {"persona.md": persona_md},
+            "developer": {"persona.md": "# Persona: Developer"},
+            "technical-writer": {
+                "persona.md": "# Persona: Technical Writer / Doc Owner",
+            },
+        })
+        # Only select team-lead and developer
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="team-lead"),
+            PersonaSelection(id="developer"),
+        ]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        # "(defer to Developer)" should remain
+        assert "(defer to Developer)" in content
+        # "(defer to Technical Writer)" should be removed
+        assert "(defer to Technical Writer)" not in content
+        # But the constraint itself should remain
+        assert "- Write docs" in content
+
+    def test_all_selected_nothing_filtered(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "team-lead": {
+                "persona.md": self._persona_with_collab(
+                    "Team Lead", ["Developer", "Architect"],
+                ),
+            },
+            "developer": {"persona.md": "# Persona: Developer"},
+            "architect": {"persona.md": "# Persona: Architect"},
+        })
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="team-lead"),
+            PersonaSelection(id="developer"),
+            PersonaSelection(id="architect"),
+        ]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        assert "| Developer" in content
+        assert "| Architect" in content
+
+    def test_empty_collab_table_section_removed(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "team-lead": {
+                "persona.md": self._persona_with_collab(
+                    "Team Lead", ["Developer", "Architect"],
+                ),
+            },
+            "developer": {"persona.md": "# Persona: Developer"},
+            "architect": {"persona.md": "# Persona: Architect"},
+        })
+        # Only team-lead selected — both collaborators are non-selected
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="team-lead"),
+        ]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        assert "## Collaboration" not in content
+
+    def test_unknown_entities_preserved_in_collab_table(self, tmp_path: Path):
+        output = tmp_path / "project"
+        persona_md = (
+            "# Persona: Team Lead\n\n"
+            "## Collaboration & Handoffs\n\n"
+            "| Collaborator | Pattern |\n"
+            "|---|---|\n"
+            "| Developer | Code stuff |\n"
+            "| Stakeholders | Business decisions |\n"
+        )
+        index, lib_root = _make_library(tmp_path, personas={
+            "team-lead": {"persona.md": persona_md},
+            "developer": {"persona.md": "# Persona: Developer"},
+        })
+        # Only team-lead selected — Developer not selected but Stakeholders unknown
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="team-lead"),
+        ]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        # Stakeholders should remain (unknown entity)
+        assert "Stakeholders" in content
+        # Developer should be removed (known, not selected)
+        assert "| Developer" not in content

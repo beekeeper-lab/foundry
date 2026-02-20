@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-164 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-20 20:11 |
+| **Completed** | 2026-02-20 20:21 |
+| **Duration** | 10m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -34,21 +34,22 @@ Investigate how CLAUDE.md is generated, identify why non-selected personas appea
 
 ## Acceptance Criteria
 
-- [ ] Generated CLAUDE.md only references team members that were selected in the composition
-- [ ] No extraneous persona/agent references appear for non-selected team members
-- [ ] Generated CLAUDE.md is concise — no verbose boilerplate for unused features
-- [ ] Existing test for CLAUDE.md generation is updated or new test added
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Generated CLAUDE.md only references team members that were selected in the composition
+- [x] No extraneous persona/agent references appear for non-selected team members
+- [x] Generated CLAUDE.md is concise — no verbose boilerplate for unused features
+- [x] Existing test for CLAUDE.md generation is updated or new test added
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Filter non-selected persona references in generated CLAUDE.md | Developer | — | Done |
+| 2 | Verify persona filtering | Tech-QA | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default)
+> Bottleneck check: no contention found — sequential Developer → Tech-QA wave
 
 ## Notes
 
@@ -69,12 +70,13 @@ Look at the generated project in `generated-projects/my-new-app-idea/` for a con
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Filter non-selected persona references in generated CLAUDE.md | Developer | 5m | 3,349,453 | 1,222 | $6.85 |
+| 2 | Verify persona filtering | Tech-QA | < 1m | 1,101,754 | 304 | $1.81 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 5m |
+| **Total Tokens In** | 4,451,207 |
+| **Total Tokens Out** | 1,526 |
+| **Total Cost** | $8.66 |

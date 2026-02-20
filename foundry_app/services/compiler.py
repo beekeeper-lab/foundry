@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 # Template variable pattern: {{ var }} or {{ var | filter }}
 _PLACEHOLDER_RE = re.compile(r"\{\{\s*(.+?)\s*\}\}")
 
+# Pattern for extracting persona display name from "# Persona: <Name>" header
+_PERSONA_HEADER_RE = re.compile(r"^#\s+Persona:\s*(.+)", re.MULTILINE)
+
+# Pattern for "(defer to X)" or "(defer to X; extra text)" parentheticals
+_DEFER_TO_RE = re.compile(r"\s*\(defer to ([^;)]+)(?:;[^)]+)?\)")
+
 
 def _resolve_placeholder(match: re.Match[str], context: dict[str, str]) -> str:
     """Resolve a single {{ ... }} placeholder against the context dict.
@@ -66,6 +72,141 @@ def _build_context(spec: CompositionSpec) -> dict[str, str]:
         "project_name": spec.project.name,
         "stacks": ",".join(stack_ids),
     }
+
+
+def _build_persona_name_map(index: LibraryIndex) -> dict[str, str]:
+    """Build a mapping of persona display names to IDs from the library.
+
+    Reads the ``# Persona: <Name>`` header from each persona.md to extract
+    display names.  Returns a dict mapping display name -> persona ID.
+    """
+    name_map: dict[str, str] = {}
+    for persona_info in index.personas:
+        persona_md = _read_file(Path(persona_info.path) / "persona.md")
+        if persona_md is None:
+            continue
+        match = _PERSONA_HEADER_RE.search(persona_md)
+        if match:
+            name_map[match.group(1).strip()] = persona_info.id
+    return name_map
+
+
+def _resolve_persona_name(
+    name: str,
+    name_to_id: dict[str, str],
+) -> str | None:
+    """Resolve a display name to a persona ID.
+
+    Handles exact matches and short-form names (e.g., ``"Technical Writer"``
+    matching ``"Technical Writer / Doc Owner"``).
+    """
+    name = name.strip()
+    if name in name_to_id:
+        return name_to_id[name]
+    for canonical, pid in name_to_id.items():
+        if canonical.startswith(name + " / "):
+            return pid
+    return None
+
+
+def _filter_collaboration_table(
+    text: str,
+    selected_ids: set[str],
+    name_to_id: dict[str, str],
+) -> str:
+    """Filter Collaboration & Handoffs table to only include selected personas.
+
+    Removes table rows where the collaborator is a known-but-not-selected
+    persona.  Rows for unknown entities (e.g., ``"Stakeholders"``) are kept.
+    If all data rows are removed, the entire section (heading + table) is
+    dropped.
+    """
+    lines = text.split("\n")
+    result: list[str] = []
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+
+        if re.match(r"^##\s+Collaboration", line):
+            # Collect the heading and any blank lines before the table
+            section_lines: list[str] = [line]
+            i += 1
+            while i < len(lines) and lines[i].strip() == "":
+                section_lines.append(lines[i])
+                i += 1
+
+            # Collect table header row
+            if i < len(lines) and lines[i].startswith("|"):
+                section_lines.append(lines[i])
+                i += 1
+            else:
+                result.extend(section_lines)
+                continue
+
+            # Collect separator row
+            if i < len(lines) and lines[i].startswith("|"):
+                section_lines.append(lines[i])
+                i += 1
+            else:
+                result.extend(section_lines)
+                continue
+
+            # Collect and filter data rows
+            data_rows: list[str] = []
+            while i < len(lines) and lines[i].startswith("|"):
+                cells = lines[i].split("|")
+                if len(cells) >= 3:
+                    collaborator = cells[1].strip()
+                    pid = _resolve_persona_name(collaborator, name_to_id)
+                    if pid is None or pid in selected_ids:
+                        data_rows.append(lines[i])
+                else:
+                    data_rows.append(lines[i])
+                i += 1
+
+            if data_rows:
+                result.extend(section_lines)
+                result.extend(data_rows)
+            # else: empty table after filtering — drop the entire section
+            continue
+
+        result.append(line)
+        i += 1
+
+    return "\n".join(result)
+
+
+def _filter_defer_references(
+    text: str,
+    selected_ids: set[str],
+    name_to_id: dict[str, str],
+) -> str:
+    """Remove ``(defer to X)`` parentheticals when *X* is not selected."""
+
+    def _replace(match: re.Match[str]) -> str:
+        persona_name = match.group(1).strip()
+        pid = _resolve_persona_name(persona_name, name_to_id)
+        if pid is None or pid in selected_ids:
+            return match.group(0)
+        return ""
+
+    return _DEFER_TO_RE.sub(_replace, text)
+
+
+def _filter_persona_references(
+    text: str,
+    selected_ids: set[str],
+    name_to_id: dict[str, str],
+) -> str:
+    """Remove references to non-selected personas from compiled content.
+
+    1. Filters the Collaboration & Handoffs table.
+    2. Strips ``(defer to X)`` parentheticals for non-selected personas.
+    """
+    text = _filter_collaboration_table(text, selected_ids, name_to_id)
+    text = _filter_defer_references(text, selected_ids, name_to_id)
+    return text
 
 
 def _compile_persona_section(
@@ -174,6 +315,10 @@ def compile_project(
     context = _build_context(spec)
     sections: list[str] = []
 
+    # Build persona name map and selected IDs for reference filtering
+    name_to_id = _build_persona_name_map(library_index)
+    selected_ids = {ps.id for ps in spec.team.personas}
+
     # --- Project header ---
     header = f"# {spec.project.name}"
     sections.append(header)
@@ -186,6 +331,9 @@ def compile_project(
                 persona_sel.id, lib_root, library_index, context, warnings,
             )
             if persona_section is not None:
+                persona_section = _filter_persona_references(
+                    persona_section, selected_ids, name_to_id,
+                )
                 sections.append(persona_section)
 
     # --- Stack sections (sorted by order field, then alphabetically) ---
