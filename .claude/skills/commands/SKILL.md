@@ -27,6 +27,7 @@ This skill makes NO tool calls — it outputs a hardcoded table for instant resp
 | `/run` | `/run [branch]` | _(none)_ | Pull latest code and launch the Foundry app |
 | `/status-report` | `/status-report` | `--format brief\|full`, `--cycle <c>` | Generate a project status report |
 | `/telemetry-report` | `/telemetry-report` | `--category <c>`, `--status <s>`, `--since <date>` | Aggregate time/duration telemetry across beans |
+| `/docs-update` | `/docs-update` | `--dry-run` | Audit project docs against codebase, fix stale values |
 | `/bg` | `/bg <command> [args]` | _(passes flags to inner command)_ | Run any slash command in a background tmux window |
 | `/commands` | `/commands` | _(none)_ | This table |
 ```

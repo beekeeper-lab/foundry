@@ -22,8 +22,9 @@ Each stage returns a `StageResult(wrote=[], warnings=[])`. The orchestrator (`ge
 foundry_app/
   core/
     models.py          # Pydantic models: CompositionSpec, SafetyConfig, GenerationManifest, LibraryIndex
-    settings.py        # App settings (QSettings-backed)
-    logging.py         # Logging setup
+    settings.py        # App settings (JSON-backed)
+    logging_config.py  # Structured logging with rotation
+    resources.py       # Resource path helpers
   services/
     generator.py       # Pipeline orchestrator — generate_project()
     validator.py       # Pre-generation validation (strictness levels)
@@ -31,19 +32,33 @@ foundry_app/
     compiler.py        # Compiles per-member prompts from persona + stack files
     asset_copier.py    # Copies skills, commands, hooks into .claude/
     seeder.py          # Generates seed tasks (detailed or kickoff mode)
-    safety.py          # Writes settings.local.json from SafetyConfig
+    safety_writer.py   # Writes settings.local.json from SafetyConfig
     library_indexer.py # Builds LibraryIndex from library directory scan
     diff_reporter.py   # Generates diff report for generated files
-    export.py          # Export/move generated project to destination
+    agent_writer.py    # Writes agent definition files per persona
+    mcp_writer.py      # Generates MCP configuration files
   io/
     composition_io.py  # YAML/JSON read/write for CompositionSpec
+  templates/
+    agent.md.j2        # Jinja2 template for agent files
   ui/
     main_window.py     # QMainWindow shell
+    generation_worker.py # Background thread for pipeline execution
+    theme.py           # Dark/light theme support
+    icons.py           # Icon management
     screens/
+      builder_screen.py    # Wizard host screen
       builder/
-        wizard_pages/  # 4-step wizard: Project → Team&Stack → Safety → Review
-      generate/        # Generation progress screen
-      library/         # Library browser screen
+        wizard_pages/      # 6-step wizard: Project → Stack → Persona → Architecture → Hooks → Review
+      generation_progress.py # Pipeline runner with progress display
+      export_screen.py     # Export with pre-flight checklist
+      history_screen.py    # Recent projects + logs
+      library_manager.py   # Library browser
+      settings_screen.py   # App preferences
+    widgets/
+      branded_empty_state.py # Empty state placeholder
+      markdown_editor.py     # Source + preview editor
+      spinner_widget.py      # Branded spinner graphic
   cli.py               # CLI entry point (foundry-cli)
   main.py              # GUI entry point (foundry)
 ```
@@ -64,7 +79,7 @@ foundry_app/
 
 ## Test Patterns
 
-- **248 tests** across all services and core modules
+- **1811 tests** across all services and core modules
 - Fixtures use `tmp_path` for isolated filesystem tests
 - Helper functions like `_make_spec()` create minimal `CompositionSpec` instances
 - `LIBRARY_ROOT` constant points to `ai-team-library/` for integration tests

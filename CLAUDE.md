@@ -6,7 +6,7 @@ Foundry is a PySide6 desktop application and Python service layer that generates
 
 ```
 foundry_app/          # Application source (core/, services/, ui/, io/)
-tests/                # pytest test suite (248 tests)
+tests/                # pytest test suite (1811 tests)
 ai-team-library/      # Reusable library: personas, stacks, templates, workflows
 ai/                   # AI team workspace (context, outputs, beans, tasks)
 .claude/              # Claude Code config (agents, skills, commands, hooks, settings)
