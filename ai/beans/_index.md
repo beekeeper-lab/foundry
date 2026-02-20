@@ -163,3 +163,4 @@
 | BEAN-139 | Team Member Assignment Recommendations | Process | High | Done | team-lead |
 | BEAN-140 | Trello-Bean Lifecycle Mapping | Process | High | Done | team-lead |
 | BEAN-141 | Token Usage Optimization Analysis | Process | High | Done | team-lead |
+| BEAN-142 | Test Generator Stage Callback Contract | App | High | In Progress | team-lead |
