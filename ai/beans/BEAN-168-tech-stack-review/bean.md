@@ -52,11 +52,13 @@ Review all existing tech stack options in the library. Identify new tech stack o
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/beans/BEAN-168-tech-stack-review/bean.md | +27 -13 |
+| ai/beans/BEAN-168-tech-stack-review/tasks/01-architect-review-stacks.md | +29 |
+| ai/beans/BEAN-168-tech-stack-review/tasks/02-tech-qa-verify-review.md | +27 |
+| ai/outputs/architect/tech-stack-review.md | +142 |
+| ai/outputs/tech-qa/review-BEAN-168.md | +31 |
 
 ## Notes
 
