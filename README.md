@@ -645,7 +645,7 @@ Collect decisions, generate a project, and export it.
 
 | Screen | Purpose |
 |---|---|
-| **New Project Wizard** | 4-step guided flow: Project, Team & Stack, Safety, Review & Generate |
+| **New Project Wizard** | 6-step guided flow: Project, Stack, Persona, Architecture, Hooks, Review & Generate |
 | **Composition Editor** | Power-edit `composition.yml` with synchronized Form and YAML views |
 | **Generate** | Run the pipeline, watch stage progress, inspect the generation manifest |
 | **Export** | Copy/move the project to its final destination with pre-export validation |
@@ -748,6 +748,7 @@ Foundry provides a comprehensive set of Claude Code skills and commands that aut
 | `/close-loop` | Quality | Verify task outputs against acceptance criteria; record telemetry |
 | `/compile-team` | Generation | Resolve persona/stack references; produce unified CLAUDE.md |
 | `/deploy` | Deployment | Promote `test` to `main` (or current branch to `test`) via PR with tests and release notes |
+| `/docs-update` | Documentation | Audit project docs against codebase and fix stale values |
 | `/handoff` | Workflow | Package artifacts and context for the next persona in the wave |
 | `/long-run` | Execution | Autonomous backlog processing — pick, decompose, execute, merge, loop |
 | `/merge-bean` | Integration | Merge a bean's feature branch into `test` with conflict detection |
@@ -1043,6 +1044,30 @@ Creates a lightweight developer decision record for implementation-level choices
 - `--work` — Related work item ID
 
 **Produces:** Decision file (`DD-NNN-slug.md`), log update
+
+---
+
+#### `/docs-update` — Audit and Fix Stale Documentation
+
+Audits project documentation against the live codebase and fixes stale values. All facts are gathered by introspection — nothing is hardcoded.
+
+```
+/docs-update [--dry-run]
+```
+
+**Options:**
+- `--dry-run` — Audit only; display report without writing changes
+
+**What it does:**
+1. Gathers live facts: test count, module lists, wizard pages, bean totals, skill/command counts, git log, directory tree
+2. Compares each fact against its doc location, producing `[OK]`, `[STALE]`, or `[MISSING]` findings
+3. Fixes every stale finding (regenerates module maps and trees from scratch)
+4. Re-verifies all checks pass
+5. Commits all documentation changes atomically
+
+**Documents checked:** CLAUDE.md, README.md, ai/context/project.md, CHANGELOG.md, MEMORY.md
+
+**Produces:** Updated documentation files, verification report, atomic commit
 
 ---
 
@@ -1493,6 +1518,7 @@ foundry/
   pyproject.toml                       # Project metadata, dependencies, entry points
   README.md                            # This file
   CLAUDE.md                            # Claude Code project instructions
+  CHANGELOG.md                         # Release history
   foundry_app/
     __init__.py                        # Version (1.0.0)
     __main__.py                        # python -m foundry_app support
@@ -1502,6 +1528,7 @@ foundry/
       models.py                        # Pydantic data contracts
       settings.py                      # Persistent user preferences
       logging_config.py                # Structured logging with rotation
+      resources.py                     # Resource path helpers
     services/
       generator.py                     # Pipeline orchestrator
       compiler.py                      # Meta-prompt compiler (Jinja2)
@@ -1511,24 +1538,31 @@ foundry/
       library_indexer.py               # Library directory scanner + cache
       asset_copier.py                  # Copies skills, commands, hooks
       safety_writer.py                 # settings.local.json generation
-      overlay.py                       # Overlay engine for regeneration
       diff_reporter.py                 # Generation diff reports
+      agent_writer.py                  # Agent definition file writer
+      mcp_writer.py                    # MCP configuration generator
     io/
       composition_io.py                # YAML/JSON read/write
+    templates/
+      agent.md.j2                      # Jinja2 template for agent files
     ui/
       main_window.py                   # Three-pane QMainWindow layout
+      generation_worker.py             # Background thread for pipeline execution
       theme.py                         # Dark/light theme support
       icons.py                         # Icon management
       screens/
-        builder/                       # Project generation wizard
-          wizard_pages/                # 4-step wizard pages
+        builder_screen.py              # Wizard host screen
+        builder/
+          wizard_pages/                # 6-step wizard pages
         generation_progress.py         # Pipeline runner
         export_screen.py               # Export with pre-flight checklist
         history_screen.py              # Recent projects + logs
         library_manager.py             # Library browser
+        settings_screen.py             # App preferences
       widgets/
         branded_empty_state.py         # Empty state placeholder
         markdown_editor.py             # Source + preview editor
+        spinner_widget.py              # Branded spinner graphic
   ai-team-library/                     # Bundled building-block library (read-only)
     personas/                          # 13 role definitions
     stacks/                            # 11 tech-stack packs
@@ -1547,7 +1581,7 @@ foundry/
     skills/                            # Skill definitions
     commands/                          # Command definitions
     hooks/                             # Git/operation hooks
-  tests/                               # Test suite
+  tests/                               # Test suite (1811 tests)
   examples/                            # 4 example composition YAML files
   resources/
     icons/                             # App icons
