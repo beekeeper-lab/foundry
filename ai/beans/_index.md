@@ -196,5 +196,5 @@
 | BEAN-172 | AWS Cloud Platform Stack | App | Medium | Done | team-lead |
 | BEAN-173 | React Native Mobile Tech Stack | App | Medium | Done | team-lead |
 | BEAN-174 | Data Engineering Tech Stack | App | Medium | Done | team-lead |
-| BEAN-175 | GDPR & Data Privacy Compliance Stack | App | Medium | In Progress | team-lead |
+| BEAN-175 | GDPR & Data Privacy Compliance Stack | App | Medium | Done | team-lead |
 | BEAN-176 | Go Language Tech Stack | App | Medium | In Progress | team-lead |
