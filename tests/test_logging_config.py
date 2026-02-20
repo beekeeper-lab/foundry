@@ -2,7 +2,9 @@
 
 import logging
 from logging.handlers import RotatingFileHandler
+from unittest.mock import patch
 
+import pytest
 from PySide6.QtWidgets import QApplication
 
 from foundry_app.core.logging_config import (
@@ -12,6 +14,16 @@ from foundry_app.core.logging_config import (
 )
 
 _app = QApplication.instance() or QApplication([])
+
+
+@pytest.fixture(autouse=True)
+def _isolate_log_dir(tmp_path):
+    """Route log files to tmp_path instead of real QStandardPaths location."""
+    with patch(
+        "foundry_app.core.logging_config.QStandardPaths.writableLocation",
+        return_value=str(tmp_path),
+    ):
+        yield
 
 
 class TestSetupLogging:

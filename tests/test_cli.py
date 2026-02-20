@@ -3,7 +3,18 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 import yaml
+
+
+@pytest.fixture(autouse=True)
+def _isolate_logging(tmp_path):
+    """Prevent setup_logging from creating dirs via unmocked QStandardPaths."""
+    with patch(
+        "foundry_app.core.logging_config.QStandardPaths.writableLocation",
+        return_value=str(tmp_path),
+    ):
+        yield
 
 from foundry_app.cli import (
     EXIT_GENERATION_ERROR,
