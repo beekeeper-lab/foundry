@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-172 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 18:11 |
+| **Completed** | 2026-02-20 18:15 |
+| **Duration** | 4m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -36,20 +36,18 @@ Add a complete AWS cloud platform stack to the ai-team-library following the est
 
 ## Acceptance Criteria
 
-- [ ] `ai-team-library/stacks/aws-cloud-platform/` directory exists with properly formatted stack file
-- [ ] Stack file follows the standardized template pattern (Defaults table+alternatives, Do/Don't, Common Pitfalls, Checklist)
-- [ ] Covers core services, Well-Architected Framework, cost optimization, and security
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `ai-team-library/stacks/aws-cloud-platform/` directory exists with properly formatted stack file
+- [x] Stack file follows the standardized template pattern (Defaults table+alternatives, Do/Don't, Common Pitfalls, Checklist)
+- [x] Covers core services, Well-Architected Framework, cost optimization, and security
+- [x] All tests pass (`uv run pytest`) — pre-existing PySide6 headless failures only; no new failures
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Create AWS cloud platform stack file | Developer | — | Done |
+| 2 | Verify tests and lint pass | Tech-QA | 1 | Done |
 
 ## Changes
 
@@ -78,12 +76,13 @@ AWS is the dominant cloud platform. This provides AWS-specific guidance compleme
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create AWS cloud platform stack file | Developer | — | — | — | — |
+| 2 | Verify tests and lint pass | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 4m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
