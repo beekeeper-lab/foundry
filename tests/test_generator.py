@@ -1125,3 +1125,145 @@ class TestEndToEnd:
             assert persona.id.replace("-", " ") in content or persona.id in content, (
                 f"Agent file {agent_file.name} does not reference persona {persona.id}"
             )
+
+
+# ---------------------------------------------------------------------------
+# Stage callback contract
+# ---------------------------------------------------------------------------
+
+
+class TestStageCallback:
+    """Verify the stage_callback parameter fires with correct keys, statuses, and payloads."""
+
+    # The default stages that always run (seed_tasks and diff_report are optional)
+    DEFAULT_STAGES = {"scaffold", "compile", "agent_writer", "copy_assets", "mcp_config", "safety"}
+
+    def test_callback_fires_twice_per_stage(self, tmp_path: Path):
+        lib_root = _make_library_dir(tmp_path)
+        output_dir = tmp_path / "output" / "test-project"
+        spec = _make_spec()
+        calls: list[tuple[str, str, int]] = []
+
+        generate_project(
+            spec, lib_root, output_root=output_dir,
+            stage_callback=lambda key, status, count: calls.append((key, status, count)),
+        )
+
+        # Group calls by stage key
+        stage_keys = [key for key, _, _ in calls]
+        for stage in self.DEFAULT_STAGES:
+            occurrences = stage_keys.count(stage)
+            assert occurrences == 2, (
+                f"Stage '{stage}' should fire exactly twice (running+done), got {occurrences}"
+            )
+
+    def test_callback_status_values(self, tmp_path: Path):
+        lib_root = _make_library_dir(tmp_path)
+        output_dir = tmp_path / "output" / "test-project"
+        spec = _make_spec()
+        calls: list[tuple[str, str, int]] = []
+
+        generate_project(
+            spec, lib_root, output_root=output_dir,
+            stage_callback=lambda key, status, count: calls.append((key, status, count)),
+        )
+
+        # Each stage fires "running" then "done" in order
+        for stage in self.DEFAULT_STAGES:
+            stage_calls = [(s, c) for k, s, c in calls if k == stage]
+            assert stage_calls[0][0] == "running"
+            assert stage_calls[1][0] == "done"
+
+    def test_running_status_has_zero_file_count(self, tmp_path: Path):
+        lib_root = _make_library_dir(tmp_path)
+        output_dir = tmp_path / "output" / "test-project"
+        spec = _make_spec()
+        calls: list[tuple[str, str, int]] = []
+
+        generate_project(
+            spec, lib_root, output_root=output_dir,
+            stage_callback=lambda key, status, count: calls.append((key, status, count)),
+        )
+
+        for key, status, count in calls:
+            if status == "running":
+                assert count == 0, f"Stage '{key}' running callback has count={count}, expected 0"
+
+    def test_done_status_has_nonnegative_int_file_count(self, tmp_path: Path):
+        lib_root = _make_library_dir(tmp_path)
+        output_dir = tmp_path / "output" / "test-project"
+        spec = _make_spec()
+        calls: list[tuple[str, str, int]] = []
+
+        generate_project(
+            spec, lib_root, output_root=output_dir,
+            stage_callback=lambda key, status, count: calls.append((key, status, count)),
+        )
+
+        for key, status, count in calls:
+            if status == "done":
+                assert isinstance(count, int), (
+                    f"Stage '{key}' done callback count is {type(count).__name__}, expected int"
+                )
+                assert count >= 0, (
+                    f"Stage '{key}' done callback has negative count={count}"
+                )
+
+    def test_stage_keys_match_expected_set(self, tmp_path: Path):
+        lib_root = _make_library_dir(tmp_path)
+        output_dir = tmp_path / "output" / "test-project"
+        spec = _make_spec(generation=GenerationOptions(
+            seed_tasks=False, write_diff_report=False,
+        ))
+        calls: list[tuple[str, str, int]] = []
+
+        generate_project(
+            spec, lib_root, output_root=output_dir,
+            stage_callback=lambda key, status, count: calls.append((key, status, count)),
+        )
+
+        actual_keys = {key for key, _, _ in calls}
+        assert actual_keys == self.DEFAULT_STAGES, (
+            f"Expected stages {self.DEFAULT_STAGES}, got {actual_keys}"
+        )
+
+    def test_optional_seed_tasks_stage_fires_when_enabled(self, tmp_path: Path):
+        lib_root = _make_library_dir(tmp_path)
+        output_dir = tmp_path / "output" / "test-project"
+        spec = _make_spec(generation=GenerationOptions(seed_tasks=True))
+        calls: list[tuple[str, str, int]] = []
+
+        generate_project(
+            spec, lib_root, output_root=output_dir,
+            stage_callback=lambda key, status, count: calls.append((key, status, count)),
+        )
+
+        stage_keys = [key for key, _, _ in calls]
+        assert stage_keys.count("seed_tasks") == 2
+
+    def test_optional_diff_report_stage_fires_when_enabled(self, tmp_path: Path):
+        lib_root = _make_library_dir(tmp_path)
+        output_dir = tmp_path / "output" / "test-project"
+        spec = _make_spec(generation=GenerationOptions(write_diff_report=True))
+        calls: list[tuple[str, str, int]] = []
+
+        generate_project(
+            spec, lib_root, output_root=output_dir,
+            stage_callback=lambda key, status, count: calls.append((key, status, count)),
+        )
+
+        stage_keys = [key for key, _, _ in calls]
+        assert stage_keys.count("diff_report") == 2
+
+    def test_no_callback_does_not_error(self, tmp_path: Path):
+        """Passing None (default) for stage_callback should work without errors."""
+        lib_root = _make_library_dir(tmp_path)
+        output_dir = tmp_path / "output" / "test-project"
+        spec = _make_spec()
+
+        manifest, validation, _ = generate_project(
+            spec, lib_root, output_root=output_dir, stage_callback=None,
+        )
+
+        assert validation.is_valid
+        assert "scaffold" in manifest.stages
