@@ -25,16 +25,21 @@ EXPECTED_PERSONAS = [
 ]
 
 EXPECTED_STACKS = [
+    "aws-cloud-platform",
     "clean-code",
     "data-engineering",
     "devops",
     "dotnet",
+    "go",
+    "hipaa-compliance",
     "iso-9000",
     "java",
     "node",
     "python",
     "python-qt-pyside6",
     "react",
+    "react-native",
+    "rust",
     "security",
     "sox-compliance",
     "sql-dba",
