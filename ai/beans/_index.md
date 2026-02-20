@@ -184,5 +184,5 @@
 | BEAN-160 | Test SecretPolicy Reports Correct Index for Invalid Regex | App | Medium | In Progress | team-lead |
 | BEAN-161 | Test save_composition Excludes None Fields from YAML Output | App | Medium | Approved | (unassigned) |
 | BEAN-162 | Bean Change Summary Section | Process | Medium | Approved | (unassigned) |
-| BEAN-163 | Fix Open Project Folder Button | App | High | In Progress | team-lead |
+| BEAN-163 | Fix Open Project Folder Button | App | High | Done | team-lead |
 | BEAN-164 | Review and Prune Generated CLAUDE.md | App | High | In Progress | team-lead |
