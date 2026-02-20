@@ -35,6 +35,7 @@ EXPECTED_STACKS = [
     "python-qt-pyside6",
     "react",
     "security",
+    "sox-compliance",
     "sql-dba",
     "typescript",
 ]
