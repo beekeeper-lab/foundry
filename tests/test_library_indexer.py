@@ -28,6 +28,7 @@ EXPECTED_STACKS = [
     "clean-code",
     "devops",
     "dotnet",
+    "iso-9000",
     "java",
     "node",
     "python",

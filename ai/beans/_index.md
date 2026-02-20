@@ -188,6 +188,6 @@
 | BEAN-164 | Review and Prune Generated CLAUDE.md | App | High | Done | team-lead |
 | BEAN-165 | Test Card from Trello-Add Skill | Infra | Low | Approved | (unassigned) |
 | BEAN-166 | Foundry Kit — Shared Config Architecture Spec | Process | High | Done | team-lead |
-| BEAN-167 | ISO 9000 Certification Tech Stack | App | Medium | Approved | (unassigned) |
+| BEAN-167 | ISO 9000 Certification Tech Stack | App | Medium | In Progress | team-lead |
 | BEAN-168 | Tech Stack Options Review & Expansion | App | Medium | Approved | (unassigned) |
 | BEAN-169 | SOX Compliance Tech Stack | App | Medium | Approved | (unassigned) |

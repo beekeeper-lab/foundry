@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-167 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 22:20 |
+| **Completed** | 2026-02-20 22:26 |
+| **Duration** | 6m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -34,21 +34,21 @@ Add a new tech stack option in the ai-team-library for ISO 9000 Certification an
 
 ## Acceptance Criteria
 
-- [ ] ISO 9000 tech stack YAML exists in the library
-- [ ] Stack includes relevant skills (QMS, audit, document control, CAPA, etc.)
-- [ ] References to third-party sources are included
-- [ ] Library indexer can discover and index the new stack
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] ISO 9000 tech stack YAML exists in the library
+- [x] Stack includes relevant skills (QMS, audit, document control, CAPA, etc.)
+- [x] References to third-party sources are included
+- [x] Library indexer can discover and index the new stack
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Create ISO 9000 Tech Stack | Developer | — | Done |
+| 2 | Verify ISO 9000 Tech Stack | Tech-QA | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default — straightforward library addition)
 
 ## Changes
 
@@ -77,12 +77,13 @@ Add a new tech stack option in the ai-team-library for ISO 9000 Certification an
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create ISO 9000 Tech Stack | Developer | 4m | 3,022,218 | 3,830 | $5.39 |
+| 2 | Verify ISO 9000 Tech Stack | Tech-QA | 1m | 307,214 | 831 | $0.54 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 5m |
+| **Total Tokens In** | 3,329,432 |
+| **Total Tokens Out** | 4,661 |
+| **Total Cost** | $5.93 |
