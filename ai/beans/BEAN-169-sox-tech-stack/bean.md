@@ -52,11 +52,18 @@ Add a new tech stack option in the ai-team-library for SOX compliance. Include d
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| ai-team-library/stacks/sox-compliance/audit-trail.md | +139 |
+| ai-team-library/stacks/sox-compliance/internal-controls.md | +122 |
+| ai-team-library/stacks/sox-compliance/itgc.md | +162 |
+| ai-team-library/stacks/sox-compliance/references.md | +79 |
+| ai-team-library/stacks/sox-compliance/segregation-of-duties.md | +128 |
+| ai/beans/BEAN-169-sox-tech-stack/bean.md | +27 -13 |
+| ai/beans/BEAN-169-sox-tech-stack/tasks/01-developer-create-sox-stack.md | +27 |
+| ai/beans/BEAN-169-sox-tech-stack/tasks/02-tech-qa-verify-sox-stack.md | +26 |
+| ai/outputs/tech-qa/review-BEAN-169.md | +60 |
+| tests/test_library_indexer.py | +1 |
 
 ## Notes
 
