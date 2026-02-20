@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-166 |
-| **Status** | In Progress |
+| **Status** | Approved |
 | **Priority** | High |
 | **Created** | 2026-02-20 |
-| **Started** | 2026-02-20 20:39 |
+| **Started** | — |
 | **Completed** | — |
 | **Duration** | — |
 | **Owner** | team-lead |
