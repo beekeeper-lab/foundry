@@ -192,9 +192,9 @@
 | BEAN-168 | Tech Stack Options Review & Expansion | App | Medium | Done | team-lead |
 | BEAN-169 | SOX Compliance Tech Stack | App | Medium | Done | team-lead |
 | BEAN-170 | HIPAA Compliance Stack | App | Medium | In Progress | team-lead |
-| BEAN-171 | Rust Language Tech Stack | App | Medium | In Progress | team-lead |
+| BEAN-171 | Rust Language Tech Stack | App | Medium | Done | team-lead |
 | BEAN-172 | AWS Cloud Platform Stack | App | Medium | In Progress | team-lead |
 | BEAN-173 | React Native Mobile Tech Stack | App | Medium | In Progress | team-lead |
 | BEAN-174 | Data Engineering Tech Stack | App | Medium | In Progress | team-lead |
-| BEAN-175 | GDPR & Data Privacy Compliance Stack | App | Medium | Approved | (unassigned) |
+| BEAN-175 | GDPR & Data Privacy Compliance Stack | App | Medium | In Progress | team-lead |
 | BEAN-176 | Go Language Tech Stack | App | Medium | Approved | (unassigned) |
