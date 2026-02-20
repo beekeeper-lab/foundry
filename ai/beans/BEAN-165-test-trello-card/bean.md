@@ -44,11 +44,10 @@ Verify the Trello integration pipeline works correctly by processing this test c
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/beans/BEAN-165-test-trello-card/bean.md | +25 -13 |
+| ai/beans/BEAN-165-test-trello-card/tasks/01-tech-qa-verify-lifecycle.md | +24 |
 
 ## Notes
 
