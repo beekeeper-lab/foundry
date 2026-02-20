@@ -186,7 +186,7 @@
 | BEAN-162 | Bean Change Summary Section | Process | Medium | Done | team-lead |
 | BEAN-163 | Fix Open Project Folder Button | App | High | Done | team-lead |
 | BEAN-164 | Review and Prune Generated CLAUDE.md | App | High | Done | team-lead |
-| BEAN-165 | Test Card from Trello-Add Skill | Infra | Low | Approved | (unassigned) |
+| BEAN-165 | Test Card from Trello-Add Skill | Infra | Low | Done | team-lead |
 | BEAN-166 | Foundry Kit — Shared Config Architecture Spec | Process | High | Done | team-lead |
 | BEAN-167 | ISO 9000 Certification Tech Stack | App | Medium | Done | team-lead |
 | BEAN-168 | Tech Stack Options Review & Expansion | App | Medium | Done | team-lead |
