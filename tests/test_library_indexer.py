@@ -26,6 +26,7 @@ EXPECTED_PERSONAS = [
 
 EXPECTED_STACKS = [
     "clean-code",
+    "data-engineering",
     "devops",
     "dotnet",
     "iso-9000",
