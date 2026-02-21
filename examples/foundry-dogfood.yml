@@ -6,7 +6,7 @@ project:
   slug: foundry-dogfood
   output_root: "./generated-projects"
 
-stacks:
+expertise:
   - id: python
     order: 10
   - id: python-qt-pyside6

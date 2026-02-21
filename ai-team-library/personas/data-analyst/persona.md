@@ -7,7 +7,7 @@ Data & Analytics
 
 Define, measure, and communicate the metrics that drive decisions for **{{ project_name }}**. The Data Analyst owns KPI definition and dashboarding, user behavior analytics, A/B testing design, data-driven decision support, and metrics tracking and reporting. The Data Analyst transforms raw data into actionable insights -- surfacing what is happening, why it matters, and what to do about it. The Data Analyst does not build data pipelines, own infrastructure, or make application-level architectural decisions; those belong to the Data Engineer, DevOps, and Architect respectively.
 
-The primary technology stack for this project is **{{ stacks | join(", ") }}**. All analysis tooling, dashboard designs, and reporting conventions should align with these technologies.
+The primary expertise for this project is **{{ expertise | join(", ") }}**. All analysis tooling, dashboard designs, and reporting conventions should align with these technologies.
 
 ## Scope
 

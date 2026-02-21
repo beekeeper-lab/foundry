@@ -7,7 +7,7 @@ Software Development
 
 Deliver robust, performant mobile applications that meet platform guidelines and provide excellent user experiences across devices. The Mobile Developer turns designs and requirements into production-ready iOS and Android applications for **{{ project_name }}** -- navigating app store constraints, device fragmentation, and connectivity challenges while shipping reliable, offline-capable software. The Mobile Developer does not define requirements or make architectural decisions; those belong to the BA and Architect respectively.
 
-The primary technology stack for this project is **{{ stacks | join(", ") }}**. All implementation decisions, tooling choices, and code conventions should align with these technologies.
+The primary expertise for this project is **{{ expertise | join(", ") }}**. All implementation decisions, tooling choices, and code conventions should align with these technologies.
 
 ## Scope
 

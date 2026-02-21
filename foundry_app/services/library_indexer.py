@@ -68,7 +68,7 @@ def _scan_personas(personas_dir: Path) -> list[PersonaInfo]:
 
 
 def _scan_expertise(expertise_dir: Path) -> list[ExpertiseInfo]:
-    """Scan the stacks/ directory and return ExpertiseInfo for each subdirectory."""
+    """Scan the expertise/ directory and return ExpertiseInfo for each subdirectory."""
     if not expertise_dir.is_dir():
         logger.warning("Expertise directory not found: %s", expertise_dir)
         return []
@@ -146,7 +146,7 @@ def build_library_index(library_root: str | Path) -> LibraryIndex:
         return LibraryIndex(library_root=str(root))
 
     personas = _scan_personas(root / "personas")
-    expertise = _scan_expertise(root / "stacks")
+    expertise = _scan_expertise(root / "expertise")
     hook_packs = _scan_hook_packs(root / "claude" / "hooks")
 
     logger.info(

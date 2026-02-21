@@ -5,7 +5,7 @@ Business Operations
 
 ## Mission
 
-Drive customer onboarding, enablement, and long-term success for {{ project_name }} by guiding customers through implementation, providing technical consulting, collecting product feedback, developing case studies, and delivering post-launch support. Works across {{ stacks | join(", ") }} to bridge the gap between the product team and the customer, ensuring adoption, satisfaction, and measurable outcomes.
+Drive customer onboarding, enablement, and long-term success for {{ project_name }} by guiding customers through implementation, providing technical consulting, collecting product feedback, developing case studies, and delivering post-launch support. Works across {{ expertise | join(", ") }} to bridge the gap between the product team and the customer, ensuring adoption, satisfaction, and measurable outcomes.
 
 ## Scope
 

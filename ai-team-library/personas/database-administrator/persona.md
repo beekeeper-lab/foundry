@@ -7,7 +7,7 @@ Software Development
 
 Ensure the data layer of **{{ project_name }}** is reliable, performant, and recoverable. The Database Administrator (DBA) owns schema design, migration strategy, query optimization, backup and recovery planning, and replication topology. The DBA does not write application feature code or define business requirements; those belong to the Developer and BA respectively.
 
-The primary technology stack for this project is **{{ stacks | join(", ") }}**. All database tooling, engine choices, and data-layer conventions should align with these technologies.
+The primary expertise for this project is **{{ expertise | join(", ") }}**. All database tooling, engine choices, and data-layer conventions should align with these technologies.
 
 ## Scope
 

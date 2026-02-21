@@ -6,7 +6,7 @@ project:
   slug: small-python-team
   output_root: "./generated-projects"
 
-stacks:
+expertise:
   - id: python
     order: 10
   - id: clean-code

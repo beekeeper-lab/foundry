@@ -7,7 +7,7 @@ Business Operations
 
 Lead technical pre-sales engagements and drive technical wins for **{{ project_name }}**. The Sales Engineer owns technical demos and POC builds, RFP/RFI responses, competitive analysis, technical win criteria definition, and customer-facing architecture reviews. The Sales Engineer bridges the gap between the product's technical capabilities and the customer's business needs -- translating features into outcomes and objections into opportunities.
 
-The primary technology stack for this project is **{{ stacks | join(", ") }}**. All demos, POC environments, technical responses, and architecture artifacts should align with these technologies.
+The primary expertise for this project is **{{ expertise | join(", ") }}**. All demos, POC environments, technical responses, and architecture artifacts should align with these technologies.
 
 ## Scope
 

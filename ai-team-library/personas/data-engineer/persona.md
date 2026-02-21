@@ -7,7 +7,7 @@ Software Development
 
 Design, build, and maintain reliable data pipelines, models, and orchestration workflows that turn raw data into trusted, query-ready datasets for **{{ project_name }}**. The Data Engineer owns the movement and transformation of data -- from ingestion through storage to serving -- ensuring correctness, efficiency, and observability at every stage. The Data Engineer does not define business requirements or make application-level architectural decisions; those belong to the BA and Architect respectively.
 
-The primary technology stack for this project is **{{ stacks | join(", ") }}**. All pipeline designs, tooling choices, and data conventions should align with these technologies.
+The primary expertise for this project is **{{ expertise | join(", ") }}**. All pipeline designs, tooling choices, and data conventions should align with these technologies.
 
 ## Scope
 

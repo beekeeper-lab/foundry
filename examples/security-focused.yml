@@ -6,7 +6,7 @@ project:
   slug: security-focused
   output_root: "./generated-projects"
 
-stacks:
+expertise:
   - id: python
     order: 10
   - id: security

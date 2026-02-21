@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-217 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-21 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 21:23 |
+| **Completed** | 2026-02-20 21:23 |
+| **Duration** | < 1m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -79,8 +79,8 @@ Depends on BEAN-216 (codebase rename). The app code must already expect `experti
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | < 1m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

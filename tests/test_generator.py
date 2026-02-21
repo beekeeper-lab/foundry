@@ -56,7 +56,7 @@ def _make_library(tmp_path: Path) -> LibraryIndex:
     (persona_dir / "persona.md").write_text("# Developer persona")
 
     # Create expertise directory
-    expertise_dir = lib_root / "stacks" / "python"
+    expertise_dir = lib_root / "expertise" / "python"
     expertise_dir.mkdir(parents=True)
     (expertise_dir / "conventions.md").write_text("# Python conventions")
 
@@ -91,7 +91,7 @@ def _make_library_dir(tmp_path: Path) -> Path:
     persona_dir.mkdir(parents=True)
     (persona_dir / "persona.md").write_text("# Developer persona")
 
-    expertise_dir = lib_root / "stacks" / "python"
+    expertise_dir = lib_root / "expertise" / "python"
     expertise_dir.mkdir(parents=True)
     (expertise_dir / "conventions.md").write_text("# Python conventions")
 

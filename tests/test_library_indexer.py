@@ -181,13 +181,13 @@ class TestBuildLibraryIndexGraceful:
         assert idx.hook_packs == []
 
     def test_missing_personas_dir(self, tmp_path: Path):
-        (tmp_path / "stacks" / "python").mkdir(parents=True)
-        (tmp_path / "stacks" / "python" / "conventions.md").touch()
+        (tmp_path / "expertise" / "python").mkdir(parents=True)
+        (tmp_path / "expertise" / "python" / "conventions.md").touch()
         idx = build_library_index(tmp_path)
         assert idx.personas == []
         assert len(idx.expertise) == 1
 
-    def test_missing_stacks_dir(self, tmp_path: Path):
+    def test_missing_expertise_dir(self, tmp_path: Path):
         (tmp_path / "personas" / "dev").mkdir(parents=True)
         (tmp_path / "personas" / "dev" / "persona.md").touch()
         idx = build_library_index(tmp_path)

@@ -6,7 +6,7 @@ project:
   slug: full-stack-web
   output_root: "./generated-projects"
 
-stacks:
+expertise:
   - id: react
     order: 10
   - id: typescript
