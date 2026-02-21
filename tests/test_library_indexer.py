@@ -24,6 +24,7 @@ EXPECTED_PERSONAS = [
     "legal-counsel",
     "mobile-developer",
     "platform-sre-engineer",
+    "product-owner",
     "researcher-librarian",
     "security-engineer",
     "team-lead",
