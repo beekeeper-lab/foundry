@@ -5,6 +5,7 @@ from pathlib import Path
 from foundry_app.core.models import (
     CompositionSpec,
     ExpertiseSelection,
+    GenerationOptions,
     HookPackSelection,
     HooksConfig,
     LibraryIndex,
@@ -728,3 +729,115 @@ class TestEdgeCases:
         assert "ai/outputs/developer/implementation-plan.md" in result.wrote
         # Tech-qa templates NOT copied
         assert not any("tech-qa" in w for w in result.wrote if "ai/outputs" in w)
+
+
+# ---------------------------------------------------------------------------
+# Subtree mode (claude_kit_url set)
+# ---------------------------------------------------------------------------
+
+
+class TestSubtreeMode:
+
+    def test_skips_claude_commands_when_subtree_mode(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            generation=GenerationOptions(
+                claude_kit_url="git@github.com:example/claude-kit.git",
+            ),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/commands/validate-repo.md" not in result.wrote
+        assert ".claude/commands/seed-tasks.md" not in result.wrote
+        assert not (output / ".claude" / "commands").exists()
+
+    def test_skips_claude_skills_when_subtree_mode(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            generation=GenerationOptions(
+                claude_kit_url="git@github.com:example/claude-kit.git",
+            ),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/skills/review-pr.md" not in result.wrote
+        assert ".claude/skills/deploy.md" not in result.wrote
+        assert not (output / ".claude" / "skills").exists()
+
+    def test_skips_hooks_when_subtree_mode(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            hooks=_all_hooks_config(),
+            generation=GenerationOptions(
+                claude_kit_url="git@github.com:example/claude-kit.git",
+            ),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        hook_writes = [w for w in result.wrote if ".claude/hooks" in w]
+        assert hook_writes == []
+
+    def test_still_copies_persona_templates_in_subtree_mode(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            team=TeamConfig(
+                personas=[PersonaSelection(id="developer", include_templates=True)]
+            ),
+            generation=GenerationOptions(
+                claude_kit_url="git@github.com:example/claude-kit.git",
+            ),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        assert "ai/outputs/developer/implementation-plan.md" in result.wrote
+
+    def test_still_copies_process_dirs_in_subtree_mode(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        # Add process dirs
+        (lib / "process" / "beans").mkdir(parents=True)
+        (lib / "process" / "beans" / "_template.md").write_text("# Template\n")
+        (lib / "process" / "context").mkdir(parents=True)
+        (lib / "process" / "context" / "workflow.md").write_text("# Workflow\n")
+
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            generation=GenerationOptions(
+                claude_kit_url="git@github.com:example/claude-kit.git",
+            ),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        assert "ai/beans/_template.md" in result.wrote
+        assert "ai/context/workflow.md" in result.wrote
+
+    def test_copies_everything_when_no_subtree_url(self, tmp_path: Path):
+        lib = _make_library(tmp_path)
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(hooks=_all_hooks_config())
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/commands/validate-repo.md" in result.wrote
+        assert ".claude/skills/review-pr.md" in result.wrote
+        assert ".claude/hooks/pre-commit-lint.md" in result.wrote

@@ -378,6 +378,11 @@ class GenerationOptions(BaseModel):
     )
     write_manifest: bool = Field(default=True, description="Write manifest.json")
     write_diff_report: bool = Field(default=False, description="Write diff-report.md")
+    claude_kit_url: str | None = Field(
+        default=None,
+        description="Git URL for claude-kit subtree repo. When set, .claude/ is added via "
+        "git subtree instead of copying from the library.",
+    )
 
 
 # ---------------------------------------------------------------------------
