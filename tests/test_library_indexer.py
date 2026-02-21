@@ -11,6 +11,7 @@ LIBRARY_ROOT = Path(__file__).resolve().parent.parent / "ai-team-library"
 EXPECTED_PERSONAS = [
     "architect",
     "ba",
+    "change-management",
     "code-quality-reviewer",
     "compliance-risk",
     "data-engineer",

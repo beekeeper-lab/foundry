@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-203 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 19:47 |
+| **Completed** | 2026-02-20 19:52 |
+| **Duration** | < 1 day |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -31,21 +31,20 @@ Add the persona to `ai-team-library/personas/` with complete persona definition,
 
 ## Acceptance Criteria
 
-- [ ] Persona directory created in `ai-team-library/personas/` with persona.md, outputs.md, prompts.md, templates/
-- [ ] persona.md follows standardized format with mission, capabilities, boundaries
-- [ ] outputs.md defines deliverable types and formats
-- [ ] prompts.md provides reusable prompt templates
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Persona directory created in `ai-team-library/personas/` with persona.md, outputs.md, prompts.md, templates/
+- [x] persona.md follows standardized format with mission, capabilities, boundaries
+- [x] outputs.md defines deliverable types and formats
+- [x] prompts.md provides reusable prompt templates
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Create change-management persona directory with persona.md, outputs.md, prompts.md, templates/ | Developer | — | Done |
+| 2 | Update test_library_indexer.py EXPECTED_PERSONAS | Developer | 1 | Done |
+| 3 | Verify tests pass and lint clean | Tech-QA | 2 | Done |
 
 ## Changes
 
@@ -74,12 +73,14 @@ Sourced from Trello card #78.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create change-management persona directory with persona.md, outputs.md, prompts.md, templates/ | Developer | — | — | — | — |
+| 2 | Update test_library_indexer.py EXPECTED_PERSONAS | Developer | — | — | — | — |
+| 3 | Verify tests pass and lint clean | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 5m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
