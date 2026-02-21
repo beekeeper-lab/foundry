@@ -210,7 +210,7 @@
 | BEAN-186 | Microservices Tech Stack | Infra | Medium | In Progress | team-lead |
 | BEAN-187 | Frontend Build & Tooling Tech Stack | Infra | Medium | Done | team-lead |
 | BEAN-188 | PCI-DSS Compliance Stack | Infra | Medium | In Progress | team-lead |
-| BEAN-189 | Data Engineer Persona | Infra | Medium | Approved | (unassigned) |
+| BEAN-189 | Data Engineer Persona | Infra | Medium | In Progress | team-lead |
 | BEAN-190 | Mobile Developer Persona | Infra | Medium | Approved | (unassigned) |
 | BEAN-191 | Platform/SRE Engineer Persona | Infra | Medium | Approved | (unassigned) |
 | BEAN-192 | Database Administrator Persona | Infra | Medium | Approved | (unassigned) |
