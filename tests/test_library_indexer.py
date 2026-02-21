@@ -27,6 +27,7 @@ EXPECTED_PERSONAS = [
 EXPECTED_STACKS = [
     "api-design",
     "aws-cloud-platform",
+    "azure-cloud-platform",
     "clean-code",
     "data-engineering",
     "devops",
@@ -42,6 +43,7 @@ EXPECTED_STACKS = [
     "kubernetes",
     "microservices",
     "node",
+    "pci-dss-compliance",
     "python",
     "python-qt-pyside6",
     "react",
