@@ -23,7 +23,7 @@ This skill makes NO tool calls — it outputs a hardcoded table for instant resp
 | `/show-backlog` | `/show-backlog` | `--status <s>`, `--category <c>` | Display bean backlog as a table |
 | `/review-beans` | `/review-beans` | `--status <s>`, `--category <c>` | Open beans in Obsidian for review/approval |
 | `/long-run` | `/long-run` | `--fast N`, `--category <c>` | Autonomous bean processing (sequential or parallel) |
-| `/deploy` | `/deploy [target]` | `--tag <version>` | Promote test→main (or branch→test) via PR |
+| `/deploy` | `/deploy` | `--tag <version>` | Tag a release on main, clean up branches |
 | `/run` | `/run [branch]` | _(none)_ | Pull latest code and launch the Foundry app |
 | `/status-report` | `/status-report` | `--format brief\|full`, `--cycle <c>` | Generate a project status report |
 | `/telemetry-report` | `/telemetry-report` | `--category <c>`, `--status <s>`, `--since <date>` | Aggregate time/duration telemetry across beans |

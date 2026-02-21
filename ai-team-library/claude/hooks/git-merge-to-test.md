@@ -1,18 +1,18 @@
-# Hook Pack: Git Merge to Test
+# Hook Pack: Git Merge to Main
 
 ## Category
 git
 
 ## Purpose
 
-Merges an approved pull request to the test integration branch. Runs pre-merge checks to ensure the feature branch is up to date and tests pass before merging. Uses `--no-ff` to preserve merge history.
+Merges an approved pull request to the main branch. Runs pre-merge checks to ensure the feature branch is up to date and tests pass before merging. Uses `--no-ff` to preserve merge history.
 
 ## Hooks
 
 | Hook Name | Trigger | Check | Pass Criteria | Fail Action |
 |-----------|---------|-------|---------------|-------------|
 | `pr-approval-check` | `pre-merge` | Verify PR has at least one approval | PR status shows approved | Block merge; show approval requirements |
-| `branch-up-to-date` | `pre-merge` | Check feature branch is rebased on latest test | No merge conflicts detected with test branch | Block merge; instruct to rebase/merge latest test |
+| `branch-up-to-date` | `pre-merge` | Check feature branch is rebased on latest main | No merge conflicts detected with main branch | Block merge; instruct to rebase/merge latest main |
 | `merge-no-ff` | `post-approval` | Execute merge with `--no-ff` flag to preserve history | Merge commit created successfully | Block; report merge failure with conflict details |
 
 ## Configuration

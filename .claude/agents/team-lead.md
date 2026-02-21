@@ -21,9 +21,9 @@ Use these skills at the specified points in the workflow. Skills are in `.claude
 | `/internal:new-bean` | When new work is identified. Creates a bean directory, populates bean.md from the template, assigns the next sequential ID, and updates `_index.md`. |
 | `/pick-bean` | When selecting an Approved bean from the backlog. Updates status to In Progress in both bean.md and `_index.md`. Only Approved beans can be picked. |
 | `/bean-status` | At any time to review the backlog. Shows all beans grouped by status with counts and actionable items. Use `--verbose` for task-level detail. |
-| `/long-run` | When the user wants autonomous backlog processing. Reads the backlog, picks the best bean, decomposes, executes the wave, verifies, commits, merges to `test`, and loops until the backlog is clear. Use `--fast N` to run N beans in parallel via tmux child windows. |
-| `/internal:merge-bean` | After a bean is Done and committed on its feature branch. Safely merges the feature branch into `test` (checkout, pull, merge --no-ff, push). Reports conflicts without auto-resolving. |
-| `/deploy` | When the user wants to promote `test` → `main`. Runs tests, code quality review, security review, generates release notes, waits for user approval, then merges. The only authorized path to `main`. |
+| `/long-run` | When the user wants autonomous backlog processing. Reads the backlog, picks the best bean, decomposes, executes the wave, verifies, commits, merges to `main`, and loops until the backlog is clear. Use `--fast N` to run N beans in parallel via tmux child windows. |
+| `/internal:merge-bean` | After a bean is Done and committed on its feature branch. Safely merges the feature branch into `main` (checkout, pull, merge --no-ff, push). Reports conflicts without auto-resolving. |
+| `/deploy` | When the user wants to create a release. Validates `main`, runs tests, reviews documentation, builds release notes, tags the release, and cleans up merged feature branches. |
 | `/internal:seed-tasks` | When decomposing a bean into tasks. Helps structure tasks with owners, dependencies, and acceptance criteria. |
 | `/new-work` | When creating a new work item (feature, bug, chore, spike, refactor) outside the beans flow. Routes through the proper funnel with type-specific artifacts. |
 | `/status-report` | After each task completes and when closing a bean. Scan task state, collect artifacts, identify blockers, produce a progress summary for stakeholders. Write to `ai/outputs/team-lead/`. |
@@ -227,7 +227,7 @@ Write all outputs to `ai/outputs/team-lead/`. Task files go in the relevant bean
 - Reference `ai/context/bean-workflow.md` for the full lifecycle specification
 - Reference `ai/context/project.md` for detailed architecture and module map
 - **Every bean MUST have its own feature branch** — create `bean/BEAN-NNN-<slug>` as the first action when picking a bean. No exceptions.
-- **Never commit directly to `main`** — all work happens on feature branches, merged to `test` via Merge Captain
-- **`test` is the integration branch** — ensure it exists (create from `main` if missing). All completed beans merge here.
-- Push to `test` only through the Merge Captain workflow (`/internal:merge-bean`)
+- **Never commit directly to `main`** — all work happens on feature branches, merged to `main` via Merge Captain
+- **`main` is the integration branch** — feature branches merge directly to `main`. There is no intermediate integration branch.
+- Push to `main` only through the Merge Captain workflow (`/internal:merge-bean`)
 - See `.claude/hooks/hook-policy.md` "Branch Protection" for full push rules

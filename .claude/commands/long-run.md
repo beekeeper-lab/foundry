@@ -27,15 +27,15 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 
 ### Phase 0: Branch Prerequisite
 
-0. **Ensure on `test` branch** — Run `git branch --show-current`.
-   - If already on `test`: proceed.
-   - If on `main` with a clean working tree: run `git checkout test` and proceed.
-   - If on any other branch or the working tree is dirty: display "⚠ /long-run requires a clean working tree on the `test` branch. Current branch: `<branch>`. Please switch to `test` and retry." Then stop.
+0. **Ensure on `main` branch** — Run `git branch --show-current`.
+   - If already on `main`: proceed.
+   - If on another branch with a clean working tree: run `git checkout main` and proceed.
+   - If the working tree is dirty: display "⚠ /long-run requires a clean working tree on the `main` branch. Current branch: `<branch>`. Please switch to `main` and retry." Then stop.
 
 1. **Read backlog** — Parse `ai/beans/_index.md`. Identify beans with status `Approved`.
 2. **Check for actionable beans** — If no beans are actionable (all `Done`, `Deferred`, or blocked by dependencies), report "Backlog clear — no actionable beans" and stop.
 3. **Select best bean** — Apply selection heuristics (see Options below) to choose the single best bean to work on next.
-4. **Pick the bean** — Update status to `In Progress` in `bean.md`. Update `_index.md` on `test` to set status to `In Progress` and owner to `team-lead`.
+4. **Pick the bean** — Update status to `In Progress` in `bean.md`. Update `_index.md` on `main` to set status to `In Progress` and owner to `team-lead`.
 5. **Create feature branch** — Create and checkout `bean/BEAN-NNN-<slug>` from current HEAD. All work for this bean happens on this branch.
 6. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in the bean's `tasks/` directory. Default wave: Developer → Tech-QA. Include BA or Architect only when their inclusion criteria are met. Tech-QA is mandatory for every bean.
 7. **Execute the wave** — Process each task in dependency order:
@@ -45,10 +45,10 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 8. **Verify acceptance criteria** — Check every criterion in the bean's AC list. Run tests and lint if applicable.
 9. **Close the bean** — Update status to `Done` in `bean.md`. (The orchestrator updates `_index.md` after the merge — see step 11.)
 10. **Commit on feature branch** — Stage all changed files and commit with message: `BEAN-NNN: <title>`. The commit goes on the `bean/BEAN-NNN-<slug>` branch.
-11. **Merge to test and update index** — Execute `/internal:merge-bean` to merge the feature branch into `test`: checkout test, pull latest, merge with `--no-ff`, push. Then update `_index.md` on `test` to set the bean's status to `Done`, commit, and push. If merge conflicts occur, report and stop. *(In parallel mode, workers do NOT merge or edit `_index.md` — the orchestrator handles both after each worker completes.)*
-12. **Stay on test** — Remain on the `test` branch (do not switch to `main`).
+11. **Merge to main and update index** — Execute `/internal:merge-bean` to merge the feature branch into `main`: checkout main, pull latest, merge with `--no-ff`, push. Then update `_index.md` on `main` to set the bean's status to `Done`, commit, and push. If merge conflicts occur, report and stop. *(In parallel mode, workers do NOT merge or edit `_index.md` — the orchestrator handles both after each worker completes.)*
+12. **Stay on main** — Remain on the `main` branch.
 13. **Report progress** — Summarize what was completed: bean title, tasks executed, branch name, merge commit, files changed.
-14. **Loop** — Go back to step 1. Continue until no actionable beans remain. When complete, display: `⚠ Work is on the test branch. Run /deploy to promote to main.`
+14. **Loop** — Go back to step 1. Continue until no actionable beans remain. When complete, display: `All work merged to main.`
 
 ## Output
 
@@ -128,7 +128,7 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
    You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.
    - Do NOT create or checkout branches.
    - Do NOT run /internal:merge-bean — the orchestrator handles merging after you finish.
-   - Do NOT checkout main or test.
+   - Do NOT checkout main — this will fail in a worktree if that branch is checked out elsewhere.
    - Do NOT edit _index.md — the orchestrator is the sole writer of the backlog index.
 
    1. Update bean.md status to In Progress
@@ -158,7 +158,7 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
 After spawning the initial batch of workers, the main window enters a **persistent dashboard loop** that runs until the backlog is exhausted. This is the mechanism that keeps assigning beans — it is not just a passive monitor. See `/internal:spawn-bean` Step 4 for the full specification. **Every iteration** of the loop performs these steps:
 
 1. **Read** all `/tmp/foundry-worker-*.status` files.
-2. **Process completed workers** — For each worker showing `status: done` that hasn't been merged: remove the worktree, sync (`git fetch && git pull`), run `/internal:merge-bean`, update `_index.md` to `Done`, commit and push.
+2. **Process completed workers** — For each worker showing `status: done` that hasn't been merged: remove the worktree, sync (`git fetch && git pull origin main`), run `/internal:merge-bean`, update `_index.md` to `Done`, commit and push.
 3. **Assign replacements** — **Re-read `_index.md` fresh** (not a pre-computed queue). For each empty worker slot, find the next `Approved` unblocked bean. If found: mark it `In Progress` in `_index.md`, create a worktree, spawn a new tmux window.
 4. **Render** the dashboard table with progress bars, percentages, and color-coded status.
 5. **Alert** on `blocked` (🔴) and `stale` (🟡, no update for 5+ minutes) workers.
@@ -211,7 +211,7 @@ Team Lead reads the backlog, picks the highest-priority unblocked bean, processe
   Beans processed: 4
   Backlog status: 0 actionable, 2 deferred
 
-  ⚠ Work is on the `test` branch. Run /deploy to promote to `main`.
+  All work merged to main.
 ```
 
 **Parallel mode with 3 workers:**
@@ -234,7 +234,7 @@ Team Lead detects tmux, selects 3 independent beans, spawns 3 child windows. Eac
   Beans processed: 5 (3 parallel + 2 sequential)
   Backlog status: 0 actionable
 
-  ⚠ Work is on the `test` branch. Run /deploy to promote to `main`.
+  All work merged to main.
 ```
 
 **Filter by category:**

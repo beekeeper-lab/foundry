@@ -173,7 +173,7 @@ Pick BEAN-NNN (slug) using /pick-bean NNN, then execute the full bean lifecycle 
 You are running in an ISOLATED GIT WORKTREE. Your feature branch (bean/BEAN-NNN-slug) is already checked out.
 - Do NOT create or checkout branches — you are already on the correct feature branch.
 - Do NOT run /internal:merge-bean — the orchestrator handles merging after you finish.
-- Do NOT checkout main or test — this will fail in a worktree if those branches are checked out elsewhere.
+- Do NOT checkout main — this will fail in a worktree if that branch is checked out elsewhere.
 
 STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition:
 - Write the file using: cat > /tmp/foundry-worker-BEAN-NNN.status << 'SF_EOF'
@@ -242,7 +242,7 @@ Bean lifecycle:
 4. Use /internal:handoff between persona transitions
 5. Run tests (uv run pytest) and lint (uv run ruff check foundry_app/) before closing
 6. Commit all changes on the feature branch
-7. Use /internal:merge-bean to merge into test
+7. Use /internal:merge-bean to merge into main
 8. Use /status-report to produce final summary
 Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
 ```
@@ -260,9 +260,9 @@ The orchestrator runs a persistent loop that monitors workers, merges completed 
 1. **Read all status files** — Read all `/tmp/foundry-worker-*.status` files. For each file, parse the key-value pairs.
 2. **Process completed workers** — For each status file showing `status: done` (or whose tmux window has closed) that has not yet been merged:
    a. **Remove the worktree**: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
-   b. **Sync before merging**: `git fetch origin && git pull origin test` — worktrees push to the remote, so the orchestrator's local `test` may be behind.
-   c. **Merge the bean**: Run `/internal:merge-bean NNN` from the main repo to merge the feature branch into `test`.
-   d. **Update `_index.md`**: Set the bean's status to `Done` on `test`. Commit and push. (The orchestrator is the sole writer of `_index.md`.)
+   b. **Sync before merging**: `git fetch origin && git pull origin main` — worktrees push to the remote, so the orchestrator's local `main` may be behind.
+   c. **Merge the bean**: Run `/internal:merge-bean NNN` from the main repo to merge the feature branch into `main`.
+   d. **Update `_index.md`**: Set the bean's status to `Done` on `main`. Commit and push. (The orchestrator is the sole writer of `_index.md`.)
    e. **Move Trello card** if applicable (same logic as long-run step 17b — best-effort, do not block on failure).
    f. **Mark this worker as merged** in the orchestrator's internal tracking so it is not re-processed on the next iteration.
 3. **Assign replacement workers** — After processing all completed workers, **re-read `_index.md` fresh** (do NOT use a pre-computed queue — the backlog may have changed due to merges or newly-approved beans). For each merged worker slot that has no replacement:
@@ -304,7 +304,7 @@ while true; do
       BEAN_NUM=$(echo "$BEAN_LABEL" | sed 's/BEAN-0*//')
       WORKTREE="/tmp/foundry-worktree-${BEAN_LABEL}"
       git worktree remove --force "$WORKTREE" 2>/dev/null
-      git fetch origin && git pull origin test
+      git fetch origin && git pull origin main
       # Merge is handled by the orchestrator's Claude session via /internal:merge-bean
       echo "MERGE_NEEDED: $BEAN_NUM"
       MERGED="$MERGED $BEAN_LABEL"
@@ -359,7 +359,7 @@ When a worker has `status: blocked`:
 - Below the table, print a prominent alert: `⚠  N worker(s) need attention`
 - Include the window switch shortcut so the user can jump there immediately
 
-**Why merges happen from the main repo:** Worktrees cannot checkout `test` if it's checked out elsewhere. The orchestrator merges sequentially from the main repo, ensuring no branch conflicts.
+**Why merges happen from the main repo:** Worktrees cannot checkout `main` if it's checked out elsewhere. The orchestrator merges sequentially from the main repo, ensuring no branch conflicts.
 
 **User interrupts:** If the user presses Ctrl-C, exit cleanly. Status files remain in `/tmp/` for inspection. Worktrees can be cleaned up manually with `git worktree remove --force` and `git worktree prune`.
 
@@ -383,7 +383,7 @@ Workers clean up automatically:
 - **Wide mode** (`--wide`): all workers share one window as tiled panes — ideal for large monitors where you can see all workers at once
 - **Git worktrees** provide isolation: each worker gets its own working directory at `/tmp/foundry-worktree-BEAN-NNN/`. No branch collisions, no file stomping between workers.
 - **Pre-assignment** eliminates race conditions: when using `--count N`, the orchestrator selects all beans upfront and creates worktrees before spawning. No stagger delay needed.
-- **Orchestrator merges**: Workers do NOT run `/internal:merge-bean`. The orchestrator handles merging sequentially after each worker completes, since worktrees cannot checkout `test` if it's checked out elsewhere.
+- **Orchestrator merges**: Workers do NOT run `/internal:merge-bean`. The orchestrator handles merging sequentially after each worker completes, since worktrees cannot checkout `main` if it's checked out elsewhere.
 - **`uv` in worktrees**: Each worktree auto-creates its own `.venv` on first `uv run` — works seamlessly.
 - Child agents work fully autonomously — no user input needed for normal flow
 - Workers auto-close when done — no manual cleanup needed (both windows and panes)

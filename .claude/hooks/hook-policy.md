@@ -122,7 +122,6 @@ Push permissions are enforced via `settings.local.json` deny rules. The policy p
 | Branch Pattern | Push | Purpose |
 |----------------|------|---------|
 | `bean/*` | Allowed | Feature branches for bean work (e.g., `bean/BEAN-006-backlog-refinement`) |
-| `test` | Allowed | Integration branch for merge captain auto-merge |
 | `dev` | Allowed | Development integration branch |
 | Other feature branches | Allowed | General development work |
 
@@ -131,7 +130,7 @@ Push permissions are enforced via `settings.local.json` deny rules. The policy p
 - **Deny rules take precedence** over allow rules in `settings.local.json`.
 - Pushes to `main` and `master` are blocked by explicit deny patterns.
 - Force push is always blocked regardless of branch (existing rule).
-- The Merge Captain persona is the only role that pushes to `test` or `dev`.
+- The Merge Captain persona is the only role that pushes to `main` or `dev`.
 - All other personas push only to their bean's feature branch.
 - Branch deletion is blocked by existing deny rules (`git branch -D`, `git branch -d`).
 

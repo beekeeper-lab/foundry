@@ -1,74 +1,54 @@
 # /deploy Command
 
-Promotes a source branch into a target branch via a pull request. Runs tests, creates the PR, merges it, and cleans up — all after a single user approval.
+Creates a release from the current `main` branch. Runs tests, reviews documentation, builds release notes, optionally tags the release, and cleans up merged feature branches — all after a single user approval.
 
 ## Usage
 
 ```
-/deploy [target] [--tag <version>]
+/deploy [--tag <version>]
 ```
 
-- `target` -- Optional. Target branch: `main` (default) or `test`.
-- `--tag <version>` -- Optional. Tag the merge commit with a version (e.g., `v1.2.0`). Only valid when target is `main`.
+- `--tag <version>` -- Optional. Tag the release with a version (e.g., `v1.2.0`). If not provided, a date-based tag `deploy/YYYY-MM-DD` is used.
 
 | Command | What It Does |
 |---------|-------------|
-| `/deploy` | `test` → `main` — Full release with branch cleanup |
-| `/deploy test` | current branch → `test` — Integration merge for feature branches |
-| `/deploy --tag v2.0.0` | `test` → `main` with version tag |
+| `/deploy` | Tag current `main` HEAD with date-based release tag, clean up branches |
+| `/deploy --tag v2.0.0` | Tag current `main` HEAD with version tag, clean up branches |
 
 ## Process
 
 1. **Check for uncommitted changes** — if dirty, prompt: **Commit** (stage + commit), **Stash** (stash, restore at end), or **Abort**
-2. **Determine source/target** — target `main`: source is `test`. Target `test`: source is current branch.
-3. **Push source** to remote
-4. **Review documentation** — Check all docs in the Documentation Checklist (MEMORY.md) for stale references. Search broadly for related concepts. Update any stale docs and commit before proceeding. If the change introduces a new document, add it to the checklist.
+2. **Ensure on `main`** — checkout `main` if not already there, pull latest
+3. **Determine release scope** — find commits since last tag. If none, report "Nothing to deploy" and exit
+4. **Review documentation** — Check all docs in the Documentation Checklist (MEMORY.md) for stale references. Search broadly for related concepts. Update any stale docs and commit before proceeding.
 5. **Run tests** (`uv run pytest`) and **ruff** (`uv run ruff check foundry_app/`) — stop if they fail
-6. **Build release notes** from bean commits in `git log <target>..<source>`
-7. **One approval prompt** — user says "go" (or "go with tag" for main), or "abort"
-8. **Create PR** (`gh pr create --base <target> --head <source>`)
-9. **Merge PR** (`gh pr merge --merge`) — preserves full commit history
-10. **Tag** if requested (main only)
-11. **Delete** merged feature branches, local + remote (main only)
-12. **Sync target** locally, restore stash
-13. **Report** — PR URL, merge commit, beans deployed, branches deleted
+6. **Build release notes** from bean commits in `git log <last-tag>..HEAD`
+7. **One approval prompt** — user says "go" or "abort"
+8. **Create tag** — annotated tag with release notes, push to remote
+9. **Delete** merged feature branches, local + remote
+10. **Restore** stash if applicable, return to original branch
+11. **Report** — tag name, commit hash, beans deployed, branches deleted
 
 ## Examples
 
 ```
-/deploy              # Promote test → main
-/deploy test         # Merge current feature branch → test
-/deploy --tag v2.0.0 # Promote test → main with version tag
+/deploy              # Tag main HEAD with date-based tag, clean up branches
+/deploy --tag v2.0.0 # Tag main HEAD with version tag, clean up branches
 ```
 
-**Approval prompt (main):**
+**Approval prompt:**
 ```
 ===================================================
-DEPLOY: test → main (via PR)
+DEPLOY: main @ a1b2c3d (tag: deploy/2026-02-21)
 ===================================================
 
 Beans: BEAN-029, BEAN-030, BEAN-033
 Tests: 750 passed, 0 failed
 Ruff: clean
 
-Post-merge: 3 feature branches will be deleted
+Post-deploy: 3 feature branches will be deleted
 
-On "go": create PR, merge it, delete branches,
-restore working tree. No further prompts.
-===================================================
-```
-
-**Approval prompt (test):**
-```
-===================================================
-DEPLOY: bean/BEAN-042-telemetry → test (via PR)
-===================================================
-
-Beans: BEAN-042
-Tests: 565 passed, 0 failed
-Ruff: clean
-
-On "go": create PR, merge it,
+On "go": tag release, push tag, delete branches,
 restore working tree. No further prompts.
 ===================================================
 ```
@@ -77,10 +57,10 @@ restore working tree. No further prompts.
 
 | Error | Resolution |
 |-------|------------|
-| Nothing to deploy | Report and exit |
-| Tests fail | Report failures, stop. Fix on a bean branch first. |
-| PR create fails | Check `gh auth status` and repo permissions |
-| PR merge fails | Check branch protection rules or merge conflicts |
+| Nothing to deploy | No new commits since last tag — report and exit |
+| Tests fail | Report failures, stop. Fix first. |
+| Tag already exists | Append suffix or prompt for a different tag name |
+| Tag push fails | Check permissions |
 | Uncommitted changes | Prompted to commit, stash, or abort before proceeding |
 | User aborts | Restore stash, return to original branch |
 | Command blocked by sandbox | Prints exact command for manual execution, continues |

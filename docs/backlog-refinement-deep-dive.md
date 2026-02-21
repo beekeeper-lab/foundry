@@ -45,7 +45,7 @@ running its own Claude Code instance working on a separate bean.
 │   │   "I've identified 4 potential beans from your input:
 │   │    1. Parallel Execution Engine — tmux worker spawning (Priority: High)
 │   │    2. Feature Branch Strategy — isolated branches per bean (Priority: High)
-│   │    3. Merge Captain — safe merging back to test (Priority: Medium)
+│   │    3. Merge Captain — safe merging back to main (Priority: Medium)
 │   │    4. Push Hook Safety — prevent accidental pushes to main (Priority: Medium)"
 │   │
 │   ├─ Ask clarifying questions (2-4 at a time):
@@ -274,9 +274,7 @@ Shows proposed beans (auth, dashboard, mobile API) without creating them. Useful
         ↓
   User reviews & approves    Sets status: Approved
         ↓
-/long-run                    Picks Approved beans, executes them
-        ↓
-/deploy                      Promotes test → main
+/long-run                    Picks Approved beans, executes them, merges to main
 ```
 
 `/backlog-refinement` is the **front door** to the entire pipeline. Everything downstream depends on well-formed beans with clear acceptance criteria — that's what this command produces.

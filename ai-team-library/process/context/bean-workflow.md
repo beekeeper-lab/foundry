@@ -138,22 +138,13 @@ Once all acceptance criteria are met:
 1. Update bean status to `Done`
 2. Update `ai/beans/_index.md`
 3. Note any follow-up beans spawned during execution
-4. **Merge feature branch to `test`** using `/merge-bean` (Merge Captain). This step is mandatory — a bean is not fully closed until its branch has been merged to `test` and tests pass on the integrated branch
+4. **Merge feature branch to `main`** using `/merge-bean` (Merge Captain). This step is mandatory — a bean is not fully closed until its branch has been merged to `main` and tests pass on the integrated branch
 
 ## Branch Strategy
 
 **Every bean MUST have its own feature branch.** No exceptions. All work happens on the feature branch, never directly on `main`.
 
-### Integration Branch
-
-The standard integration branch is `test`. All completed beans merge into `test` via the Merge Captain. If `test` does not exist, create it from `main`:
-
-```
-git checkout -b test main
-git push -u origin test
-```
-
-Promotion from `test` → `main` happens via the `/deploy` command (a separate, gated process).
+Feature branches merge directly to `main` (trunk-based development). The `/deploy` command creates release tags on `main`.
 
 ### Naming Convention
 
@@ -171,7 +162,7 @@ Examples: `bean/BEAN-006-backlog-refinement`, `bean/BEAN-012-user-auth`
    ```
    This is the **first action** after picking a bean. No work happens before the branch exists.
 2. **Work on the branch** — All task commits for this bean happen on the feature branch. Never commit to `main`.
-3. **Merge to test** — After the bean is verified and closed, the Merge Captain merges the feature branch into `test` using `/merge-bean`.
+3. **Merge to main** — After the bean is verified and closed, the Merge Captain merges the feature branch into `main` using `/merge-bean`.
 4. **Cleanup** — After a successful merge, the feature branch is deleted (local + remote).
 
 ### Branch Creation Rules
