@@ -30,6 +30,7 @@ from foundry_app.services.mcp_writer import write_mcp_config
 from foundry_app.services.safety_writer import write_safety
 from foundry_app.services.scaffold import scaffold_project
 from foundry_app.services.seeder import seed_tasks
+from foundry_app.services.subtree_setup import setup_subtree
 from foundry_app.services.validator import run_pre_generation_validation
 
 logger = logging.getLogger(__name__)
@@ -188,6 +189,12 @@ def _run_pipeline(
 
     # Stage 4: Copy assets
     _run_stage("copy_assets", copy_assets, spec, library, library_root, output_dir)
+
+    # Stage 4b: Subtree setup (when claude_kit_url is configured)
+    if spec.generation.claude_kit_url:
+        _run_stage(
+            "subtree_setup", setup_subtree, spec.generation.claude_kit_url, output_dir,
+        )
 
     # Stage 5: Write MCP config
     _run_stage("mcp_config", write_mcp_config, spec, output_dir)

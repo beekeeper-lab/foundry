@@ -20,6 +20,13 @@ _GLOBAL_ASSET_DIRS = [
     ("process/context", "ai/context"),
 ]
 
+# Subset of _GLOBAL_ASSET_DIRS targeting .claude/ — skipped when subtree mode is active
+_CLAUDE_ASSET_DIRS = {
+    ("claude/commands", ".claude/commands"),
+    ("claude/skills", ".claude/skills"),
+    ("claude/settings", ".claude"),
+}
+
 
 def copy_assets(
     spec: CompositionSpec,
@@ -50,11 +57,16 @@ def copy_assets(
     wrote: list[str] = []
     warnings: list[str] = []
 
+    subtree_mode = bool(spec.generation.claude_kit_url)
+
     # --- Persona templates ---
     _copy_persona_templates(spec, library_index, lib_root, out_root, wrote, warnings)
 
     # --- Global assets (commands, skills, settings, process dirs) ---
     for src_subdir, dest_subdir in _GLOBAL_ASSET_DIRS:
+        if subtree_mode and (src_subdir, dest_subdir) in _CLAUDE_ASSET_DIRS:
+            logger.debug("Subtree mode: skipping .claude/ asset dir %s", dest_subdir)
+            continue
         _copy_directory_files(
             lib_root / src_subdir,
             out_root / dest_subdir,
@@ -64,7 +76,10 @@ def copy_assets(
         )
 
     # --- Hooks (selective — only enabled packs) ---
-    _copy_selected_hooks(spec, lib_root, out_root, wrote, warnings)
+    if subtree_mode:
+        logger.debug("Subtree mode: skipping hook copy (.claude/hooks/ comes from subtree)")
+    else:
+        _copy_selected_hooks(spec, lib_root, out_root, wrote, warnings)
 
     logger.info(
         "Asset copy complete: %d files copied, %d warnings",

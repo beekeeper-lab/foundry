@@ -65,6 +65,12 @@ def _build_parser() -> argparse.ArgumentParser:
         default="standard",
         help="Validation strictness level (default: standard)",
     )
+    gen.add_argument(
+        "--claude-kit-url",
+        type=str,
+        default=None,
+        help="Git URL for claude-kit subtree repo (sets up .claude/ via subtree instead of copy)",
+    )
 
     return parser
 
@@ -104,6 +110,10 @@ def _run_generate(args: argparse.Namespace) -> int:
         return EXIT_VALIDATION_ERROR
 
     strictness = Strictness(args.strictness)
+
+    # Apply CLI overrides to the composition
+    if args.claude_kit_url:
+        composition.generation.claude_kit_url = args.claude_kit_url
 
     print(f"Generating project: {composition.project.name}")
     print(f"  Library: {library_path}")
