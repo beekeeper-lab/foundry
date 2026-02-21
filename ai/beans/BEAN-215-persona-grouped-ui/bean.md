@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-215 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-21 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 20:59 |
+| **Completed** | 2026-02-20 21:03 |
+| **Duration** | 4m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -38,26 +38,24 @@ Update the persona selection page to group PersonaCards under collapsible catego
 
 ## Acceptance Criteria
 
-- [ ] Persona cards are visually grouped under category headers
-- [ ] Category headers show the category name and count (e.g., "Software Development (13)")
-- [ ] Each category section is collapsible (click header to toggle)
-- [ ] All categories are expanded by default
-- [ ] Personas with no category appear in an "Other" group
-- [ ] All 24 personas have entries in `PERSONA_DESCRIPTIONS`
-- [ ] Selecting/deselecting personas still works correctly within groups
-- [ ] `get_team_config()` returns all selected personas regardless of group
-- [ ] `set_team_config()` correctly restores selections across groups
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Persona cards are visually grouped under category headers
+- [x] Category headers show the category name and count (e.g., "Software Development (13)")
+- [x] Each category section is collapsible (click header to toggle)
+- [x] All categories are expanded by default
+- [x] Personas with no category appear in an "Other" group
+- [x] All 24 personas have entries in `PERSONA_DESCRIPTIONS`
+- [x] Selecting/deselecting personas still works correctly within groups
+- [x] `get_team_config()` returns all selected personas regardless of group
+- [x] `set_team_config()` correctly restores selections across groups
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Add PERSONA_DESCRIPTIONS for 11 new personas and implement grouped layout | Developer | — | Done |
+| 2 | Update tests for grouped layout | Tech-QA | 1 | Done |
 
 ## Changes
 
@@ -83,12 +81,13 @@ The 11 new personas needing PERSONA_DESCRIPTIONS entries: change-management, cus
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add PERSONA_DESCRIPTIONS for 11 new personas and implement grouped layout | Developer | — | — | — | — |
+| 2 | Update tests for grouped layout | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 4m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

@@ -8,12 +8,14 @@ Each persona row shows name/role and expandable per-persona config options
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFrame,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QScrollArea,
@@ -33,6 +35,7 @@ from foundry_app.ui.theme import (
     ACCENT_SECONDARY_MUTED,
     BG_SURFACE,
     BORDER_DEFAULT,
+    FONT_SIZE_LG,
     FONT_SIZE_MD,
     FONT_SIZE_SM,
     FONT_SIZE_XL,
@@ -54,14 +57,31 @@ logger = logging.getLogger(__name__)
 PERSONA_DESCRIPTIONS: dict[str, tuple[str, str]] = {
     "architect": ("Software Architect", "System design, ADRs, component boundaries"),
     "ba": ("Business Analyst", "Requirements, user stories, acceptance criteria"),
+    "change-management": (
+        "Change Management / Adoption Lead", "Organizational adoption and transition planning"
+    ),
     "code-quality-reviewer": ("Code Quality Reviewer", "Code review and quality gates"),
     "compliance-risk": ("Compliance / Risk Analyst", "Compliance and risk management"),
+    "customer-success": ("Customer Success Lead", "Customer onboarding, retention, satisfaction"),
+    "data-analyst": ("Data Analyst", "KPI definition, dashboards, data-driven insights"),
+    "data-engineer": ("Data Engineer", "Data pipelines, ETL, data infrastructure"),
+    "database-administrator": ("Database Administrator", "Database design, tuning, maintenance"),
     "developer": ("Developer", "Implementation, features, bug fixes"),
     "devops-release": ("DevOps / Release Engineer", "CI/CD, deployment, release management"),
+    "financial-operations": (
+        "Financial Operations / Budget Officer", "Cost estimation, budgeting, financial governance"
+    ),
     "integrator-merge-captain": (
         "Integrator / Merge Captain", "Git integration, merge coordination"
     ),
+    "legal-counsel": ("Legal Counsel", "Contract review, IP protection, regulatory compliance"),
+    "mobile-developer": ("Mobile Developer", "Mobile app development, cross-platform delivery"),
+    "platform-sre-engineer": (
+        "Platform SRE Engineer", "Reliability engineering, observability, incident response"
+    ),
+    "product-owner": ("Product Owner", "Product vision, backlog prioritization, stakeholder mgmt"),
     "researcher-librarian": ("Researcher / Librarian", "Research and library maintenance"),
+    "sales-engineer": ("Sales Engineer", "Technical demos, proof-of-concept, sales support"),
     "security-engineer": ("Security Engineer", "Security review and threat modeling"),
     "team-lead": ("Team Lead", "Project orchestration, task decomposition"),
     "tech-qa": ("Tech QA / Test Engineer", "Test planning and quality assurance"),
@@ -98,6 +118,23 @@ HEADING_STYLE = (
 SUBHEADING_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
 WARNING_STYLE = f"color: {STATUS_ERROR}; font-size: {FONT_SIZE_SM}px;"
 TEMPLATES_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_XS}px; font-style: italic;"
+
+CATEGORY_GROUP_STYLE = f"""
+QGroupBox {{
+    font-size: {FONT_SIZE_LG}px;
+    font-weight: {FONT_WEIGHT_BOLD};
+    color: {TEXT_PRIMARY};
+    border: 1px solid {BORDER_DEFAULT};
+    border-radius: {RADIUS_MD}px;
+    margin-top: 12px;
+    padding-top: 24px;
+}}
+QGroupBox::title {{
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 6px;
+}}
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -245,6 +282,7 @@ class PersonaSelectionPage(QWidget):
     ) -> None:
         super().__init__(parent)
         self._cards: dict[str, PersonaCard] = {}
+        self._category_groups: dict[str, QGroupBox] = {}
         self._warning_label: QLabel | None = None
         self._build_ui()
         if library_index is not None:
@@ -305,24 +343,54 @@ class PersonaSelectionPage(QWidget):
     # -- Public API ---------------------------------------------------------
 
     def load_personas(self, library_index: LibraryIndex) -> None:
-        """Populate the page with personas from a LibraryIndex."""
-        # Clear existing cards
+        """Populate the page with personas from a LibraryIndex, grouped by category."""
+        # Clear existing cards and group boxes
         for card in self._cards.values():
-            self._card_layout.removeWidget(card)
             card.deleteLater()
         self._cards.clear()
 
-        # Insert cards before the stretch
-        insert_idx = 0
+        for group_box in self._category_groups.values():
+            self._card_layout.removeWidget(group_box)
+            group_box.deleteLater()
+        self._category_groups.clear()
+
+        # Group personas by category
+        groups: dict[str, list[PersonaInfo]] = defaultdict(list)
         for persona in library_index.personas:
-            card = PersonaCard(persona)
-            card.toggled.connect(self._on_card_toggled)
-            self._card_layout.insertWidget(insert_idx, card)
-            self._cards[persona.id] = card
+            cat = persona.category.strip() if persona.category else ""
+            if not cat:
+                cat = "Other"
+            groups[cat].append(persona)
+
+        # Sort category names alphabetically, with "Other" always last
+        sorted_cats = sorted(
+            groups.keys(), key=lambda c: (c == "Other", c)
+        )
+
+        insert_idx = 0
+        for cat_name in sorted_cats:
+            personas_in_cat = groups[cat_name]
+            group_box = QGroupBox(f"{cat_name} ({len(personas_in_cat)})")
+            group_box.setCheckable(False)
+            group_box.setStyleSheet(CATEGORY_GROUP_STYLE)
+            group_layout = QVBoxLayout()
+            group_layout.setContentsMargins(8, 8, 8, 8)
+            group_layout.setSpacing(8)
+
+            for persona in personas_in_cat:
+                card = PersonaCard(persona)
+                card.toggled.connect(self._on_card_toggled)
+                group_layout.addWidget(card)
+                self._cards[persona.id] = card
+
+            group_box.setLayout(group_layout)
+            self._card_layout.insertWidget(insert_idx, group_box)
+            self._category_groups[cat_name] = group_box
             insert_idx += 1
 
         self._empty_label.setVisible(len(self._cards) == 0)
-        logger.info("Loaded %d persona cards", len(self._cards))
+        logger.info("Loaded %d persona cards in %d categories",
+                     len(self._cards), len(self._category_groups))
 
     def get_team_config(self) -> TeamConfig:
         """Return a TeamConfig from currently selected personas."""
@@ -358,6 +426,11 @@ class PersonaSelectionPage(QWidget):
     def persona_cards(self) -> dict[str, PersonaCard]:
         """Access cards by persona id (for testing)."""
         return dict(self._cards)
+
+    @property
+    def category_groups(self) -> dict[str, QGroupBox]:
+        """Access category group boxes by name (for testing)."""
+        return dict(self._category_groups)
 
     # -- Slots --------------------------------------------------------------
 

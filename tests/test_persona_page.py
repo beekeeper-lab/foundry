@@ -1,7 +1,7 @@
 """Tests for foundry_app.ui.screens.builder.wizard_pages.persona_page."""
 
 import pytest
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QGroupBox
 
 from foundry_app.core.models import (
     LibraryIndex,
@@ -23,7 +23,11 @@ _app = QApplication.instance() or QApplication([])
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_persona(pid: str, templates: list[str] | None = None) -> PersonaInfo:
+def _make_persona(
+    pid: str,
+    templates: list[str] | None = None,
+    category: str = "",
+) -> PersonaInfo:
     """Create a minimal PersonaInfo for testing."""
     return PersonaInfo(
         id=pid,
@@ -32,24 +36,55 @@ def _make_persona(pid: str, templates: list[str] | None = None) -> PersonaInfo:
         has_outputs_md=True,
         has_prompts_md=True,
         templates=templates or [],
+        category=category,
     )
 
 
 def _make_library(*persona_ids: str) -> LibraryIndex:
-    """Create a LibraryIndex with the given persona ids."""
+    """Create a LibraryIndex with the given persona ids (no category)."""
     return LibraryIndex(
         library_root="/fake/library",
         personas=[_make_persona(pid) for pid in persona_ids],
     )
 
 
+# Category mapping matching the real library
+_PERSONA_CATEGORIES: dict[str, str] = {
+    "architect": "Software Development",
+    "ba": "Software Development",
+    "change-management": "Business Operations",
+    "code-quality-reviewer": "Software Development",
+    "compliance-risk": "Compliance & Legal",
+    "customer-success": "Business Operations",
+    "data-analyst": "Data & Analytics",
+    "data-engineer": "Software Development",
+    "database-administrator": "Software Development",
+    "developer": "Software Development",
+    "devops-release": "Software Development",
+    "financial-operations": "Business Operations",
+    "integrator-merge-captain": "Software Development",
+    "legal-counsel": "Business Operations",
+    "mobile-developer": "Software Development",
+    "platform-sre-engineer": "Software Development",
+    "product-owner": "Business Operations",
+    "researcher-librarian": "Data & Analytics",
+    "sales-engineer": "Business Operations",
+    "security-engineer": "Compliance & Legal",
+    "team-lead": "Software Development",
+    "tech-qa": "Software Development",
+    "technical-writer": "Data & Analytics",
+    "ux-ui-designer": "Software Development",
+}
+
+
 def _make_full_library() -> LibraryIndex:
-    """Create a LibraryIndex matching the real 13-persona library."""
-    return _make_library(
-        "architect", "ba", "code-quality-reviewer", "compliance-risk",
-        "developer", "devops-release", "integrator-merge-captain",
-        "researcher-librarian", "security-engineer", "team-lead",
-        "tech-qa", "technical-writer", "ux-ui-designer",
+    """Create a LibraryIndex matching the real 24-persona library with categories."""
+    return LibraryIndex(
+        library_root="/fake/library",
+        personas=[
+            _make_persona(pid, category=cat)
+            for pid, cat in _PERSONA_CATEGORIES.items()
+        ],
     )
 
 
@@ -233,14 +268,17 @@ class TestPageConstruction:
     def test_warning_hidden_initially(self, page):
         assert page._warning_label.isHidden() is True
 
+    def test_no_category_groups_initially(self, page):
+        assert len(page.category_groups) == 0
+
 
 # ---------------------------------------------------------------------------
 # PersonaSelectionPage — load_personas
 # ---------------------------------------------------------------------------
 
 class TestLoadPersonas:
-    def test_loads_all_13_personas(self, loaded_page):
-        assert len(loaded_page.persona_cards) == 13
+    def test_loads_all_24_personas(self, loaded_page):
+        assert len(loaded_page.persona_cards) == 24
 
     def test_all_known_persona_ids_present(self, loaded_page):
         cards = loaded_page.persona_cards
@@ -263,6 +301,105 @@ class TestLoadPersonas:
         lib = LibraryIndex(library_root="/fake")
         page.load_personas(lib)
         assert len(page.persona_cards) == 0
+
+
+# ---------------------------------------------------------------------------
+# PERSONA_DESCRIPTIONS completeness
+# ---------------------------------------------------------------------------
+
+class TestPersonaDescriptions:
+    def test_has_24_entries(self):
+        assert len(PERSONA_DESCRIPTIONS) == 24
+
+    def test_all_entries_are_tuples_with_two_strings(self):
+        for pid, (name, desc) in PERSONA_DESCRIPTIONS.items():
+            assert isinstance(name, str), f"{pid} name is not str"
+            assert isinstance(desc, str), f"{pid} desc is not str"
+            assert len(name) > 0, f"{pid} has empty display name"
+            assert len(desc) > 0, f"{pid} has empty description"
+
+    def test_new_personas_have_entries(self):
+        new_personas = [
+            "change-management", "customer-success", "data-analyst",
+            "data-engineer", "database-administrator", "financial-operations",
+            "legal-counsel", "mobile-developer", "platform-sre-engineer",
+            "product-owner", "sales-engineer",
+        ]
+        for pid in new_personas:
+            assert pid in PERSONA_DESCRIPTIONS, f"Missing: {pid}"
+
+
+# ---------------------------------------------------------------------------
+# PersonaSelectionPage — category grouping
+# ---------------------------------------------------------------------------
+
+class TestCategoryGrouping:
+    def test_creates_category_groups(self, loaded_page):
+        groups = loaded_page.category_groups
+        assert len(groups) > 0
+
+    def test_expected_categories_present(self, loaded_page):
+        groups = loaded_page.category_groups
+        expected = {"Software Development", "Business Operations",
+                    "Compliance & Legal", "Data & Analytics"}
+        assert set(groups.keys()) == expected
+
+    def test_category_header_shows_count(self, loaded_page):
+        groups = loaded_page.category_groups
+        sw_group = groups["Software Development"]
+        assert isinstance(sw_group, QGroupBox)
+        # Should contain the count in parentheses
+        title = sw_group.title()
+        assert "Software Development" in title
+        assert "(13)" in title
+
+    def test_business_operations_count(self, loaded_page):
+        groups = loaded_page.category_groups
+        title = groups["Business Operations"].title()
+        assert "(6)" in title
+
+    def test_compliance_legal_count(self, loaded_page):
+        groups = loaded_page.category_groups
+        title = groups["Compliance & Legal"].title()
+        assert "(2)" in title
+
+    def test_data_analytics_count(self, loaded_page):
+        groups = loaded_page.category_groups
+        title = groups["Data & Analytics"].title()
+        assert "(3)" in title
+
+    def test_all_groups_expanded_by_default(self, loaded_page):
+        for name, group in loaded_page.category_groups.items():
+            assert not group.isHidden(), f"{name} group is hidden"
+
+    def test_personas_with_no_category_go_to_other(self):
+        lib = LibraryIndex(
+            library_root="/fake",
+            personas=[
+                _make_persona("developer", category="Software Development"),
+                _make_persona("custom-role", category=""),
+            ],
+        )
+        page = PersonaSelectionPage(library_index=lib)
+        groups = page.category_groups
+        assert "Other" in groups
+        assert "Other (1)" == groups["Other"].title()
+        page.close()
+
+    def test_other_group_not_created_when_all_have_categories(self, loaded_page):
+        groups = loaded_page.category_groups
+        assert "Other" not in groups
+
+    def test_reload_clears_old_groups(self, loaded_page):
+        # Reload with a small library
+        new_lib = LibraryIndex(
+            library_root="/fake",
+            personas=[_make_persona("developer", category="Dev")],
+        )
+        loaded_page.load_personas(new_lib)
+        groups = loaded_page.category_groups
+        assert len(groups) == 1
+        assert "Dev" in groups
 
 
 # ---------------------------------------------------------------------------
@@ -301,6 +438,14 @@ class TestPageSelection:
         loaded_page.persona_cards["developer"].is_selected = True
         assert loaded_page._warning_label.isHidden() is True
 
+    def test_select_across_groups(self, loaded_page):
+        # Select from different categories
+        loaded_page.persona_cards["developer"].is_selected = True  # Software Dev
+        loaded_page.persona_cards["data-analyst"].is_selected = True  # Data
+        loaded_page.persona_cards["compliance-risk"].is_selected = True  # Compliance
+        loaded_page.persona_cards["change-management"].is_selected = True  # Business
+        assert loaded_page.selected_count() == 4
+
 
 # ---------------------------------------------------------------------------
 # PersonaSelectionPage — get_team_config
@@ -335,6 +480,14 @@ class TestGetTeamConfig:
         config = loaded_page.get_team_config()
         ids = [p.id for p in config.personas]
         assert "architect" not in ids
+
+    def test_get_config_across_groups(self, loaded_page):
+        loaded_page.persona_cards["developer"].is_selected = True
+        loaded_page.persona_cards["data-analyst"].is_selected = True
+        loaded_page.persona_cards["legal-counsel"].is_selected = True
+        config = loaded_page.get_team_config()
+        ids = {p.id for p in config.personas}
+        assert ids == {"developer", "data-analyst", "legal-counsel"}
 
 
 # ---------------------------------------------------------------------------
@@ -412,6 +565,35 @@ class TestSetTeamConfig:
         # Set an empty config
         loaded_page.set_team_config(TeamConfig())
         assert loaded_page._warning_label.isHidden() is False
+
+    def test_set_config_across_groups(self, loaded_page):
+        config = TeamConfig(personas=[
+            PersonaSelection(id="developer"),
+            PersonaSelection(id="data-analyst"),
+            PersonaSelection(id="compliance-risk"),
+            PersonaSelection(id="change-management"),
+        ])
+        loaded_page.set_team_config(config)
+        assert loaded_page.persona_cards["developer"].is_selected is True
+        assert loaded_page.persona_cards["data-analyst"].is_selected is True
+        assert loaded_page.persona_cards["compliance-risk"].is_selected is True
+        assert loaded_page.persona_cards["change-management"].is_selected is True
+        assert loaded_page.persona_cards["architect"].is_selected is False
+
+    def test_roundtrip_across_groups(self, loaded_page):
+        loaded_page.persona_cards["developer"].is_selected = True
+        loaded_page.persona_cards["data-analyst"].is_selected = True
+        loaded_page.persona_cards["compliance-risk"].is_selected = True
+        original = loaded_page.get_team_config()
+
+        for card in loaded_page.persona_cards.values():
+            card.is_selected = False
+
+        loaded_page.set_team_config(original)
+        restored = loaded_page.get_team_config()
+        assert {p.id for p in restored.personas} == {
+            "developer", "data-analyst", "compliance-risk"
+        }
 
 
 # ---------------------------------------------------------------------------
