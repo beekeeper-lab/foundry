@@ -202,7 +202,7 @@
 | BEAN-178 | Swift Language Tech Stack | Infra | Medium | Done | team-lead |
 | BEAN-179 | C#/.NET Expanded Tech Stack | Infra | Medium | In Progress | team-lead |
 | BEAN-180 | Kubernetes Tech Stack | Infra | Medium | In Progress | team-lead |
-| BEAN-181 | Terraform/IaC Tech Stack | Infra | Medium | In Progress | team-lead |
+| BEAN-181 | Terraform/IaC Tech Stack | Infra | Medium | Done | team-lead |
 | BEAN-182 | GCP Cloud Platform Stack | Infra | Medium | In Progress | team-lead |
 | BEAN-183 | Azure Cloud Platform Stack | Infra | Medium | Approved | (unassigned) |
 | BEAN-184 | API Design Tech Stack | Infra | Medium | Approved | (unassigned) |
