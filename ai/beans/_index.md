@@ -208,7 +208,7 @@
 | BEAN-184 | API Design Tech Stack | Infra | Medium | In Progress | team-lead |
 | BEAN-185 | Event-Driven / Messaging Tech Stack | Infra | Medium | In Progress | team-lead |
 | BEAN-186 | Microservices Tech Stack | Infra | Medium | In Progress | team-lead |
-| BEAN-187 | Frontend Build & Tooling Tech Stack | Infra | Medium | In Progress | team-lead |
+| BEAN-187 | Frontend Build & Tooling Tech Stack | Infra | Medium | Done | team-lead |
 | BEAN-188 | PCI-DSS Compliance Stack | Infra | Medium | In Progress | team-lead |
 | BEAN-189 | Data Engineer Persona | Infra | Medium | Approved | (unassigned) |
 | BEAN-190 | Mobile Developer Persona | Infra | Medium | Approved | (unassigned) |
