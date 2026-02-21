@@ -234,7 +234,7 @@
 | BEAN-210 | Sales Engineering Stack | Infra | Medium | Done | team-lead |
 | BEAN-211 | ML/AI & LLM Operations Stack | Infra | Medium | Done | team-lead |
 | BEAN-212 | Accessibility Compliance (ADA/WCAG) Stack | Infra | Medium | Done | team-lead |
-| BEAN-213 | Add Category Field to PersonaInfo Model | App | High | In Progress | team-lead |
+| BEAN-213 | Add Category Field to PersonaInfo Model | App | High | Done | team-lead |
 | BEAN-214 | Add Category Metadata to All Persona Files | Infra | High | Approved | (unassigned) |
 | BEAN-215 | Group Personas by Category in Wizard UI | App | High | Approved | (unassigned) |
 | BEAN-216 | Rename Stack to Expertise in Codebase | App | High | In Progress | team-lead |
