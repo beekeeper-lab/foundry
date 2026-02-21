@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-196 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 19:36 |
+| **Completed** | 2026-02-20 19:39 |
+| **Duration** | 3m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -31,19 +31,17 @@ Add the content to the ai-team-library with comprehensive, actionable guidance.
 
 ## Acceptance Criteria
 
-- [ ] Skill documentation created following library conventions
-- [ ] Covers all key topics described in the card description
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Skill documentation created following library conventions
+- [x] Covers all key topics described in the card description
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Create legal-drafting SKILL.md | Developer | — | Done |
+| 2 | Verify skill and run tests | Tech-QA | 1 | Done |
 
 ## Changes
 
@@ -72,12 +70,13 @@ Sourced from Trello card #71.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create legal-drafting SKILL.md | Developer | — | — | — | — |
+| 2 | Verify skill and run tests | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 3m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
