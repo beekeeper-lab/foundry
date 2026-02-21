@@ -13,6 +13,7 @@ EXPECTED_PERSONAS = [
     "ba",
     "code-quality-reviewer",
     "compliance-risk",
+    "data-analyst",
     "data-engineer",
     "database-administrator",
     "developer",
