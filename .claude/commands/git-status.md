@@ -23,6 +23,12 @@ Show the sync status of all tracked branches in a clear table with actionable ne
    - `git rev-list --left-right --count origin/test...test` → same (skip if no local `test`)
 6. **Compare server main ↔ server test (pipeline gap):**
    - `git rev-list --left-right --count origin/test...origin/main` → parse as `<test_ahead>\t<main_ahead>`
+7. **Compare .claude/ subtree ↔ claude-kit remote:**
+   - `git fetch claude-kit main 2>/dev/null` — fetch latest claude-kit refs
+   - `git rev-parse HEAD:.claude` — tree hash of `.claude/` in foundry
+   - `git rev-parse FETCH_HEAD^{tree}` — root tree hash of claude-kit main
+   - If the two tree hashes match: in sync. If they differ: drift.
+   - If the fetch fails (no `claude-kit` remote): skip this section and note "claude-kit remote not configured"
 
 ## Output Format
 
@@ -82,14 +88,37 @@ Shows the gap between `main` and `test` on the server and what to do about it.
 | main_ahead=0, test_ahead>0 | ⚠ test ahead | Promote: `/deploy` to tag and release main from test |
 | main_ahead>0, test_ahead>0 | ⚠ Diverged | Investigate — branches have diverged |
 
+### Claude Kit Sync table
+
+Shows whether the local `.claude/` directory matches what's on the `claude-kit` remote. This is the most valuable part of the project — always keep it in sync.
+
+```
+### Claude Kit Subtree (.claude/ ↔ claude-kit)
+
+| Local Tree | Remote Tree | Status    | Action Needed |
+|------------|-------------|-----------|---------------|
+| `e2487…`   | `e2487…`    | ✓ In sync | —             |
+```
+
+Display the first 7 characters of each tree hash. Rules:
+
+| Condition | Status | Action |
+|-----------|--------|--------|
+| Trees match | ✓ In sync | — |
+| Trees differ | ⚠ Out of sync | `git subtree push --prefix=.claude claude-kit main` |
+| Fetch failed | — No remote | Configure: `git remote add claude-kit git@github.com:beekeeper-lab/claude-kit.git` |
+
+**Note:** Subtree drift means local `.claude/` changes haven't been pushed to `claude-kit`, or upstream changes haven't been pulled. The action depends on which side changed — if you made local changes, push. If upstream changed, pull with `git subtree pull --prefix=.claude claude-kit main --squash`.
+
 ### Summary line
 
 After the tables, add a one-line **Next step** that tells the user the single most important thing to do. Evaluate in this priority order (first match wins):
 
 1. Uncommitted changes → `**Next step:** Commit and push to sync <branch> with server`
 2. Local branch ahead/behind → `**Next step:** <push or pull command>`
-3. Pipeline drift → `**Next step:** <sync or deploy command>`
-4. Everything clean → `All clear — nothing to do.`
+3. Claude Kit out of sync → `**Next step:** <subtree push or pull command>`
+4. Pipeline drift → `**Next step:** <sync or deploy command>`
+5. Everything clean → `All clear — nothing to do.`
 
 ## Complete Example (all in sync)
 
@@ -111,7 +140,42 @@ After the tables, add a one-line **Next step** that tells the user the single mo
 |------|------|-----|-----------|---------------|
 | main | test | —   | ✓ In sync | —             |
 
+### Claude Kit Subtree (.claude/ ↔ claude-kit)
+
+| Local Tree | Remote Tree | Status    | Action Needed |
+|------------|-------------|-----------|---------------|
+| `e2487…`   | `e2487…`    | ✓ In sync | —             |
+
 All clear — nothing to do.
+```
+
+## Complete Example (claude-kit drift)
+
+```
+## Git Status
+
+**Branch:** `main` · **Working tree:** ✓ Clean
+
+### Branch Sync (local ↔ server)
+
+| Branch | Local    | Server   | Status    | Action Needed |
+|--------|----------|----------|-----------|---------------|
+| main   | `abc123` | `abc123` | ✓ In sync | —             |
+| test   | `abc123` | `abc123` | ✓ In sync | —             |
+
+### Deploy Pipeline (server main ↔ server test)
+
+| From | To   | Gap | Status    | Action Needed |
+|------|------|-----|-----------|---------------|
+| main | test | —   | ✓ In sync | —             |
+
+### Claude Kit Subtree (.claude/ ↔ claude-kit)
+
+| Local Tree | Remote Tree | Status          | Action Needed                                          |
+|------------|-------------|-----------------|--------------------------------------------------------|
+| `a1b2c…`   | `d3e4f…`    | ⚠ Out of sync  | `git subtree push --prefix=.claude claude-kit main`    |
+
+**Next step:** Push .claude/ to claude-kit — `git subtree push --prefix=.claude claude-kit main`
 ```
 
 ## Complete Example (uncommitted changes)
@@ -136,6 +200,12 @@ All clear — nothing to do.
 |------|------|-----|-----------|---------------|
 | main | test | —   | ✓ In sync | —             |
 
+### Claude Kit Subtree (.claude/ ↔ claude-kit)
+
+| Local Tree | Remote Tree | Status         | Action Needed                  |
+|------------|-------------|----------------|--------------------------------|
+| `e2487…`   | `e2487…`    | ⚠ Uncommitted  | Commit first, then check again |
+
 **Next step:** Commit and push to sync main with server
 ```
 
@@ -158,6 +228,12 @@ All clear — nothing to do.
 | From | To   | Gap             | Status       | Action Needed                                                                      |
 |------|------|-----------------|--------------|------------------------------------------------------------------------------------|
 | main | test | 2 commits ahead | ⚠ main ahead | Sync test: `git checkout test && git merge --ff-only main && git push origin test`  |
+
+### Claude Kit Subtree (.claude/ ↔ claude-kit)
+
+| Local Tree | Remote Tree | Status    | Action Needed |
+|------------|-------------|-----------|---------------|
+| `e2487…`   | `e2487…`    | ✓ In sync | —             |
 
 **Next step:** Sync test to main — `git checkout test && git merge --ff-only main && git push origin test`
 ```

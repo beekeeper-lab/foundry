@@ -100,6 +100,13 @@ With trunk-based development, feature branches merge directly to `main` via `/me
     - Create annotated tag: `git tag -a <tag> -m "Deploy: <date> — <bean list>"`.
     - Push tag: `git push origin --tags`.
 
+12a. **Sync claude-kit subtree** — Push `.claude/` to the `claude-kit` remote to keep the shared config in sync:
+    - `git fetch claude-kit main` — fetch latest claude-kit refs.
+    - Compare tree hashes: `git rev-parse HEAD:.claude` vs `git rev-parse FETCH_HEAD^{tree}`.
+    - If they differ: run `git subtree push --prefix=.claude claude-kit main`.
+    - If they match: already in sync, skip.
+    - If the `claude-kit` remote doesn't exist: warn and skip.
+
 13. **Delete local feature branches** — All `bean/*` branches merged into main: `git branch -d`. Stale/orphaned ones for Done beans: `git branch -D`.
 
 14. **Delete remote feature branches** — Any `remotes/origin/bean/*` that are merged: `git push origin --delete`.
