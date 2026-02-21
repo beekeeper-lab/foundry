@@ -110,6 +110,10 @@ With trunk-based development, feature branches merge directly to `main` via `/me
 
 17. **Report success** — Tag name, commit hash, beans deployed, branches deleted.
 
+### Phase 6: Status Check
+
+18. **Run `/git-status`** — After the deploy report, run the `/git-status` command to show the current sync state of all branches. This confirms the deploy landed and shows if `test` needs syncing.
+
 ## Key Rules
 
 - **One approval gate.** User says "go" once. Everything after is automatic.
