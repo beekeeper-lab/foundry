@@ -211,8 +211,8 @@
 | BEAN-187 | Frontend Build & Tooling Tech Stack | Infra | Medium | Done | team-lead |
 | BEAN-188 | PCI-DSS Compliance Stack | Infra | Medium | In Progress | team-lead |
 | BEAN-189 | Data Engineer Persona | Infra | Medium | In Progress | team-lead |
-| BEAN-190 | Mobile Developer Persona | Infra | Medium | Approved | (unassigned) |
-| BEAN-191 | Platform/SRE Engineer Persona | Infra | Medium | Approved | (unassigned) |
+| BEAN-190 | Mobile Developer Persona | Infra | Medium | In Progress | team-lead |
+| BEAN-191 | Platform/SRE Engineer Persona | Infra | Medium | In Progress | team-lead |
 | BEAN-192 | Database Administrator Persona | Infra | Medium | Approved | (unassigned) |
 | BEAN-193 | Legal Counsel / Lawyer Persona | Infra | Medium | Approved | (unassigned) |
 | BEAN-194 | Contract Review & Analysis Skill | Infra | Medium | Approved | (unassigned) |
