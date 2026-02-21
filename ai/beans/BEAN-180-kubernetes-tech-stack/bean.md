@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-180 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 19:09 |
+| **Completed** | 2026-02-20 19:14 |
+| **Duration** | 5m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -31,19 +31,22 @@ Add the stack to `ai-team-library/stacks/` with comprehensive, production-ready 
 
 ## Acceptance Criteria
 
-- [ ] Stack file created in `ai-team-library/stacks/` following standardized template
-- [ ] Includes: Defaults table with alternatives, Do/Don't lists, Common Pitfalls, Checklist, code examples
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Stack file created in `ai-team-library/stacks/` following standardized template
+- [x] Includes: Defaults table with alternatives, Do/Don't lists, Common Pitfalls, Checklist, code examples
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Create conventions.md — core K8s conventions, manifests, resource mgmt | Developer | — | Done |
+| 2 | Create helm-charts.md — Helm charts, templating, releases | Developer | — | Done |
+| 3 | Create security.md — RBAC, pod security, network policies | Developer | — | Done |
+| 4 | Create networking.md — Services, ingress, DNS, service mesh | Developer | — | Done |
+| 5 | Create operations.md — Operators, scaling, monitoring, upgrades | Developer | — | Done |
+| 6 | Update test expectations for kubernetes stack | Developer | 1 | Done |
+| 7 | Run tests and lint verification | Tech-QA | 1-6 | Done |
 
 ## Changes
 
@@ -72,12 +75,18 @@ Sourced from Trello card #53.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create conventions.md — core K8s conventions, manifests, resource mgmt | Developer | — | — | — | — |
+| 2 | Create helm-charts.md — Helm charts, templating, releases | Developer | — | — | — | — |
+| 3 | Create security.md — RBAC, pod security, network policies | Developer | — | — | — | — |
+| 4 | Create networking.md — Services, ingress, DNS, service mesh | Developer | — | — | — | — |
+| 5 | Create operations.md — Operators, scaling, monitoring, upgrades | Developer | — | — | — | — |
+| 6 | Update test expectations for kubernetes stack | Developer | — | — | — | — |
+| 7 | Run tests and lint verification | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 7 |
+| **Total Duration** | 5m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

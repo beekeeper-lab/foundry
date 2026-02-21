@@ -36,6 +36,7 @@ EXPECTED_STACKS = [
     "iso-9000",
     "java",
     "kotlin",
+    "kubernetes",
     "node",
     "python",
     "python-qt-pyside6",
