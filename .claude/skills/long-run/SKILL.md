@@ -59,11 +59,11 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 ### Phase 3: Bean Execution
 
 7. **Pick the bean** — Update status to `In Progress` in `bean.md` using the Edit tool (the telemetry hook auto-stamps `Started` — do NOT manually set it). Update `_index.md` to set status to `In Progress` and owner to `team-lead`. (In sequential mode the orchestrator is also the worker, so both updates happen here.)
-8. **Create feature branch** — Create and checkout the feature branch (mandatory for every bean):
+8. **Create feature branch from `test`** — Create and checkout the feature branch (mandatory for every bean):
    - Branch name: `bean/BEAN-NNN-<slug>` (derived from the bean directory name)
-   - Command: `git checkout -b bean/BEAN-NNN-<slug>`
+   - Command: `git fetch origin && git checkout -b bean/BEAN-NNN-<slug> origin/test`
    - If the branch already exists (e.g., resuming after an error), check it out instead.
-   - All work happens on this branch. Never commit directly to `main`.
+   - All work happens on this branch. Never commit directly to `main` or `test`.
 10. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in `ai/beans/BEAN-NNN-<slug>/tasks/`:
     - Name: `01-<owner>-<slug>.md`, `02-<owner>-<slug>.md`, etc.
     - Default wave: **Developer → Tech-QA**. Include BA or Architect only when their inclusion criteria are met (see Team Lead agent's Participation Decisions section).
@@ -92,10 +92,10 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 
 ### Phase 5.5: Merge Captain
 
-17. **Merge to main branch and update index** — Execute the `/internal:merge-bean` skill to merge the feature branch into `main`:
-    - Checkout `main`, pull latest, merge `bean/BEAN-NNN-<slug>` with `--no-ff`, push.
+17. **Merge to `test` branch and update index** — Execute `/internal:merge-bean NNN --target test` to merge the feature branch into `test`:
+    - The merge-bean skill checks out `test`, pulls latest, merges `bean/BEAN-NNN-<slug>` with `--no-ff`, pushes, then returns to the original branch (`main`).
     - If merge conflicts occur: report the conflicts, abort the merge, leave the bean on its feature branch, and stop the loop.
-    - If merge succeeds: update `_index.md` to set the bean's status to `Done`, commit the index update on `main`, and push.
+    - If merge succeeds: checkout `main` (if not already there), update `_index.md` to set the bean's status to `Done`, commit the index update on `main`, and push.
 17b. **Move Trello card to Completed** — After a successful merge, update the
     source Trello card if one exists:
     a. Read the bean's `## Trello` section. Parse the metadata table for
@@ -112,12 +112,12 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
     f. Log the move: `Trello: Moved "[Card Name]" → Completed (card [Card ID])`
     g. If the Trello MCP is unavailable or the move fails, log a warning
        and continue — this is best-effort and must not block the run.
-18. **Stay on main** — Remain on the `main` branch.
+18. **Stay on main** — Remain on the `main` branch (the orchestrator lives on `main` for index management; code goes to `test`).
 19. **Report progress** — Print the **Completion Summary** from the Team Lead Communication Template: bean title, task counts, branch name, files changed, notes, and remaining backlog status.
 
 ### Phase 6: Loop
 
-20. **Return to Phase 1** — Read the backlog again. If actionable beans remain, process the next one. If not, report final summary including: `All work merged to main.` Then exit.
+20. **Return to Phase 1** — Read the backlog again. If actionable beans remain, process the next one. If not, report final summary including: `All work merged to test.` Then exit.
 
 ---
 
@@ -161,7 +161,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
      git worktree add "$WORKTREE_DIR" "$BRANCH_NAME"
    else
-     git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" main
+     git fetch origin && git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" origin/test
    fi
 
    LAUNCHER=$(mktemp /tmp/foundry-bean-XXXXXX.sh)
@@ -214,9 +214,9 @@ The main window enters a **persistent dashboard loop** that monitors workers, me
 10. **Read status files** — Read all `/tmp/foundry-worker-*.status` files and parse key-value pairs. Cross-reference with `tmux list-windows` to detect closed windows.
 11. **Process completed workers** — For each status file showing `status: done` (or whose tmux window has closed) that has not yet been merged:
     a. Remove the worktree: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
-    b. Sync before merging: `git fetch origin && git pull origin main`
-    c. Merge the bean: run `/internal:merge-bean NNN` from the main repo.
-    d. Update `_index.md` on `main`: set the bean's status to `Done`. Commit and push.
+    b. Sync before merging: `git fetch origin && git checkout test && git pull origin test && git checkout main`
+    c. Merge the bean: run `/internal:merge-bean NNN --target test` from the main repo.
+    d. After merge, ensure on `main`. Update `_index.md` on `main`: set the bean's status to `Done`. Commit and push.
     e. Move the Trello card to Completed (same logic as sequential step 17b). Best-effort; do not block on failure.
     f. Mark this worker as merged in the orchestrator's tracking.
 12. **Assign replacement workers** — **Re-read `_index.md` fresh** (do NOT use a pre-computed queue — the backlog may have changed). For each merged worker slot with no replacement:
@@ -233,10 +233,11 @@ The loop runs indefinitely until the backlog is exhausted. There is no maximum b
 ### Parallel Phase 5: Completion
 
 17. **Exit reached** — All workers are done/merged and no approved beans remain.
-18. **Final report** — Output: total beans processed, parallel vs sequential breakdown, all branch names created, remaining backlog status. End with: `All work merged to main.`
+18. **Final report** — Output: total beans processed, parallel vs sequential breakdown, all branch names created, remaining backlog status. End with: `All work merged to test.`
 19. **Cleanup** — Remove status files: `rm -f /tmp/foundry-worker-*.status`. Run `git worktree prune` to clean up any stale worktree references.
 20. **Sync local branches** — Worktrees pushed to the remote, so the original repo's refs are stale. Bring them up to date:
     - `git fetch origin && git pull origin main` (the orchestrator is already on `main`).
+    - `git checkout test && git pull origin test && git checkout main` (sync the test branch too).
     - This ensures the repo that launched `/long-run` has current refs when the user resumes work.
 
 ### Bean Assignment Rules
@@ -280,7 +281,7 @@ The loop runs indefinitely until the backlog is exhausted. There is no maximum b
 | `TaskFailure` | A task cannot be completed | Report failure details, leave bean `In Progress`, stop loop |
 | `TestFailure` | Tests or lint fail | Attempt to fix; if unresolvable, report and stop |
 | `CommitFailure` | Git error during commit | Report error and stop for manual resolution |
-| `MergeConflict` | Merge to main branch fails due to conflicts | Report conflicting files, abort merge, stop loop |
+| `MergeConflict` | Merge to `test` branch fails due to conflicts | Report conflicting files, abort merge, stop loop |
 | `NotInTmux` | `--fast` used but `$TMUX` is not set | Instruct user to restart in tmux |
 | `WorkerFailure` | A parallel worker fails on its bean | Report which worker/bean failed; other workers continue |
 

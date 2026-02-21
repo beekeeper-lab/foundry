@@ -101,7 +101,7 @@ git worktree remove --force "$WORKTREE_DIR" 2>/dev/null
 if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
   git worktree add "$WORKTREE_DIR" "$BRANCH_NAME"
 else
-  git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" main
+  git fetch origin && git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" origin/test
 fi
 
 # Write initial status file so dashboard picks it up immediately
@@ -275,8 +275,8 @@ The orchestrator runs a persistent loop that monitors workers, merges completed 
 1. **Read all status files** — Read all `/tmp/foundry-worker-*.status` files. For each file, parse the key-value pairs.
 2. **Process completed workers** — For each status file showing `status: done` (or whose tmux window has closed) that has not yet been merged:
    a. **Remove the worktree**: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
-   b. **Sync before merging**: `git fetch origin && git pull origin main` — worktrees push to the remote, so the orchestrator's local `main` may be behind.
-   c. **Merge the bean**: Run `/internal:merge-bean NNN` from the main repo to merge the feature branch into `main`.
+   b. **Sync before merging**: `git fetch origin && git checkout test && git pull origin test && git checkout main` — worktrees push to the remote, so the orchestrator's local `test` may be behind.
+   c. **Merge the bean**: Run `/internal:merge-bean NNN --target test` from the main repo to merge the feature branch into `test`.
    d. **Update `_index.md`**: Set the bean's status to `Done` on `main`. Commit and push. (The orchestrator is the sole writer of `_index.md`.)
    e. **Move Trello card** if applicable (same logic as long-run step 17b — best-effort, do not block on failure).
    f. **Mark this worker as merged** in the orchestrator's internal tracking so it is not re-processed on the next iteration.
@@ -324,7 +324,7 @@ while true; do
       BEAN_NUM=$(echo "$BEAN_LABEL" | sed 's/BEAN-0*//')
       WORKTREE="/tmp/foundry-worktree-${BEAN_LABEL}"
       git worktree remove --force "$WORKTREE" 2>/dev/null
-      git fetch origin && git pull origin main
+      git fetch origin && git checkout test && git pull origin test && git checkout main
       # Merge is handled by the orchestrator's Claude session via /internal:merge-bean
       echo "MERGE_NEEDED: $BEAN_NUM"
       MERGED="$MERGED $BEAN_LABEL"

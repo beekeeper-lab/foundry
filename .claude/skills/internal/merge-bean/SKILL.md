@@ -2,7 +2,7 @@
 
 ## Description
 
-Safely merges a bean's feature branch into `main`. Handles pulling latest changes, detecting merge conflicts, and reporting results. This is the Merge Captain's primary operation — the final stage of the bean execution wave.
+Safely merges a bean's feature branch into a target branch (default: `main`). Handles pulling latest changes, detecting merge conflicts, and reporting results. This is the Merge Captain's primary operation — the final stage of the bean execution wave.
 
 ## Trigger
 
@@ -35,7 +35,7 @@ Safely merges a bean's feature branch into `main`. Handles pulling latest change
    - If telemetry data is missing or incomplete, fill what is available and note gaps.
 4. **Populate Changes section** — Generate a git diff summary and write it to the bean's `## Changes` section:
    - Ensure you are on the feature branch: `git checkout bean/BEAN-NNN-<slug>`.
-   - Run `git diff --stat main...HEAD` to get the file-level change summary against the base branch.
+   - Run `git diff --stat <target>...HEAD` to get the file-level change summary against the target branch.
    - Parse the output into a markdown table with columns `File` and `Lines` (e.g., `+25 −3`).
    - Add a **Total** row summing all insertions and deletions.
    - Replace the placeholder `## Changes` section in `bean.md` with the populated table.
@@ -47,32 +47,33 @@ Safely merges a bean's feature branch into `main`. Handles pulling latest change
 
 ### Phase 2: Prepare Target
 
-7. **Checkout target branch** — `git checkout main` (or specified target).
-   - If the target branch doesn't exist locally, report an error — `main` should always exist.
-8. **Pull latest** — `git pull origin main`.
+7. **Save current branch** — Record the current branch name (e.g., via `git branch --show-current`) so it can be restored after the merge.
+8. **Checkout target branch** — `git checkout <target>`.
+   - If the target branch doesn't exist locally, report a `TargetNotFound` error and exit.
+9. **Pull latest** — `git pull origin <target>`.
    - If the remote branch doesn't exist yet (first merge), skip pull.
 
 ### Phase 3: Merge
 
-9. **Merge feature branch** — `git merge bean/BEAN-NNN-<slug> --no-ff`.
-   - The `--no-ff` flag preserves a merge commit even if fast-forward is possible, making the merge visible in history.
-10. **Check merge result**:
+10. **Merge feature branch** — `git merge bean/BEAN-NNN-<slug> --no-ff`.
+    - The `--no-ff` flag preserves a merge commit even if fast-forward is possible, making the merge visible in history.
+11. **Check merge result**:
     - **Clean merge**: proceed to Phase 4.
     - **Conflict**: go to Conflict Handling (below).
 
 ### Phase 4: Push & Cleanup
 
-11. **Push to remote** — `git push origin main`.
+12. **Push to remote** — `git push origin <target>`.
     - If push fails (e.g., another worker pushed first), pull and retry once.
-12. **Delete feature branch** — `git branch -d bean/BEAN-NNN-<slug>`.
+13. **Delete feature branch** — `git branch -d bean/BEAN-NNN-<slug>`.
     - If the branch is also on the remote: `git push origin --delete bean/BEAN-NNN-<slug>`.
     - If delete fails (e.g., worktree reference), log a warning but continue.
-13. **Return to main** — `git checkout main`.
-14. **Report success** — Output: bean title, feature branch name (deleted), target branch, merge commit hash, and telemetry summary totals.
+14. **Return to original branch** — `git checkout <original-branch>` (the branch recorded in step 7).
+15. **Report success** — Output: bean title, feature branch name (deleted), target branch, merge commit hash, and telemetry summary totals.
 
 ### Conflict Handling
 
-If step 10 detects merge conflicts:
+If step 11 detects merge conflicts:
 
 1. **List conflicting files** — Report each file with conflicts.
 2. **Abort the merge** — `git merge --abort` to restore the target branch to its pre-merge state.
@@ -92,7 +93,7 @@ If step 10 detects merge conflicts:
 - The target branch is always pulled before merging (handles concurrent merges).
 - Merge uses `--no-ff` to preserve merge history.
 - Conflicts are never auto-resolved — they are reported clearly.
-- After a successful merge, the feature branch is deleted (local + remote) and the working directory returns to `main`.
+- After a successful merge, the feature branch is deleted (local + remote) and the working directory returns to the original branch (the branch checked out before the merge began).
 - After a failed merge, the working directory returns to the feature branch (branch is preserved for conflict resolution).
 - Push failures trigger one retry after pull.
 
@@ -104,7 +105,7 @@ If step 10 detects merge conflicts:
 | `BranchNotFound` | Feature branch doesn't exist in git | Was the bean processed with `--no-branch`? Create branch manually or skip merge |
 | `MergeConflict` | Auto-merge fails due to conflicting changes | Report files, abort merge, return to feature branch |
 | `PushFailure` | Push rejected or network error | Pull and retry once; if still failing, report for manual resolution |
-| `TargetNotFound` | Target branch doesn't exist on remote | Unexpected — `main` should always exist. Check remote configuration. |
+| `TargetNotFound` | Target branch doesn't exist locally or on remote | Verify the target branch exists. Check remote configuration. |
 
 ## Dependencies
 
