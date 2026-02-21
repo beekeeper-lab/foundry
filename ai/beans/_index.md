@@ -218,8 +218,8 @@
 | BEAN-194 | Contract Review & Analysis Skill | Infra | Medium | Done | team-lead |
 | BEAN-195 | Intellectual Property & Licensing Skill | Infra | Medium | Done | team-lead |
 | BEAN-196 | Terms of Service & Privacy Policy Drafting Skill | Infra | Medium | Done | team-lead |
-| BEAN-197 | Regulatory Compliance Assessment Skill | Infra | Medium | In Progress | team-lead |
-| BEAN-198 | Risk Assessment & Liability Analysis Skill | Infra | Medium | In Progress | team-lead |
+| BEAN-197 | Regulatory Compliance Assessment Skill | Infra | Medium | Approved | (unassigned) |
+| BEAN-198 | Risk Assessment & Liability Analysis Skill | Infra | Medium | Done | team-lead |
 | BEAN-199 | Product Owner / Product Manager Persona | Infra | Medium | In Progress | team-lead |
 | BEAN-200 | Data Analyst / BI Analyst Persona | Infra | Medium | In Progress | team-lead |
 | BEAN-201 | Customer Success / Solutions Engineer Persona | Infra | Medium | In Progress | team-lead |
