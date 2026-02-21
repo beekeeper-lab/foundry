@@ -58,7 +58,13 @@ Fix the generated long-run and spawn-bean skill templates so that apps created b
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai-team-library/claude/commands/long-run.md | +36 -36 |
+| ai-team-library/claude/commands/spawn-bean.md | +52 -52 |
+| ai-team-library/claude/skills/long-run/SKILL.md | +49 -49 |
+| ai/beans/BEAN-221-worktree-agent-merge-gap/bean.md | +91 |
+| ai/beans/BEAN-221-worktree-agent-merge-gap/tasks/01-developer-fix-library-templates.md | +62 |
+| ai/beans/BEAN-221-worktree-agent-merge-gap/tasks/02-tech-qa-verify-templates.md | +45 |
+| ai/beans/_index.md | +1 |
 
 ## Notes
 
