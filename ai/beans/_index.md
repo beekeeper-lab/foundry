@@ -245,5 +245,5 @@
 | BEAN-221 | Fix Worktree Agent Merge Gap in Generated Apps | App | High | Done | team-lead |
 | BEAN-222 | Move to Trunk-Based Development | Process | High | Done | team-lead |
 | BEAN-223 | Share .claude/ Across Projects via Git Subtree | Infra | High | Approved | — |
-| BEAN-224 | Parallel Worker Reliability — Commit, Exit, and Watchdog | Process | High | Approved | — |
+| BEAN-224 | Parallel Worker Reliability — Commit, Exit, and Watchdog | Process | High | In Progress | team-lead |
 | BEAN-225 | Generate Subtree Setup Instead of Asset Copy for .claude/ | App | High | Approved | — |

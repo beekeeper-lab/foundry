@@ -173,9 +173,17 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    1. Update bean.md status to In Progress
    2. Decompose into tasks
    3. Execute the wave (BA → Architect → Developer → Tech-QA)
+      — COMMIT AFTER EACH TASK. Do not wait until the end. If you stall on task 3 of 4,
+        tasks 1-2 should already be committed and pushed.
    4. Verify acceptance criteria
-   5. Update bean.md status to Done (the PostToolUse telemetry hook auto-computes Duration from git timestamps)
-   6. Commit on the feature branch
+   5. Update bean.md status to Done
+   6. Final commit and push on the feature branch
+
+   RELIABILITY RULES:
+   - COMMIT AND PUSH after completing each task, not just at the end.
+   - On unrecoverable error: commit any completed work, push, set status file to error with a clear message, then EXIT immediately. Do NOT retry indefinitely or spin in loops.
+   - If you have been running for more than 30 minutes, commit and push whatever is done, set status appropriately, and exit.
+   - Update the status file updated timestamp after every task completion as a heartbeat signal.
 
    STATUS FILE PROTOCOL — You MUST update /tmp/agentic-worker-BEAN-NNN.status at every transition.
    See /spawn-bean command for full status file format and update rules."
@@ -205,7 +213,7 @@ The main window enters a **persistent dashboard loop** that monitors workers, me
     b. If found: update `_index.md` to mark it `In Progress`, commit and push on `main`, create a new worktree, write its status file, and spawn a new tmux window using the same launcher script pattern.
     c. If no approved unblocked bean exists, leave the slot empty.
 13. **Render dashboard** — Display progress bars (█/░), percentages (tasks_done/tasks_total), and color-coded status emoji.
-14. **Alert** — Flag `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no update for 5+ minutes).
+14. **Alert and recover** — Flag `blocked` workers (🔴 with message and window switch shortcut). For `stale` workers (no status update for 10+ minutes): (a) kill the tmux window: `tmux kill-window -t "bean-NNN"`, (b) remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`, (c) update the status file to `status: error`, `message: Killed by orchestrator (stale for 10+ minutes)`, (d) log the event. The bean stays `In Progress` for manual retry.
 15. **Check exit condition** — Exit the loop only when **both**: all workers are done/merged, AND no approved beans remain in `_index.md`. If either condition is false, continue.
 16. **Sleep ~30 seconds** — Then go back to step 10.
 

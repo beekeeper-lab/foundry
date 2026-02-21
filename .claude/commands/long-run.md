@@ -134,9 +134,13 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
    1. Update bean.md status to In Progress
    2. Decompose into tasks
    3. Execute the wave (Developer → Tech-QA default; include BA/Architect per criteria)
+      — COMMIT AND PUSH after each task. Do not wait until the end.
    4. Verify acceptance criteria
    5. Update bean.md status to Done
-   6. Commit on the feature branch
+   6. Final commit and push on the feature branch
+
+   RELIABILITY: Commit+push after each task. On error: commit what you have, set status to error, EXIT.
+   If running for 30+ minutes: commit, set status, exit. Update status file after every task as a heartbeat.
 
    STATUS FILE PROTOCOL — You MUST update /tmp/foundry-worker-BEAN-NNN.status at every transition.
    See /internal:spawn-bean command for full status file format and update rules."
@@ -161,7 +165,7 @@ After spawning the initial batch of workers, the main window enters a **persiste
 2. **Process completed workers** — For each worker showing `status: done` that hasn't been merged: remove the worktree, sync (`git fetch && git pull origin main`), run `/internal:merge-bean`, update `_index.md` to `Done`, commit and push.
 3. **Assign replacements** — **Re-read `_index.md` fresh** (not a pre-computed queue). For each empty worker slot, find the next `Approved` unblocked bean. If found: mark it `In Progress` in `_index.md`, create a worktree, spawn a new tmux window.
 4. **Render** the dashboard table with progress bars, percentages, and color-coded status.
-5. **Alert** on `blocked` (🔴) and `stale` (🟡, no update for 5+ minutes) workers.
+5. **Alert and recover** — Flag `blocked` (🔴). For `stale` workers (no update for 10+ minutes): kill tmux window, remove worktree, set status to error, log event. Bean stays `In Progress` for retry.
 6. **Check exit** — Exit only when **both**: all workers are done/merged, AND no approved beans remain in `_index.md`.
 7. **Sleep ~30 seconds**, then repeat from step 1.
 
