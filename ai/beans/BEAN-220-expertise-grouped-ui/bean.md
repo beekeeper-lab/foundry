@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-220 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-21 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 21:42 |
+| **Completed** | 2026-02-20 21:46 |
+| **Duration** | 4m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -89,8 +89,8 @@ The 28 expertise items needing EXPERTISE_DESCRIPTIONS entries (currently only 11
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 4m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

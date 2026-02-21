@@ -21,25 +21,50 @@ _app = QApplication.instance() or QApplication([])
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_expertise(sid: str, files: list[str] | None = None) -> ExpertiseInfo:
+def _make_expertise(
+    sid: str,
+    files: list[str] | None = None,
+    category: str = "",
+) -> ExpertiseInfo:
     """Create a minimal ExpertiseInfo for testing."""
     return ExpertiseInfo(
         id=sid,
-        path=f"/fake/stacks/{sid}",
+        path=f"/fake/expertise/{sid}",
         files=files or [],
+        category=category,
     )
 
 
 def _make_library(*stack_ids: str) -> LibraryIndex:
-    """Create a LibraryIndex with the given expertise ids."""
+    """Create a LibraryIndex with the given expertise ids (no categories)."""
     return LibraryIndex(
         library_root="/fake/library",
         expertise=[_make_expertise(sid) for sid in stack_ids],
     )
 
 
+def _make_categorized_library() -> LibraryIndex:
+    """Create a LibraryIndex with categorized expertise for grouped UI tests."""
+    return LibraryIndex(
+        library_root="/fake/library",
+        expertise=[
+            _make_expertise("python", category="Languages"),
+            _make_expertise("react", category="Languages"),
+            _make_expertise("typescript", category="Languages"),
+            _make_expertise("clean-code", category="Architecture & Patterns"),
+            _make_expertise("microservices", category="Architecture & Patterns"),
+            _make_expertise("devops", category="Infrastructure & Platforms"),
+            _make_expertise("kubernetes", category="Infrastructure & Platforms"),
+            _make_expertise("sql-dba", category="Data & ML"),
+            _make_expertise("security", category="Compliance & Governance"),
+            _make_expertise("finops", category="Business Practices"),
+            _make_expertise("custom-thing"),  # no category -> Other
+        ],
+    )
+
+
 def _make_full_library() -> LibraryIndex:
-    """Create a LibraryIndex matching the real 11-expertise library."""
+    """Create a LibraryIndex with 11 expertise items for compatibility."""
     return _make_library(
         "clean-code", "devops", "dotnet", "java", "node",
         "python", "python-qt-pyside6", "react", "security",
@@ -183,6 +208,14 @@ def loaded_page():
     p.close()
 
 
+@pytest.fixture()
+def categorized_page():
+    lib = _make_categorized_library()
+    p = ExpertiseSelectionPage(library_index=lib)
+    yield p
+    p.close()
+
+
 class TestPageConstruction:
     def test_creates_without_error(self, page):
         assert page is not None
@@ -212,11 +245,6 @@ class TestLoadExpertise:
     def test_loads_all_11_expertise(self, loaded_page):
         assert len(loaded_page.expertise_cards) == 11
 
-    def test_all_known_expertise_ids_present(self, loaded_page):
-        cards = loaded_page.expertise_cards
-        for sid in EXPERTISE_DESCRIPTIONS:
-            assert sid in cards, f"Missing expertise card: {sid}"
-
     def test_loads_via_constructor(self):
         lib = _make_library("python", "react")
         page = ExpertiseSelectionPage(library_index=lib)
@@ -233,6 +261,70 @@ class TestLoadExpertise:
         lib = LibraryIndex(library_root="/fake")
         page.load_expertise(lib)
         assert len(page.expertise_cards) == 0
+
+
+# ---------------------------------------------------------------------------
+# ExpertiseSelectionPage — category grouping
+# ---------------------------------------------------------------------------
+
+class TestCategoryGrouping:
+    def test_items_grouped_by_category(self, categorized_page):
+        groups = categorized_page.category_groups
+        assert "Languages" in groups
+        assert "Architecture & Patterns" in groups
+        assert "Infrastructure & Platforms" in groups
+        assert "Data & ML" in groups
+        assert "Compliance & Governance" in groups
+        assert "Business Practices" in groups
+        assert "Other" in groups
+
+    def test_category_count_in_title(self, categorized_page):
+        groups = categorized_page.category_groups
+        assert "Languages (3)" in groups["Languages"].title()
+        assert "Architecture & Patterns (2)" in groups["Architecture & Patterns"].title()
+        assert "Other (1)" in groups["Other"].title()
+
+    def test_all_cards_accessible(self, categorized_page):
+        assert len(categorized_page.expertise_cards) == 11
+
+    def test_uncategorized_items_in_other(self, categorized_page):
+        assert "custom-thing" in categorized_page.expertise_cards
+
+    def test_reload_clears_groups(self, categorized_page):
+        new_lib = _make_library("python")
+        categorized_page.load_expertise(new_lib)
+        groups = categorized_page.category_groups
+        assert len(groups) == 1
+        assert "Other" in groups
+
+    def test_category_groups_sorted_alphabetically(self, categorized_page):
+        group_names = list(categorized_page.category_groups.keys())
+        # "Other" should be last, rest alphabetical
+        non_other = [g for g in group_names if g != "Other"]
+        assert non_other == sorted(non_other)
+        if "Other" in group_names:
+            assert group_names[-1] == "Other"
+
+    def test_selection_works_across_groups(self, categorized_page):
+        categorized_page.expertise_cards["python"].is_selected = True
+        categorized_page.expertise_cards["devops"].is_selected = True
+        categorized_page.expertise_cards["custom-thing"].is_selected = True
+        assert categorized_page.selected_count() == 3
+        sels = categorized_page.get_expertise_selections()
+        ids = {s.id for s in sels}
+        assert ids == {"python", "devops", "custom-thing"}
+
+    def test_set_selections_works_across_groups(self, categorized_page):
+        selections = [
+            ExpertiseSelection(id="python", order=0),
+            ExpertiseSelection(id="security", order=1),
+            ExpertiseSelection(id="finops", order=2),
+        ]
+        categorized_page.set_expertise_selections(selections)
+        assert categorized_page.expertise_cards["python"].is_selected is True
+        assert categorized_page.expertise_cards["security"].is_selected is True
+        assert categorized_page.expertise_cards["finops"].is_selected is True
+        assert categorized_page.expertise_cards["devops"].is_selected is False
 
 
 # ---------------------------------------------------------------------------
@@ -466,11 +558,18 @@ class TestFileBadge:
 # ---------------------------------------------------------------------------
 
 class TestExpertiseDescriptions:
-    def test_all_11_expertise_have_descriptions(self):
+    def test_all_39_expertise_have_descriptions(self):
         expected = {
-            "clean-code", "devops", "dotnet", "java", "node",
-            "python", "python-qt-pyside6", "react", "security",
-            "sql-dba", "typescript",
+            "accessibility-compliance", "api-design", "aws-cloud-platform",
+            "azure-cloud-platform", "business-intelligence", "change-management",
+            "clean-code", "customer-enablement", "data-engineering", "devops",
+            "dotnet", "event-driven-messaging", "finops", "frontend-build-tooling",
+            "gcp-cloud-platform", "gdpr-data-privacy", "go", "hipaa-compliance",
+            "iso-9000", "java", "kotlin", "kubernetes", "microservices", "mlops",
+            "node", "pci-dss-compliance", "product-strategy", "python",
+            "python-qt-pyside6", "react", "react-native", "rust",
+            "sales-engineering", "security", "sox-compliance", "sql-dba",
+            "swift", "terraform", "typescript",
         }
         assert set(EXPERTISE_DESCRIPTIONS.keys()) == expected
 

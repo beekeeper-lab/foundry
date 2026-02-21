@@ -3,16 +3,19 @@
 Displays all expertise from the library index with checkboxes for multi-select.
 Each expertise row shows name/description and file count badge.
 Selected expertise can be reordered to control compilation priority.
+Expertise items are grouped by category in collapsible sections.
 """
 
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QFrame,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -32,6 +35,7 @@ from foundry_app.ui.theme import (
     BG_INSET,
     BG_SURFACE,
     BORDER_DEFAULT,
+    FONT_SIZE_LG,
     FONT_SIZE_MD,
     FONT_SIZE_SM,
     FONT_SIZE_XL,
@@ -49,17 +53,51 @@ from foundry_app.ui.theme import (
 logger = logging.getLogger(__name__)
 
 EXPERTISE_DESCRIPTIONS: dict[str, tuple[str, str]] = {
-    "clean-code": ("Clean Code", "Code quality standards, naming conventions, SOLID principles"),
-    "devops": ("DevOps", "CI/CD pipelines, infrastructure as code, deployment automation"),
+    # Languages
     "dotnet": (".NET / C#", "ASP.NET Core, Entity Framework, NuGet packaging"),
+    "go": ("Go", "Concurrency patterns, error handling, module system"),
     "java": ("Java", "Spring Boot, Maven/Gradle, JVM ecosystem conventions"),
+    "kotlin": ("Kotlin", "Coroutines, multiplatform, Spring/Android conventions"),
     "node": ("Node.js", "Express/Fastify, npm packaging, API design patterns"),
     "python": ("Python", "Packaging, testing, performance, security conventions"),
     "python-qt-pyside6": ("Python Qt (PySide6)", "Desktop GUI with PySide6, Qt patterns"),
     "react": ("React", "Components, state management, accessibility, testing"),
-    "security": ("Security", "OWASP guidelines, threat modeling, secure coding"),
-    "sql-dba": ("SQL / DBA", "Database design, query optimization, migrations"),
+    "react-native": ("React Native", "Cross-platform mobile, navigation, native modules"),
+    "rust": ("Rust", "Ownership, lifetimes, concurrency, cargo ecosystem"),
+    "swift": ("Swift", "iOS/macOS development, SwiftUI, Combine framework"),
     "typescript": ("TypeScript", "Type safety, module patterns, build tooling"),
+    # Architecture & Patterns
+    "api-design": ("API Design", "REST/GraphQL conventions, versioning, error contracts"),
+    "clean-code": ("Clean Code", "Code quality standards, naming conventions, SOLID principles"),
+    "event-driven-messaging": ("Event-Driven Messaging", "Pub/sub, event sourcing, brokers"),
+    "frontend-build-tooling": ("Frontend Build Tooling", "Bundlers, monorepo tools, optimization"),
+    "microservices": ("Microservices", "Service decomposition, communication, resilience patterns"),
+    # Infrastructure & Platforms
+    "aws-cloud-platform": ("AWS Cloud Platform", "Core services, Well-Architected Framework"),
+    "azure-cloud-platform": ("Azure Cloud Platform", "Core services, Well-Architected Framework"),
+    "devops": ("DevOps", "CI/CD pipelines, infrastructure as code, deployment automation"),
+    "gcp-cloud-platform": ("GCP Cloud Platform", "Core services, Well-Architected Framework"),
+    "kubernetes": ("Kubernetes", "Container orchestration, Helm charts, networking, security"),
+    "terraform": ("Terraform", "Infrastructure as code, modules, state management"),
+    # Data & ML
+    "business-intelligence": ("Business Intelligence", "Dashboards, visualization, KPI frameworks"),
+    "data-engineering": ("Data Engineering", "Pipelines, data modeling, quality, orchestration"),
+    "mlops": ("MLOps", "Model training, versioning, feature stores, LLM operations"),
+    "sql-dba": ("SQL / DBA", "Database design, query optimization, migrations"),
+    # Compliance & Governance
+    "accessibility-compliance": ("Accessibility", "WCAG conformance, ARIA patterns, audits"),
+    "gdpr-data-privacy": ("GDPR & Data Privacy", "Privacy by design, cross-border transfers"),
+    "hipaa-compliance": ("HIPAA Compliance", "PHI safeguards, business associate agreements"),
+    "iso-9000": ("ISO 9000", "Quality management systems, document control, audits"),
+    "pci-dss-compliance": ("PCI DSS", "Cardholder data security, encryption, SAQ guidance"),
+    "security": ("Security", "OWASP guidelines, threat modeling, secure coding"),
+    "sox-compliance": ("SOX Compliance", "Internal controls, audit trails, segregation of duties"),
+    # Business Practices
+    "change-management": ("Change Management", "Communication plans, stakeholder mgmt, rollback"),
+    "customer-enablement": ("Customer Enablement", "Onboarding, health scoring, knowledge bases"),
+    "finops": ("FinOps", "Cloud cost optimization, budgets, tagging and allocation"),
+    "product-strategy": ("Product Strategy", "Prioritization, OKRs, competitive analysis, GTM"),
+    "sales-engineering": ("Sales Engineering", "Demo environments, POC scoping, battle cards"),
 }
 
 CARD_STYLE = f"""
@@ -102,6 +140,23 @@ QPushButton:disabled {{
     color: {TEXT_DISABLED};
     background-color: {BG_INSET};
     border-color: {BORDER_DEFAULT};
+}}
+"""
+
+CATEGORY_GROUP_STYLE = f"""
+QGroupBox {{
+    font-size: {FONT_SIZE_LG}px;
+    font-weight: {FONT_WEIGHT_BOLD};
+    color: {TEXT_PRIMARY};
+    border: 1px solid {BORDER_DEFAULT};
+    border-radius: {RADIUS_MD}px;
+    margin-top: 12px;
+    padding-top: 24px;
+}}
+QGroupBox::title {{
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 6px;
 }}
 """
 
@@ -192,6 +247,7 @@ class ExpertiseSelectionPage(QWidget):
         super().__init__(parent)
         self._cards: dict[str, ExpertiseCard] = {}
         self._ordered_ids: list[str] = []
+        self._category_groups: dict[str, QGroupBox] = {}
         self._warning_label: QLabel | None = None
         self._build_ui()
         if library_index is not None:
@@ -267,22 +323,55 @@ class ExpertiseSelectionPage(QWidget):
         outer.addWidget(scroll, stretch=1)
 
     def load_expertise(self, library_index: LibraryIndex) -> None:
+        """Populate the page with expertise from a LibraryIndex, grouped by category."""
+        # Clear existing cards and group boxes
         for card in self._cards.values():
-            self._card_layout.removeWidget(card)
             card.deleteLater()
         self._cards.clear()
         self._ordered_ids.clear()
 
-        insert_idx = 0
+        for group_box in self._category_groups.values():
+            self._card_layout.removeWidget(group_box)
+            group_box.deleteLater()
+        self._category_groups.clear()
+
+        # Group expertise by category
+        groups: dict[str, list[ExpertiseInfo]] = defaultdict(list)
         for expertise in library_index.expertise:
-            card = ExpertiseCard(expertise)
-            card.toggled.connect(self._on_card_toggled)
-            self._card_layout.insertWidget(insert_idx, card)
-            self._cards[expertise.id] = card
+            cat = expertise.category.strip() if expertise.category else ""
+            if not cat:
+                cat = "Other"
+            groups[cat].append(expertise)
+
+        # Sort category names alphabetically, with "Other" always last
+        sorted_cats = sorted(
+            groups.keys(), key=lambda c: (c == "Other", c)
+        )
+
+        insert_idx = 0
+        for cat_name in sorted_cats:
+            items_in_cat = groups[cat_name]
+            group_box = QGroupBox(f"{cat_name} ({len(items_in_cat)})")
+            group_box.setCheckable(False)
+            group_box.setStyleSheet(CATEGORY_GROUP_STYLE)
+            group_layout = QVBoxLayout()
+            group_layout.setContentsMargins(8, 8, 8, 8)
+            group_layout.setSpacing(8)
+
+            for expertise in items_in_cat:
+                card = ExpertiseCard(expertise)
+                card.toggled.connect(self._on_card_toggled)
+                group_layout.addWidget(card)
+                self._cards[expertise.id] = card
+
+            group_box.setLayout(group_layout)
+            self._card_layout.insertWidget(insert_idx, group_box)
+            self._category_groups[cat_name] = group_box
             insert_idx += 1
 
         self._empty_label.setVisible(len(self._cards) == 0)
-        logger.info("Loaded %d expertise cards", len(self._cards))
+        logger.info("Loaded %d expertise cards in %d categories",
+                     len(self._cards), len(self._category_groups))
 
     def get_expertise_selections(self) -> list[ExpertiseSelection]:
         selections: list[ExpertiseSelection] = []
@@ -320,6 +409,11 @@ class ExpertiseSelectionPage(QWidget):
     @property
     def ordered_ids(self) -> list[str]:
         return list(self._ordered_ids)
+
+    @property
+    def category_groups(self) -> dict[str, QGroupBox]:
+        """Access category group boxes by name (for testing)."""
+        return dict(self._category_groups)
 
     def move_expertise_up(self, expertise_id: str) -> None:
         if expertise_id not in self._ordered_ids:
