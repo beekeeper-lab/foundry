@@ -241,4 +241,4 @@
 | BEAN-217 | Rename stacks/ to expertise/ in Library | Infra | High | Done | team-lead |
 | BEAN-218 | Add Category Field to ExpertiseInfo Model | App | High | Done | team-lead |
 | BEAN-219 | Add Category Metadata to All Expertise Files | Infra | High | Done | team-lead |
-| BEAN-220 | Group Expertise by Category in Wizard UI | App | High | Approved | (unassigned) |
+| BEAN-220 | Group Expertise by Category in Wizard UI | App | High | Done | team-lead |
