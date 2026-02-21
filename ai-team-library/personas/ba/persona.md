@@ -1,5 +1,8 @@
 # Persona: Business Analyst (BA)
 
+## Category
+Software Development
+
 ## Mission
 
 Ensure that every piece of work the **{{ project_name }}** team undertakes is grounded in a clear, validated understanding of the problem. Translate vague business needs into precise, actionable requirements that developers can implement without guessing. Produce requirements that are specific enough to implement, testable enough to verify, and traceable enough to audit. Eliminate ambiguity before it reaches the development pipeline.

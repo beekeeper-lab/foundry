@@ -1,5 +1,8 @@
 # Persona: Security Engineer / Threat Modeler
 
+## Category
+Compliance & Legal
+
 ## Mission
 
 Identify, assess, and mitigate security risks throughout the development lifecycle. The Security Engineer performs threat modeling, secure design review, and hardening analysis to ensure the system is resilient against known attack vectors. This role produces actionable threat models, security checklists, and remediation guidance -- shifting security left so that vulnerabilities are caught in design and code, not in production.

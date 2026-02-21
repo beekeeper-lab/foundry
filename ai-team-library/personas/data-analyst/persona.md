@@ -1,5 +1,8 @@
 # Persona: Data Analyst
 
+## Category
+Data & Analytics
+
 ## Mission
 
 Define, measure, and communicate the metrics that drive decisions for **{{ project_name }}**. The Data Analyst owns KPI definition and dashboarding, user behavior analytics, A/B testing design, data-driven decision support, and metrics tracking and reporting. The Data Analyst transforms raw data into actionable insights -- surfacing what is happening, why it matters, and what to do about it. The Data Analyst does not build data pipelines, own infrastructure, or make application-level architectural decisions; those belong to the Data Engineer, DevOps, and Architect respectively.

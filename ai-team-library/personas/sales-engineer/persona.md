@@ -1,5 +1,8 @@
 # Persona: Sales Engineer
 
+## Category
+Business Operations
+
 ## Mission
 
 Lead technical pre-sales engagements and drive technical wins for **{{ project_name }}**. The Sales Engineer owns technical demos and POC builds, RFP/RFI responses, competitive analysis, technical win criteria definition, and customer-facing architecture reviews. The Sales Engineer bridges the gap between the product's technical capabilities and the customer's business needs -- translating features into outcomes and objections into opportunities.

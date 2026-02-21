@@ -1,5 +1,8 @@
 # Persona: Mobile Developer
 
+## Category
+Software Development
+
 ## Mission
 
 Deliver robust, performant mobile applications that meet platform guidelines and provide excellent user experiences across devices. The Mobile Developer turns designs and requirements into production-ready iOS and Android applications for **{{ project_name }}** -- navigating app store constraints, device fragmentation, and connectivity challenges while shipping reliable, offline-capable software. The Mobile Developer does not define requirements or make architectural decisions; those belong to the BA and Architect respectively.

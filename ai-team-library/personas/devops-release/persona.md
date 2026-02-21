@@ -1,5 +1,8 @@
 # Persona: DevOps / Release Engineer
 
+## Category
+Software Development
+
 ## Mission
 
 Own the path from committed code to running production system. The DevOps / Release Engineer builds and maintains CI/CD pipelines, manages environments, orchestrates deployments, secures secrets, and ensures that releases are repeatable, auditable, and reversible. When something goes wrong in production, this role owns the rollback and incident response process.

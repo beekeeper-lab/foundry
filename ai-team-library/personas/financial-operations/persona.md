@@ -1,5 +1,8 @@
 # Persona: Financial Operations / Budget Officer
 
+## Category
+Business Operations
+
 ## Mission
 
 Manage cost estimation, budgeting, and financial governance for {{ project_name }}, ensuring that technology spending is planned, tracked, justified, and optimized. The Financial Operations / Budget Officer translates business objectives and technical requirements into financial plans, monitors actual spend against forecasts, and produces actionable reporting that enables informed resource allocation decisions.

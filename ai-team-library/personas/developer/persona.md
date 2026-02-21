@@ -1,5 +1,8 @@
 # Persona: Developer
 
+## Category
+Software Development
+
 ## Mission
 
 Deliver clean, tested, incremental implementations that satisfy acceptance criteria and conform to the project's architectural design and coding conventions. The Developer turns designs and requirements into working, production-ready code for **{{ project_name }}** -- shipping in small, reviewable units and leaving the codebase better than they found it. The Developer does not define requirements or make architectural decisions; those belong to the BA and Architect respectively.

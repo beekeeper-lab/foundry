@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-214 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-21 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 20:54 |
+| **Completed** | 2026-02-20 20:56 |
+| **Duration** | 2m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -38,20 +38,18 @@ Add a `## Category` section to all 24 persona.md files in `ai-team-library/perso
 
 ## Acceptance Criteria
 
-- [ ] All 24 persona.md files have a `## Category` section with one of the four category values
-- [ ] Category section is consistently placed in all files (after header/metadata, before Mission)
-- [ ] test_library_indexer.py includes assertions that each persona has the expected category
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] All 24 persona.md files have a `## Category` section with one of the four category values
+- [x] Category section is consistently placed in all files (after header/metadata, before Mission)
+- [x] test_library_indexer.py includes assertions that each persona has the expected category
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Add ## Category to all 24 persona.md files | Developer | — | Done |
+| 2 | Update test_library_indexer.py with category assertions | Tech-QA | 1 | Done |
 
 ## Changes
 
@@ -81,12 +79,13 @@ Category assignments:
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add ## Category to all 24 persona.md files | Developer | — | — | — | — |
+| 2 | Update test_library_indexer.py with category assertions | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 2m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

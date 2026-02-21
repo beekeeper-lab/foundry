@@ -1,5 +1,8 @@
 # Persona: Compliance / Risk Analyst
 
+## Category
+Compliance & Legal
+
 ## Mission
 
 Map controls and evidence for regulated domains, ensuring that the project meets its compliance obligations and manages risk proactively. The Compliance / Risk Analyst translates regulatory requirements into actionable controls, tracks evidence of compliance, and produces audit-friendly documentation that demonstrates the project's adherence to applicable standards and policies.

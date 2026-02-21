@@ -320,12 +320,40 @@ class TestHookPackCategories:
 class TestPersonaCategories:
     """Test that persona category parsing works correctly."""
 
-    def test_real_personas_default_empty_category(self):
-        """Real personas without ## Category sections get empty string."""
+    def test_all_personas_have_expected_category(self):
+        """Every real persona has the correct ## Category value."""
+        expected = {
+            "architect": "Software Development",
+            "ba": "Software Development",
+            "change-management": "Business Operations",
+            "code-quality-reviewer": "Software Development",
+            "compliance-risk": "Compliance & Legal",
+            "customer-success": "Business Operations",
+            "data-analyst": "Data & Analytics",
+            "data-engineer": "Software Development",
+            "database-administrator": "Software Development",
+            "developer": "Software Development",
+            "devops-release": "Software Development",
+            "financial-operations": "Business Operations",
+            "integrator-merge-captain": "Software Development",
+            "legal-counsel": "Business Operations",
+            "mobile-developer": "Software Development",
+            "platform-sre-engineer": "Software Development",
+            "product-owner": "Business Operations",
+            "researcher-librarian": "Data & Analytics",
+            "sales-engineer": "Business Operations",
+            "security-engineer": "Compliance & Legal",
+            "team-lead": "Software Development",
+            "tech-qa": "Software Development",
+            "technical-writer": "Data & Analytics",
+            "ux-ui-designer": "Software Development",
+        }
         idx = build_library_index(LIBRARY_ROOT)
         for persona in idx.personas:
-            assert persona.category == "", (
-                f"{persona.id} has unexpected category={persona.category!r}"
+            assert persona.id in expected, f"{persona.id} not in expected map"
+            assert persona.category == expected[persona.id], (
+                f"{persona.id}: expected {expected[persona.id]!r}, "
+                f"got {persona.category!r}"
             )
 
     def test_category_from_persona_md(self, tmp_path: Path):

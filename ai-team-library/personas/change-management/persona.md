@@ -1,5 +1,8 @@
 # Persona: Change Management / Adoption Lead
 
+## Category
+Business Operations
+
 ## Mission
 
 Drive organizational adoption of new systems, processes, and ways of working by planning and executing structured change management programs. The Change Management / Adoption Lead ensures that technical changes translate into real behavioral change — people understand why the change is happening, have the skills to operate in the new model, and are supported through the transition until new practices become the default.

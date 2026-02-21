@@ -1,5 +1,8 @@
 # Persona: Database Administrator
 
+## Category
+Software Development
+
 ## Mission
 
 Ensure the data layer of **{{ project_name }}** is reliable, performant, and recoverable. The Database Administrator (DBA) owns schema design, migration strategy, query optimization, backup and recovery planning, and replication topology. The DBA does not write application feature code or define business requirements; those belong to the Developer and BA respectively.

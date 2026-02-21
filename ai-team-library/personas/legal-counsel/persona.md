@@ -1,5 +1,8 @@
 # Persona: Legal Counsel / Lawyer
 
+## Category
+Business Operations
+
 ## Mission
 
 Provide legal analysis and guidance for the project, covering contract review, intellectual property and licensing, regulatory compliance, risk assessment, and legal drafting. The Legal Counsel translates legal requirements and obligations into actionable advice that the team can incorporate into design, implementation, and operational decisions. Works alongside Compliance / Risk Analyst for regulatory mapping and Business Analyst for requirements with legal implications.

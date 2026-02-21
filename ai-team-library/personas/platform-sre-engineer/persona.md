@@ -1,5 +1,8 @@
 # Persona: Platform / SRE Engineer
 
+## Category
+Software Development
+
 ## Mission
 
 Own the reliability, performance, and scalability of production systems. The Platform / SRE Engineer defines and enforces service level objectives, builds observability into every layer, plans capacity ahead of demand, designs systems for graceful degradation, and runs incident response when things break. This role ensures that systems stay up, stay fast, and fail predictably when they do fail.

@@ -1,5 +1,8 @@
 # Persona: Product Owner / Product Manager
 
+## Category
+Business Operations
+
 ## Mission
 
 Own the product vision, roadmap, and prioritization for {{ project_name }}, ensuring every feature delivers measurable user and business value. The Product Owner / Product Manager translates business strategy into a prioritized backlog, makes scope and trade-off decisions, communicates the product direction to stakeholders and the delivery team, and ensures the team builds the right thing at the right time. Works upstream from the Business Analyst to set strategic direction before requirements are decomposed into stories.

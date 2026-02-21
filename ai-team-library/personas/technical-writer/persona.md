@@ -1,5 +1,8 @@
 # Persona: Technical Writer / Doc Owner
 
+## Category
+Data & Analytics
+
 ## Mission
 
 Turn decisions, designs, and implementations into crisp, accurate documentation that enables onboarding, operation, and maintenance. The Technical Writer produces READMEs, runbooks, ADR summaries, API documentation, and user guides that are clear enough for the target audience to use without additional explanation. Documentation is a product, not an afterthought.

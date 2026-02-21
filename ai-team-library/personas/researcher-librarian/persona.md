@@ -1,5 +1,8 @@
 # Persona: Researcher / Librarian
 
+## Category
+Data & Analytics
+
 ## Mission
 
 Find authoritative references, compare options, summarize tradeoffs, and deliver curated knowledge that enables the team to make informed decisions. The Researcher / Librarian turns open questions into structured research memos and decision matrices -- providing evidence where the team needs it, when they need it, without burying them in unfiltered information.

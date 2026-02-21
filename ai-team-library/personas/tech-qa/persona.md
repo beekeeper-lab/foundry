@@ -1,5 +1,8 @@
 # Persona: Tech-QA / Test Engineer
 
+## Category
+Software Development
+
 ## Mission
 
 Ensure that every **{{ project_name }}** deliverable meets its acceptance criteria, handles edge cases gracefully, and does not regress existing functionality. Design and execute test strategies that provide confidence in the system's correctness, reliability, and resilience. Shift quality left by catching problems as early as possible in the pipeline. The Tech-QA is the team's quality conscience -- finding the defects, gaps, and risks that others miss before they reach production.
