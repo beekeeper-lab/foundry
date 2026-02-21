@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-197 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
+| **Started** | 2026-02-20 19:44 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Infra |
 
 ## Problem Statement
@@ -40,10 +40,11 @@ Add the content to the ai-team-library with comprehensive, actionable guidance.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Create regulatory compliance assessment skill | Developer | — | Pending |
+| 2 | Verify regulatory compliance assessment skill | Tech-QA | 1 | Pending |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default)
+> Bottleneck check: no contention — sequential Developer → Tech-QA wave
 
 ## Changes
 
@@ -72,7 +73,8 @@ Sourced from Trello card #72.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create regulatory compliance assessment skill | Developer | — | — | — | — |
+| 2 | Verify regulatory compliance assessment skill | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
