@@ -65,6 +65,7 @@ EXPECTED_STACKS = [
     "react",
     "react-native",
     "rust",
+    "sales-engineering",
     "security",
     "sox-compliance",
     "sql-dba",
