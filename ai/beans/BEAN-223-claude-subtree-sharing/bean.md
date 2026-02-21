@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-223 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-21 |
-| **Started** | — |
+| **Started** | 2026-02-21 19:56 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Infra |
 
 ## Problem Statement
@@ -37,32 +37,34 @@ Extract `.claude/` into a standalone git repository (`claude-kit`) and embed it 
 
 ## Acceptance Criteria
 
-- [ ] `claude-kit` repo exists with all current `.claude/` contents
-- [ ] Foundry's `.claude/` is a git subtree linked to `claude-kit`
-- [ ] `git subtree push --prefix=.claude claude-kit main` works to push changes back
-- [ ] `git subtree pull --prefix=.claude claude-kit main --squash` works to pull updates
-- [ ] Claude Code reads skills, commands, and agents correctly from the subtree
-- [ ] Convenience aliases documented
-- [ ] Another project can add the subtree with standard git commands
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] `claude-kit` repo exists with all current `.claude/` contents
+- [x] Foundry's `.claude/` is a git subtree linked to `claude-kit`
+- [x] `git subtree push --prefix=.claude claude-kit main` works to push changes back
+- [x] `git subtree pull --prefix=.claude claude-kit main --squash` works to pull updates
+- [x] Claude Code reads skills, commands, and agents correctly from the subtree
+- [x] Convenience aliases documented
+- [x] Another project can add the subtree with standard git commands
+- [x] All tests pass (`uv run pytest`) — 659 passed
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Create claude-kit repo and set up git subtree | Developer | — | Done |
+| 2 | Verify subtree setup and documentation | Tech-QA | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default)
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| CLAUDE.md | +15/-5 |
+| ai/beans/BEAN-223-claude-subtree-sharing/bean.md | +22/-13 |
+| ai/beans/BEAN-223-claude-subtree-sharing/tasks/01-developer-create-claude-kit-and-subtree.md | +61 |
+| ai/beans/BEAN-223-claude-subtree-sharing/tasks/02-tech-qa-verify-subtree.md | +37 |
+| ai/beans/_index.md | +1/-1 |
 
 ## Notes
 
@@ -90,7 +92,8 @@ alias claude-pull='git subtree pull --prefix=.claude claude-kit main --squash'
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create claude-kit repo and set up git subtree | Developer | — | — | — | — |
+| 2 | Verify subtree setup and documentation | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|

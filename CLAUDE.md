@@ -9,7 +9,7 @@ foundry_app/          # Application source (core/, services/, ui/, io/)
 tests/                # pytest test suite (1811 tests)
 ai-team-library/      # Reusable library: personas, expertise, templates, workflows
 ai/                   # AI team workspace (context, outputs, beans, tasks)
-.claude/              # Claude Code config (agents, skills, commands, hooks, settings)
+.claude/              # Claude Code config — git subtree from beekeeper-lab/claude-kit
 examples/             # Example composition YAMLs
 ```
 
@@ -58,6 +58,24 @@ uv run foundry                         # Launch GUI
 uv run foundry-cli generate <yml> --library ai-team-library  # CLI generation
 /bg <command> [args...]                # Run any slash command in a background tmux window
 ```
+
+## Claude Kit Subtree
+
+The `.claude/` directory is shared across projects via a git subtree linked to `beekeeper-lab/claude-kit`.
+
+```bash
+# Pull latest changes from claude-kit into this repo
+git subtree pull --prefix=.claude claude-kit main --squash
+
+# Push local .claude/ changes back to claude-kit
+git subtree push --prefix=.claude claude-kit main
+
+# Add claude-kit to a new project
+git remote add claude-kit git@github.com:beekeeper-lab/claude-kit.git
+git subtree add --prefix=.claude claude-kit main --squash
+```
+
+Edits to `.claude/` files are committed normally in this repo. Push them to `claude-kit` when ready to share with other projects.
 
 ## Rules
 
