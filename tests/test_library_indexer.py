@@ -45,6 +45,7 @@ EXPECTED_STACKS = [
     "sox-compliance",
     "sql-dba",
     "swift",
+    "terraform",
     "typescript",
 ]
 

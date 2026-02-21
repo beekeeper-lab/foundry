@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-181 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 19:09 |
+| **Completed** | 2026-02-20 19:13 |
+| **Duration** | 4m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -31,19 +31,21 @@ Add the stack to `ai-team-library/stacks/` with comprehensive, production-ready 
 
 ## Acceptance Criteria
 
-- [ ] Stack file created in `ai-team-library/stacks/` following standardized template
-- [ ] Includes: Defaults table with alternatives, Do/Don't lists, Common Pitfalls, Checklist, code examples
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Stack file created in `ai-team-library/stacks/` following standardized template
+- [x] Includes: Defaults table with alternatives, Do/Don't lists, Common Pitfalls, Checklist, code examples
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Create conventions.md — defaults, alternatives, project structure, naming, provider patterns | Developer | — | Done |
+| 2 | Create modules.md — module structure, composition, registry patterns | Developer | — | Done |
+| 3 | Create state-management.md — backends, locking, migration, workspace strategies | Developer | — | Done |
+| 4 | Create operations.md — drift detection, CI/CD, plan/apply workflows | Developer | — | Done |
+| 5 | Update test_library_indexer.py EXPECTED_STACKS | Developer | 1 | Done |
+| 6 | Run tests and lint verification | Tech-QA | 5 | Done |
 
 ## Changes
 
@@ -72,12 +74,17 @@ Sourced from Trello card #54.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create conventions.md — defaults, alternatives, project structure, naming, provider patterns | Developer | — | — | — | — |
+| 2 | Create modules.md — module structure, composition, registry patterns | Developer | — | — | — | — |
+| 3 | Create state-management.md — backends, locking, migration, workspace strategies | Developer | — | — | — | — |
+| 4 | Create operations.md — drift detection, CI/CD, plan/apply workflows | Developer | — | — | — | — |
+| 5 | Update test_library_indexer.py EXPECTED_STACKS | Developer | — | — | — | — |
+| 6 | Run tests and lint verification | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 6 |
+| **Total Duration** | 4m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
