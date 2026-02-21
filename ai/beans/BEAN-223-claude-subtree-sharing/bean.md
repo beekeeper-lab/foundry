@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-223 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-02-21 |
-| **Started** | — |
+| **Started** | 2026-02-21 19:56 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Infra |
 
 ## Problem Statement
@@ -51,10 +51,10 @@ Extract `.claude/` into a standalone git repository (`claude-kit`) and embed it 
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Create claude-kit repo and set up git subtree | Developer | — | In Progress |
+| 2 | Verify subtree setup and documentation | Tech-QA | 1 | Pending |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (default)
 
 ## Changes
 
@@ -90,7 +90,8 @@ alias claude-pull='git subtree pull --prefix=.claude claude-kit main --squash'
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create claude-kit repo and set up git subtree | Developer | — | — | — | — |
+| 2 | Verify subtree setup and documentation | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
