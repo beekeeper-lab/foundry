@@ -26,9 +26,8 @@ Updates a bean's status from `Approved` to `In Progress` in both the bean's own 
 2. **Validate state** -- Confirm the bean's current status is `Approved` or `Deferred`. Reject if `Unapproved` (not yet reviewed). Warn if already `In Progress`.
 3. **Update bean.md** -- Set Status to `In Progress`. Set Owner to `team-lead`. Set `Started` to current timestamp (`YYYY-MM-DD HH:MM`).
 4. **Update index** -- Update the matching row in `ai/beans/_index.md` with the new status and owner.
-5. **Ensure test branch** -- Check if `test` branch exists locally; create from `main` if missing.
-6. **Create feature branch** -- Create and checkout a feature branch: `git checkout -b bean/BEAN-NNN-<slug>`. Branching is mandatory for all beans.
-7. **Confirm** -- Display the bean ID, title, new status (`In Progress`), branch name, and a reminder to decompose into tasks.
+5. **Create feature branch** -- Create and checkout a feature branch: `git checkout -b bean/BEAN-NNN-<slug>`. Branching is mandatory for all beans.
+6. **Confirm** -- Display the bean ID, title, new status (`In Progress`), branch name, and a reminder to decompose into tasks.
 
 ## Output
 

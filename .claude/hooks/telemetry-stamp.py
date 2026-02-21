@@ -233,11 +233,11 @@ def git_branch_duration() -> str | None:
             capture_output=True, text=True, timeout=5,
         ).stdout.strip()
 
-        if not branch or branch in ("main", "test"):
+        if not branch or branch == "main":
             return None
 
-        # Find the merge base with test (or main as fallback)
-        for base in ("test", "main"):
+        # Find the merge base with main
+        for base in ("main",):
             result = subprocess.run(
                 ["git", "merge-base", base, "HEAD"],
                 capture_output=True, text=True, timeout=5,

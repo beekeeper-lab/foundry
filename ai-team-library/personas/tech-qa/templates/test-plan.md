@@ -63,7 +63,7 @@
 
 *Testing can begin when all of the following are met.*
 
-- [ ] Feature code is merged to the test branch
+- [ ] Feature code is merged to the main branch
 - [ ] Build passes CI with no blocking failures
 - [ ] Test environment is provisioned and accessible
 - [ ] Test data is loaded and verified

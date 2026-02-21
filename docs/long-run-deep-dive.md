@@ -20,7 +20,7 @@ YOU type: /long-run
 │
 ├─ Phase 0: Branch Check
 │   └─ git branch --show-current
-│   └─ Must be on `test` (auto-checkouts from `main` if clean)
+│   └─ Must be on `main` (auto-checkouts if clean)
 │   └─ Any other branch or dirty tree → STOP
 │
 ├─ Phase 0.5: Trello Sync
@@ -71,9 +71,9 @@ YOU type: /long-run
 ├─ Phase 5.5: Merge Captain
 │   ├─ CALLS: /internal:merge-bean NNN          ← SKILL CALL
 │   │   ├─ Aggregates telemetry totals into bean.md
-│   │   ├─ git checkout test && git pull origin test
+│   │   ├─ git checkout main && git pull origin main
 │   │   ├─ git merge bean/BEAN-NNN-<slug> --no-ff
-│   │   ├─ git push origin test
+│   │   ├─ git push origin main
 │   │   ├─ git branch -d bean/BEAN-NNN-<slug>   ← deletes feature branch
 │   │   └─ Conflict? → abort merge, STOP loop
 │   ├─ Update _index.md → "Done", commit, push
@@ -84,7 +84,7 @@ YOU type: /long-run
 ├─ Phase 6: Loop
 │   └─ Go back to Phase 1
 │   └─ Repeat until no actionable beans remain
-│   └─ Final message: "Work is on test branch. Run /deploy to promote to main."
+│   └─ Final message: "All beans merged to main. Backlog clear."
 ```
 
 ### Skills called in sequential mode
@@ -99,7 +99,7 @@ YOU type: /long-run
 ```
 YOU type: /long-run --fast 3
 │
-├─ Same Phase 0 (branch check) and Phase 0.5 (Trello sync)
+├─ Same Phase 0 (branch check on main) and Phase 0.5 (Trello sync)
 │
 ├─ Parallel Phase 2: Backlog Assessment
 │   └─ Same filtering as sequential
@@ -107,7 +107,7 @@ YOU type: /long-run --fast 3
 │
 ├─ Parallel Phase 3: Worker Spawning
 │   └─ For EACH selected bean:
-│       ├─ Update _index.md → "In Progress" (commit on test)
+│       ├─ Update _index.md → "In Progress" (commit on main)
 │       ├─ Write status file: /tmp/foundry-worker-BEAN-NNN.status
 │       ├─ Create git worktree: /tmp/foundry-worktree-BEAN-NNN/
 │       │   └─ git worktree add -b bean/BEAN-NNN-slug /tmp/... main
@@ -122,7 +122,7 @@ YOU type: /long-run --fast 3
 │       ├─ Read all /tmp/foundry-worker-*.status files
 │       ├─ For completed workers (status: done):
 │       │   ├─ git worktree remove --force
-│       │   ├─ git fetch && git pull origin test
+│       │   ├─ git fetch && git pull origin main
 │       │   ├─ CALLS: /internal:merge-bean NNN      ← SKILL CALL
 │       │   ├─ Update _index.md → "Done", commit, push
 │       │   └─ Move Trello card (if applicable)
@@ -137,7 +137,7 @@ YOU type: /long-run --fast 3
 ├─ Parallel Phase 5: Cleanup
 │   └─ rm -f /tmp/foundry-worker-*.status
 │   └─ git worktree prune
-│   └─ git fetch && git pull origin test
+│   └─ git fetch && git pull origin main
 │   └─ Final report
 ```
 
@@ -169,7 +169,7 @@ In parallel mode, the main window **never processes beans itself** — it only o
 Each parallel worker gets full isolation via git worktrees:
 
 ```
-Main repo: /home/gregg/.../foundry/     (orchestrator — on `test` branch)
+Main repo: /home/gregg/.../foundry/     (orchestrator — on `main` branch)
 Worker 1:  /tmp/foundry-worktree-BEAN-016/  (own feature branch, own .venv)
 Worker 2:  /tmp/foundry-worktree-BEAN-017/  (own feature branch, own .venv)
 Worker 3:  /tmp/foundry-worktree-BEAN-018/  (own feature branch, own .venv)
@@ -242,7 +242,7 @@ updated: 2026-02-07T14:32:01
 │   └── Inline bean creation (reads _bean-template.md, writes bean.md)
 │
 ├── [per bean — sequential mode, or per worker completion — parallel mode]
-│   └── /internal:merge-bean       (merge feature branch → test)
+│   └── /internal:merge-bean       (merge feature branch → main)
 │       └── Pure git operations (checkout, pull, merge --no-ff, push, branch -d)
 │
 └── [parallel mode only — inside each child Claude]

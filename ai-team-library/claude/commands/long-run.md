@@ -27,15 +27,14 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 
 ### Phase 0: Branch Prerequisite
 
-0. **Ensure on `test` branch** — Run `git branch --show-current`.
-   - If already on `test`: proceed.
-   - If on `main` with a clean working tree: run `git checkout test` and proceed.
-   - If on any other branch or the working tree is dirty: display "⚠ /long-run requires a clean working tree on the `test` branch. Current branch: `<branch>`. Please switch to `test` and retry." Then stop.
+0. **Ensure on `main` branch** — Run `git branch --show-current`.
+   - If already on `main`: proceed.
+   - If on any other branch or the working tree is dirty: display "⚠ /long-run requires a clean working tree on the `main` branch. Current branch: `<branch>`. Please switch to `main` and retry." Then stop.
 
 1. **Read backlog** — Parse `ai/beans/_index.md`. Identify beans with status `Approved`.
 2. **Check for actionable beans** — If no beans are actionable (all `Done`, `Deferred`, or blocked by dependencies), report "Backlog clear — no actionable beans" and stop.
 3. **Select best bean** — Apply selection heuristics (see Options below) to choose the single best bean to work on next.
-4. **Pick the bean** — Update status to `In Progress` in `bean.md`. Update `_index.md` on `test` to set status to `In Progress` and owner to `team-lead`.
+4. **Pick the bean** — Update status to `In Progress` in `bean.md`. Update `_index.md` on `main` to set status to `In Progress` and owner to `team-lead`.
 5. **Create feature branch** — Create and checkout `bean/BEAN-NNN-<slug>` from current HEAD. All work for this bean happens on this branch.
 6. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in the bean's `tasks/` directory. Assign owners and dependencies following the wave: BA → Architect → Developer → Tech-QA (skip roles not needed).
 7. **Execute the wave** — Process each task in dependency order:
@@ -45,10 +44,10 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 8. **Verify acceptance criteria** — Check every criterion in the bean's AC list. Run tests and lint if applicable.
 9. **Close the bean** — Update status to `Done` in `bean.md`. (The orchestrator updates `_index.md` after the merge — see step 11.)
 10. **Commit on feature branch** — Stage all changed files and commit with message: `BEAN-NNN: <title>`. The commit goes on the `bean/BEAN-NNN-<slug>` branch.
-11. **Merge to test and update index** — Execute `/merge-bean` to merge the feature branch into `test`: checkout test, pull latest, merge with `--no-ff`, push. Then update `_index.md` on `test` to set the bean's status to `Done`, commit, and push. If merge conflicts occur, report and stop. *(In parallel mode, workers do NOT merge or edit `_index.md` — the orchestrator handles both after each worker completes.)*
-12. **Stay on test** — Remain on the `test` branch (do not switch to `main`).
+11. **Merge to main and update index** — Execute `/merge-bean` to merge the feature branch into `main`: checkout main, pull latest, merge with `--no-ff`, push. Then update `_index.md` on `main` to set the bean's status to `Done`, commit, and push. If merge conflicts occur, report and stop. *(In parallel mode, workers do NOT merge or edit `_index.md` — the orchestrator handles both after each worker completes.)*
+12. **Stay on main** — Remain on the `main` branch.
 13. **Report progress** — Summarize what was completed: bean title, tasks executed, branch name, merge commit, files changed.
-14. **Loop** — Go back to step 1. Continue until no actionable beans remain. When complete, display: `⚠ Work is on the test branch. Run /deploy to promote to main.`
+14. **Loop** — Go back to step 1. Continue until no actionable beans remain. When complete, display: `All work merged to main.`
 
 ## Output
 
@@ -128,7 +127,7 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
    You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.
    - Do NOT create or checkout branches.
    - Do NOT run /merge-bean — the orchestrator handles merging after you finish.
-   - Do NOT checkout main or test.
+   - Do NOT checkout main — the orchestrator handles merging after you finish.
    - Do NOT edit _index.md — the orchestrator is the sole writer of the backlog index.
 
    1. Update bean.md status to In Progress
@@ -161,9 +160,9 @@ The main window enters a **persistent dashboard loop** that monitors workers, me
 1. **Read status files** — Read all `/tmp/agentic-worker-*.status` files. Cross-reference with `tmux list-windows` to detect closed windows.
 2. **Process completed workers** — For each worker showing `status: done` (or whose window has closed) that has not yet been merged:
    - Remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
-   - Sync: `git fetch origin && git pull origin test`
+   - Sync: `git fetch origin && git pull origin main`
    - Merge: run `/merge-bean NNN` from the main repo
-   - Update `_index.md` on `test`: set status to `Done`, commit and push
+   - Update `_index.md` on `main`: set status to `Done`, commit and push
    - Mark this worker as merged
 3. **Assign replacements** — **Re-read `_index.md` fresh**. For each open slot, find the next `Approved` unblocked bean. If found, update `_index.md`, create worktree, spawn worker.
 4. **Render dashboard** — Progress bars, status emoji, alerts for blocked/stale workers.
@@ -213,7 +212,7 @@ Team Lead reads the backlog, picks the highest-priority unblocked bean, processe
   Beans processed: 4
   Backlog status: 0 actionable, 2 deferred
 
-  ⚠ Work is on the `test` branch. Run /deploy to promote to `main`.
+  All work merged to `main`.
 ```
 
 **Parallel mode with 3 workers:**
@@ -236,7 +235,7 @@ Team Lead detects tmux, selects 3 independent beans, spawns 3 child windows. Eac
   Beans processed: 5 (3 parallel + 2 sequential)
   Backlog status: 0 actionable
 
-  ⚠ Work is on the `test` branch. Run /deploy to promote to `main`.
+  All work merged to `main`.
 ```
 
 **Filter by category:**

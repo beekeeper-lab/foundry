@@ -2,7 +2,7 @@
 
 ## Description
 
-Safely merges a bean's feature branch into the `test` integration branch. Handles pulling latest changes, detecting merge conflicts, and reporting results. This is the Merge Captain's primary operation — the final stage of the bean execution wave.
+Safely merges a bean's feature branch into the `main` branch. Handles pulling latest changes, detecting merge conflicts, and reporting results. This is the Merge Captain's primary operation — the final stage of the bean execution wave.
 
 ## Trigger
 
@@ -15,7 +15,7 @@ Safely merges a bean's feature branch into the `test` integration branch. Handle
 | Input | Type | Required | Description |
 |-------|------|----------|-------------|
 | bean_id | String | Yes | Bean identifier (e.g., `BEAN-011` or `11`) |
-| target_branch | String | No | Branch to merge into (default: `test`) |
+| target_branch | String | No | Branch to merge into (default: `main`) |
 | bean_dir | Directory | Yes | `ai/beans/BEAN-NNN-<slug>/` — resolved from bean_id |
 
 ## Process
@@ -39,9 +39,9 @@ Safely merges a bean's feature branch into the `test` integration branch. Handle
 
 ### Phase 2: Prepare Target
 
-6. **Checkout target branch** — `git checkout test` (or specified target).
-   - If the target branch doesn't exist locally, create it: `git checkout -b test`.
-7. **Pull latest** — `git pull origin test`.
+6. **Checkout target branch** — `git checkout main` (or specified target).
+   - If the target branch doesn't exist locally: this is an error — `main` should always exist.
+7. **Pull latest** — `git pull origin main`.
    - If the remote branch doesn't exist yet (first merge), skip pull.
 
 ### Phase 3: Merge
@@ -54,7 +54,7 @@ Safely merges a bean's feature branch into the `test` integration branch. Handle
 
 ### Phase 4: Push & Cleanup
 
-10. **Push to remote** — `git push origin test`.
+10. **Push to remote** — `git push origin main`.
     - If push fails (e.g., another worker pushed first), pull and retry once.
 11. **Delete feature branch** — `git branch -d bean/BEAN-NNN-<slug>`.
     - If the branch is also on the remote: `git push origin --delete bean/BEAN-NNN-<slug>`.
@@ -96,7 +96,7 @@ If step 9 detects merge conflicts:
 | `BranchNotFound` | Feature branch doesn't exist in git | Was the bean processed with `--no-branch`? Create branch manually or skip merge |
 | `MergeConflict` | Auto-merge fails due to conflicting changes | Report files, abort merge, return to feature branch |
 | `PushFailure` | Push rejected or network error | Pull and retry once; if still failing, report for manual resolution |
-| `TargetNotFound` | Target branch doesn't exist on remote | Create locally and push; this is normal for the first merge |
+| `TargetNotFound` | Target branch doesn't exist on remote | Verify repository setup — `main` should always exist |
 
 ## Dependencies
 

@@ -1,73 +1,53 @@
 # /deploy Command
 
-Promotes a source branch into a target branch via a pull request. Runs tests, creates the PR, merges it, and cleans up — all after a single user approval.
+Validates the `main` branch, runs tests, and creates a version tag. With trunk-based development, all work is already on `main` via feature branch merges — deploy simply tags a release point.
 
 ## Usage
 
 ```
-/deploy [target] [--tag <version>]
+/deploy [--tag <version>]
 ```
 
-- `target` -- Optional. Target branch: `main` (default) or `test`.
-- `--tag <version>` -- Optional. Tag the merge commit with a version (e.g., `v1.2.0`). Only valid when target is `main`.
+- `--tag <version>` -- Optional. Tag the current commit with a version (e.g., `v1.2.0`). If omitted, auto-generates from date: `deploy-YYYY-MM-DD`.
 
 | Command | What It Does |
 |---------|-------------|
-| `/deploy` | `test` → `main` — Full release with branch cleanup |
-| `/deploy test` | current branch → `test` — Integration merge for feature branches |
-| `/deploy --tag v2.0.0` | `test` → `main` with version tag |
+| `/deploy` | Validate main, run tests, tag with date-based label |
+| `/deploy --tag v2.0.0` | Validate main, run tests, tag with version |
 
 ## Process
 
-1. **Check for uncommitted changes** — if dirty, prompt: **Commit** (stage + commit), **Stash** (stash, restore at end), or **Abort**
-2. **Determine source/target** — target `main`: source is `test`. Target `test`: source is current branch.
-3. **Push source** to remote
+1. **Ensure on `main` branch** — Run `git branch --show-current`. If not on `main`, display error and stop.
+2. **Check for uncommitted changes** — if dirty, prompt: **Commit** (stage + commit), **Stash** (stash, restore at end), or **Abort**
+3. **Pull latest** — `git pull origin main`
 4. **Run tests** (`uv run pytest`) and **ruff** (`uv run ruff check`) — stop if they fail
-5. **Build release notes** from bean commits in `git log <target>..<source>`
-6. **One approval prompt** — user says "go" (or "go with tag" for main), or "abort"
-7. **Create PR** (`gh pr create --base <target> --head <source>`)
-8. **Merge PR** (`gh pr merge --merge`) — preserves full commit history
-9. **Tag** if requested (main only)
-10. **Delete** merged feature branches, local + remote (main only)
-11. **Sync target** locally, restore stash
-12. **Report** — PR URL, merge commit, beans deployed, branches deleted
+5. **Build release notes** from bean commits since the last deploy tag in `git log <last-tag>..HEAD`
+6. **One approval prompt** — user says "go", or "abort"
+7. **Tag** — Create annotated tag: `git tag -a <version> -m "Deploy: <date> — <bean list>"`
+8. **Push tag** — `git push origin <version>`
+9. **Clean up** — Delete merged feature branches (local + remote) that are fully merged into `main`
+10. **Report** — Tag name, commit hash, beans deployed, branches deleted
 
 ## Examples
 
 ```
-/deploy              # Promote test → main
-/deploy test         # Merge current feature branch → test
-/deploy --tag v2.0.0 # Promote test → main with version tag
+/deploy              # Validate and tag with date-based label
+/deploy --tag v2.0.0 # Validate and tag with version number
 ```
 
-**Approval prompt (main):**
+**Approval prompt:**
 ```
 ===================================================
-DEPLOY: test → main (via PR)
+DEPLOY: Tag main as deploy-2026-02-21
 ===================================================
 
-Beans: BEAN-029, BEAN-030, BEAN-033
+Beans since last deploy: BEAN-029, BEAN-030, BEAN-033
 Tests: 750 passed, 0 failed
 Ruff: clean
 
-Post-merge: 3 feature branches will be deleted
+Post-tag: 3 merged feature branches will be deleted
 
-On "go": create PR, merge it, delete branches,
-restore working tree. No further prompts.
-===================================================
-```
-
-**Approval prompt (test):**
-```
-===================================================
-DEPLOY: bean/BEAN-042-telemetry → test (via PR)
-===================================================
-
-Beans: BEAN-042
-Tests: 565 passed, 0 failed
-Ruff: clean
-
-On "go": create PR, merge it,
+On "go": create tag, push it, delete branches,
 restore working tree. No further prompts.
 ===================================================
 ```
@@ -76,10 +56,10 @@ restore working tree. No further prompts.
 
 | Error | Resolution |
 |-------|------------|
-| Nothing to deploy | Report and exit |
-| Tests fail | Report failures, stop. Fix on a bean branch first. |
-| PR create fails | Check `gh auth status` and repo permissions |
-| PR merge fails | Check branch protection rules or merge conflicts |
+| Not on main | Switch to main and retry |
+| Nothing to deploy | No new commits since last tag — report and exit |
+| Tests fail | Report failures, stop. Fix on a feature branch first. |
+| Tag already exists | Report error, suggest a different tag name |
 | Uncommitted changes | Prompted to commit, stash, or abort before proceeding |
-| User aborts | Restore stash, return to original branch |
+| User aborts | Restore stash, return to original state |
 | Command blocked by sandbox | Prints exact command for manual execution, continues |

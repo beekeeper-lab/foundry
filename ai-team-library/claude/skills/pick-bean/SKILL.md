@@ -46,17 +46,13 @@ Updates a bean's status from `Approved` to `In Progress`, assigning ownership to
    - Status column to `In Progress`
    - Owner column to `team-lead`
 
-8. **Ensure test branch exists** -- Check if the `test` integration branch exists locally:
-   - Run: `git branch --list test`
-   - If it doesn't exist, create it: `git checkout -b test main && git checkout -` (create from main, then return)
-
-9. **Create feature branch** -- Always create the feature branch:
+8. **Create feature branch** -- Always create the feature branch:
    - Derive the slug from the bean directory name (e.g., `BEAN-006-backlog-refinement`)
    - Run: `git checkout -b bean/BEAN-NNN-<slug>`
    - If the branch already exists, check it out instead of creating.
    - Feature branching is mandatory. Every bean gets its own branch.
 
-10. **Confirm** -- Report: bean ID, title, status (`In Progress`), branch name, and next step:
+9. **Confirm** -- Report: bean ID, title, status (`In Progress`), branch name, and next step:
     - "Ready for decomposition on branch `bean/BEAN-NNN-<slug>`. Create task files in `tasks/` subdirectory."
 
 ## Outputs

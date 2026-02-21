@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-222 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-21 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-21 17:46 |
+| **Completed** | 2026-02-21 18:03 |
+| **Duration** | 18m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -42,26 +42,24 @@ Eliminate the `test` branch and adopt trunk-based development. Feature branches 
 
 ## Acceptance Criteria
 
-- [ ] Feature branches created from `main` and merge directly to `main`
-- [ ] `/long-run` works with `main` as the sole integration branch
-- [ ] `/merge-bean` defaults to `main`
-- [ ] `/deploy` is repurposed or removed
-- [ ] All agent files updated (no stale `test` branch references)
-- [ ] All skill/command files updated
-- [ ] Library templates updated for generated sub-apps
-- [ ] Bean workflow docs updated
-- [ ] `test` branch deleted (local + remote)
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Feature branches created from `main` and merge directly to `main`
+- [x] `/long-run` works with `main` as the sole integration branch
+- [x] `/merge-bean` defaults to `main`
+- [x] `/deploy` is repurposed as tag/release tool
+- [x] All agent files updated (no stale `test` branch references)
+- [x] All skill/command files updated
+- [x] Library templates updated for generated sub-apps
+- [x] Bean workflow docs updated
+- [ ] `test` branch deleted (local + remote) — deferred to post-deploy
+- [x] All tests pass (`uv run pytest`) — 659 passed
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Update all workflow files for trunk-based development | Developer | — | Done |
+| 2 | Verify trunk-based development migration | Tech-QA | 1 | Done |
 
 ## Changes
 
@@ -69,7 +67,39 @@ Eliminate the `test` branch and adopt trunk-based development. Feature branches 
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/agents/team-lead.md | 12 |
+| .claude/commands/deploy.md | 68 |
+| .claude/commands/internal/merge-bean.md | 24 |
+| .claude/commands/internal/spawn-bean.md | 16 |
+| .claude/commands/long-run.md | 24 |
+| .claude/hooks/hook-policy.md | 3 |
+| .claude/hooks/telemetry-stamp.py | 6 |
+| .claude/skills/commands/SKILL.md | 2 |
+| .claude/skills/deploy/SKILL.md | 110 |
+| .claude/skills/internal/merge-bean/SKILL.md | 14 |
+| .claude/skills/long-run/SKILL.md | 40 |
+| .claude/skills/run/SKILL.md | 13 |
+| ai-team-library/claude/commands/deploy.md | 72 |
+| ai-team-library/claude/commands/long-run.md | 25 |
+| ai-team-library/claude/commands/merge-bean.md | 24 |
+| ai-team-library/claude/commands/pick-bean.md | 5 |
+| ai-team-library/claude/commands/run.md | 7 |
+| ai-team-library/claude/commands/spawn-bean.md | 12 |
+| ai-team-library/claude/hooks/git-commit-branch.md | 4 |
+| ai-team-library/claude/hooks/git-generate-pr.md | 4 |
+| ai-team-library/claude/hooks/git-merge-to-prod.md | 6 |
+| ai-team-library/claude/hooks/git-merge-to-test.md | 6 |
+| ai-team-library/claude/hooks/telemetry-stamp.py | 6 |
+| ai-team-library/claude/skills/deploy/SKILL.md | 125 |
+| ai-team-library/claude/skills/long-run/SKILL.md | 41 |
+| ai-team-library/claude/skills/merge-bean/SKILL.md | 14 |
+| ai-team-library/claude/skills/pick-bean/SKILL.md | 8 |
+| ai-team-library/claude/skills/run/SKILL.md | 13 |
+| ai-team-library/personas/tech-qa/templates/test-plan.md | 2 |
+| ai-team-library/process/context/bean-workflow.md | 15 |
+| ai/context/bean-workflow.md | 15 |
+| docs/backlog-refinement-deep-dive.md | 6 |
+| docs/long-run-deep-dive.md | 20 |
 
 ## Notes
 
@@ -87,12 +117,13 @@ BEAN-223 (claude subtree sharing) depends on this bean completing first, since t
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Update all workflow files for trunk-based development | Developer | 7m | 1,288,363 | 2,196 | $2.48 |
+| 2 | Verify trunk-based development migration | Tech-QA | 5m | 6,559,096 | 1,008 | $15.05 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 12m |
+| **Total Tokens In** | 7,847,459 |
+| **Total Tokens Out** | 3,204 |
+| **Total Cost** | $17.53 |

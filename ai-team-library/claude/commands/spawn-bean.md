@@ -173,7 +173,7 @@ Pick BEAN-NNN (slug) using /pick-bean NNN, then execute the full bean lifecycle 
 You are running in an ISOLATED GIT WORKTREE. Your feature branch (bean/BEAN-NNN-slug) is already checked out.
 - Do NOT create or checkout branches — you are already on the correct feature branch.
 - Do NOT run /merge-bean — the orchestrator handles merging after you finish.
-- Do NOT checkout main or test — this will fail in a worktree if those branches are checked out elsewhere.
+- Do NOT checkout main — the orchestrator handles merging after you finish.
 
 STATUS FILE PROTOCOL — You MUST update /tmp/agentic-worker-BEAN-NNN.status at every transition:
 - Write the file using: cat > /tmp/agentic-worker-BEAN-NNN.status << 'SF_EOF'
@@ -230,7 +230,7 @@ Bean lifecycle:
 4. Use /handoff between persona transitions
 5. Run tests (uv run pytest) and lint (uv run ruff check) before closing
 6. Commit all changes on the feature branch
-7. Use /merge-bean to merge into test
+7. Use /merge-bean to merge into main
 8. Use /status-report to produce final summary
 Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
 ```
@@ -246,9 +246,9 @@ After all workers are spawned, the main window enters a **persistent dashboard l
 1. **Read status files** — Read all `/tmp/agentic-worker-*.status` files and parse key-value pairs. Cross-reference with `tmux list-windows` to detect closed windows (worker exited).
 2. **Process completed workers** — For each status file showing `status: done` (or whose tmux window has closed) that has not yet been merged:
    a. Remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
-   b. Sync before merging: `git fetch origin && git pull origin test`
-   c. Merge the bean: run `/merge-bean NNN` from the main repo to merge the feature branch into `test`. This ensures merges happen sequentially from the main repo (avoiding the worktree limitation where `test` can't be checked out from a worktree if it's in use elsewhere).
-   d. Update `_index.md` on `test`: set the bean's status to `Done`. Commit and push.
+   b. Sync before merging: `git fetch origin && git pull origin main`
+   c. Merge the bean: run `/merge-bean NNN` from the main repo to merge the feature branch into `main`. This ensures merges happen sequentially from the main repo (avoiding the worktree limitation where `main` can't be checked out from a worktree if it's in use elsewhere).
+   d. Update `_index.md` on `main`: set the bean's status to `Done`. Commit and push.
    e. Mark this worker as merged in the orchestrator's tracking.
 3. **Assign replacement workers** — **Re-read `_index.md` fresh** (do NOT use a pre-computed queue — the backlog may have changed). For each merged worker slot with no replacement:
    a. Find the next bean with status `Approved` that has no unmet inter-bean dependencies.
@@ -312,7 +312,7 @@ Workers clean up automatically:
 - **Wide mode** (`--wide`): all workers share one window as tiled panes — ideal for large monitors where you can see all workers at once
 - **Git worktrees** provide isolation: each worker gets its own working directory at `/tmp/agentic-worktree-BEAN-NNN/`. No branch collisions, no file stomping between workers.
 - **Pre-assignment** eliminates race conditions: when using `--count N`, the orchestrator selects all beans upfront and creates worktrees before spawning. No stagger delay needed.
-- **Orchestrator merges**: Workers do NOT run `/merge-bean`. The orchestrator handles merging sequentially after each worker completes, since worktrees cannot checkout `test` if it's checked out elsewhere.
+- **Orchestrator merges**: Workers do NOT run `/merge-bean`. The orchestrator handles merging sequentially after each worker completes, since worktrees cannot checkout `main` if it's checked out elsewhere.
 - **`uv` in worktrees**: Each worktree auto-creates its own `.venv` on first `uv run` — works seamlessly.
 - Child agents work fully autonomously — no user input needed for normal flow
 - Workers auto-close when done — no manual cleanup needed (both windows and panes)
