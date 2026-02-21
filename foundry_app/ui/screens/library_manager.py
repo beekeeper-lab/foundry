@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 # Order matters — this is the display order in the tree.
 LIBRARY_CATEGORIES: list[tuple[str, str]] = [
     ("Personas", "personas"),
-    ("Stacks", "stacks"),
+    ("Expertise", "stacks"),
     ("Shared Templates", "templates"),
     ("Workflows", "workflows"),
     ("Claude Commands", "claude/commands"),
@@ -49,7 +49,7 @@ LIBRARY_CATEGORIES: list[tuple[str, str]] = [
 # Categories that support create/delete operations, mapped to their rel_path.
 _EDITABLE_CATEGORIES: dict[str, str] = {
     "Personas": "personas",
-    "Stacks": "stacks",
+    "Expertise": "stacks",
     "Shared Templates": "templates",
     "Workflows": "workflows",
     "Claude Commands": "claude/commands",
@@ -160,8 +160,8 @@ Describe the workflow or reference document.
 Add content here.
 """
 
-STARTER_STACK_CONVENTIONS = """\
-# {name} Stack Conventions
+STARTER_EXPERTISE_CONVENTIONS = """\
+# {name} Expertise Conventions
 
 Conventions for {name} projects. Deviations require an ADR with justification.
 
@@ -193,7 +193,7 @@ Conventions for {name} projects. Deviations require an ADR with justification.
 - [ ] Item two
 """
 
-STARTER_STACK_FILE = """\
+STARTER_EXPERTISE_FILE = """\
 # {name}
 
 ## Overview
@@ -386,10 +386,10 @@ def starter_content(category: str, name: str) -> str:
         return STARTER_SKILL.format(name=title, slug=name)
     if category == "Claude Hooks":
         return STARTER_HOOK.format(name=title)
-    if category == "Stacks":
-        return STARTER_STACK_CONVENTIONS.format(name=title)
-    if category == "Stacks:file":
-        return STARTER_STACK_FILE.format(name=title)
+    if category == "Expertise":
+        return STARTER_EXPERTISE_CONVENTIONS.format(name=title)
+    if category == "Expertise:file":
+        return STARTER_EXPERTISE_FILE.format(name=title)
     if category in ("Shared Templates", "_persona_template"):
         return STARTER_TEMPLATE.format(name=title)
     return STARTER_WORKFLOW.format(name=title)
@@ -862,9 +862,9 @@ class LibraryManagerScreen(QWidget):
             item is not None
             and item.data(0, Qt.ItemDataRole.UserRole) is not None
         )
-        # For skills/stacks/personas, also allow deleting the directory node
+        # For skills/expertise/personas, also allow deleting the directory node
         is_asset_dir = (
-            cat in ("Claude Skills", "Stacks", "Personas")
+            cat in ("Claude Skills", "Expertise", "Personas")
             and item is not None
             and item.parent() is not None
             and item.data(0, Qt.ItemDataRole.UserRole) is None
@@ -919,32 +919,32 @@ class LibraryManagerScreen(QWidget):
                 return True
         return False
 
-    # -- Stack helpers -----------------------------------------------------
+    # -- Expertise helpers -------------------------------------------------
 
-    def _is_stack_subitem(self, item: QTreeWidgetItem | None) -> bool:
-        """Return True if *item* is inside a specific stack (dir or file).
+    def _is_expertise_subitem(self, item: QTreeWidgetItem | None) -> bool:
+        """Return True if *item* is inside a specific expertise (dir or file).
 
-        A stack subitem is a node under the Stacks category whose parent is
-        *not* the top-level category node itself -- i.e. it sits inside one
-        of the stack directories.
+        An expertise subitem is a node under the Expertise category whose parent
+        is *not* the top-level category node itself -- i.e. it sits inside one
+        of the expertise directories.
         """
         if item is None:
             return False
         cat = self._get_category_for_item(item)
-        if cat != "Stacks":
+        if cat != "Expertise":
             return False
         return item.parent() is not None and item.parent().parent() is not None
 
-    def _get_stack_dir_for_item(self, item: QTreeWidgetItem) -> Path | None:
-        """Return the filesystem path of the stack directory for *item*.
+    def _get_expertise_dir_for_item(self, item: QTreeWidgetItem) -> Path | None:
+        """Return the filesystem path of the expertise directory for *item*.
 
-        Walks up to the stack-directory node (direct child of the Stacks
+        Walks up to the expertise-directory node (direct child of the Expertise
         category) and resolves the path.
         """
         if self._library_root is None:
             return None
         cat = self._get_category_for_item(item)
-        if cat != "Stacks":
+        if cat != "Expertise":
             return None
 
         node = item
@@ -954,7 +954,7 @@ class LibraryManagerScreen(QWidget):
         if node.parent() is None:
             return None  # category node itself
 
-        rel_path = _EDITABLE_CATEGORIES["Stacks"]
+        rel_path = _EDITABLE_CATEGORIES["Expertise"]
         return self._library_root / rel_path / node.text(0)
 
     # -- Create / Delete operations ----------------------------------------
@@ -977,15 +977,15 @@ class LibraryManagerScreen(QWidget):
                 self._create_template(tpl_dir)
             return
 
-        # Determine whether we are adding a file *inside* an existing stack
-        adding_to_stack = cat == "Stacks" and self._is_stack_subitem(item)
+        # Determine whether we are adding a file *inside* an existing expertise
+        adding_to_expertise = cat == "Expertise" and self._is_expertise_subitem(item)
 
-        if adding_to_stack:
-            prompt_title = "New Stack File"
+        if adding_to_expertise:
+            prompt_title = "New Expertise File"
             prompt_label = "Enter filename (lowercase, hyphens, no extension):"
-        elif cat == "Stacks":
-            prompt_title = "New Stack"
-            prompt_label = "Enter stack name (lowercase, hyphens):"
+        elif cat == "Expertise":
+            prompt_title = "New Expertise"
+            prompt_label = "Enter expertise name (lowercase, hyphens):"
         else:
             label = {
                 "Personas": "persona",
@@ -1034,18 +1034,18 @@ class LibraryManagerScreen(QWidget):
             self._select_file_in_tree(persona_dir / "persona.md")
             return
 
-        # --- Stack: add file to existing stack ---
-        if adding_to_stack:
-            stack_dir = self._get_stack_dir_for_item(item)
-            if stack_dir is None:
+        # --- Expertise: add file to existing expertise ---
+        if adding_to_expertise:
+            expertise_dir = self._get_expertise_dir_for_item(item)
+            if expertise_dir is None:
                 return
-            dest = stack_dir / f"{name}.md"
+            dest = expertise_dir / f"{name}.md"
             if dest.exists():
                 QMessageBox.warning(
                     self, "Duplicate", f"File '{name}.md' already exists."
                 )
                 return
-            content = starter_content("Stacks:file", name)
+            content = starter_content("Expertise:file", name)
             try:
                 dest.write_text(content, encoding="utf-8")
             except OSError as exc:
@@ -1056,24 +1056,24 @@ class LibraryManagerScreen(QWidget):
             self.refresh_tree()
             return
 
-        # --- Stack: create new stack directory with conventions.md ---
-        if cat == "Stacks":
-            stack_dir = target_dir / name
-            if stack_dir.exists():
+        # --- Expertise: create new expertise directory with conventions.md ---
+        if cat == "Expertise":
+            expertise_dir = target_dir / name
+            if expertise_dir.exists():
                 QMessageBox.warning(
-                    self, "Duplicate", f"Stack '{name}' already exists."
+                    self, "Duplicate", f"Expertise '{name}' already exists."
                 )
                 return
             try:
-                stack_dir.mkdir(parents=True, exist_ok=True)
-                dest = stack_dir / "conventions.md"
-                content = starter_content("Stacks", name)
+                expertise_dir.mkdir(parents=True, exist_ok=True)
+                dest = expertise_dir / "conventions.md"
+                content = starter_content("Expertise", name)
                 dest.write_text(content, encoding="utf-8")
             except OSError as exc:
-                logger.error("Failed to create stack %s: %s", name, exc)
-                QMessageBox.critical(self, "Error", f"Could not create stack: {exc}")
+                logger.error("Failed to create expertise %s: %s", name, exc)
+                QMessageBox.critical(self, "Error", f"Could not create expertise: {exc}")
                 return
-            logger.info("Created stack %s", stack_dir)
+            logger.info("Created expertise %s", expertise_dir)
             self.refresh_tree()
             self._select_file_in_tree(dest)
             return
@@ -1184,7 +1184,7 @@ class LibraryManagerScreen(QWidget):
 
         # Asset directory node (no path, direct child of category)
         is_asset_dir = (
-            cat in ("Claude Skills", "Stacks", "Personas")
+            cat in ("Claude Skills", "Expertise", "Personas")
             and file_path is None
             and item.parent() is not None
             and item.parent().parent() is None
@@ -1205,9 +1205,9 @@ class LibraryManagerScreen(QWidget):
                 f"Delete persona '{display}' and all its files? "
                 "This cannot be undone."
             )
-        elif cat == "Stacks" and is_asset_dir:
+        elif cat == "Expertise" and is_asset_dir:
             msg = (
-                f"Delete stack '{display}' and all its files? "
+                f"Delete expertise '{display}' and all its files? "
                 "This cannot be undone."
             )
         else:

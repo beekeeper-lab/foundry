@@ -7,15 +7,14 @@ from pydantic import ValidationError
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseSelection,
     GenerationOptions,
     HookPackSelection,
     PersonaSelection,
     ProjectIdentity,
-    StackSelection,
     TeamConfig,
 )
 from foundry_app.services.generator import generate_project
-
 
 # ---------------------------------------------------------------------------
 # ProjectIdentity.output_root
@@ -102,22 +101,22 @@ class TestPersonaIdTraversal:
 
 
 # ---------------------------------------------------------------------------
-# StackSelection.id
+# ExpertiseSelection.id
 # ---------------------------------------------------------------------------
 
-class TestStackIdTraversal:
-    """Stack IDs must not contain traversal sequences."""
+class TestExpertiseIdTraversal:
+    """Expertise IDs must not contain traversal sequences."""
 
     def test_rejects_dotdot(self):
-        with pytest.raises(ValidationError, match="stack id"):
-            StackSelection(id="../../evil")
+        with pytest.raises(ValidationError, match="expertise id"):
+            ExpertiseSelection(id="../../evil")
 
     def test_rejects_slash(self):
-        with pytest.raises(ValidationError, match="stack id"):
-            StackSelection(id="foo/bar")
+        with pytest.raises(ValidationError, match="expertise id"):
+            ExpertiseSelection(id="foo/bar")
 
     def test_accepts_normal_id(self):
-        s = StackSelection(id="python")
+        s = ExpertiseSelection(id="python")
         assert s.id == "python"
 
 
@@ -186,7 +185,7 @@ class TestGeneratorContainment:
         )
         spec = CompositionSpec.model_construct(
             project=project,
-            stacks=[],
+            expertise=[],
             team=TeamConfig(),
             generation=GenerationOptions(),
         )
@@ -202,6 +201,6 @@ class TestGeneratorContainment:
                 slug="my-project",
                 output_root="./generated",
             ),
-            stacks=[StackSelection(id="python")],
+            expertise=[ExpertiseSelection(id="python")],
         )
         assert spec.project.slug == "my-project"

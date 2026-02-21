@@ -38,25 +38,25 @@ def _check_personas(
             ))
 
 
-def _check_stacks(
+def _check_expertise(
     composition: CompositionSpec,
     library_index: LibraryIndex,
     messages: list[ValidationMessage],
 ) -> None:
-    """Validate that all referenced stacks exist in the library."""
-    for ss in composition.stacks:
-        stack = library_index.stack_by_id(ss.id)
-        if stack is None:
+    """Validate that all referenced expertise exist in the library."""
+    for ss in composition.expertise:
+        expertise = library_index.expertise_by_id(ss.id)
+        if expertise is None:
             messages.append(ValidationMessage(
                 severity=Severity.ERROR,
-                code="missing-stack",
-                message=f"Stack '{ss.id}' not found in library",
+                code="missing-expertise",
+                message=f"Expertise '{ss.id}' not found in library",
             ))
-        elif not stack.files:
+        elif not expertise.files:
             messages.append(ValidationMessage(
                 severity=Severity.WARNING,
-                code="stack-no-files",
-                message=f"Stack '{ss.id}' has no convention files",
+                code="expertise-no-files",
+                message=f"Expertise '{ss.id}' has no convention files",
             ))
 
 
@@ -88,11 +88,11 @@ def _check_required_fields(
             message="No personas selected — the generated project will have no team",
         ))
 
-    if not composition.stacks:
+    if not composition.expertise:
         messages.append(ValidationMessage(
             severity=Severity.INFO,
-            code="no-stacks",
-            message="No stacks selected — no technology convention files will be included",
+            code="no-expertise",
+            message="No expertise selected — no convention files will be included",
         ))
 
 
@@ -112,16 +112,16 @@ def _check_duplicates(
             ))
         seen_personas.add(pid)
 
-    stack_ids = [ss.id for ss in composition.stacks]
-    seen_stacks: set[str] = set()
-    for sid in stack_ids:
-        if sid in seen_stacks:
+    expertise_ids = [ss.id for ss in composition.expertise]
+    seen_expertise: set[str] = set()
+    for sid in expertise_ids:
+        if sid in seen_expertise:
             messages.append(ValidationMessage(
                 severity=Severity.WARNING,
-                code="duplicate-stack",
-                message=f"Stack '{sid}' is selected more than once",
+                code="duplicate-expertise",
+                message=f"Expertise '{sid}' is selected more than once",
             ))
-        seen_stacks.add(sid)
+        seen_expertise.add(sid)
 
 
 def _apply_strictness(
@@ -174,7 +174,7 @@ def run_pre_generation_validation(
 
     _check_required_fields(composition, messages)
     _check_personas(composition, library_index, messages)
-    _check_stacks(composition, library_index, messages)
+    _check_expertise(composition, library_index, messages)
     _check_hook_packs(composition, library_index, messages)
     _check_duplicates(composition, messages)
 

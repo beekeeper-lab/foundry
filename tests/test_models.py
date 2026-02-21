@@ -27,8 +27,8 @@ from foundry_app.core.models import (
     SecretPolicy,
     SeedMode,
     ShellPolicy,
-    StackInfo,
-    StackSelection,
+    ExpertiseInfo,
+    ExpertiseSelection,
     StageResult,
     Strictness,
     TeamConfig,
@@ -76,22 +76,22 @@ class TestProjectIdentity:
 
 
 # ---------------------------------------------------------------------------
-# StackSelection
+# ExpertiseSelection
 # ---------------------------------------------------------------------------
 
-class TestStackSelection:
+class TestExpertiseSelection:
     def test_minimal(self):
-        s = StackSelection(id="python")
+        s = ExpertiseSelection(id="python")
         assert s.id == "python"
         assert s.order == 0
 
     def test_with_order(self):
-        s = StackSelection(id="react", order=20)
+        s = ExpertiseSelection(id="react", order=20)
         assert s.order == 20
 
     def test_empty_id_rejected(self):
         with pytest.raises(ValidationError):
-            StackSelection(id="")
+            ExpertiseSelection(id="")
 
 
 # ---------------------------------------------------------------------------
@@ -281,13 +281,13 @@ class TestCompositionSpec:
             project=ProjectIdentity(name="Test", slug="test"),
         )
         assert spec.project.name == "Test"
-        assert spec.stacks == []
+        assert spec.expertise == []
         assert spec.team.personas == []
 
     def test_full(self):
         spec = CompositionSpec(
             project=ProjectIdentity(name="Full", slug="full"),
-            stacks=[StackSelection(id="python", order=10)],
+            expertise=[ExpertiseSelection(id="python", order=10)],
             team=TeamConfig(personas=[
                 PersonaSelection(id="developer"),
             ]),
@@ -296,7 +296,7 @@ class TestCompositionSpec:
             ]),
             generation=GenerationOptions(seed_tasks=True, write_diff_report=True),
         )
-        assert len(spec.stacks) == 1
+        assert len(spec.expertise) == 1
         assert len(spec.team.personas) == 1
         assert spec.hooks.posture == Posture.HARDENED
         assert spec.generation.write_diff_report is True
@@ -318,9 +318,9 @@ class TestCompositionSpec:
     def test_serialization_roundtrip(self):
         spec = CompositionSpec(
             project=ProjectIdentity(name="Round Trip", slug="round-trip"),
-            stacks=[
-                StackSelection(id="python", order=10),
-                StackSelection(id="react", order=20),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="react", order=20),
             ],
             team=TeamConfig(personas=[
                 PersonaSelection(id="team-lead", strictness="strict"),
@@ -473,8 +473,8 @@ class TestLibraryIndex:
                 PersonaInfo(id="tech-qa", path="/tmp/lib/personas/tech-qa",
                             has_persona_md=True, has_outputs_md=True),
             ],
-            stacks=[
-                StackInfo(id="python", path="/tmp/lib/stacks/python",
+            expertise=[
+                ExpertiseInfo(id="python", path="/tmp/lib/stacks/python",
                           files=["conventions.md"]),
             ],
             hook_packs=[
@@ -493,15 +493,15 @@ class TestLibraryIndex:
         idx = self._make_index()
         assert idx.persona_by_id("nonexistent") is None
 
-    def test_stack_by_id_found(self):
+    def test_expertise_by_id_found(self):
         idx = self._make_index()
-        s = idx.stack_by_id("python")
+        s = idx.expertise_by_id("python")
         assert s is not None
         assert "conventions.md" in s.files
 
-    def test_stack_by_id_not_found(self):
+    def test_expertise_by_id_not_found(self):
         idx = self._make_index()
-        assert idx.stack_by_id("rust") is None
+        assert idx.expertise_by_id("rust") is None
 
     def test_hook_pack_by_id_found(self):
         idx = self._make_index()

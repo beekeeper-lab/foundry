@@ -1,4 +1,4 @@
-"""Compiler service — assembles CLAUDE.md from library persona and stack files."""
+"""Compiler service — assembles CLAUDE.md from library persona and expertise files."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def _resolve_placeholder(match: re.Match[str], context: dict[str, str]) -> str:
 
     Supports:
     - Simple variables: ``{{ project_name }}``
-    - join filter: ``{{ stacks | join(", ") }}``
+    - join filter: ``{{ expertise | join(", ") }}``
 
     Returns the original placeholder text if the variable is not in context.
     """
@@ -62,15 +62,15 @@ def _read_file(path: Path) -> str | None:
 
 def _build_context(spec: CompositionSpec) -> dict[str, str]:
     """Build the template variable context from the composition spec."""
-    stack_ids = sorted(
-        (s.id for s in spec.stacks),
+    expertise_ids = sorted(
+        (s.id for s in spec.expertise),
         key=lambda sid: next(
-            (s.order for s in spec.stacks if s.id == sid), 0
+            (s.order for s in spec.expertise if s.id == sid), 0
         ),
     )
     return {
         "project_name": spec.project.name,
-        "stacks": ",".join(stack_ids),
+        "expertise": ",".join(expertise_ids),
     }
 
 
@@ -258,31 +258,31 @@ def _compile_persona_section(
     return "\n\n".join(parts)
 
 
-def _compile_stack_section(
-    stack_id: str,
+def _compile_expertise_section(
+    expertise_id: str,
     library_root: Path,
     index: LibraryIndex,
     context: dict[str, str],
     warnings: list[str],
 ) -> str | None:
-    """Compile the section for a single stack.
+    """Compile the section for a single expertise.
 
-    Returns the assembled markdown text, or None if the stack directory
+    Returns the assembled markdown text, or None if the expertise directory
     is missing from the library.
     """
-    stack_info = index.stack_by_id(stack_id)
-    if stack_info is None:
-        warnings.append(f"Stack '{stack_id}' not found in library index")
+    expertise_info = index.expertise_by_id(expertise_id)
+    if expertise_info is None:
+        warnings.append(f"Expertise '{expertise_id}' not found in library index")
         return None
 
-    stack_dir = Path(stack_info.path)
+    expertise_dir = Path(expertise_info.path)
 
-    # Read conventions.md (primary file for each stack)
-    conventions = _read_file(stack_dir / "conventions.md")
+    # Read conventions.md (primary file for each expertise)
+    conventions = _read_file(expertise_dir / "conventions.md")
     if conventions is not None:
         return _substitute(conventions.strip(), context)
 
-    warnings.append(f"Stack '{stack_id}' missing conventions.md")
+    warnings.append(f"Expertise '{expertise_id}' missing conventions.md")
     return None
 
 
@@ -294,7 +294,7 @@ def compile_project(
 ) -> StageResult:
     """Compile CLAUDE.md from library components based on the composition spec.
 
-    Reads persona source files (persona.md, outputs.md, prompts.md) and stack
+    Reads persona source files (persona.md, outputs.md, prompts.md) and expertise
     convention files (conventions.md) from the library, performs template variable
     substitution, and assembles them into a single deterministic CLAUDE.md.
 
@@ -336,16 +336,16 @@ def compile_project(
                 )
                 sections.append(persona_section)
 
-    # --- Stack sections (sorted by order field, then alphabetically) ---
-    if spec.stacks:
-        sections.append("## Technology Stacks")
-        sorted_stacks = sorted(spec.stacks, key=lambda s: (s.order, s.id))
-        for stack_sel in sorted_stacks:
-            stack_section = _compile_stack_section(
-                stack_sel.id, lib_root, library_index, context, warnings,
+    # --- Expertise sections (sorted by order field, then alphabetically) ---
+    if spec.expertise:
+        sections.append("## Expertise")
+        sorted_expertise = sorted(spec.expertise, key=lambda s: (s.order, s.id))
+        for expertise_sel in sorted_expertise:
+            expertise_section = _compile_expertise_section(
+                expertise_sel.id, lib_root, library_index, context, warnings,
             )
-            if stack_section is not None:
-                sections.append(stack_section)
+            if expertise_section is not None:
+                sections.append(expertise_section)
 
     # --- Assemble and write ---
     content = "\n\n".join(sections) + "\n"

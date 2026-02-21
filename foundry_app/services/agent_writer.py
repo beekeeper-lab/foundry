@@ -17,8 +17,8 @@ _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 # Max number of operating principles / key rules to extract per persona
 _MAX_KEY_RULES = 5
 
-# Max lines of stack conventions to include as highlights
-_MAX_STACK_HIGHLIGHT_LINES = 15
+# Max lines of expertise conventions to include as highlights
+_MAX_EXPERTISE_HIGHLIGHT_LINES = 15
 
 
 def _extract_mission(persona_text: str) -> str:
@@ -78,8 +78,8 @@ def _extract_key_rules(persona_text: str) -> list[str]:
     return rules
 
 
-def _extract_stack_highlights(conventions_text: str) -> str:
-    """Extract the key highlights from a stack conventions.md file."""
+def _extract_expertise_highlights(conventions_text: str) -> str:
+    """Extract the key highlights from an expertise conventions.md file."""
     lines = conventions_text.strip().splitlines()
     highlights: list[str] = []
     in_defaults = False
@@ -106,7 +106,7 @@ def _extract_stack_highlights(conventions_text: str) -> str:
             else:
                 highlights.append(stripped)
 
-        if len(highlights) >= _MAX_STACK_HIGHLIGHT_LINES:
+        if len(highlights) >= _MAX_EXPERTISE_HIGHLIGHT_LINES:
             break
 
     return "\n".join(highlights).strip()
@@ -120,7 +120,7 @@ def write_agents(
 ) -> StageResult:
     """Generate .claude/agents/<persona>.md files for each selected persona.
 
-    Each agent file combines persona identity with stack context into a
+    Each agent file combines persona identity with expertise context into a
     named team member role. The file is self-contained enough to be useful
     on its own, while referencing the full compiled member prompt for depth.
 
@@ -143,25 +143,25 @@ def write_agents(
     )
     template = env.get_template("agent.md.j2")
 
-    # Gather stack info
-    stack_ids = [s.id for s in spec.stacks]
-    stack_names = ", ".join(stack_ids) if stack_ids else "General"
+    # Gather expertise info
+    expertise_ids = [s.id for s in spec.expertise]
+    expertise_names = ", ".join(expertise_ids) if expertise_ids else "General"
 
-    # Gather stack sections (shared across all personas)
-    stack_sections: list[dict[str, str]] = []
-    for stack_sel in spec.stacks:
-        stack_info = library_index.stack_by_id(stack_sel.id)
-        if stack_info is None:
-            warnings.append(f"Stack '{stack_sel.id}' not found in library index")
+    # Gather expertise sections (shared across all personas)
+    expertise_sections: list[dict[str, str]] = []
+    for expertise_sel in spec.expertise:
+        expertise_info = library_index.expertise_by_id(expertise_sel.id)
+        if expertise_info is None:
+            warnings.append(f"Expertise '{expertise_sel.id}' not found in library index")
             continue
 
-        conventions_path = Path(stack_info.path) / "conventions.md"
+        conventions_path = Path(expertise_info.path) / "conventions.md"
         if conventions_path.is_file():
             conventions_text = conventions_path.read_text(encoding="utf-8")
-            highlights = _extract_stack_highlights(conventions_text)
+            highlights = _extract_expertise_highlights(conventions_text)
             if highlights:
-                stack_sections.append({
-                    "name": stack_sel.id.replace("-", " ").title(),
+                expertise_sections.append({
+                    "name": expertise_sel.id.replace("-", " ").title(),
                     "highlights": highlights,
                 })
 
@@ -184,19 +184,23 @@ def write_agents(
 
         persona_text = persona_path.read_text(encoding="utf-8")
 
-        # Build role name: stack + persona (e.g., "Python Developer")
-        primary_stack = stack_ids[0].replace("-", " ").title() if stack_ids else ""
+        # Build role name: expertise + persona (e.g., "Python Developer")
+        primary_expertise = expertise_ids[0].replace("-", " ").title() if expertise_ids else ""
         persona_title = persona_sel.id.replace("-", " ").title()
-        role_name = f"{primary_stack} {persona_title}".strip() if primary_stack else persona_title
+        role_name = (
+            f"{primary_expertise} {persona_title}".strip()
+            if primary_expertise
+            else persona_title
+        )
 
         context = {
             "role_name": role_name,
             "role_description": _extract_role_description(persona_text),
-            "stack_names": stack_names,
+            "expertise_names": expertise_names,
             "persona_id": persona_sel.id,
             "mission": _extract_mission(persona_text),
             "key_rules": _extract_key_rules(persona_text),
-            "stack_sections": stack_sections,
+            "expertise_sections": expertise_sections,
         }
 
         content = template.render(**context)

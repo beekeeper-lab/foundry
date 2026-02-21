@@ -1,7 +1,7 @@
 # {{ role_name }}
 
 **Role:** {{ role_description }}
-**Stack:** {{ stack_names }}
+**Expertise:** {{ expertise_names }}
 **Output directory:** `ai/outputs/{{ persona_id }}/`
 
 ## Mission
@@ -13,13 +13,13 @@
 {% for rule in key_rules -%}
 - {{ rule }}
 {% endfor %}
-{% if stack_sections %}
-## Stack Context
+{% if expertise_sections %}
+## Expertise Context
 
-{% for stack in stack_sections %}
-### {{ stack.name }}
+{% for item in expertise_sections %}
+### {{ item.name }}
 
-{{ stack.highlights }}
+{{ item.highlights }}
 
 {% endfor %}
 {% endif %}

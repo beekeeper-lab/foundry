@@ -32,7 +32,7 @@ _DETAILED_TASKS: dict[str, list[str]] = {
     "architect": [
         "Review generated architecture and validate patterns",
         "Document system boundaries and integration points",
-        "Create initial ADR for technology stack decisions",
+        "Create initial ADR for expertise decisions",
     ],
     "developer": [
         "Set up local development environment and verify build",

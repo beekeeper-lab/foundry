@@ -2,6 +2,8 @@
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseInfo,
+    ExpertiseSelection,
     HookPackInfo,
     HookPackSelection,
     HooksConfig,
@@ -10,8 +12,6 @@ from foundry_app.core.models import (
     PersonaSelection,
     ProjectIdentity,
     Severity,
-    StackInfo,
-    StackSelection,
     Strictness,
     TeamConfig,
     ValidationResult,
@@ -36,10 +36,10 @@ def _make_library(**kwargs) -> LibraryIndex:
             PersonaInfo(id="tech-qa", path="/fake/library/personas/tech-qa",
                         has_persona_md=True),
         ],
-        stacks=[
-            StackInfo(id="python", path="/fake/library/stacks/python",
+        expertise=[
+            ExpertiseInfo(id="python", path="/fake/library/stacks/python",
                       files=["conventions.md", "tools.md", "patterns.md"]),
-            StackInfo(id="react", path="/fake/library/stacks/react",
+            ExpertiseInfo(id="react", path="/fake/library/stacks/react",
                       files=["conventions.md"]),
         ],
         hook_packs=[
@@ -57,7 +57,7 @@ def _make_spec(**kwargs) -> CompositionSpec:
     """Build a CompositionSpec with sensible defaults."""
     defaults = dict(
         project=ProjectIdentity(name="Test Project", slug="test-project"),
-        stacks=[StackSelection(id="python")],
+        expertise=[ExpertiseSelection(id="python")],
         team=TeamConfig(personas=[PersonaSelection(id="developer")]),
     )
     defaults.update(kwargs)
@@ -76,9 +76,9 @@ class TestValidComposition:
         assert result.is_valid
         assert result.errors == []
 
-    def test_valid_spec_with_multiple_personas_and_stacks(self):
+    def test_valid_spec_with_multiple_personas_and_expertise(self):
         spec = _make_spec(
-            stacks=[StackSelection(id="python"), StackSelection(id="react")],
+            expertise=[ExpertiseSelection(id="python"), ExpertiseSelection(id="react")],
             team=TeamConfig(personas=[
                 PersonaSelection(id="developer"),
                 PersonaSelection(id="architect"),
@@ -112,12 +112,12 @@ class TestMissingReferences:
         assert result.errors[0].code == "missing-persona"
         assert "nonexistent" in result.errors[0].message
 
-    def test_missing_stack_is_error(self):
-        spec = _make_spec(stacks=[StackSelection(id="cobol")])
+    def test_missing_expertise_is_error(self):
+        spec = _make_spec(expertise=[ExpertiseSelection(id="cobol")])
         result = run_pre_generation_validation(spec, _make_library())
         assert not result.is_valid
         assert len(result.errors) == 1
-        assert result.errors[0].code == "missing-stack"
+        assert result.errors[0].code == "missing-expertise"
         assert "cobol" in result.errors[0].message
 
     def test_missing_hook_pack_is_error(self):
@@ -130,7 +130,7 @@ class TestMissingReferences:
 
     def test_multiple_missing_references(self):
         spec = _make_spec(
-            stacks=[StackSelection(id="cobol")],
+            expertise=[ExpertiseSelection(id="cobol")],
             team=TeamConfig(personas=[PersonaSelection(id="nonexistent")]),
             hooks=HooksConfig(packs=[HookPackSelection(id="bad-hook")]),
         )
@@ -138,7 +138,7 @@ class TestMissingReferences:
         assert not result.is_valid
         error_codes = {e.code for e in result.errors}
         assert "missing-persona" in error_codes
-        assert "missing-stack" in error_codes
+        assert "missing-expertise" in error_codes
         assert "missing-hook-pack" in error_codes
 
 
@@ -165,14 +165,14 @@ class TestWarnings:
         assert result.is_valid
         assert any(m.code == "persona-no-persona-md" for m in result.warnings)
 
-    def test_stack_with_no_files_is_warning(self):
-        library = _make_library(stacks=[
-            StackInfo(id="empty-stack", path="/fake/library/stacks/empty-stack", files=[]),
+    def test_expertise_with_no_files_is_warning(self):
+        library = _make_library(expertise=[
+            ExpertiseInfo(id="empty-stack", path="/fake/library/stacks/empty-stack", files=[]),
         ])
-        spec = _make_spec(stacks=[StackSelection(id="empty-stack")])
+        spec = _make_spec(expertise=[ExpertiseSelection(id="empty-stack")])
         result = run_pre_generation_validation(spec, library)
         assert result.is_valid
-        assert any(m.code == "stack-no-files" for m in result.warnings)
+        assert any(m.code == "expertise-no-files" for m in result.warnings)
 
     def test_duplicate_persona_is_warning(self):
         spec = _make_spec(
@@ -185,13 +185,13 @@ class TestWarnings:
         assert result.is_valid
         assert any(m.code == "duplicate-persona" for m in result.warnings)
 
-    def test_duplicate_stack_is_warning(self):
+    def test_duplicate_expertise_is_warning(self):
         spec = _make_spec(
-            stacks=[StackSelection(id="python"), StackSelection(id="python")],
+            expertise=[ExpertiseSelection(id="python"), ExpertiseSelection(id="python")],
         )
         result = run_pre_generation_validation(spec, _make_library())
         assert result.is_valid
-        assert any(m.code == "duplicate-stack" for m in result.warnings)
+        assert any(m.code == "duplicate-expertise" for m in result.warnings)
 
 
 # ---------------------------------------------------------------------------
@@ -201,11 +201,11 @@ class TestWarnings:
 
 class TestInfoMessages:
 
-    def test_no_stacks_is_info(self):
-        spec = _make_spec(stacks=[])
+    def test_no_expertise_is_info(self):
+        spec = _make_spec(expertise=[])
         result = run_pre_generation_validation(spec, _make_library())
         assert result.is_valid
-        assert any(m.code == "no-stacks" for m in result.infos)
+        assert any(m.code == "no-expertise" for m in result.infos)
 
 
 # ---------------------------------------------------------------------------
@@ -262,11 +262,11 @@ class TestStrictnessStrict:
         assert result.warnings == []
 
     def test_info_stays_info_in_strict_mode(self):
-        spec = _make_spec(stacks=[])
+        spec = _make_spec(expertise=[])
         result = run_pre_generation_validation(
             spec, _make_library(), strictness=Strictness.STRICT,
         )
-        assert any(m.code == "no-stacks" and m.severity == Severity.INFO
+        assert any(m.code == "no-expertise" and m.severity == Severity.INFO
                     for m in result.messages)
 
 
@@ -307,7 +307,7 @@ class TestEdgeCases:
     def test_empty_library_all_references_fail(self):
         library = LibraryIndex(library_root="/empty")
         spec = _make_spec(
-            stacks=[StackSelection(id="python")],
+            expertise=[ExpertiseSelection(id="python")],
             team=TeamConfig(personas=[PersonaSelection(id="developer")]),
             hooks=HooksConfig(packs=[HookPackSelection(id="pre-commit-lint")]),
         )
@@ -315,13 +315,13 @@ class TestEdgeCases:
         assert not result.is_valid
         assert len(result.errors) == 3
 
-    def test_minimal_spec_no_team_no_stacks(self):
-        spec = _make_spec(stacks=[], team=TeamConfig(personas=[]))
+    def test_minimal_spec_no_team_no_expertise(self):
+        spec = _make_spec(expertise=[], team=TeamConfig(personas=[]))
         result = run_pre_generation_validation(spec, _make_library())
         assert result.is_valid
-        # Should have info about no stacks and warning about no personas
+        # Should have info about no expertise and warning about no personas
         codes = {m.code for m in result.messages}
-        assert "no-stacks" in codes
+        assert "no-expertise" in codes
         assert "no-personas" in codes
 
     def test_mixed_valid_and_invalid_personas(self):

@@ -257,7 +257,7 @@ class TestBuildFileTreeTemplates:
         names = [c["name"] for c in tree]
         assert len(names) == 7
         assert "Personas" in names
-        assert "Stacks" in names
+        assert "Expertise" in names
         assert "Shared Templates" in names
         assert "Workflows" in names
         assert "Claude Commands" in names

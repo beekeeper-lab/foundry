@@ -6,19 +6,19 @@ import pytest
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseInfo,
+    ExpertiseSelection,
     LibraryIndex,
     PersonaInfo,
     PersonaSelection,
     ProjectIdentity,
-    StackInfo,
-    StackSelection,
     TeamConfig,
 )
 from foundry_app.services.agent_writer import (
+    _extract_expertise_highlights,
     _extract_key_rules,
     _extract_mission,
     _extract_role_description,
-    _extract_stack_highlights,
     write_agents,
 )
 
@@ -55,7 +55,7 @@ designs into working code.
 """
 
 _SAMPLE_CONVENTIONS_MD = """\
-# Python Stack Conventions
+# Python Expertise Conventions
 
 These conventions are non-negotiable defaults for Python projects.
 
@@ -77,15 +77,15 @@ Standard layout with src/ directory.
 
 
 def _make_library(tmp_path: Path) -> tuple[Path, LibraryIndex]:
-    """Create a minimal library with one persona and one stack."""
+    """Create a minimal library with one persona and one expertise."""
     lib_root = tmp_path / "library"
     persona_dir = lib_root / "personas" / "developer"
     persona_dir.mkdir(parents=True)
     (persona_dir / "persona.md").write_text(_SAMPLE_PERSONA_MD, encoding="utf-8")
 
-    stack_dir = lib_root / "stacks" / "python"
-    stack_dir.mkdir(parents=True)
-    (stack_dir / "conventions.md").write_text(_SAMPLE_CONVENTIONS_MD, encoding="utf-8")
+    expertise_dir = lib_root / "stacks" / "python"
+    expertise_dir.mkdir(parents=True)
+    (expertise_dir / "conventions.md").write_text(_SAMPLE_CONVENTIONS_MD, encoding="utf-8")
 
     index = LibraryIndex(
         library_root=str(lib_root),
@@ -95,21 +95,21 @@ def _make_library(tmp_path: Path) -> tuple[Path, LibraryIndex]:
             path=str(persona_dir),
             templates=[],
         )],
-        stacks=[StackInfo(
+        expertise=[ExpertiseInfo(
             id="python",
             name="Python",
-            path=str(stack_dir),
+            path=str(expertise_dir),
         )],
     )
     return lib_root, index
 
 
 def _make_spec(**overrides) -> CompositionSpec:
-    """Create a minimal spec with one persona and one stack."""
+    """Create a minimal spec with one persona and one expertise."""
     defaults = dict(
         project=ProjectIdentity(name="Test Project", slug="test-project"),
         team=TeamConfig(personas=[PersonaSelection(id="developer")]),
-        stacks=[StackSelection(id="python")],
+        expertise=[ExpertiseSelection(id="python")],
     )
     defaults.update(overrides)
     return CompositionSpec(**defaults)
@@ -161,15 +161,15 @@ class TestExtractKeyRules:
         assert rules == []
 
 
-class TestExtractStackHighlights:
+class TestExtractExpertiseHighlights:
 
     def test_extracts_defaults_table(self):
-        highlights = _extract_stack_highlights(_SAMPLE_CONVENTIONS_MD)
+        highlights = _extract_expertise_highlights(_SAMPLE_CONVENTIONS_MD)
         assert "Python version" in highlights
         assert "pytest" in highlights
 
     def test_empty_input(self):
-        assert _extract_stack_highlights("") == ""
+        assert _extract_expertise_highlights("") == ""
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +224,7 @@ class TestWriteAgents:
         content = (output / ".claude" / "agents" / "developer.md").read_text()
         assert "Read before you write" in content
 
-    def test_agent_file_has_stack_context(self, tmp_path: Path):
+    def test_agent_file_has_expertise_context(self, tmp_path: Path):
         lib_root, index = _make_library(tmp_path)
         spec = _make_spec()
         output = tmp_path / "output"
@@ -258,9 +258,9 @@ class TestWriteAgents:
         assert len(result.wrote) == 0
         assert any("nonexistent" in w for w in result.warnings)
 
-    def test_no_stacks(self, tmp_path: Path):
+    def test_no_expertise(self, tmp_path: Path):
         lib_root, index = _make_library(tmp_path)
-        spec = _make_spec(stacks=[])
+        spec = _make_spec(expertise=[])
         output = tmp_path / "output"
         output.mkdir()
 
@@ -269,13 +269,13 @@ class TestWriteAgents:
         agent_file = output / ".claude" / "agents" / "developer.md"
         assert agent_file.is_file()
         content = agent_file.read_text()
-        # Without stacks, role name should just be "Developer"
+        # Without expertise, role name should just be "Developer"
         assert "# Developer" in content
 
-    def test_multiple_stacks(self, tmp_path: Path):
+    def test_multiple_expertise(self, tmp_path: Path):
         lib_root, index = _make_library(tmp_path)
 
-        # Add a second stack
+        # Add a second expertise
         react_dir = lib_root / "stacks" / "react"
         react_dir.mkdir(parents=True)
         (react_dir / "conventions.md").write_text(
@@ -283,22 +283,24 @@ class TestWriteAgents:
             "|---------|--------|\n| Framework | React 18 |\n",
             encoding="utf-8",
         )
-        index.stacks.append(StackInfo(
+        index.expertise.append(ExpertiseInfo(
             id="react",
             name="React",
             path=str(react_dir),
         ))
 
-        spec = _make_spec(stacks=[StackSelection(id="python"), StackSelection(id="react")])
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id="python"), ExpertiseSelection(id="react"),
+        ])
         output = tmp_path / "output"
         output.mkdir()
 
         write_agents(spec, index, lib_root, output)
 
         content = (output / ".claude" / "agents" / "developer.md").read_text()
-        # Primary stack in role name
+        # Primary expertise in role name
         assert "# Python Developer" in content
-        # Both stacks in stack names
+        # Both expertise in expertise names
         assert "python, react" in content
 
     def test_no_warnings_for_valid_spec(self, tmp_path: Path):

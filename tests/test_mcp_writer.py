@@ -5,12 +5,11 @@ from pathlib import Path
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseSelection,
     ProjectIdentity,
-    StackSelection,
     TeamConfig,
 )
 from foundry_app.services.mcp_writer import write_mcp_config
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -45,7 +44,7 @@ class TestWriteMcpConfig:
         assert ".claude/mcp.json" in result.wrote
 
     def test_baseline_filesystem_server_always_present(self, tmp_path: Path):
-        spec = _make_spec(stacks=[])
+        spec = _make_spec(expertise=[])
         output = tmp_path / "output"
         output.mkdir()
 
@@ -69,8 +68,8 @@ class TestWriteMcpConfig:
         assert "mcpServers" in config
         assert isinstance(config["mcpServers"], dict)
 
-    def test_python_stack_adds_server(self, tmp_path: Path):
-        spec = _make_spec(stacks=[StackSelection(id="python")])
+    def test_python_expertise_adds_server(self, tmp_path: Path):
+        spec = _make_spec(expertise=[ExpertiseSelection(id="python")])
         output = tmp_path / "output"
         output.mkdir()
 
@@ -81,8 +80,8 @@ class TestWriteMcpConfig:
         assert "filesystem" in servers
         assert "python-docs" in servers
 
-    def test_node_stack_adds_server(self, tmp_path: Path):
-        spec = _make_spec(stacks=[StackSelection(id="node")])
+    def test_node_expertise_adds_server(self, tmp_path: Path):
+        spec = _make_spec(expertise=[ExpertiseSelection(id="node")])
         output = tmp_path / "output"
         output.mkdir()
 
@@ -91,8 +90,8 @@ class TestWriteMcpConfig:
         config = json.loads((output / ".claude" / "mcp.json").read_text())
         assert "node-docs" in config["mcpServers"]
 
-    def test_react_stack_adds_server(self, tmp_path: Path):
-        spec = _make_spec(stacks=[StackSelection(id="react")])
+    def test_react_expertise_adds_server(self, tmp_path: Path):
+        spec = _make_spec(expertise=[ExpertiseSelection(id="react")])
         output = tmp_path / "output"
         output.mkdir()
 
@@ -101,8 +100,8 @@ class TestWriteMcpConfig:
         config = json.loads((output / ".claude" / "mcp.json").read_text())
         assert "react-docs" in config["mcpServers"]
 
-    def test_unknown_stack_no_extra_servers(self, tmp_path: Path):
-        spec = _make_spec(stacks=[StackSelection(id="cobol")])
+    def test_unknown_expertise_no_extra_servers(self, tmp_path: Path):
+        spec = _make_spec(expertise=[ExpertiseSelection(id="cobol")])
         output = tmp_path / "output"
         output.mkdir()
 
@@ -112,10 +111,10 @@ class TestWriteMcpConfig:
         # Only baseline servers (filesystem, obsidian, trello)
         assert list(config["mcpServers"].keys()) == ["filesystem", "obsidian", "trello"]
 
-    def test_multiple_stacks(self, tmp_path: Path):
-        spec = _make_spec(stacks=[
-            StackSelection(id="python"),
-            StackSelection(id="react"),
+    def test_multiple_expertise(self, tmp_path: Path):
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id="python"),
+            ExpertiseSelection(id="react"),
         ])
         output = tmp_path / "output"
         output.mkdir()
@@ -128,8 +127,8 @@ class TestWriteMcpConfig:
         assert "python-docs" in servers
         assert "react-docs" in servers
 
-    def test_empty_stacks(self, tmp_path: Path):
-        spec = _make_spec(stacks=[])
+    def test_empty_expertise(self, tmp_path: Path):
+        spec = _make_spec(expertise=[])
         output = tmp_path / "output"
         output.mkdir()
 
@@ -141,7 +140,7 @@ class TestWriteMcpConfig:
         assert len(config["mcpServers"]) == 3  # filesystem, obsidian, trello
 
     def test_baseline_obsidian_server_always_present(self, tmp_path: Path):
-        spec = _make_spec(stacks=[])
+        spec = _make_spec(expertise=[])
         output = tmp_path / "output"
         output.mkdir()
 
@@ -155,7 +154,7 @@ class TestWriteMcpConfig:
         assert obsidian["args"] == ["mcp-obsidian"]
 
     def test_baseline_trello_server_always_present(self, tmp_path: Path):
-        spec = _make_spec(stacks=[])
+        spec = _make_spec(expertise=[])
         output = tmp_path / "output"
         output.mkdir()
 
@@ -169,7 +168,7 @@ class TestWriteMcpConfig:
         assert trello["args"] == ["-y", "@delorenj/mcp-server-trello"]
 
     def test_no_warnings_for_valid_spec(self, tmp_path: Path):
-        spec = _make_spec(stacks=[StackSelection(id="python")])
+        spec = _make_spec(expertise=[ExpertiseSelection(id="python")])
         output = tmp_path / "output"
         output.mkdir()
 

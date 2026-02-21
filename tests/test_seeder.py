@@ -4,11 +4,11 @@ from pathlib import Path
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseSelection,
     GenerationOptions,
     PersonaSelection,
     ProjectIdentity,
     SeedMode,
-    StackSelection,
     TeamConfig,
 )
 from foundry_app.services.seeder import seed_tasks
@@ -22,7 +22,7 @@ def _make_spec(**kwargs) -> CompositionSpec:
     """Build a CompositionSpec with sensible defaults."""
     defaults = dict(
         project=ProjectIdentity(name="Test Project", slug="test-project"),
-        stacks=[StackSelection(id="python")],
+        expertise=[ExpertiseSelection(id="python")],
         team=TeamConfig(personas=[PersonaSelection(id="developer")]),
     )
     defaults.update(kwargs)

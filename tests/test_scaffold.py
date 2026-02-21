@@ -4,9 +4,9 @@ from pathlib import Path
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseSelection,
     PersonaSelection,
     ProjectIdentity,
-    StackSelection,
     TeamConfig,
 )
 from foundry_app.services.scaffold import scaffold_project
@@ -20,7 +20,7 @@ def _make_spec(**kwargs) -> CompositionSpec:
     """Build a CompositionSpec with sensible defaults."""
     defaults = dict(
         project=ProjectIdentity(name="Test Project", slug="test-project"),
-        stacks=[StackSelection(id="python")],
+        expertise=[ExpertiseSelection(id="python")],
         team=TeamConfig(personas=[PersonaSelection(id="developer")]),
     )
     defaults.update(kwargs)
@@ -283,9 +283,9 @@ class TestEdgeCases:
         assert output.is_dir()
         assert len(result.wrote) > 0
 
-    def test_empty_stacks_still_creates_standard_dirs(self, tmp_path: Path):
+    def test_empty_expertise_still_creates_standard_dirs(self, tmp_path: Path):
         output = tmp_path / "my-project"
-        spec = _make_spec(stacks=[])
+        spec = _make_spec(expertise=[])
         scaffold_project(spec, output)
         assert (output / ".claude" / "agents").is_dir()
         assert (output / "ai" / "context").is_dir()

@@ -24,13 +24,13 @@ from foundry_app.ui import theme
 from foundry_app.ui.screens.builder.wizard_pages.architecture_page import (
     ArchitectureCloudPage,
 )
+from foundry_app.ui.screens.builder.wizard_pages.expertise_page import ExpertiseSelectionPage
 from foundry_app.ui.screens.builder.wizard_pages.hook_safety_page import HookSafetyPage
 from foundry_app.ui.screens.builder.wizard_pages.persona_page import (
     PersonaSelectionPage,
 )
 from foundry_app.ui.screens.builder.wizard_pages.project_page import ProjectPage
 from foundry_app.ui.screens.builder.wizard_pages.review_page import ReviewPage
-from foundry_app.ui.screens.builder.wizard_pages.stack_page import StackSelectionPage
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 _STEPS = [
     ("Project", "project"),
     ("Team", "persona"),
-    ("Stacks", "stack"),
+    ("Expertise", "expertise"),
     ("Architecture", "architecture"),
     ("Safety", "hooks"),
     ("Review", "review"),
@@ -103,7 +103,7 @@ class BuilderScreen(QWidget):
         # Create wizard pages
         self._project_page = ProjectPage()
         self._persona_page = PersonaSelectionPage()
-        self._stack_page = StackSelectionPage()
+        self._expertise_page = ExpertiseSelectionPage()
         self._architecture_page = ArchitectureCloudPage()
         self._hooks_page = HookSafetyPage()
         self._review_page = ReviewPage()
@@ -111,7 +111,7 @@ class BuilderScreen(QWidget):
         self._pages: list[QWidget] = [
             self._project_page,
             self._persona_page,
-            self._stack_page,
+            self._expertise_page,
             self._architecture_page,
             self._hooks_page,
             self._review_page,
@@ -128,7 +128,7 @@ class BuilderScreen(QWidget):
             lambda _: self._update_next_enabled()
         )
         self._persona_page.selection_changed.connect(self._update_next_enabled)
-        self._stack_page.selection_changed.connect(self._update_next_enabled)
+        self._expertise_page.selection_changed.connect(self._update_next_enabled)
 
         # Navigation bar
         nav_bar = QWidget()
@@ -174,8 +174,8 @@ class BuilderScreen(QWidget):
         return self._persona_page
 
     @property
-    def stack_page(self) -> StackSelectionPage:
-        return self._stack_page
+    def expertise_page(self) -> ExpertiseSelectionPage:
+        return self._expertise_page
 
     @property
     def review_page(self) -> ReviewPage:
@@ -193,7 +193,7 @@ class BuilderScreen(QWidget):
         """Load library data into pages that need it."""
         self._library_index = index
         self._persona_page.load_personas(index)
-        self._stack_page.load_stacks(index)
+        self._expertise_page.load_expertise(index)
         self._hooks_page.load_hook_packs(index)
         logger.info("Library loaded into builder wizard")
 
@@ -272,7 +272,7 @@ class BuilderScreen(QWidget):
         """Collect data from all wizard pages into a CompositionSpec."""
         project = self._project_page.get_data()
         team = self._persona_page.get_team_config()
-        stacks = self._stack_page.get_stack_selections()
+        expertise = self._expertise_page.get_expertise_selections()
         architecture = self._architecture_page.get_architecture_config()
         hooks = self._hooks_page.get_hooks_config()
         safety = self._hooks_page.get_safety_config()
@@ -280,7 +280,7 @@ class BuilderScreen(QWidget):
         return CompositionSpec(
             project=project,
             team=team,
-            stacks=stacks,
+            expertise=expertise,
             architecture=architecture,
             hooks=hooks,
             safety=safety,

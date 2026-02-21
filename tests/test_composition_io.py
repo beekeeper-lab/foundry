@@ -8,13 +8,13 @@ from pydantic import ValidationError
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseSelection,
     GenerationManifest,
     GenerationOptions,
     HookPackSelection,
     HooksConfig,
     PersonaSelection,
     ProjectIdentity,
-    StackSelection,
     StageResult,
     TeamConfig,
 )
@@ -33,9 +33,9 @@ def _make_spec() -> CompositionSpec:
     """Create a minimal but complete CompositionSpec for testing."""
     return CompositionSpec(
         project=ProjectIdentity(name="Test Project", slug="test-project"),
-        stacks=[
-            StackSelection(id="python", order=10),
-            StackSelection(id="clean-code", order=20),
+        expertise=[
+            ExpertiseSelection(id="python", order=10),
+            ExpertiseSelection(id="clean-code", order=20),
         ],
         team=TeamConfig(personas=[
             PersonaSelection(id="team-lead"),
@@ -73,12 +73,12 @@ class TestLoadComposition:
         yml = tmp_path / "comp.yml"
         yml.write_text(yaml.dump({
             "project": {"name": "Hello", "slug": "hello"},
-            "stacks": [{"id": "python", "order": 10}],
+            "expertise": [{"id": "python", "order": 10}],
             "team": {"personas": [{"id": "developer"}]},
         }), encoding="utf-8")
         spec = load_composition(yml)
         assert spec.project.name == "Hello"
-        assert spec.stacks[0].id == "python"
+        assert spec.expertise[0].id == "python"
         assert spec.team.personas[0].id == "developer"
 
     def test_load_missing_file(self, tmp_path):
@@ -150,7 +150,7 @@ class TestSaveComposition:
         save_composition(spec, out)
         data = yaml.safe_load(out.read_text(encoding="utf-8"))
         assert data["project"]["name"] == "Test Project"
-        assert len(data["stacks"]) == 2
+        assert len(data["expertise"]) == 2
 
 
 class TestCompositionRoundTrip:
@@ -191,7 +191,7 @@ class TestCompositionRoundTrip:
         save_composition(spec, yml)
         restored = load_composition(yml)
         assert restored.project.name == "Min"
-        assert restored.stacks == []
+        assert restored.expertise == []
 
     def test_multiple_roundtrips_stable(self, tmp_path):
         """Three consecutive round-trips produce identical results."""
@@ -292,7 +292,7 @@ project:
   slug: small-python-team
   output_root: "./generated-projects"
 
-stacks:
+expertise:
   - id: python
     order: 10
   - id: clean-code
@@ -325,7 +325,7 @@ generation:
         yml.write_text(yml_content, encoding="utf-8")
         spec = load_composition(yml)
         assert spec.project.name == "Small Python Team"
-        assert len(spec.stacks) == 2
+        assert len(spec.expertise) == 2
         assert len(spec.team.personas) == 2
         assert spec.hooks.posture.value == "baseline"
 

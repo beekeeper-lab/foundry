@@ -9,14 +9,14 @@ import pytest
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseInfo,
+    ExpertiseSelection,
     GenerationOptions,
     LibraryIndex,
     OverlayPlan,
     PersonaInfo,
     PersonaSelection,
     ProjectIdentity,
-    StackInfo,
-    StackSelection,
     Strictness,
     TeamConfig,
 )
@@ -39,7 +39,7 @@ def _make_spec(**kwargs) -> CompositionSpec:
     """Build a CompositionSpec with sensible defaults."""
     defaults = dict(
         project=ProjectIdentity(name="Test Project", slug="test-project"),
-        stacks=[StackSelection(id="python")],
+        expertise=[ExpertiseSelection(id="python")],
         team=TeamConfig(personas=[PersonaSelection(id="developer")]),
     )
     defaults.update(kwargs)
@@ -47,7 +47,7 @@ def _make_spec(**kwargs) -> CompositionSpec:
 
 
 def _make_library(tmp_path: Path) -> LibraryIndex:
-    """Build a minimal on-disk library with real persona and stack directories."""
+    """Build a minimal on-disk library with real persona and expertise directories."""
     lib_root = tmp_path / "library"
 
     # Create persona directory
@@ -55,10 +55,10 @@ def _make_library(tmp_path: Path) -> LibraryIndex:
     persona_dir.mkdir(parents=True)
     (persona_dir / "persona.md").write_text("# Developer persona")
 
-    # Create stack directory
-    stack_dir = lib_root / "stacks" / "python"
-    stack_dir.mkdir(parents=True)
-    (stack_dir / "conventions.md").write_text("# Python conventions")
+    # Create expertise directory
+    expertise_dir = lib_root / "stacks" / "python"
+    expertise_dir.mkdir(parents=True)
+    (expertise_dir / "conventions.md").write_text("# Python conventions")
 
     return LibraryIndex(
         library_root=str(lib_root),
@@ -72,10 +72,10 @@ def _make_library(tmp_path: Path) -> LibraryIndex:
                 templates=[],
             ),
         ],
-        stacks=[
-            StackInfo(
+        expertise=[
+            ExpertiseInfo(
                 id="python",
-                path=str(stack_dir),
+                path=str(expertise_dir),
                 files=["conventions.md"],
             ),
         ],
@@ -91,9 +91,9 @@ def _make_library_dir(tmp_path: Path) -> Path:
     persona_dir.mkdir(parents=True)
     (persona_dir / "persona.md").write_text("# Developer persona")
 
-    stack_dir = lib_root / "stacks" / "python"
-    stack_dir.mkdir(parents=True)
-    (stack_dir / "conventions.md").write_text("# Python conventions")
+    expertise_dir = lib_root / "stacks" / "python"
+    expertise_dir.mkdir(parents=True)
+    (expertise_dir / "conventions.md").write_text("# Python conventions")
 
     return lib_root
 
@@ -942,7 +942,7 @@ class TestEdgeCases:
         lib_root = _make_library_dir(tmp_path)
         output_dir = tmp_path / "output" / "test-project"
         spec = _make_spec(
-            stacks=[],
+            expertise=[],
             team=TeamConfig(personas=[]),
         )
 
@@ -1092,12 +1092,12 @@ class TestEndToEnd:
                 f"CLAUDE.md missing reference to persona: {persona.id}"
             )
 
-    def test_claude_md_contains_stack_content(self, generated_project):
+    def test_claude_md_contains_expertise_content(self, generated_project):
         output_dir, _, spec = generated_project
         claude_md = (output_dir / "CLAUDE.md").read_text(encoding="utf-8").lower()
-        for stack in spec.stacks:
-            assert stack.id in claude_md, (
-                f"CLAUDE.md missing reference to stack: {stack.id}"
+        for exp in spec.expertise:
+            assert exp.id in claude_md, (
+                f"CLAUDE.md missing reference to expertise: {exp.id}"
             )
 
     def test_manifest_json_valid_structure(self, generated_project):

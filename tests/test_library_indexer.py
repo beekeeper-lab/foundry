@@ -35,7 +35,7 @@ EXPECTED_PERSONAS = [
     "ux-ui-designer",
 ]
 
-EXPECTED_STACKS = [
+EXPECTED_EXPERTISE = [
     "accessibility-compliance",
     "api-design",
     "aws-cloud-platform",
@@ -111,10 +111,10 @@ class TestBuildLibraryIndexReal:
         persona_ids = [p.id for p in idx.personas]
         assert persona_ids == EXPECTED_PERSONAS
 
-    def test_discovers_all_stacks(self):
+    def test_discovers_all_expertise(self):
         idx = build_library_index(LIBRARY_ROOT)
-        stack_ids = [s.id for s in idx.stacks]
-        assert stack_ids == EXPECTED_STACKS
+        expertise_ids = [s.id for s in idx.expertise]
+        assert expertise_ids == EXPECTED_EXPERTISE
 
     def test_discovers_all_hook_packs(self):
         idx = build_library_index(LIBRARY_ROOT)
@@ -135,12 +135,12 @@ class TestBuildLibraryIndexReal:
         for persona in idx.personas:
             assert persona.has_persona_md, f"{persona.id} missing persona.md"
 
-    def test_stack_has_files(self):
+    def test_expertise_has_files(self):
         idx = build_library_index(LIBRARY_ROOT)
-        python_stack = idx.stack_by_id("python")
-        assert python_stack is not None
-        assert "conventions.md" in python_stack.files
-        assert len(python_stack.files) >= 3
+        python_expertise = idx.expertise_by_id("python")
+        assert python_expertise is not None
+        assert "conventions.md" in python_expertise.files
+        assert len(python_expertise.files) >= 3
 
     def test_hook_pack_has_file(self):
         idx = build_library_index(LIBRARY_ROOT)
@@ -170,14 +170,14 @@ class TestBuildLibraryIndexGraceful:
         idx = build_library_index(tmp_path / "does-not-exist")
         assert isinstance(idx, LibraryIndex)
         assert idx.personas == []
-        assert idx.stacks == []
+        assert idx.expertise == []
         assert idx.hook_packs == []
 
     def test_empty_root(self, tmp_path: Path):
         idx = build_library_index(tmp_path)
         assert isinstance(idx, LibraryIndex)
         assert idx.personas == []
-        assert idx.stacks == []
+        assert idx.expertise == []
         assert idx.hook_packs == []
 
     def test_missing_personas_dir(self, tmp_path: Path):
@@ -185,13 +185,13 @@ class TestBuildLibraryIndexGraceful:
         (tmp_path / "stacks" / "python" / "conventions.md").touch()
         idx = build_library_index(tmp_path)
         assert idx.personas == []
-        assert len(idx.stacks) == 1
+        assert len(idx.expertise) == 1
 
     def test_missing_stacks_dir(self, tmp_path: Path):
         (tmp_path / "personas" / "dev").mkdir(parents=True)
         (tmp_path / "personas" / "dev" / "persona.md").touch()
         idx = build_library_index(tmp_path)
-        assert idx.stacks == []
+        assert idx.expertise == []
         assert len(idx.personas) == 1
 
     def test_missing_hooks_dir(self, tmp_path: Path):
@@ -237,13 +237,13 @@ class TestLibraryIndexLookups:
         idx = build_library_index(LIBRARY_ROOT)
         assert idx.persona_by_id("nonexistent") is None
 
-    def test_stack_by_id_found(self):
+    def test_expertise_by_id_found(self):
         idx = build_library_index(LIBRARY_ROOT)
-        assert idx.stack_by_id("python") is not None
+        assert idx.expertise_by_id("python") is not None
 
-    def test_stack_by_id_not_found(self):
+    def test_expertise_by_id_not_found(self):
         idx = build_library_index(LIBRARY_ROOT)
-        assert idx.stack_by_id("cobol") is None
+        assert idx.expertise_by_id("cobol") is None
 
     def test_hook_pack_by_id_found(self):
         idx = build_library_index(LIBRARY_ROOT)

@@ -4,12 +4,12 @@ from pathlib import Path
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseInfo,
+    ExpertiseSelection,
     LibraryIndex,
     PersonaInfo,
     PersonaSelection,
     ProjectIdentity,
-    StackInfo,
-    StackSelection,
     TeamConfig,
 )
 from foundry_app.services.compiler import (
@@ -32,21 +32,21 @@ def _make_spec(**kwargs) -> CompositionSpec:
     """Build a CompositionSpec with sensible defaults."""
     defaults = dict(
         project=ProjectIdentity(name="Test Project", slug="test-project"),
-        stacks=[StackSelection(id="python", order=10)],
+        expertise=[ExpertiseSelection(id="python", order=10)],
         team=TeamConfig(personas=[PersonaSelection(id="developer")]),
     )
     defaults.update(kwargs)
     return CompositionSpec(**defaults)
 
 
-def _make_library(tmp_path: Path, personas=None, stacks=None) -> tuple[LibraryIndex, Path]:
+def _make_library(tmp_path: Path, personas=None, expertise=None) -> tuple[LibraryIndex, Path]:
     """Create a minimal library on disk and return (index, library_root).
 
     Args:
         tmp_path: pytest tmp_path fixture.
         personas: dict mapping persona_id -> dict of files.
             e.g. {"developer": {"persona.md": "# Dev", "outputs.md": "# Out"}}
-        stacks: dict mapping stack_id -> dict of files.
+        expertise: dict mapping expertise_id -> dict of files.
             e.g. {"python": {"conventions.md": "# Python Conventions"}}
 
     Returns:
@@ -54,7 +54,7 @@ def _make_library(tmp_path: Path, personas=None, stacks=None) -> tuple[LibraryIn
     """
     lib_root = tmp_path / "library"
     personas = personas or {}
-    stacks = stacks or {}
+    expertise = expertise or {}
 
     persona_infos: list[PersonaInfo] = []
     for pid, files in personas.items():
@@ -71,22 +71,22 @@ def _make_library(tmp_path: Path, personas=None, stacks=None) -> tuple[LibraryIn
             templates=[],
         ))
 
-    stack_infos: list[StackInfo] = []
-    for sid, files in stacks.items():
-        stack_dir = lib_root / "stacks" / sid
-        stack_dir.mkdir(parents=True, exist_ok=True)
+    expertise_infos: list[ExpertiseInfo] = []
+    for sid, files in expertise.items():
+        expertise_dir = lib_root / "stacks" / sid
+        expertise_dir.mkdir(parents=True, exist_ok=True)
         for fname, content in files.items():
-            (stack_dir / fname).write_text(content, encoding="utf-8")
-        stack_infos.append(StackInfo(
+            (expertise_dir / fname).write_text(content, encoding="utf-8")
+        expertise_infos.append(ExpertiseInfo(
             id=sid,
-            path=str(stack_dir),
+            path=str(expertise_dir),
             files=list(files.keys()),
         ))
 
     index = LibraryIndex(
         library_root=str(lib_root),
         personas=persona_infos,
-        stacks=stack_infos,
+        expertise=expertise_infos,
     )
     return index, lib_root
 
@@ -115,15 +115,15 @@ class TestSubstitute:
 
     def test_handles_join_filter(self):
         result = _substitute(
-            '{{ stacks | join(", ") }}',
-            {"stacks": "python,typescript"},
+            '{{ expertise | join(", ") }}',
+            {"expertise": "python,typescript"},
         )
         assert result == "python, typescript"
 
     def test_join_single_item(self):
         result = _substitute(
-            '{{ stacks | join(", ") }}',
-            {"stacks": "python"},
+            '{{ expertise | join(", ") }}',
+            {"expertise": "python"},
         )
         assert result == "python"
 
@@ -157,34 +157,34 @@ class TestBuildContext:
         ctx = _build_context(spec)
         assert ctx["project_name"] == "Test Project"
 
-    def test_includes_stacks_comma_separated(self):
-        spec = _make_spec(stacks=[
-            StackSelection(id="python", order=10),
-            StackSelection(id="typescript", order=20),
+    def test_includes_expertise_comma_separated(self):
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id="python", order=10),
+            ExpertiseSelection(id="typescript", order=20),
         ])
         ctx = _build_context(spec)
-        assert "python" in ctx["stacks"]
-        assert "typescript" in ctx["stacks"]
+        assert "python" in ctx["expertise"]
+        assert "typescript" in ctx["expertise"]
 
-    def test_stacks_sorted_by_order(self):
-        spec = _make_spec(stacks=[
-            StackSelection(id="typescript", order=20),
-            StackSelection(id="python", order=10),
+    def test_expertise_sorted_by_order(self):
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id="typescript", order=20),
+            ExpertiseSelection(id="python", order=10),
         ])
         ctx = _build_context(spec)
-        parts = ctx["stacks"].split(",")
+        parts = ctx["expertise"].split(",")
         assert parts[0] == "python"
         assert parts[1] == "typescript"
 
-    def test_empty_stacks(self):
-        spec = _make_spec(stacks=[])
+    def test_empty_expertise(self):
+        spec = _make_spec(expertise=[])
         ctx = _build_context(spec)
-        assert ctx["stacks"] == ""
+        assert ctx["expertise"] == ""
 
-    def test_single_stack(self):
-        spec = _make_spec(stacks=[StackSelection(id="python", order=10)])
+    def test_single_expertise(self):
+        spec = _make_spec(expertise=[ExpertiseSelection(id="python", order=10)])
         ctx = _build_context(spec)
-        assert ctx["stacks"] == "python"
+        assert ctx["expertise"] == "python"
 
 
 # ---------------------------------------------------------------------------
@@ -279,24 +279,24 @@ class TestCompileProjectContent:
         content = (output / "CLAUDE.md").read_text()
         assert "Build great code." in content
 
-    def test_contains_stack_heading(self, tmp_path: Path):
+    def test_contains_expertise_heading(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "# Dev"}},
-            stacks={"python": {"conventions.md": "# Python Conventions"}},
+            expertise={"python": {"conventions.md": "# Python Conventions"}},
         )
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
-        assert "## Technology Stacks" in content
+        assert "## Expertise" in content
 
-    def test_contains_stack_content(self, tmp_path: Path):
+    def test_contains_expertise_content(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "# Dev"}},
-            stacks={"python": {"conventions.md": "Use type hints everywhere."}},
+            expertise={"python": {"conventions.md": "Use type hints everywhere."}},
         )
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
@@ -464,74 +464,74 @@ class TestMultiplePersonas:
 
 
 # ---------------------------------------------------------------------------
-# compile_project — multiple stacks
+# compile_project — multiple expertise
 # ---------------------------------------------------------------------------
 
 
-class TestMultipleStacks:
+class TestMultipleExpertise:
 
-    def test_all_stacks_included(self, tmp_path: Path):
+    def test_all_expertise_included(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "# Dev"}},
-            stacks={
+            expertise={
                 "python": {"conventions.md": "PYTHON_CONV"},
                 "typescript": {"conventions.md": "TS_CONV"},
             },
         )
-        spec = _make_spec(stacks=[
-            StackSelection(id="python", order=10),
-            StackSelection(id="typescript", order=20),
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id="python", order=10),
+            ExpertiseSelection(id="typescript", order=20),
         ])
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
         assert "PYTHON_CONV" in content
         assert "TS_CONV" in content
 
-    def test_stacks_sorted_by_order(self, tmp_path: Path):
+    def test_expertise_sorted_by_order(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "# Dev"}},
-            stacks={
+            expertise={
                 "python": {"conventions.md": "PYTHON_FIRST"},
                 "typescript": {"conventions.md": "TS_SECOND"},
             },
         )
-        spec = _make_spec(stacks=[
-            StackSelection(id="typescript", order=20),
-            StackSelection(id="python", order=10),
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id="typescript", order=20),
+            ExpertiseSelection(id="python", order=10),
         ])
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
         assert content.index("PYTHON_FIRST") < content.index("TS_SECOND")
 
-    def test_stacks_same_order_sorted_alphabetically(self, tmp_path: Path):
+    def test_expertise_same_order_sorted_alphabetically(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "# Dev"}},
-            stacks={
+            expertise={
                 "typescript": {"conventions.md": "TS_CONTENT"},
                 "python": {"conventions.md": "PY_CONTENT"},
             },
         )
-        spec = _make_spec(stacks=[
-            StackSelection(id="typescript", order=0),
-            StackSelection(id="python", order=0),
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id="typescript", order=0),
+            ExpertiseSelection(id="python", order=0),
         ])
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
         # python comes before typescript alphabetically
         assert content.index("PY_CONTENT") < content.index("TS_CONTENT")
 
-    def test_personas_before_stacks(self, tmp_path: Path):
+    def test_personas_before_expertise(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "PERSONA_SECTION"}},
-            stacks={"python": {"conventions.md": "STACK_SECTION"}},
+            expertise={"python": {"conventions.md": "STACK_SECTION"}},
         )
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
@@ -557,18 +557,18 @@ class TestTemplateSubstitutionInContent:
         assert "Working on Test Project" in content
         assert "{{ project_name }}" not in content
 
-    def test_stacks_join_substituted_in_persona(self, tmp_path: Path):
+    def test_expertise_join_substituted_in_persona(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {
-                "persona.md": 'Stack: {{ stacks | join(", ") }}',
+                "persona.md": 'Stack: {{ expertise | join(", ") }}',
             },
         })
-        spec = _make_spec(stacks=[
-            StackSelection(id="python", order=10),
-            StackSelection(id="typescript", order=20),
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id="python", order=10),
+            ExpertiseSelection(id="typescript", order=20),
         ])
-        # Need stacks in library too for them to compile
+        # Need expertise in library too for them to compile
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
         assert "Stack: python, typescript" in content
@@ -599,12 +599,12 @@ class TestTemplateSubstitutionInContent:
         content = (output / "CLAUDE.md").read_text()
         assert "Context for Test Project" in content
 
-    def test_substitution_in_stack_conventions(self, tmp_path: Path):
+    def test_substitution_in_expertise_conventions(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "# Dev"}},
-            stacks={"python": {"conventions.md": "For {{ project_name }}"}},
+            expertise={"python": {"conventions.md": "For {{ project_name }}"}},
         )
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
@@ -638,12 +638,12 @@ class TestCompileWarnings:
         result = compile_project(spec, index, lib_root, output)
         assert any("missing persona.md" in w for w in result.warnings)
 
-    def test_warns_on_missing_stack_in_index(self, tmp_path: Path):
+    def test_warns_on_missing_expertise_in_index(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "# Dev"},
-        })  # no stacks in library
-        spec = _make_spec(stacks=[StackSelection(id="nonexistent")])
+        })  # no expertise in library
+        spec = _make_spec(expertise=[ExpertiseSelection(id="nonexistent")])
         result = compile_project(spec, index, lib_root, output)
         assert any("nonexistent" in w and "not found" in w for w in result.warnings)
 
@@ -652,7 +652,7 @@ class TestCompileWarnings:
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "# Dev"}},
-            stacks={"python": {"readme.md": "Not conventions"}},
+            expertise={"python": {"readme.md": "Not conventions"}},
         )
         spec = _make_spec()
         result = compile_project(spec, index, lib_root, output)
@@ -676,7 +676,7 @@ class TestCompileWarnings:
                 "outputs.md": "# Outputs",
                 "prompts.md": "# Prompts",
             }},
-            stacks={"python": {"conventions.md": "# Python"}},
+            expertise={"python": {"conventions.md": "# Python"}},
         )
         spec = _make_spec()
         result = compile_project(spec, index, lib_root, output)
@@ -704,7 +704,7 @@ class TestCompileWarnings:
 
 
 # ---------------------------------------------------------------------------
-# compile_project — no personas / no stacks
+# compile_project — no personas / no expertise
 # ---------------------------------------------------------------------------
 
 
@@ -714,7 +714,7 @@ class TestEmptySelections:
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
-            stacks={"python": {"conventions.md": "# Python"}},
+            expertise={"python": {"conventions.md": "# Python"}},
         )
         spec = _make_spec(team=TeamConfig(personas=[]))
         result = compile_project(spec, index, lib_root, output)
@@ -725,37 +725,37 @@ class TestEmptySelections:
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
-            stacks={"python": {"conventions.md": "# Python"}},
+            expertise={"python": {"conventions.md": "# Python"}},
         )
         spec = _make_spec(team=TeamConfig(personas=[]))
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
         assert "## Team" not in content
 
-    def test_no_stacks_still_creates_claude_md(self, tmp_path: Path):
+    def test_no_expertise_still_creates_claude_md(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "# Dev"},
         })
-        spec = _make_spec(stacks=[])
+        spec = _make_spec(expertise=[])
         result = compile_project(spec, index, lib_root, output)
         assert (output / "CLAUDE.md").exists()
         assert "CLAUDE.md" in result.wrote
 
-    def test_no_stacks_no_stacks_heading(self, tmp_path: Path):
+    def test_no_expertise_no_expertise_heading(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "# Dev"},
         })
-        spec = _make_spec(stacks=[])
+        spec = _make_spec(expertise=[])
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
-        assert "## Technology Stacks" not in content
+        assert "## Expertise" not in content
 
-    def test_no_personas_no_stacks(self, tmp_path: Path):
+    def test_no_personas_no_expertise(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path)
-        spec = _make_spec(team=TeamConfig(personas=[]), stacks=[])
+        spec = _make_spec(team=TeamConfig(personas=[]), expertise=[])
         result = compile_project(spec, index, lib_root, output)
         assert (output / "CLAUDE.md").exists()
         content = (output / "CLAUDE.md").read_text()
@@ -820,7 +820,7 @@ class TestDeterminism:
                 "developer": {"persona.md": "# Dev", "outputs.md": "# Out"},
                 "architect": {"persona.md": "# Arch"},
             },
-            stacks={
+            expertise={
                 "python": {"conventions.md": "# Python"},
                 "typescript": {"conventions.md": "# TS"},
             },
@@ -830,9 +830,9 @@ class TestDeterminism:
                 PersonaSelection(id="developer"),
                 PersonaSelection(id="architect"),
             ]),
-            stacks=[
-                StackSelection(id="python", order=10),
-                StackSelection(id="typescript", order=20),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
             ],
         )
         output1 = tmp_path / "run1"
@@ -847,7 +847,7 @@ class TestDeterminism:
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "# Dev"}},
-            stacks={"python": {"conventions.md": "# Python"}},
+            expertise={"python": {"conventions.md": "# Python"}},
         )
         spec = _make_spec()
         outputs = []
@@ -933,16 +933,16 @@ class TestEdgeCases:
             assert f"CONTENT_{i}" in content
         assert "CLAUDE.md" in result.wrote
 
-    def test_large_number_of_stacks(self, tmp_path: Path):
+    def test_large_number_of_expertise(self, tmp_path: Path):
         output = tmp_path / "project"
-        stacks = {f"stack-{i}": {"conventions.md": f"STACK_{i}"} for i in range(10)}
+        expertise_items = {f"stack-{i}": {"conventions.md": f"STACK_{i}"} for i in range(10)}
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "# Dev"}},
-            stacks=stacks,
+            expertise=expertise_items,
         )
-        spec = _make_spec(stacks=[
-            StackSelection(id=f"stack-{i}", order=i) for i in range(10)
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id=f"stack-{i}", order=i) for i in range(10)
         ])
         result = compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
@@ -963,7 +963,7 @@ class TestEdgeCases:
         index, lib_root = _make_library(
             tmp_path,
             personas={"developer": {"persona.md": "# Dev"}},
-            stacks={"python": {"conventions.md": ""}},
+            expertise={"python": {"conventions.md": ""}},
         )
         spec = _make_spec()
         result = compile_project(spec, index, lib_root, output)
@@ -1020,12 +1020,12 @@ class TestFullIntegration:
                     "prompts.md": "# Team Lead Prompts",
                 },
                 "developer": {
-                    "persona.md": '# Developer using {{ stacks | join(", ") }}',
+                    "persona.md": '# Developer using {{ expertise | join(", ") }}',
                     "outputs.md": "# Developer Outputs",
                     "prompts.md": "# Developer Prompts",
                 },
             },
-            stacks={
+            expertise={
                 "python": {"conventions.md": "# Python Conventions"},
                 "clean-code": {"conventions.md": "# Clean Code"},
             },
@@ -1036,9 +1036,9 @@ class TestFullIntegration:
                 PersonaSelection(id="team-lead"),
                 PersonaSelection(id="developer"),
             ]),
-            stacks=[
-                StackSelection(id="python", order=10),
-                StackSelection(id="clean-code", order=20),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="clean-code", order=20),
             ],
         )
         result = compile_project(spec, index, lib_root, output)
@@ -1047,7 +1047,7 @@ class TestFullIntegration:
         # Structure checks
         assert content.startswith("# Full Test")
         assert "## Team" in content
-        assert "## Technology Stacks" in content
+        assert "## Expertise" in content
 
         # Persona content
         assert "# Team Lead for Full Test" in content
@@ -1057,12 +1057,12 @@ class TestFullIntegration:
         assert "# Developer Outputs" in content
         assert "# Developer Prompts" in content
 
-        # Stack content
+        # Expertise content
         assert "# Python Conventions" in content
         assert "# Clean Code" in content
 
-        # Order: header -> team -> stacks
-        assert content.index("## Team") < content.index("## Technology Stacks")
+        # Order: header -> team -> expertise
+        assert content.index("## Team") < content.index("## Expertise")
         assert content.index("Team Lead") < content.index("Developer")
         assert content.index("Python Conventions") < content.index("Clean Code")
 
@@ -1085,7 +1085,7 @@ class TestFullIntegration:
                     # no outputs.md, no prompts.md
                 },
             },
-            stacks={
+            expertise={
                 "python": {"conventions.md": "# Python"},
                 # missing-stack not in library
             },
@@ -1095,9 +1095,9 @@ class TestFullIntegration:
                 PersonaSelection(id="developer"),
                 PersonaSelection(id="architect"),
             ]),
-            stacks=[
-                StackSelection(id="python", order=10),
-                StackSelection(id="missing-stack", order=20),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="missing-stack", order=20),
             ],
         )
         result = compile_project(spec, index, lib_root, output)

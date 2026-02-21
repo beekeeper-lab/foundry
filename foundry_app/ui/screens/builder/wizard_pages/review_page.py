@@ -303,7 +303,7 @@ class ReviewPage(QWidget):
         self._clear_sections()
         self._build_project_section(spec)
         self._build_team_section(spec)
-        self._build_stacks_section(spec)
+        self._build_expertise_section(spec)
         self._build_architecture_section(spec)
         self._build_hooks_section(spec)
         self._build_generation_section(spec)
@@ -351,13 +351,13 @@ class ReviewPage(QWidget):
                 text += f"  ({', '.join(parts[1:])})"
             section.add_item(f"\u2022 {text}", mono=True)
 
-    def _build_stacks_section(self, spec: CompositionSpec) -> None:
-        section = self._add_section("stacks", "Technology Stacks")
-        stacks = sorted(spec.stacks, key=lambda s: s.order)
-        if not stacks:
-            section.add_empty_message("No stacks selected")
+    def _build_expertise_section(self, spec: CompositionSpec) -> None:
+        section = self._add_section("expertise", "Expertise")
+        expertise = sorted(spec.expertise, key=lambda s: s.order)
+        if not expertise:
+            section.add_empty_message("No expertise selected")
             return
-        for idx, s in enumerate(stacks):
+        for idx, s in enumerate(expertise):
             section.add_item(f"{idx + 1}. {s.id}", mono=True)
 
     def _build_architecture_section(self, spec: CompositionSpec) -> None:

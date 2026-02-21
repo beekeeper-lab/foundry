@@ -6,13 +6,12 @@ import pytest
 from pydantic import ValidationError
 
 from foundry_app.core.models import (
+    ExpertiseSelection,
     HookPackSelection,
     PersonaSelection,
     ProjectIdentity,
     SecretPolicy,
-    StackSelection,
 )
-
 
 # ---------------------------------------------------------------------------
 # max_length constraints
@@ -49,9 +48,9 @@ class TestMaxLengthBounds:
         with pytest.raises(ValidationError):
             PersonaSelection(id="a" * 101)
 
-    def test_stack_id_rejects_over_100(self):
+    def test_expertise_id_rejects_over_100(self):
         with pytest.raises(ValidationError):
-            StackSelection(id="a" * 101)
+            ExpertiseSelection(id="a" * 101)
 
     def test_hook_pack_id_rejects_over_100(self):
         with pytest.raises(ValidationError):

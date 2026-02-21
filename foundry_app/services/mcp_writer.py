@@ -11,7 +11,7 @@ from foundry_app.core.models import CompositionSpec, StageResult
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Stack-to-MCP-server mappings
+# Expertise-to-MCP-server mappings
 # ---------------------------------------------------------------------------
 
 # Baseline servers included in every generated project.
@@ -33,8 +33,8 @@ _BASELINE_SERVERS: dict[str, dict] = {
     },
 }
 
-# Stack-specific MCP servers suggested per stack ID.
-_STACK_SERVERS: dict[str, dict[str, dict]] = {
+# Expertise-specific MCP servers suggested per expertise ID.
+_EXPERTISE_SERVERS: dict[str, dict[str, dict]] = {
     "python": {
         "python-docs": {
             "type": "stdio",
@@ -73,7 +73,7 @@ def write_mcp_config(
     """Generate .claude/mcp.json for the project.
 
     Produces a baseline filesystem MCP server for every project,
-    plus stack-specific servers for recognized stacks.
+    plus expertise-specific servers for recognized expertise.
 
     Args:
         spec: The composition spec describing the project.
@@ -89,12 +89,12 @@ def write_mcp_config(
     # Start with baseline servers
     servers: dict[str, dict] = dict(_BASELINE_SERVERS)
 
-    # Add stack-specific servers
-    for stack_sel in spec.stacks:
-        stack_servers = _STACK_SERVERS.get(stack_sel.id)
-        if stack_servers:
-            servers.update(stack_servers)
-            logger.debug("Added MCP servers for stack '%s'", stack_sel.id)
+    # Add expertise-specific servers
+    for expertise_sel in spec.expertise:
+        expertise_servers = _EXPERTISE_SERVERS.get(expertise_sel.id)
+        if expertise_servers:
+            servers.update(expertise_servers)
+            logger.debug("Added MCP servers for expertise '%s'", expertise_sel.id)
 
     mcp_config = {"mcpServers": servers}
 

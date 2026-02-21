@@ -4,13 +4,13 @@ from pathlib import Path
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseSelection,
     HookPackSelection,
     HooksConfig,
     LibraryIndex,
     PersonaInfo,
     PersonaSelection,
     ProjectIdentity,
-    StackSelection,
     TeamConfig,
 )
 from foundry_app.services.asset_copier import copy_assets
@@ -37,7 +37,7 @@ def _make_spec(**kwargs) -> CompositionSpec:
     """
     defaults = dict(
         project=ProjectIdentity(name="Test Project", slug="test-project"),
-        stacks=[StackSelection(id="python")],
+        expertise=[ExpertiseSelection(id="python")],
         team=TeamConfig(personas=[PersonaSelection(id="developer")]),
     )
     defaults.update(kwargs)

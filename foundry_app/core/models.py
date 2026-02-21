@@ -106,31 +106,31 @@ class ProjectIdentity(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Stack selection
+# Expertise selection
 # ---------------------------------------------------------------------------
 
-class StackSelection(BaseModel):
-    """A single tech-stack pack chosen for the project."""
+class ExpertiseSelection(BaseModel):
+    """A single expertise pack chosen for the project."""
 
     id: str = Field(
         ..., min_length=1, max_length=100,
-        description="Stack identifier (e.g. 'python')",
+        description="Expertise identifier (e.g. 'python')",
     )
     order: int = Field(default=0, description="Sort order when compiling prompts")
 
     @field_validator("id")
     @classmethod
     def validate_id(cls, v: str) -> str:
-        return _validate_safe_id(v, "stack id")
+        return _validate_safe_id(v, "expertise id")
 
 
-class StackOverrides(BaseModel):
-    """Optional per-stack overrides — reserved for future extensibility.
+class ExpertiseOverrides(BaseModel):
+    """Optional per-expertise overrides — reserved for future extensibility.
 
     TODO: Currently unused. Remove if not needed by v2.0.
     """
 
-    stack_id: str
+    expertise_id: str
     overrides: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -388,7 +388,7 @@ class CompositionSpec(BaseModel):
     """Top-level composition specification — the input to the generation pipeline."""
 
     project: ProjectIdentity
-    stacks: list[StackSelection] = Field(default_factory=list)
+    expertise: list[ExpertiseSelection] = Field(default_factory=list)
     team: TeamConfig = Field(default_factory=TeamConfig)
     architecture: ArchitectureConfig = Field(default_factory=ArchitectureConfig)
     hooks: HooksConfig = Field(default_factory=HooksConfig)
@@ -537,11 +537,11 @@ class PersonaInfo(BaseModel):
     templates: list[str] = Field(default_factory=list, description="Template filenames")
 
 
-class StackInfo(BaseModel):
-    """Metadata about a discovered stack in the library."""
+class ExpertiseInfo(BaseModel):
+    """Metadata about a discovered expertise in the library."""
 
     id: str
-    path: str = Field(..., description="Path to stack directory")
+    path: str = Field(..., description="Path to expertise directory")
     files: list[str] = Field(default_factory=list, description="Convention doc filenames")
 
 
@@ -559,14 +559,14 @@ class LibraryIndex(BaseModel):
 
     library_root: str = Field(..., description="Absolute path to library root")
     personas: list[PersonaInfo] = Field(default_factory=list)
-    stacks: list[StackInfo] = Field(default_factory=list)
+    expertise: list[ExpertiseInfo] = Field(default_factory=list)
     hook_packs: list[HookPackInfo] = Field(default_factory=list)
 
     def persona_by_id(self, persona_id: str) -> PersonaInfo | None:
         return next((p for p in self.personas if p.id == persona_id), None)
 
-    def stack_by_id(self, stack_id: str) -> StackInfo | None:
-        return next((s for s in self.stacks if s.id == stack_id), None)
+    def expertise_by_id(self, expertise_id: str) -> ExpertiseInfo | None:
+        return next((s for s in self.expertise if s.id == expertise_id), None)
 
     def hook_pack_by_id(self, pack_id: str) -> HookPackInfo | None:
         return next((h for h in self.hook_packs if h.id == pack_id), None)

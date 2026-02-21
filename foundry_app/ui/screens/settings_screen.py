@@ -103,7 +103,7 @@ class SettingsScreen(QWidget):
         self._add_section_header(layout, "LIBRARY ROOT")
 
         lib_desc = QLabel(
-            "Path to the ai-team-library directory containing personas, stacks, "
+            "Path to the ai-team-library directory containing personas, expertise, "
             "templates, and workflows."
         )
         lib_desc.setWordWrap(True)

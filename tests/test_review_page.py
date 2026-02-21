@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseSelection,
     GenerationOptions,
     HookPackSelection,
     HooksConfig,
@@ -13,7 +14,6 @@ from foundry_app.core.models import (
     ProjectIdentity,
     SafetyConfig,
     SeedMode,
-    StackSelection,
     Strictness,
     TeamConfig,
 )
@@ -60,10 +60,10 @@ def _make_full_spec() -> CompositionSpec:
                 strictness=Strictness.LIGHT,
             ),
         ]),
-        stacks=[
-            StackSelection(id="python", order=0),
-            StackSelection(id="react", order=1),
-            StackSelection(id="typescript", order=2),
+        expertise=[
+            ExpertiseSelection(id="python", order=0),
+            ExpertiseSelection(id="react", order=1),
+            ExpertiseSelection(id="typescript", order=2),
         ],
         hooks=HooksConfig(
             posture=Posture.HARDENED,
@@ -88,7 +88,7 @@ def _make_spec_no_safety() -> CompositionSpec:
     return CompositionSpec(
         project=_make_project(),
         team=TeamConfig(personas=[PersonaSelection(id="developer")]),
-        stacks=[StackSelection(id="python", order=0)],
+        expertise=[ExpertiseSelection(id="python", order=0)],
     )
 
 
@@ -216,8 +216,8 @@ class TestMinimalSpec:
     def test_team_section_created(self, minimal_page):
         assert "team" in minimal_page.sections
 
-    def test_stacks_section_created(self, minimal_page):
-        assert "stacks" in minimal_page.sections
+    def test_expertise_section_created(self, minimal_page):
+        assert "expertise" in minimal_page.sections
 
     def test_hooks_section_created(self, minimal_page):
         assert "hooks" in minimal_page.sections
@@ -240,7 +240,7 @@ class TestMinimalSpec:
 
 class TestFullSpec:
     def test_all_sections_created(self, full_page):
-        expected = {"project", "team", "stacks", "architecture", "hooks", "generation", "safety"}
+        expected = {"project", "team", "expertise", "architecture", "hooks", "generation", "safety"}
         assert set(full_page.sections.keys()) == expected
 
     def test_project_section_present(self, full_page):
@@ -310,30 +310,30 @@ class TestTeamSection:
 
 
 # ---------------------------------------------------------------------------
-# ReviewPage — stacks section content
+# ReviewPage — expertise section content
 # ---------------------------------------------------------------------------
 
-class TestStacksSection:
-    def test_empty_stacks(self, minimal_page):
-        section = minimal_page.sections["stacks"]
+class TestExpertiseSection:
+    def test_empty_expertise(self, minimal_page):
+        section = minimal_page.sections["expertise"]
         assert section is not None
 
-    def test_multiple_stacks_ordered(self, full_page):
-        section = full_page.sections["stacks"]
+    def test_multiple_expertise_ordered(self, full_page):
+        section = full_page.sections["expertise"]
         assert section is not None
 
-    def test_stacks_sorted_by_order(self):
+    def test_expertise_sorted_by_order(self):
         spec = CompositionSpec(
             project=_make_project(),
-            stacks=[
-                StackSelection(id="react", order=2),
-                StackSelection(id="python", order=0),
-                StackSelection(id="node", order=1),
+            expertise=[
+                ExpertiseSelection(id="react", order=2),
+                ExpertiseSelection(id="python", order=0),
+                ExpertiseSelection(id="node", order=1),
             ],
         )
         page = ReviewPage()
         page.set_composition_spec(spec)
-        assert "stacks" in page.sections
+        assert "expertise" in page.sections
         page.close()
 
 
@@ -503,11 +503,11 @@ class TestSpecReplacement:
         assert "safety" not in page.sections
 
     def test_section_count_minimal(self, minimal_page):
-        # project, team, stacks, architecture, hooks, generation = 6 (no safety)
+        # project, team, expertise, architecture, hooks, generation = 6 (no safety)
         assert len(minimal_page.sections) == 6
 
     def test_section_count_full(self, full_page):
-        # project, team, stacks, architecture, hooks, generation, safety = 7
+        # project, team, expertise, architecture, hooks, generation, safety = 7
         assert len(full_page.sections) == 7
 
 
@@ -541,14 +541,14 @@ class TestEdgeCases:
         assert "team" in page.sections
         page.close()
 
-    def test_empty_stacks_no_crash(self):
+    def test_empty_expertise_no_crash(self):
         spec = CompositionSpec(
             project=_make_project(),
-            stacks=[],
+            expertise=[],
         )
         page = ReviewPage()
         page.set_composition_spec(spec)
-        assert "stacks" in page.sections
+        assert "expertise" in page.sections
         page.close()
 
     def test_empty_hook_packs_no_crash(self):
@@ -602,14 +602,14 @@ class TestEdgeCases:
         assert "team" in page.sections
         page.close()
 
-    def test_single_stack(self):
+    def test_single_expertise(self):
         spec = CompositionSpec(
             project=_make_project(),
-            stacks=[StackSelection(id="python", order=0)],
+            expertise=[ExpertiseSelection(id="python", order=0)],
         )
         page = ReviewPage()
         page.set_composition_spec(spec)
-        assert "stacks" in page.sections
+        assert "expertise" in page.sections
         page.close()
 
     def test_seed_mode_detailed(self):

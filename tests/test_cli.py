@@ -40,7 +40,7 @@ def _write_composition(path: Path, **overrides) -> Path:
     """Write a minimal composition YAML file."""
     data = {
         "project": {"name": "Test", "slug": "test"},
-        "stacks": [{"id": "python"}],
+        "expertise": [{"id": "python"}],
         "team": {"personas": [{"id": "developer"}]},
     }
     data.update(overrides)
@@ -359,7 +359,7 @@ class TestCLIIntegration:
         spec = call_args.kwargs["composition"]
         assert spec.project.name == "Test"
         assert spec.project.slug == "test"
-        assert spec.stacks[0].id == "python"
+        assert spec.expertise[0].id == "python"
         assert spec.team.personas[0].id == "developer"
 
     @patch("foundry_app.services.generator.generate_project")

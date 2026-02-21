@@ -5,13 +5,13 @@ from pathlib import Path
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseSelection,
     HookMode,
     HookPackSelection,
     HooksConfig,
     PersonaSelection,
     Posture,
     ProjectIdentity,
-    StackSelection,
     TeamConfig,
 )
 from foundry_app.services.safety_writer import write_safety
@@ -25,7 +25,7 @@ def _make_spec(**kwargs) -> CompositionSpec:
     """Build a CompositionSpec with sensible defaults."""
     defaults = dict(
         project=ProjectIdentity(name="Test Project", slug="test-project"),
-        stacks=[StackSelection(id="python")],
+        expertise=[ExpertiseSelection(id="python")],
         team=TeamConfig(personas=[PersonaSelection(id="developer")]),
     )
     defaults.update(kwargs)

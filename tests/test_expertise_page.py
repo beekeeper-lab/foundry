@@ -1,17 +1,17 @@
-"""Tests for foundry_app.ui.screens.builder.wizard_pages.stack_page."""
+"""Tests for foundry_app.ui.screens.builder.wizard_pages.expertise_page."""
 
 import pytest
 from PySide6.QtWidgets import QApplication
 
 from foundry_app.core.models import (
+    ExpertiseInfo,
+    ExpertiseSelection,
     LibraryIndex,
-    StackInfo,
-    StackSelection,
 )
-from foundry_app.ui.screens.builder.wizard_pages.stack_page import (
-    STACK_DESCRIPTIONS,
-    StackCard,
-    StackSelectionPage,
+from foundry_app.ui.screens.builder.wizard_pages.expertise_page import (
+    EXPERTISE_DESCRIPTIONS,
+    ExpertiseCard,
+    ExpertiseSelectionPage,
 )
 
 _app = QApplication.instance() or QApplication([])
@@ -21,9 +21,9 @@ _app = QApplication.instance() or QApplication([])
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_stack(sid: str, files: list[str] | None = None) -> StackInfo:
-    """Create a minimal StackInfo for testing."""
-    return StackInfo(
+def _make_expertise(sid: str, files: list[str] | None = None) -> ExpertiseInfo:
+    """Create a minimal ExpertiseInfo for testing."""
+    return ExpertiseInfo(
         id=sid,
         path=f"/fake/stacks/{sid}",
         files=files or [],
@@ -31,15 +31,15 @@ def _make_stack(sid: str, files: list[str] | None = None) -> StackInfo:
 
 
 def _make_library(*stack_ids: str) -> LibraryIndex:
-    """Create a LibraryIndex with the given stack ids."""
+    """Create a LibraryIndex with the given expertise ids."""
     return LibraryIndex(
         library_root="/fake/library",
-        stacks=[_make_stack(sid) for sid in stack_ids],
+        expertise=[_make_expertise(sid) for sid in stack_ids],
     )
 
 
 def _make_full_library() -> LibraryIndex:
-    """Create a LibraryIndex matching the real 11-stack library."""
+    """Create a LibraryIndex matching the real 11-expertise library."""
     return _make_library(
         "clean-code", "devops", "dotnet", "java", "node",
         "python", "python-qt-pyside6", "react", "security",
@@ -48,51 +48,51 @@ def _make_full_library() -> LibraryIndex:
 
 
 def _make_library_with_files() -> LibraryIndex:
-    """Create a LibraryIndex where stacks have convention files."""
+    """Create a LibraryIndex where expertise items have convention files."""
     return LibraryIndex(
         library_root="/fake/library",
-        stacks=[
-            _make_stack("python", ["conventions.md", "testing.md", "security.md"]),
-            _make_stack("react", ["conventions.md", "testing.md"]),
-            _make_stack("devops", ["conventions.md"]),
+        expertise=[
+            _make_expertise("python", ["conventions.md", "testing.md", "security.md"]),
+            _make_expertise("react", ["conventions.md", "testing.md"]),
+            _make_expertise("devops", ["conventions.md"]),
         ],
     )
 
 
 # ---------------------------------------------------------------------------
-# StackCard — construction
+# ExpertiseCard — construction
 # ---------------------------------------------------------------------------
 
 @pytest.fixture()
 def card():
-    stack = _make_stack("python", ["conventions.md", "testing.md", "security.md"])
-    c = StackCard(stack)
+    expertise = _make_expertise("python", ["conventions.md", "testing.md", "security.md"])
+    c = ExpertiseCard(expertise)
     yield c
     c.close()
 
 
-class TestStackCardConstruction:
+class TestExpertiseCardConstruction:
     def test_creates_without_error(self, card):
         assert card is not None
 
-    def test_stack_id(self, card):
-        assert card.stack_id == "python"
+    def test_expertise_id(self, card):
+        assert card.expertise_id == "python"
 
     def test_initially_not_selected(self, card):
         assert card.is_selected is False
 
     def test_object_name(self, card):
-        assert card.objectName() == "stack-card"
+        assert card.objectName() == "expertise-card"
 
     def test_file_count(self, card):
         assert card.file_count == 3
 
 
 # ---------------------------------------------------------------------------
-# StackCard — selection
+# ExpertiseCard — selection
 # ---------------------------------------------------------------------------
 
-class TestStackCardSelection:
+class TestExpertiseCardSelection:
     def test_select_via_property(self, card):
         card.is_selected = True
         assert card.is_selected is True
@@ -119,58 +119,58 @@ class TestStackCardSelection:
 
 
 # ---------------------------------------------------------------------------
-# StackCard — to_stack_selection
+# ExpertiseCard — to_expertise_selection
 # ---------------------------------------------------------------------------
 
-class TestStackCardToSelection:
+class TestExpertiseCardToSelection:
     def test_default_selection_values(self, card):
-        sel = card.to_stack_selection()
-        assert isinstance(sel, StackSelection)
+        sel = card.to_expertise_selection()
+        assert isinstance(sel, ExpertiseSelection)
         assert sel.id == "python"
         assert sel.order == 0
 
     def test_custom_order(self, card):
-        sel = card.to_stack_selection(order=3)
+        sel = card.to_expertise_selection(order=3)
         assert sel.order == 3
 
 
 # ---------------------------------------------------------------------------
-# StackCard — load_from_selection
+# ExpertiseCard — load_from_selection
 # ---------------------------------------------------------------------------
 
-class TestStackCardLoadFromSelection:
+class TestExpertiseCardLoadFromSelection:
     def test_load_checks_card(self, card):
-        sel = StackSelection(id="python", order=2)
+        sel = ExpertiseSelection(id="python", order=2)
         card.load_from_selection(sel)
         assert card.is_selected is True
 
     def test_roundtrip_selection(self, card):
-        original = StackSelection(id="python", order=5)
+        original = ExpertiseSelection(id="python", order=5)
         card.load_from_selection(original)
-        result = card.to_stack_selection(order=5)
+        result = card.to_expertise_selection(order=5)
         assert result.id == original.id
         assert result.order == original.order
 
 
 # ---------------------------------------------------------------------------
-# StackCard — unknown stack fallback
+# ExpertiseCard — unknown expertise fallback
 # ---------------------------------------------------------------------------
 
-class TestStackCardUnknownStack:
-    def test_unknown_stack_uses_titlecased_id(self):
-        stack = _make_stack("custom-framework")
-        card = StackCard(stack)
-        assert card.stack_id == "custom-framework"
+class TestExpertiseCardUnknownId:
+    def test_unknown_expertise_uses_titlecased_id(self):
+        expertise = _make_expertise("custom-framework")
+        card = ExpertiseCard(expertise)
+        assert card.expertise_id == "custom-framework"
         card.close()
 
 
 # ---------------------------------------------------------------------------
-# StackSelectionPage — construction
+# ExpertiseSelectionPage — construction
 # ---------------------------------------------------------------------------
 
 @pytest.fixture()
 def page():
-    p = StackSelectionPage()
+    p = ExpertiseSelectionPage()
     yield p
     p.close()
 
@@ -178,7 +178,7 @@ def page():
 @pytest.fixture()
 def loaded_page():
     lib = _make_full_library()
-    p = StackSelectionPage(library_index=lib)
+    p = ExpertiseSelectionPage(library_index=lib)
     yield p
     p.close()
 
@@ -188,7 +188,7 @@ class TestPageConstruction:
         assert page is not None
 
     def test_no_cards_initially(self, page):
-        assert len(page.stack_cards) == 0
+        assert len(page.expertise_cards) == 0
 
     def test_initially_invalid(self, page):
         assert page.is_valid() is False
@@ -205,309 +205,309 @@ class TestPageConstruction:
 
 
 # ---------------------------------------------------------------------------
-# StackSelectionPage — load_stacks
+# ExpertiseSelectionPage — load_expertise
 # ---------------------------------------------------------------------------
 
-class TestLoadStacks:
-    def test_loads_all_11_stacks(self, loaded_page):
-        assert len(loaded_page.stack_cards) == 11
+class TestLoadExpertise:
+    def test_loads_all_11_expertise(self, loaded_page):
+        assert len(loaded_page.expertise_cards) == 11
 
-    def test_all_known_stack_ids_present(self, loaded_page):
-        cards = loaded_page.stack_cards
-        for sid in STACK_DESCRIPTIONS:
-            assert sid in cards, f"Missing stack card: {sid}"
+    def test_all_known_expertise_ids_present(self, loaded_page):
+        cards = loaded_page.expertise_cards
+        for sid in EXPERTISE_DESCRIPTIONS:
+            assert sid in cards, f"Missing expertise card: {sid}"
 
     def test_loads_via_constructor(self):
         lib = _make_library("python", "react")
-        page = StackSelectionPage(library_index=lib)
-        assert len(page.stack_cards) == 2
+        page = ExpertiseSelectionPage(library_index=lib)
+        assert len(page.expertise_cards) == 2
         page.close()
 
-    def test_load_replaces_previous_stacks(self, loaded_page):
+    def test_load_replaces_previous_expertise(self, loaded_page):
         new_lib = _make_library("python")
-        loaded_page.load_stacks(new_lib)
-        assert len(loaded_page.stack_cards) == 1
-        assert "python" in loaded_page.stack_cards
+        loaded_page.load_expertise(new_lib)
+        assert len(loaded_page.expertise_cards) == 1
+        assert "python" in loaded_page.expertise_cards
 
     def test_empty_library_shows_no_cards(self, page):
         lib = LibraryIndex(library_root="/fake")
-        page.load_stacks(lib)
-        assert len(page.stack_cards) == 0
+        page.load_expertise(lib)
+        assert len(page.expertise_cards) == 0
 
 
 # ---------------------------------------------------------------------------
-# StackSelectionPage — selection and validation
+# ExpertiseSelectionPage — selection and validation
 # ---------------------------------------------------------------------------
 
 class TestPageSelection:
-    def test_select_one_stack(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
+    def test_select_one_expertise(self, loaded_page):
+        loaded_page.expertise_cards["python"].is_selected = True
         assert loaded_page.selected_count() == 1
         assert loaded_page.is_valid() is True
 
-    def test_select_multiple_stacks(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-        loaded_page.stack_cards["typescript"].is_selected = True
+    def test_select_multiple_expertise(self, loaded_page):
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
+        loaded_page.expertise_cards["typescript"].is_selected = True
         assert loaded_page.selected_count() == 3
 
     def test_deselect_all_makes_invalid(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["python"].is_selected = False
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["python"].is_selected = False
         assert loaded_page.is_valid() is False
 
     def test_selection_changed_signal_emitted(self, loaded_page):
         received = []
         loaded_page.selection_changed.connect(lambda: received.append(True))
-        loaded_page.stack_cards["python"].is_selected = True
+        loaded_page.expertise_cards["python"].is_selected = True
         assert len(received) >= 1
 
     def test_warning_shown_after_deselect_all(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["python"].is_selected = False
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["python"].is_selected = False
         assert loaded_page._warning_label.isHidden() is False
 
-    def test_warning_hidden_when_stack_selected(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
+    def test_warning_hidden_when_expertise_selected(self, loaded_page):
+        loaded_page.expertise_cards["python"].is_selected = True
         assert loaded_page._warning_label.isHidden() is True
 
 
 # ---------------------------------------------------------------------------
-# StackSelectionPage — get_stack_selections
+# ExpertiseSelectionPage — get_expertise_selections
 # ---------------------------------------------------------------------------
 
-class TestGetStackSelections:
+class TestGetExpertiseSelections:
     def test_empty_when_none_selected(self, loaded_page):
-        selections = loaded_page.get_stack_selections()
+        selections = loaded_page.get_expertise_selections()
         assert isinstance(selections, list)
         assert len(selections) == 0
 
-    def test_contains_selected_stacks(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-        selections = loaded_page.get_stack_selections()
+    def test_contains_selected_expertise(self, loaded_page):
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
+        selections = loaded_page.get_expertise_selections()
         ids = {s.id for s in selections}
         assert ids == {"python", "react"}
 
-    def test_unselected_stacks_excluded(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        selections = loaded_page.get_stack_selections()
+    def test_unselected_expertise_excluded(self, loaded_page):
+        loaded_page.expertise_cards["python"].is_selected = True
+        selections = loaded_page.get_expertise_selections()
         ids = [s.id for s in selections]
         assert "react" not in ids
 
     def test_order_values_assigned(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-        selections = loaded_page.get_stack_selections()
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
+        selections = loaded_page.get_expertise_selections()
         orders = [s.order for s in selections]
         assert orders == [0, 1]
 
-    def test_selections_are_stack_selection_objects(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        selections = loaded_page.get_stack_selections()
-        assert all(isinstance(s, StackSelection) for s in selections)
+    def test_selections_are_expertise_selection_objects(self, loaded_page):
+        loaded_page.expertise_cards["python"].is_selected = True
+        selections = loaded_page.get_expertise_selections()
+        assert all(isinstance(s, ExpertiseSelection) for s in selections)
 
 
 # ---------------------------------------------------------------------------
-# StackSelectionPage — set_stack_selections (round-trip)
+# ExpertiseSelectionPage — set_expertise_selections (round-trip)
 # ---------------------------------------------------------------------------
 
-class TestSetStackSelections:
+class TestSetExpertiseSelections:
     def test_restores_selections(self, loaded_page):
         selections = [
-            StackSelection(id="python", order=0),
-            StackSelection(id="react", order=1),
+            ExpertiseSelection(id="python", order=0),
+            ExpertiseSelection(id="react", order=1),
         ]
-        loaded_page.set_stack_selections(selections)
-        assert loaded_page.stack_cards["python"].is_selected is True
-        assert loaded_page.stack_cards["react"].is_selected is True
-        assert loaded_page.stack_cards["java"].is_selected is False
+        loaded_page.set_expertise_selections(selections)
+        assert loaded_page.expertise_cards["python"].is_selected is True
+        assert loaded_page.expertise_cards["react"].is_selected is True
+        assert loaded_page.expertise_cards["java"].is_selected is False
 
     def test_restores_ordering(self, loaded_page):
         selections = [
-            StackSelection(id="react", order=0),
-            StackSelection(id="python", order=1),
+            ExpertiseSelection(id="react", order=0),
+            ExpertiseSelection(id="python", order=1),
         ]
-        loaded_page.set_stack_selections(selections)
+        loaded_page.set_expertise_selections(selections)
         assert loaded_page.ordered_ids == ["react", "python"]
 
     def test_set_clears_previous(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["java"].is_selected = True
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["java"].is_selected = True
 
-        selections = [StackSelection(id="react", order=0)]
-        loaded_page.set_stack_selections(selections)
-        assert loaded_page.stack_cards["python"].is_selected is False
-        assert loaded_page.stack_cards["java"].is_selected is False
-        assert loaded_page.stack_cards["react"].is_selected is True
+        selections = [ExpertiseSelection(id="react", order=0)]
+        loaded_page.set_expertise_selections(selections)
+        assert loaded_page.expertise_cards["python"].is_selected is False
+        assert loaded_page.expertise_cards["java"].is_selected is False
+        assert loaded_page.expertise_cards["react"].is_selected is True
 
     def test_set_updates_warning(self, loaded_page):
         # Set a valid selection
-        selections = [StackSelection(id="python", order=0)]
-        loaded_page.set_stack_selections(selections)
+        selections = [ExpertiseSelection(id="python", order=0)]
+        loaded_page.set_expertise_selections(selections)
         assert loaded_page._warning_label.isHidden() is True
 
         # Set an empty selection
-        loaded_page.set_stack_selections([])
+        loaded_page.set_expertise_selections([])
         assert loaded_page._warning_label.isHidden() is False
 
     def test_roundtrip_get_set_get(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-        original = loaded_page.get_stack_selections()
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
+        original = loaded_page.get_expertise_selections()
 
         # Reset all
-        for card in loaded_page.stack_cards.values():
+        for card in loaded_page.expertise_cards.values():
             card.is_selected = False
 
-        loaded_page.set_stack_selections(original)
-        restored = loaded_page.get_stack_selections()
+        loaded_page.set_expertise_selections(original)
+        restored = loaded_page.get_expertise_selections()
 
         assert len(restored) == len(original)
         orig_ids = {s.id for s in original}
         rest_ids = {s.id for s in restored}
         assert orig_ids == rest_ids
 
-    def test_ignores_unknown_stack_ids(self, loaded_page):
+    def test_ignores_unknown_expertise_ids(self, loaded_page):
         selections = [
-            StackSelection(id="python", order=0),
-            StackSelection(id="nonexistent", order=1),
+            ExpertiseSelection(id="python", order=0),
+            ExpertiseSelection(id="nonexistent", order=1),
         ]
-        loaded_page.set_stack_selections(selections)
-        assert loaded_page.stack_cards["python"].is_selected is True
+        loaded_page.set_expertise_selections(selections)
+        assert loaded_page.expertise_cards["python"].is_selected is True
         assert loaded_page.selected_count() == 1
 
 
 # ---------------------------------------------------------------------------
-# StackSelectionPage — ordering
+# ExpertiseSelectionPage — ordering
 # ---------------------------------------------------------------------------
 
 class TestOrdering:
     def test_selection_order_tracked(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
         assert loaded_page.ordered_ids == ["python", "react"]
 
     def test_deselection_removes_from_order(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-        loaded_page.stack_cards["python"].is_selected = False
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
+        loaded_page.expertise_cards["python"].is_selected = False
         assert loaded_page.ordered_ids == ["react"]
 
     def test_move_up(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-        loaded_page.move_stack_up("react")
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
+        loaded_page.move_expertise_up("react")
         assert loaded_page.ordered_ids == ["react", "python"]
 
     def test_move_up_at_top_no_change(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-        loaded_page.move_stack_up("python")
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
+        loaded_page.move_expertise_up("python")
         assert loaded_page.ordered_ids == ["python", "react"]
 
     def test_move_down(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-        loaded_page.move_stack_down("python")
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
+        loaded_page.move_expertise_down("python")
         assert loaded_page.ordered_ids == ["react", "python"]
 
     def test_move_down_at_bottom_no_change(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-        loaded_page.move_stack_down("react")
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
+        loaded_page.move_expertise_down("react")
         assert loaded_page.ordered_ids == ["python", "react"]
 
-    def test_move_unselected_stack_no_error(self, loaded_page):
-        loaded_page.move_stack_up("python")  # not selected, should be no-op
+    def test_move_unselected_expertise_no_error(self, loaded_page):
+        loaded_page.move_expertise_up("python")  # not selected, should be no-op
         assert loaded_page.ordered_ids == []
 
     def test_move_emits_selection_changed(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
         received = []
         loaded_page.selection_changed.connect(lambda: received.append(True))
-        loaded_page.move_stack_up("react")
+        loaded_page.move_expertise_up("react")
         assert len(received) >= 1
 
     def test_order_values_in_selections(self, loaded_page):
-        loaded_page.stack_cards["python"].is_selected = True
-        loaded_page.stack_cards["react"].is_selected = True
-        loaded_page.stack_cards["typescript"].is_selected = True
-        loaded_page.move_stack_up("typescript")
+        loaded_page.expertise_cards["python"].is_selected = True
+        loaded_page.expertise_cards["react"].is_selected = True
+        loaded_page.expertise_cards["typescript"].is_selected = True
+        loaded_page.move_expertise_up("typescript")
         # Order should be: typescript(0), python(1), react(2)
-        selections = loaded_page.get_stack_selections()
+        selections = loaded_page.get_expertise_selections()
         by_id = {s.id: s.order for s in selections}
         assert by_id["typescript"] < by_id["react"]
 
 
 # ---------------------------------------------------------------------------
-# StackSelectionPage — file count badge display
+# ExpertiseSelectionPage — file count badge display
 # ---------------------------------------------------------------------------
 
 class TestFileBadge:
-    def test_stack_with_files_shows_count(self):
+    def test_expertise_with_files_shows_count(self):
         lib = _make_library_with_files()
-        page = StackSelectionPage(library_index=lib)
-        assert page.stack_cards["python"].file_count == 3
-        assert page.stack_cards["react"].file_count == 2
-        assert page.stack_cards["devops"].file_count == 1
+        page = ExpertiseSelectionPage(library_index=lib)
+        assert page.expertise_cards["python"].file_count == 3
+        assert page.expertise_cards["react"].file_count == 2
+        assert page.expertise_cards["devops"].file_count == 1
         page.close()
 
-    def test_stack_with_no_files(self):
+    def test_expertise_with_no_files(self):
         lib = _make_library("python")
-        page = StackSelectionPage(library_index=lib)
-        assert page.stack_cards["python"].file_count == 0
+        page = ExpertiseSelectionPage(library_index=lib)
+        assert page.expertise_cards["python"].file_count == 0
         page.close()
 
 
 # ---------------------------------------------------------------------------
-# STACK_DESCRIPTIONS completeness
+# EXPERTISE_DESCRIPTIONS completeness
 # ---------------------------------------------------------------------------
 
-class TestStackDescriptions:
-    def test_all_11_stacks_have_descriptions(self):
+class TestExpertiseDescriptions:
+    def test_all_11_expertise_have_descriptions(self):
         expected = {
             "clean-code", "devops", "dotnet", "java", "node",
             "python", "python-qt-pyside6", "react", "security",
             "sql-dba", "typescript",
         }
-        assert set(STACK_DESCRIPTIONS.keys()) == expected
+        assert set(EXPERTISE_DESCRIPTIONS.keys()) == expected
 
     def test_descriptions_are_tuples(self):
-        for sid, desc in STACK_DESCRIPTIONS.items():
+        for sid, desc in EXPERTISE_DESCRIPTIONS.items():
             assert isinstance(desc, tuple), f"{sid} description is not a tuple"
             assert len(desc) == 2, f"{sid} description tuple has {len(desc)} elements"
 
     def test_descriptions_have_nonempty_values(self):
-        for sid, (name, desc) in STACK_DESCRIPTIONS.items():
+        for sid, (name, desc) in EXPERTISE_DESCRIPTIONS.items():
             assert len(name) > 0, f"{sid} has empty display name"
             assert len(desc) > 0, f"{sid} has empty description"
 
 
 # ---------------------------------------------------------------------------
-# StackSelectionPage — empty-state messaging
+# ExpertiseSelectionPage — empty-state messaging
 # ---------------------------------------------------------------------------
 
 class TestEmptyState:
     def test_empty_label_visible_when_no_library(self, page):
         assert page._empty_label.isHidden() is False
 
-    def test_empty_label_hidden_after_loading_stacks(self):
+    def test_empty_label_hidden_after_loading_expertise(self):
         lib = _make_full_library()
-        p = StackSelectionPage(library_index=lib)
+        p = ExpertiseSelectionPage(library_index=lib)
         assert p._empty_label.isHidden() is True
         p.close()
 
     def test_empty_label_visible_after_loading_empty_library(self, page):
         lib = LibraryIndex(library_root="/fake")
-        page.load_stacks(lib)
+        page.load_expertise(lib)
         assert page._empty_label.isHidden() is False
 
-    def test_empty_label_hidden_after_reloading_with_stacks(self, page):
+    def test_empty_label_hidden_after_reloading_with_expertise(self, page):
         lib_empty = LibraryIndex(library_root="/fake")
-        page.load_stacks(lib_empty)
+        page.load_expertise(lib_empty)
         assert page._empty_label.isHidden() is False
         lib = _make_library("python", "react")
-        page.load_stacks(lib)
+        page.load_expertise(lib)
         assert page._empty_label.isHidden() is True

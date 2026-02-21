@@ -6,10 +6,10 @@ import logging
 from pathlib import Path
 
 from foundry_app.core.models import (
+    ExpertiseInfo,
     HookPackInfo,
     LibraryIndex,
     PersonaInfo,
-    StackInfo,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,27 +47,27 @@ def _scan_personas(personas_dir: Path) -> list[PersonaInfo]:
     return personas
 
 
-def _scan_stacks(stacks_dir: Path) -> list[StackInfo]:
-    """Scan the stacks/ directory and return StackInfo for each subdirectory."""
-    if not stacks_dir.is_dir():
-        logger.warning("Stacks directory not found: %s", stacks_dir)
+def _scan_expertise(expertise_dir: Path) -> list[ExpertiseInfo]:
+    """Scan the stacks/ directory and return ExpertiseInfo for each subdirectory."""
+    if not expertise_dir.is_dir():
+        logger.warning("Expertise directory not found: %s", expertise_dir)
         return []
 
-    stacks: list[StackInfo] = []
-    for entry in sorted(stacks_dir.iterdir()):
+    items: list[ExpertiseInfo] = []
+    for entry in sorted(expertise_dir.iterdir()):
         if not entry.is_dir():
             continue
 
         files = sorted(f.name for f in entry.iterdir() if f.is_file())
-        stacks.append(
-            StackInfo(
+        items.append(
+            ExpertiseInfo(
                 id=entry.name,
                 path=str(entry),
                 files=files,
             )
         )
 
-    return stacks
+    return items
 
 
 def _parse_hook_category(path: Path) -> str:
@@ -118,7 +118,7 @@ def build_library_index(library_root: str | Path) -> LibraryIndex:
         library_root: Path to the root of an ai-team-library directory.
 
     Returns:
-        A LibraryIndex containing all discovered personas, stacks, and hook packs.
+        A LibraryIndex containing all discovered personas, expertise, and hook packs.
     """
     root = Path(library_root).resolve()
     if not root.is_dir():
@@ -126,19 +126,19 @@ def build_library_index(library_root: str | Path) -> LibraryIndex:
         return LibraryIndex(library_root=str(root))
 
     personas = _scan_personas(root / "personas")
-    stacks = _scan_stacks(root / "stacks")
+    expertise = _scan_expertise(root / "stacks")
     hook_packs = _scan_hook_packs(root / "claude" / "hooks")
 
     logger.info(
-        "Indexed library: %d personas, %d stacks, %d hook packs",
+        "Indexed library: %d personas, %d expertise, %d hook packs",
         len(personas),
-        len(stacks),
+        len(expertise),
         len(hook_packs),
     )
 
     return LibraryIndex(
         library_root=str(root),
         personas=personas,
-        stacks=stacks,
+        expertise=expertise,
         hook_packs=hook_packs,
     )

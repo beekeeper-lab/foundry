@@ -35,12 +35,12 @@ def _create_library(root: Path) -> Path:
     templates_dir.mkdir()
     (templates_dir / "impl.md.j2").write_text("template", encoding="utf-8")
 
-    # Stacks
-    stack_dir = lib / "stacks" / "python-fastapi"
-    stack_dir.mkdir(parents=True)
-    (stack_dir / "stack.md").write_text("# Python + FastAPI", encoding="utf-8")
-    (stack_dir / "conventions.md").write_text("# Conventions", encoding="utf-8")
-    (stack_dir / "testing.md").write_text("# Testing", encoding="utf-8")
+    # Expertise
+    expertise_dir = lib / "stacks" / "python-fastapi"
+    expertise_dir.mkdir(parents=True)
+    (expertise_dir / "stack.md").write_text("# Python + FastAPI", encoding="utf-8")
+    (expertise_dir / "conventions.md").write_text("# Conventions", encoding="utf-8")
+    (expertise_dir / "testing.md").write_text("# Testing", encoding="utf-8")
 
     # Shared Templates
     tpl_dir = lib / "templates"
@@ -86,7 +86,7 @@ class TestBuildFileTree:
         tree = _build_file_tree(lib)
         names = [cat["name"] for cat in tree]
         assert "Personas" in names
-        assert "Stacks" in names
+        assert "Expertise" in names
         assert "Shared Templates" in names
         assert "Workflows" in names
         assert "Claude Commands" in names
@@ -127,8 +127,8 @@ class TestBuildFileTree:
         (lib / "personas" / "test").mkdir(parents=True)
         (lib / "personas" / "test" / "persona.md").write_text("hi", encoding="utf-8")
         tree = _build_file_tree(lib)
-        stacks = next(c for c in tree if c["name"] == "Stacks")
-        assert stacks["children"] == []
+        expertise_items = next(c for c in tree if c["name"] == "Expertise")
+        assert expertise_items["children"] == []
 
     def test_hidden_files_are_skipped(self, tmp_path: Path):
         lib = tmp_path / "lib"
@@ -1807,39 +1807,39 @@ class TestTemplateVisualDistinction:
 
 
 # ---------------------------------------------------------------------------
-# Stack CRUD — create operations
+# Expertise CRUD — create operations
 # ---------------------------------------------------------------------------
 
 
-class TestStackCreate:
+class TestExpertiseCreate:
 
-    def test_create_stack_at_category_level(self, tmp_path: Path):
+    def test_create_expertise_at_category_level(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item)
                 break
         with patch(_INPUT_DIALOG, return_value=("rust-actix", True)):
             screen._on_new_asset()
-        stack_dir = lib / "stacks" / "rust-actix"
-        assert stack_dir.is_dir()
-        conv = stack_dir / "conventions.md"
+        expertise_dir = lib / "stacks" / "rust-actix"
+        assert expertise_dir.is_dir()
+        conv = expertise_dir / "conventions.md"
         assert conv.is_file()
         content = conv.read_text(encoding="utf-8")
-        assert "Rust Actix Stack Conventions" in content
+        assert "Rust Actix Expertise Conventions" in content
 
-    def test_create_new_file_from_stack_dir(self, tmp_path: Path):
+    def test_create_new_file_from_expertise_dir(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
-                stack_dir_node = item.child(0)  # python-fastapi dir
-                screen.tree.setCurrentItem(stack_dir_node.child(0))  # file inside
+            if item.text(0) == "Expertise":
+                expertise_dir_node = item.child(0)  # python-fastapi dir
+                screen.tree.setCurrentItem(expertise_dir_node.child(0))  # file inside
                 break
         with patch(_INPUT_DIALOG, return_value=("security", True)):
             screen._on_new_asset()
@@ -1849,28 +1849,28 @@ class TestStackCreate:
         assert "# Security" in content
         assert "## Guidelines" in content
 
-    def test_create_new_file_from_file_inside_stack(self, tmp_path: Path):
+    def test_create_new_file_from_file_inside_expertise(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
-                stack_dir = item.child(0)  # python-fastapi
-                screen.tree.setCurrentItem(stack_dir.child(0))  # conventions.md
+            if item.text(0) == "Expertise":
+                expertise_dir_node = item.child(0)  # python-fastapi
+                screen.tree.setCurrentItem(expertise_dir_node.child(0))  # conventions.md
                 break
         with patch(_INPUT_DIALOG, return_value=("performance", True)):
             screen._on_new_asset()
         created = lib / "stacks" / "python-fastapi" / "performance.md"
         assert created.is_file()
 
-    def test_create_duplicate_stack_shows_warning(self, tmp_path: Path):
+    def test_create_duplicate_expertise_shows_warning(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item)
                 break
         with (
@@ -1880,15 +1880,15 @@ class TestStackCreate:
             screen._on_new_asset()
         mock_warn.assert_called_once()
 
-    def test_create_duplicate_stack_file_shows_warning(self, tmp_path: Path):
+    def test_create_duplicate_expertise_file_shows_warning(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
-                stack_dir_node = item.child(0)  # python-fastapi dir
-                screen.tree.setCurrentItem(stack_dir_node.child(0))  # file inside
+            if item.text(0) == "Expertise":
+                expertise_dir_node = item.child(0)  # python-fastapi dir
+                screen.tree.setCurrentItem(expertise_dir_node.child(0))  # file inside
                 break
         with (
             patch(_INPUT_DIALOG, return_value=("conventions", True)),
@@ -1897,13 +1897,13 @@ class TestStackCreate:
             screen._on_new_asset()
         mock_warn.assert_called_once()
 
-    def test_create_stack_invalid_name_shows_warning(self, tmp_path: Path):
+    def test_create_expertise_invalid_name_shows_warning(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item)
                 break
         with (
@@ -1914,13 +1914,13 @@ class TestStackCreate:
         mock_warn.assert_called_once()
         assert not (lib / "stacks" / "Bad Name!").exists()
 
-    def test_create_stack_cancelled_does_nothing(self, tmp_path: Path):
+    def test_create_expertise_cancelled_does_nothing(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item)
                 break
         before_count = len(list((lib / "stacks").iterdir()))
@@ -1928,31 +1928,31 @@ class TestStackCreate:
             screen._on_new_asset()
         assert len(list((lib / "stacks").iterdir())) == before_count
 
-    def test_tree_refreshes_after_stack_create(self, tmp_path: Path):
+    def test_tree_refreshes_after_expertise_create(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 before = item.childCount()
                 screen.tree.setCurrentItem(item)
                 break
-        with patch(_INPUT_DIALOG, return_value=("new-stack", True)):
+        with patch(_INPUT_DIALOG, return_value=("new-expertise", True)):
             screen._on_new_asset()
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 assert item.childCount() == before + 1
                 break
 
-    def test_new_stack_auto_selected_after_create(self, tmp_path: Path):
+    def test_new_expertise_auto_selected_after_create(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item)
                 break
         with patch(_INPUT_DIALOG, return_value=("go-fiber", True)):
@@ -1963,48 +1963,48 @@ class TestStackCreate:
         expected_path = str(lib / "stacks" / "go-fiber" / "conventions.md")
         assert current.data(0, 0x0100) == expected_path  # Qt.ItemDataRole.UserRole
 
-    def test_new_stack_content_shown_in_editor(self, tmp_path: Path):
+    def test_new_expertise_content_shown_in_editor(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item)
                 break
         with patch(_INPUT_DIALOG, return_value=("go-fiber", True)):
             screen._on_new_asset()
         editor_text = screen.editor_widget.editor.toPlainText()
-        assert "Go Fiber Stack Conventions" in editor_text
+        assert "Go Fiber Expertise Conventions" in editor_text
 
-    def test_new_stack_parent_expanded_in_tree(self, tmp_path: Path):
+    def test_new_expertise_parent_expanded_in_tree(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item)
                 break
         with patch(_INPUT_DIALOG, return_value=("go-fiber", True)):
             screen._on_new_asset()
-        # The stack directory node should be expanded
+        # The expertise directory node should be expanded
         current = screen.tree.currentItem()
         assert current is not None
-        stack_node = current.parent()
-        assert stack_node is not None
-        assert stack_node.text(0) == "go-fiber"
-        assert stack_node.isExpanded()
+        expertise_node = current.parent()
+        assert expertise_node is not None
+        assert expertise_node.text(0) == "go-fiber"
+        assert expertise_node.isExpanded()
 
 
 # ---------------------------------------------------------------------------
-# Stack CRUD — delete operations
+# Expertise CRUD — delete operations
 # ---------------------------------------------------------------------------
 
 
-class TestStackDelete:
+class TestExpertiseDelete:
 
-    def test_delete_stack_directory(self, tmp_path: Path):
+    def test_delete_expertise_directory(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
@@ -2012,14 +2012,14 @@ class TestStackDelete:
         assert target.is_dir()
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item.child(0))  # python-fastapi dir
                 break
         with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.Yes):
             screen._on_delete_asset()
         assert not target.exists()
 
-    def test_delete_stack_file(self, tmp_path: Path):
+    def test_delete_expertise_file(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
@@ -2027,10 +2027,10 @@ class TestStackDelete:
         assert target.is_file()
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
-                stack_dir = item.child(0)
-                for j in range(stack_dir.childCount()):
-                    child = stack_dir.child(j)
+            if item.text(0) == "Expertise":
+                expertise_dir_node = item.child(0)
+                for j in range(expertise_dir_node.childCount()):
+                    child = expertise_dir_node.child(j)
                     if child.text(0) == "testing.md":
                         screen.tree.setCurrentItem(child)
                         break
@@ -2039,27 +2039,27 @@ class TestStackDelete:
             screen._on_delete_asset()
         assert not target.exists()
 
-    def test_delete_stack_cancelled_keeps_dir(self, tmp_path: Path):
+    def test_delete_expertise_cancelled_keeps_dir(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         target = lib / "stacks" / "python-fastapi"
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item.child(0))
                 break
         with patch(_MSG_QUESTION, return_value=QMessageBox.StandardButton.No):
             screen._on_delete_asset()
         assert target.is_dir()
 
-    def test_tree_refreshes_after_stack_delete(self, tmp_path: Path):
+    def test_tree_refreshes_after_expertise_delete(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 assert item.childCount() == 1
                 screen.tree.setCurrentItem(item.child(0))
                 break
@@ -2067,98 +2067,98 @@ class TestStackDelete:
             screen._on_delete_asset()
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 assert item.childCount() == 0
                 break
 
 
-# Stack Read — BEAN-085
+# Expertise Read — BEAN-085
 # ---------------------------------------------------------------------------
 
 
-class TestStackRead:
-    """Verify stack listing in tree and file loading into editor (BEAN-085)."""
+class TestExpertiseRead:
+    """Verify expertise listing in tree and file loading into editor (BEAN-085)."""
 
-    def _find_stacks_item(self, screen):
-        """Return the top-level 'Stacks' tree item."""
+    def _find_expertise_item(self, screen):
+        """Return the top-level 'Expertise' tree item."""
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 return item
         return None
 
-    def test_stacks_category_lists_all_stacks(self, tmp_path: Path):
+    def test_expertise_category_lists_all_expertise(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        stacks_item = self._find_stacks_item(screen)
-        assert stacks_item is not None
-        # _create_library creates one stack: python-fastapi
-        assert stacks_item.childCount() == 1
-        assert stacks_item.child(0).text(0) == "python-fastapi"
+        expertise_item = self._find_expertise_item(screen)
+        assert expertise_item is not None
+        # _create_library creates one expertise: python-fastapi
+        assert expertise_item.childCount() == 1
+        assert expertise_item.child(0).text(0) == "python-fastapi"
 
-    def test_stacks_category_lists_multiple_stacks(self, tmp_path: Path):
+    def test_expertise_category_lists_multiple_expertise(self, tmp_path: Path):
         lib = _create_library(tmp_path)
-        # Add a second stack
+        # Add a second expertise
         second = lib / "stacks" / "rust-actix"
         second.mkdir(parents=True)
         (second / "conventions.md").write_text("# Rust Actix", encoding="utf-8")
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        stacks_item = self._find_stacks_item(screen)
-        assert stacks_item.childCount() == 2
-        child_names = [stacks_item.child(i).text(0) for i in range(stacks_item.childCount())]
+        expertise_item = self._find_expertise_item(screen)
+        assert expertise_item.childCount() == 2
+        child_names = [expertise_item.child(i).text(0) for i in range(expertise_item.childCount())]
         assert "python-fastapi" in child_names
         assert "rust-actix" in child_names
 
-    def test_stack_directory_shows_nested_files(self, tmp_path: Path):
+    def test_expertise_directory_shows_nested_files(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        stacks_item = self._find_stacks_item(screen)
-        stack_dir_item = stacks_item.child(0)  # python-fastapi
+        expertise_item = self._find_expertise_item(screen)
+        expertise_dir_item = expertise_item.child(0)  # python-fastapi
         # _create_library adds stack.md, conventions.md, testing.md
-        assert stack_dir_item.childCount() == 3
+        assert expertise_dir_item.childCount() == 3
         file_names = sorted(
-            stack_dir_item.child(i).text(0) for i in range(stack_dir_item.childCount())
+            expertise_dir_item.child(i).text(0) for i in range(expertise_dir_item.childCount())
         )
         assert file_names == ["conventions.md", "stack.md", "testing.md"]
 
-    def test_clicking_stack_file_loads_content_in_editor(self, tmp_path: Path):
+    def test_clicking_expertise_file_loads_content_in_editor(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        stacks_item = self._find_stacks_item(screen)
-        stack_dir_item = stacks_item.child(0)
+        expertise_item = self._find_expertise_item(screen)
+        expertise_dir_item = expertise_item.child(0)
         # Find and select stack.md
-        for i in range(stack_dir_item.childCount()):
-            child = stack_dir_item.child(i)
+        for i in range(expertise_dir_item.childCount()):
+            child = expertise_dir_item.child(i)
             if child.text(0) == "stack.md":
                 screen.tree.setCurrentItem(child)
                 break
         assert "Python + FastAPI" in screen.editor_widget.editor.toPlainText()
 
-    def test_clicking_stack_conventions_loads_content(self, tmp_path: Path):
+    def test_clicking_expertise_conventions_loads_content(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        stacks_item = self._find_stacks_item(screen)
-        stack_dir_item = stacks_item.child(0)
-        for i in range(stack_dir_item.childCount()):
-            child = stack_dir_item.child(i)
+        expertise_item = self._find_expertise_item(screen)
+        expertise_dir_item = expertise_item.child(0)
+        for i in range(expertise_dir_item.childCount()):
+            child = expertise_dir_item.child(i)
             if child.text(0) == "conventions.md":
                 screen.tree.setCurrentItem(child)
                 break
         assert "Conventions" in screen.editor_widget.editor.toPlainText()
 
-    def test_file_path_label_updates_for_stack_file(self, tmp_path: Path):
+    def test_file_path_label_updates_for_expertise_file(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        stacks_item = self._find_stacks_item(screen)
-        stack_dir_item = stacks_item.child(0)
-        for i in range(stack_dir_item.childCount()):
-            child = stack_dir_item.child(i)
+        expertise_item = self._find_expertise_item(screen)
+        expertise_dir_item = expertise_item.child(0)
+        for i in range(expertise_dir_item.childCount()):
+            child = expertise_dir_item.child(i)
             if child.text(0) == "testing.md":
                 screen.tree.setCurrentItem(child)
                 break
@@ -2166,27 +2166,27 @@ class TestStackRead:
         assert "testing.md" in label_text
         assert "stacks" in label_text
 
-    def test_selecting_stack_directory_clears_editor(self, tmp_path: Path):
+    def test_selecting_expertise_directory_clears_editor(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        stacks_item = self._find_stacks_item(screen)
+        expertise_item = self._find_expertise_item(screen)
         # First select a file to load content
-        stack_dir_item = stacks_item.child(0)
-        screen.tree.setCurrentItem(stack_dir_item.child(0))
+        expertise_dir_item = expertise_item.child(0)
+        screen.tree.setCurrentItem(expertise_dir_item.child(0))
         assert screen.editor_widget.editor.toPlainText() != ""
         # Now select the directory node — editor should clear
-        screen.tree.setCurrentItem(stack_dir_item)
+        screen.tree.setCurrentItem(expertise_dir_item)
         assert screen.editor_widget.editor.toPlainText() == ""
 
-    def test_live_preview_renders_stack_markdown(self, tmp_path: Path):
+    def test_live_preview_renders_expertise_markdown(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        stacks_item = self._find_stacks_item(screen)
-        stack_dir_item = stacks_item.child(0)
-        for i in range(stack_dir_item.childCount()):
-            child = stack_dir_item.child(i)
+        expertise_item = self._find_expertise_item(screen)
+        expertise_dir_item = expertise_item.child(0)
+        for i in range(expertise_dir_item.childCount()):
+            child = expertise_dir_item.child(i)
             if child.text(0) == "stack.md":
                 screen.tree.setCurrentItem(child)
                 break
@@ -2195,32 +2195,32 @@ class TestStackRead:
         html = screen.editor_widget.preview_pane.toHtml()
         assert "Python" in html
 
-    def test_empty_stacks_directory_shows_no_children(self, tmp_path: Path):
+    def test_empty_expertise_directory_shows_no_children(self, tmp_path: Path):
         lib = tmp_path / "empty-lib"
         (lib / "stacks").mkdir(parents=True)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        stacks_item = self._find_stacks_item(screen)
-        assert stacks_item is not None
-        assert stacks_item.childCount() == 0
+        expertise_item = self._find_expertise_item(screen)
+        assert expertise_item is not None
+        assert expertise_item.childCount() == 0
 
-    def test_stack_file_nodes_have_paths(self, tmp_path: Path):
+    def test_expertise_file_nodes_have_paths(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         tree = _build_file_tree(lib)
-        stacks_cat = next(c for c in tree if c["name"] == "Stacks")
-        stack_dir = stacks_cat["children"][0]  # python-fastapi
-        assert stack_dir["path"] is None  # directory node
-        for file_node in stack_dir["children"]:
+        expertise_cat = next(c for c in tree if c["name"] == "Expertise")
+        expertise_dir_node = expertise_cat["children"][0]  # python-fastapi
+        assert expertise_dir_node["path"] is None  # directory node
+        for file_node in expertise_dir_node["children"]:
             assert file_node["path"] is not None
             assert file_node["path"].endswith(".md")
 
-    def test_stack_directory_node_has_no_path(self, tmp_path: Path):
+    def test_expertise_directory_node_has_no_path(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         tree = _build_file_tree(lib)
-        stacks_cat = next(c for c in tree if c["name"] == "Stacks")
-        stack_dir = stacks_cat["children"][0]
-        assert stack_dir["name"] == "python-fastapi"
-        assert stack_dir["path"] is None
+        expertise_cat = next(c for c in tree if c["name"] == "Expertise")
+        expertise_dir_node = expertise_cat["children"][0]
+        assert expertise_dir_node["name"] == "python-fastapi"
+        assert expertise_dir_node["path"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -2633,57 +2633,57 @@ class TestCommandUpdate:
 
 
 # ---------------------------------------------------------------------------
-# Stack Update — end-to-end workflow (BEAN-087)
+# Expertise Update — end-to-end workflow (BEAN-087)
 # ---------------------------------------------------------------------------
 
 
-def _select_stack_file(screen, stack_name: str, file_name: str):
-    """Helper: select a file inside a stack directory in the tree."""
+def _select_expertise_file(screen, expertise_name: str, file_name: str):
+    """Helper: select a file inside an expertise directory in the tree."""
     for i in range(screen.tree.topLevelItemCount()):
         item = screen.tree.topLevelItem(i)
-        if item.text(0) == "Stacks":
+        if item.text(0) == "Expertise":
             for j in range(item.childCount()):
-                stack_dir = item.child(j)
-                if stack_dir.text(0) == stack_name:
-                    for k in range(stack_dir.childCount()):
-                        child = stack_dir.child(k)
+                expertise_dir_node = item.child(j)
+                if expertise_dir_node.text(0) == expertise_name:
+                    for k in range(expertise_dir_node.childCount()):
+                        child = expertise_dir_node.child(k)
                         if child.text(0) == file_name:
                             screen.tree.setCurrentItem(child)
                             return child
     return None
 
 
-class TestStackUpdate:
+class TestExpertiseUpdate:
 
-    def test_selecting_stack_file_loads_content(self, tmp_path: Path):
+    def test_selecting_expertise_file_loads_content(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         assert "Conventions" in screen.editor_widget.editor.toPlainText()
 
-    def test_selecting_stack_file_shows_file_label(self, tmp_path: Path):
+    def test_selecting_expertise_file_shows_file_label(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         assert "conventions.md" in screen.file_label.text()
 
-    def test_editing_stack_triggers_dirty_state(self, tmp_path: Path):
+    def test_editing_expertise_triggers_dirty_state(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         assert screen.editor_widget.dirty is False
         screen.editor_widget.editor.setPlainText("# Updated conventions")
         assert screen.editor_widget.dirty is True
         assert screen.editor_widget.dirty_label.text() == "Modified"
 
-    def test_save_stack_persists_to_disk(self, tmp_path: Path):
+    def test_save_expertise_persists_to_disk(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         screen.editor_widget.editor.setPlainText("# New conventions content")
         assert screen.editor_widget.dirty is True
         result = screen.editor_widget.save()
@@ -2698,17 +2698,17 @@ class TestStackUpdate:
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         screen.editor_widget.editor.setPlainText("changed")
         assert screen.editor_widget.dirty_label.text() == "Modified"
         screen.editor_widget.save()
         assert screen.editor_widget.dirty_label.text() == ""
 
-    def test_revert_stack_restores_original(self, tmp_path: Path):
+    def test_revert_expertise_restores_original(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         original = screen.editor_widget.editor.toPlainText()
         screen.editor_widget.editor.setPlainText("unsaved changes")
     def test_revert_restores_original_skill_content(self, tmp_path: Path):
@@ -2735,27 +2735,27 @@ class TestStackUpdate:
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         screen.editor_widget.editor.setPlainText("changed")
         assert screen.editor_widget.dirty_label.text() == "Modified"
         screen.editor_widget.revert()
         assert screen.editor_widget.dirty_label.text() == ""
 
-    def test_preview_updates_for_stack(self, tmp_path: Path):
+    def test_preview_updates_for_expertise(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
-        screen.editor_widget.editor.setPlainText("# Stack Preview Test")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
+        screen.editor_widget.editor.setPlainText("# Expertise Preview Test")
         screen.editor_widget._update_preview()
         html = screen.editor_widget.preview_pane.toHtml()
-        assert "Stack Preview Test" in html
+        assert "Expertise Preview Test" in html
 
     def test_save_button_enabled_when_dirty(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         assert not screen.editor_widget.save_button.isEnabled()
         screen.editor_widget.editor.setPlainText("changed")
         assert screen.editor_widget.save_button.isEnabled()
@@ -2764,49 +2764,49 @@ class TestStackUpdate:
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         assert not screen.editor_widget.revert_button.isEnabled()
         screen.editor_widget.editor.setPlainText("changed")
         assert screen.editor_widget.revert_button.isEnabled()
 
-    def test_update_different_stack_files(self, tmp_path: Path):
+    def test_update_different_expertise_files(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         # Edit and save stack.md
-        _select_stack_file(screen, "python-fastapi", "stack.md")
-        screen.editor_widget.editor.setPlainText("# Updated stack")
+        _select_expertise_file(screen, "python-fastapi", "stack.md")
+        screen.editor_widget.editor.setPlainText("# Updated expertise")
         screen.editor_widget.save()
         # Edit and save testing.md
-        _select_stack_file(screen, "python-fastapi", "testing.md")
+        _select_expertise_file(screen, "python-fastapi", "testing.md")
         screen.editor_widget.editor.setPlainText("# Updated testing")
         screen.editor_widget.save()
         # Verify both persisted
         assert (lib / "stacks" / "python-fastapi" / "stack.md").read_text(
             encoding="utf-8"
-        ) == "# Updated stack"
+        ) == "# Updated expertise"
         assert (lib / "stacks" / "python-fastapi" / "testing.md").read_text(
             encoding="utf-8"
         ) == "# Updated testing"
 
-    def test_switching_stack_files_loads_new_content(self, tmp_path: Path):
+    def test_switching_expertise_files_loads_new_content(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         assert "Conventions" in screen.editor_widget.editor.toPlainText()
-        _select_stack_file(screen, "python-fastapi", "testing.md")
+        _select_expertise_file(screen, "python-fastapi", "testing.md")
         assert "Testing" in screen.editor_widget.editor.toPlainText()
 
     def test_dirty_state_resets_on_file_switch(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        _select_stack_file(screen, "python-fastapi", "conventions.md")
+        _select_expertise_file(screen, "python-fastapi", "conventions.md")
         screen.editor_widget.editor.setPlainText("unsaved edits")
         assert screen.editor_widget.dirty is True
         # Switch to a different file — editor reloads, dirty resets
-        _select_stack_file(screen, "python-fastapi", "testing.md")
+        _select_expertise_file(screen, "python-fastapi", "testing.md")
         assert screen.editor_widget.dirty is False
 
 
@@ -3167,13 +3167,13 @@ class TestWorkflowUpdate:
         screen.set_library_root(lib)
         _select_shared_template(screen, "CLAUDE.md.j2")
         assert "CLAUDE.md.j2" in screen.file_label.text()
-    def test_delete_stack_confirmation_message(self, tmp_path: Path):
+    def test_delete_expertise_confirmation_message(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item.child(0))
                 break
         with patch(
@@ -3187,42 +3187,42 @@ class TestWorkflowUpdate:
 
 
 # ---------------------------------------------------------------------------
-# Stack button state
+# Expertise button state
 # ---------------------------------------------------------------------------
 
 
-class TestStackButtonState:
+class TestExpertiseButtonState:
 
-    def test_delete_enabled_for_stack_directory(self, tmp_path: Path):
+    def test_delete_enabled_for_expertise_directory(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item.child(0))
                 break
         assert screen.delete_button.isEnabled()
 
-    def test_delete_enabled_for_stack_file(self, tmp_path: Path):
+    def test_delete_enabled_for_expertise_file(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
-                stack_dir = item.child(0)
-                screen.tree.setCurrentItem(stack_dir.child(0))
+            if item.text(0) == "Expertise":
+                expertise_dir_node = item.child(0)
+                screen.tree.setCurrentItem(expertise_dir_node.child(0))
                 break
         assert screen.delete_button.isEnabled()
 
-    def test_new_enabled_for_stacks_category(self, tmp_path: Path):
+    def test_new_enabled_for_expertise_category(self, tmp_path: Path):
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         for i in range(screen.tree.topLevelItemCount()):
             item = screen.tree.topLevelItem(i)
-            if item.text(0) == "Stacks":
+            if item.text(0) == "Expertise":
                 screen.tree.setCurrentItem(item)
                 break
         assert screen.new_button.isEnabled()
