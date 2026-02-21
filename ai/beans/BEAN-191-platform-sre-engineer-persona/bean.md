@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-191 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 19:27 |
+| **Completed** | 2026-02-20 19:33 |
+| **Duration** | 6m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -31,18 +31,23 @@ Add the persona to `ai-team-library/personas/` with complete persona definition,
 
 ## Acceptance Criteria
 
-- [ ] Persona directory created in `ai-team-library/personas/` with persona.md, outputs.md, prompts.md, templates/
-- [ ] persona.md follows standardized format with mission, capabilities, boundaries
-- [ ] outputs.md defines deliverable types and formats
-- [ ] prompts.md provides reusable prompt templates
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Persona directory created in `ai-team-library/personas/` with persona.md, outputs.md, prompts.md, templates/
+- [x] persona.md follows standardized format with mission, capabilities, boundaries
+- [x] outputs.md defines deliverable types and formats
+- [x] prompts.md provides reusable prompt templates
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Create persona directory and persona.md | Developer | — | Done |
+| 2 | Create outputs.md | Developer | 1 | Done |
+| 3 | Create prompts.md | Developer | 1 | Done |
+| 4 | Create templates/ with SRE templates | Developer | 1 | Done |
+| 5 | Update test_library_indexer.py EXPECTED_PERSONAS | Developer | 1 | Done |
+| 6 | Verify tests pass and lint clean | Tech-QA | 1-5 | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
@@ -74,12 +79,17 @@ Sourced from Trello card #65.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create persona directory and persona.md | Developer | — | — | — | — |
+| 2 | Create outputs.md | Developer | — | — | — | — |
+| 3 | Create prompts.md | Developer | — | — | — | — |
+| 4 | Create templates/ with SRE templates | Developer | — | — | — | — |
+| 5 | Update test_library_indexer.py EXPECTED_PERSONAS | Developer | — | — | — | — |
+| 6 | Verify tests pass and lint clean | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 6 |
+| **Total Duration** | 6m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
