@@ -133,9 +133,13 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
    1. Update bean.md status to In Progress
    2. Decompose into tasks
    3. Execute the wave (BA → Architect → Developer → Tech-QA)
+      — COMMIT AND PUSH after each task. Do not wait until the end.
    4. Verify acceptance criteria
    5. Update bean.md status to Done
-   6. Commit on the feature branch
+   6. Final commit and push on the feature branch
+
+   RELIABILITY: Commit+push after each task. On error: commit what you have, set status to error, EXIT.
+   If running for 30+ minutes: commit, set status, exit. Update status file after every task as a heartbeat.
 
    STATUS FILE PROTOCOL — You MUST update /tmp/agentic-worker-BEAN-NNN.status at every transition.
    See /spawn-bean command for full status file format and update rules."
@@ -166,7 +170,8 @@ The main window enters a **persistent dashboard loop** that monitors workers, me
    - Mark this worker as merged
 3. **Assign replacements** — **Re-read `_index.md` fresh**. For each open slot, find the next `Approved` unblocked bean. If found, update `_index.md`, create worktree, spawn worker.
 4. **Render dashboard** — Progress bars, status emoji, alerts for blocked/stale workers.
-5. **Check exit** — Exit only when **both**: all workers are done/merged AND no approved beans remain.
+5. **Alert and recover** — Flag `blocked` (🔴). For `stale` workers (no update for 10+ minutes): kill tmux window, remove worktree, set status to error, log event. Bean stays `In Progress` for retry.
+6. **Check exit** — Exit only when **both**: all workers are done/merged AND no approved beans remain.
 
 To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
 

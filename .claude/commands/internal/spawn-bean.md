@@ -199,11 +199,19 @@ CONTEXT DIET — Minimize context consumption:
 Bean lifecycle:
 1. Decompose into tasks using /internal:seed-tasks
 2. Execute each task through the appropriate team persona
+   — COMMIT AND PUSH after completing each task. Do not wait until the end.
+   — If you stall on task 3 of 4, tasks 1-2 should already be committed and pushed.
 3. Use /close-loop after each task to verify acceptance criteria
 4. Use /internal:handoff between persona transitions
 5. Run tests (uv run pytest) and lint (uv run ruff check foundry_app/) before closing
-6. Commit all changes on the feature branch
+6. Final commit and push all changes on the feature branch
 7. Use /status-report to produce final summary
+
+RELIABILITY RULES:
+- COMMIT AND PUSH after each task completion, not just at the end.
+- On unrecoverable error: commit any completed work, push, set status file to error with message, EXIT immediately.
+- If running for 30+ minutes: commit and push whatever is done, set status appropriately, exit.
+- Update the status file updated timestamp after every task as a heartbeat.
 Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
 ```
 
@@ -238,12 +246,19 @@ CONTEXT DIET — Minimize context consumption:
 Bean lifecycle:
 1. Decompose into tasks using /internal:seed-tasks
 2. Execute each task through the appropriate team persona
+   — COMMIT AND PUSH after completing each task. Do not wait until the end.
 3. Use /close-loop after each task to verify acceptance criteria
 4. Use /internal:handoff between persona transitions
 5. Run tests (uv run pytest) and lint (uv run ruff check foundry_app/) before closing
-6. Commit all changes on the feature branch
+6. Final commit and push all changes on the feature branch
 7. Use /internal:merge-bean to merge into main
 8. Use /status-report to produce final summary
+
+RELIABILITY RULES:
+- COMMIT AND PUSH after each task completion, not just at the end.
+- On unrecoverable error: commit any completed work, push, set status file to error with message, EXIT immediately.
+- If running for 30+ minutes: commit and push whatever is done, set status appropriately, exit.
+- Update the status file updated timestamp after every task as a heartbeat.
 Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
 ```
 
@@ -271,7 +286,12 @@ The orchestrator runs a persistent loop that monitors workers, merges completed 
    c. Create a new worktree, write an initial status file, create a launcher script, and spawn a new tmux window (or pane in `--wide` mode) using the same pattern as Step 2/2b.
    d. If no approved unblocked bean exists, do not spawn — the slot stays empty.
 4. **Compute progress** — For each active worker, compute `tasks_done / tasks_total * 100` (show 0% if `tasks_total` is 0).
-5. **Check for stale workers** — If a worker's `updated` timestamp is older than 5 minutes and its status is `running`, mark as `🟡 Stale` in the display.
+5. **Detect and recover stale workers** — If a worker's `updated` timestamp is older than 10 minutes and its status is `running` or `decomposing`:
+   a. Kill the tmux window: `tmux kill-window -t "bean-NNN"`
+   b. Remove the worktree: `git worktree remove --force /tmp/foundry-worktree-BEAN-NNN`
+   c. Update the status file: set `status: error`, `message: Killed by orchestrator (stale for 10+ minutes)`
+   d. Log the event to the dashboard: `🔴 BEAN-NNN killed (stale)`
+   The bean stays `In Progress` in `_index.md` for manual retry or re-spawning in a future `/long-run`.
 6. **Render the dashboard table** — See format below.
 7. **Alert on blocked workers** — If any worker has `status: blocked`, display an alert with the `message` text and which tmux window to switch to.
 8. **Check exit condition** — Exit the loop if **both** conditions are true:

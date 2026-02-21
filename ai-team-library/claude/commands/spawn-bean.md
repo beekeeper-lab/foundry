@@ -193,11 +193,19 @@ STATUS FILE PROTOCOL — You MUST update /tmp/agentic-worker-BEAN-NNN.status at 
 Bean lifecycle:
 1. Decompose into tasks using /seed-tasks
 2. Execute each task through the appropriate team persona
+   — COMMIT AND PUSH after completing each task. Do not wait until the end.
+   — If you stall on task 3 of 4, tasks 1-2 should already be committed and pushed.
 3. Use /close-loop after each task to verify acceptance criteria
 4. Use /handoff between persona transitions
-5. Run tests (uv run pytest) and lint (uv run ruff check) before closing
-6. Commit all changes on the feature branch
+5. Run tests and lint before closing
+6. Final commit and push all changes on the feature branch
 7. Use /status-report to produce final summary
+
+RELIABILITY RULES:
+- COMMIT AND PUSH after each task completion, not just at the end.
+- On unrecoverable error: commit any completed work, push, set status file to error with message, EXIT immediately.
+- If running for 30+ minutes: commit and push whatever is done, set status appropriately, exit.
+- Update the status file updated timestamp after every task as a heartbeat.
 Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
 ```
 
@@ -226,12 +234,19 @@ STATUS FILE PROTOCOL — You MUST update your status file at every transition:
 Bean lifecycle:
 1. Decompose into tasks using /seed-tasks
 2. Execute each task through the appropriate team persona
+   — COMMIT AND PUSH after completing each task. Do not wait until the end.
 3. Use /close-loop after each task to verify acceptance criteria
 4. Use /handoff between persona transitions
-5. Run tests (uv run pytest) and lint (uv run ruff check) before closing
-6. Commit all changes on the feature branch
+5. Run tests and lint before closing
+6. Final commit and push all changes on the feature branch
 7. Use /merge-bean to merge into main
 8. Use /status-report to produce final summary
+
+RELIABILITY RULES:
+- COMMIT AND PUSH after each task completion, not just at the end.
+- On unrecoverable error: commit any completed work, push, set status file to error with message, EXIT immediately.
+- If running for 30+ minutes: commit and push whatever is done, set status appropriately, exit.
+- Update the status file updated timestamp after every task as a heartbeat.
 Work autonomously until the bean is Done. Do not ask for user input unless you encounter an unresolvable blocker.
 ```
 
@@ -255,7 +270,12 @@ After all workers are spawned, the main window enters a **persistent dashboard l
    b. If found: update `_index.md` to mark it `In Progress`, commit and push, create a new worktree, write its status file, and spawn a new tmux window/pane using the same launcher script pattern.
    c. If no approved unblocked bean exists, leave the slot empty.
 4. **Render dashboard** — Compute progress: `tasks_done / tasks_total * 100` (show 0% if `tasks_total` is 0). Display the dashboard table (see format below).
-5. **Alert** — Flag `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no status file update for 5+ minutes).
+5. **Detect and recover stale workers** — If a worker's `updated` timestamp is older than 10 minutes and its status is `running` or `decomposing`:
+   a. Kill the tmux window: `tmux kill-window -t "bean-NNN"`
+   b. Remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
+   c. Update the status file: set `status: error`, `message: Killed by orchestrator (stale for 10+ minutes)`
+   d. Log the event to the dashboard: `🔴 BEAN-NNN killed (stale)`
+   The bean stays `In Progress` in `_index.md` for manual retry or re-spawning in a future `/long-run`.
 6. **Check exit condition** — Exit the loop only when **both**: all workers are done/merged, AND no approved beans remain in `_index.md`. If either condition is false, continue.
 7. **Sleep ~30 seconds** — Then go back to step 1.
 

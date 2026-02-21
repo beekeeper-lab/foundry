@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-224 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-21 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-02-21 18:05 |
+| **Completed** | 2026-02-21 18:11 |
+| **Duration** | 6m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -47,24 +47,22 @@ Make parallel workers reliably commit their work, update their status file, and 
 
 ## Acceptance Criteria
 
-- [ ] Worker prompts include explicit error-handling: on failure, commit partial work, set status to `error` with message, and exit
-- [ ] Worker prompts include incremental commit guidance (after each task completion, not just at the end)
-- [ ] Orchestrator dashboard loop detects stale workers (no status update for configurable threshold)
-- [ ] Orchestrator takes action on stale workers (kill window, remove worktree, mark bean for retry or report)
-- [ ] Library templates updated (`ai-team-library/claude/`)
-- [ ] Foundry templates updated (`.claude/`)
-- [ ] Both template sets are consistent
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Worker prompts include explicit error-handling: on failure, commit partial work, set status to `error` with message, and exit
+- [x] Worker prompts include incremental commit guidance (after each task completion, not just at the end)
+- [x] Orchestrator dashboard loop detects stale workers (10+ minute threshold)
+- [x] Orchestrator takes action on stale workers (kill window, remove worktree, mark bean for retry or report)
+- [x] Library templates updated (`ai-team-library/claude/`)
+- [x] Foundry templates updated (`.claude/`)
+- [x] Both template sets are consistent
+- [x] All tests pass (`uv run pytest`) — 659 passed
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Update worker prompts and dashboard loop for reliability | Developer | — | Done |
+| 2 | Verify worker reliability improvements | Tech-QA | 1 | Done |
 
 ## Changes
 
@@ -72,7 +70,12 @@ Make parallel workers reliably commit their work, update their status file, and 
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/skills/long-run/SKILL.md | ~20 |
+| .claude/commands/long-run.md | ~20 |
+| .claude/commands/internal/spawn-bean.md | ~40 |
+| ai-team-library/claude/skills/long-run/SKILL.md | ~20 |
+| ai-team-library/claude/commands/long-run.md | ~20 |
+| ai-team-library/claude/commands/spawn-bean.md | ~40 |
 
 ## Notes
 
@@ -93,12 +96,13 @@ Key design principles:
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Update worker prompts and dashboard loop for reliability | Developer | 3m | 1,526,094 | 300 | $3.03 |
+| 2 | Verify worker reliability improvements | Tech-QA | 1m | 2,991,926 | 395 | $4.80 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 4m |
+| **Total Tokens In** | 4,518,020 |
+| **Total Tokens Out** | 695 |
+| **Total Cost** | $7.83 |
