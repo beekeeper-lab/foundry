@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-177 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 19:08 |
+| **Completed** | 2026-02-20 19:14 |
+| **Duration** | 6m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -31,19 +31,21 @@ Add the stack to `ai-team-library/stacks/` with comprehensive, production-ready 
 
 ## Acceptance Criteria
 
-- [ ] Stack file created in `ai-team-library/stacks/` following standardized template
-- [ ] Includes: Defaults table with alternatives, Do/Don't lists, Common Pitfalls, Checklist, code examples
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Stack file created in `ai-team-library/stacks/` following standardized template
+- [x] Includes: Defaults table with alternatives, Do/Don't lists, Common Pitfalls, Checklist, code examples
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Create Kotlin conventions.md | Developer | — | Done |
+| 2 | Create Kotlin performance.md | Developer | — | Done |
+| 3 | Create Kotlin security.md | Developer | — | Done |
+| 4 | Create Kotlin testing.md | Developer | — | Done |
+| 5 | Update test_library_indexer.py expected stacks | Developer | — | Done |
+| 6 | Verify all tests pass and lint clean | Tech-QA | 1,2,3,4,5 | Done |
 
 ## Changes
 
@@ -72,12 +74,17 @@ Sourced from Trello card #50.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create Kotlin conventions.md | Developer | — | — | — | — |
+| 2 | Create Kotlin performance.md | Developer | — | — | — | — |
+| 3 | Create Kotlin security.md | Developer | — | — | — | — |
+| 4 | Create Kotlin testing.md | Developer | — | — | — | — |
+| 5 | Update test_library_indexer.py expected stacks | Developer | — | — | — | — |
+| 6 | Verify all tests pass and lint clean | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 6 |
+| **Total Duration** | 6m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
