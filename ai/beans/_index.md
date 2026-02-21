@@ -244,6 +244,6 @@
 | BEAN-220 | Group Expertise by Category in Wizard UI | App | High | Done | team-lead |
 | BEAN-221 | Fix Worktree Agent Merge Gap in Generated Apps | App | High | Done | team-lead |
 | BEAN-222 | Move to Trunk-Based Development | Process | High | Done | team-lead |
-| BEAN-223 | Share .claude/ Across Projects via Git Subtree | Infra | High | In Progress | team-lead |
+| BEAN-223 | Share .claude/ Across Projects via Git Subtree | Infra | High | Done | team-lead |
 | BEAN-224 | Parallel Worker Reliability — Commit, Exit, and Watchdog | Process | High | Done | team-lead |
 | BEAN-225 | Generate Subtree Setup Instead of Asset Copy for .claude/ | App | High | Approved | — |
