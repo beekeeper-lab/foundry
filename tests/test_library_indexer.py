@@ -16,6 +16,7 @@ EXPECTED_PERSONAS = [
     "developer",
     "devops-release",
     "integrator-merge-captain",
+    "legal-counsel",
     "researcher-librarian",
     "security-engineer",
     "team-lead",
