@@ -36,6 +36,7 @@ EXPECTED_PERSONAS = [
 ]
 
 EXPECTED_STACKS = [
+    "accessibility-compliance",
     "api-design",
     "aws-cloud-platform",
     "azure-cloud-platform",
