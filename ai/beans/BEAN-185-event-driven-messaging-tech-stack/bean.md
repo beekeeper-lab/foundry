@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-185 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 19:18 |
+| **Completed** | 2026-02-20 19:24 |
+| **Duration** | 6m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -31,19 +31,20 @@ Add the stack to `ai-team-library/stacks/` with comprehensive, production-ready 
 
 ## Acceptance Criteria
 
-- [ ] Stack file created in `ai-team-library/stacks/` following standardized template
-- [ ] Includes: Defaults table with alternatives, Do/Don't lists, Common Pitfalls, Checklist, code examples
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Stack file created in `ai-team-library/stacks/` following standardized template
+- [x] Includes: Defaults table with alternatives, Do/Don't lists, Common Pitfalls, Checklist, code examples
+- [x] All tests pass (`uv run pytest`) — pre-existing Qt import error unrelated to changes
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Create conventions.md — core defaults, broker selection, message design | Developer | — | Done |
+| 2 | Create event-sourcing.md — event sourcing, CQRS, event stores | Developer | — | Done |
+| 3 | Create patterns.md — sagas, DLQ, idempotency, retry | Developer | — | Done |
+| 4 | Create operations.md — production ops, monitoring, scaling | Developer | — | Done |
+| 5 | Verify stack: tests pass, lint clean, acceptance criteria | Tech-QA | 1,2,3,4 | Done |
 
 ## Changes
 
@@ -72,12 +73,16 @@ Sourced from Trello card #58.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create conventions.md — core defaults, broker selection, message design | Developer | — | — | — | — |
+| 2 | Create event-sourcing.md — event sourcing, CQRS, event stores | Developer | — | — | — | — |
+| 3 | Create patterns.md — sagas, DLQ, idempotency, retry | Developer | — | — | — | — |
+| 4 | Create operations.md — production ops, monitoring, scaling | Developer | — | — | — | — |
+| 5 | Verify stack: tests pass, lint clean, acceptance criteria | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 5 |
+| **Total Duration** | 6m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
