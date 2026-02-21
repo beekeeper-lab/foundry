@@ -35,6 +35,7 @@ EXPECTED_STACKS = [
     "hipaa-compliance",
     "iso-9000",
     "java",
+    "kubernetes",
     "node",
     "python",
     "python-qt-pyside6",
