@@ -25,6 +25,7 @@ EXPECTED_PERSONAS = [
 ]
 
 EXPECTED_STACKS = [
+    "api-design",
     "aws-cloud-platform",
     "clean-code",
     "data-engineering",

@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-184 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 19:18 |
+| **Completed** | 2026-02-20 19:24 |
+| **Duration** | 6m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -31,16 +31,21 @@ Add the stack to `ai-team-library/stacks/` with comprehensive, production-ready 
 
 ## Acceptance Criteria
 
-- [ ] Stack file created in `ai-team-library/stacks/` following standardized template
-- [ ] Includes: Defaults table with alternatives, Do/Don't lists, Common Pitfalls, Checklist, code examples
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Stack file created in `ai-team-library/stacks/` following standardized template
+- [x] Includes: Defaults table with alternatives, Do/Don't lists, Common Pitfalls, Checklist, code examples
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Create API design conventions stack file | Developer | — | Done |
+| 2 | Create error contracts guide | Developer | — | Done |
+| 3 | Create pagination patterns guide | Developer | — | Done |
+| 4 | Create rate limiting guide | Developer | — | Done |
+| 5 | Create OpenAPI specification guide | Developer | — | Done |
+| 6 | Verify tests and lint | Tech-QA | 1–5 | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
@@ -72,12 +77,17 @@ Sourced from Trello card #57.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create API design conventions stack file | Developer | — | — | — | — |
+| 2 | Create error contracts guide | Developer | — | — | — | — |
+| 3 | Create pagination patterns guide | Developer | — | — | — | — |
+| 4 | Create rate limiting guide | Developer | — | — | — | — |
+| 5 | Create OpenAPI specification guide | Developer | — | — | — | — |
+| 6 | Verify tests and lint | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 6 |
+| **Total Duration** | 6m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
