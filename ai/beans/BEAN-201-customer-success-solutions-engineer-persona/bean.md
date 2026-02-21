@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-201 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-02-20 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-02-20 19:43 |
+| **Completed** | 2026-02-20 19:48 |
+| **Duration** | <1 hr |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -31,21 +31,23 @@ Add the persona to `ai-team-library/personas/` with complete persona definition,
 
 ## Acceptance Criteria
 
-- [ ] Persona directory created in `ai-team-library/personas/` with persona.md, outputs.md, prompts.md, templates/
-- [ ] persona.md follows standardized format with mission, capabilities, boundaries
-- [ ] outputs.md defines deliverable types and formats
-- [ ] prompts.md provides reusable prompt templates
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Persona directory created in `ai-team-library/personas/` with persona.md, outputs.md, prompts.md, templates/
+- [x] persona.md follows standardized format with mission, capabilities, boundaries
+- [x] outputs.md defines deliverable types and formats
+- [x] prompts.md provides reusable prompt templates
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Create persona directory and persona.md | Developer | — | Done |
+| 2 | Create outputs.md with deliverable definitions | Developer | 1 | Done |
+| 3 | Create prompts.md with prompt fragments | Developer | 1 | Done |
+| 4 | Create templates/ with reusable templates | Developer | 1 | Done |
+| 5 | Update EXPECTED_PERSONAS in test_library_indexer.py | Developer | 1 | Done |
+| 6 | Run tests and lint verification | Tech-QA | 1–5 | Done |
 
 ## Changes
 
@@ -74,12 +76,17 @@ Sourced from Trello card #76.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Create persona directory and persona.md | Developer | — | — | — | — |
+| 2 | Create outputs.md with deliverable definitions | Developer | — | — | — | — |
+| 3 | Create prompts.md with prompt fragments | Developer | — | — | — | — |
+| 4 | Create templates/ with reusable templates | Developer | — | — | — | — |
+| 5 | Update EXPECTED_PERSONAS in test_library_indexer.py | Developer | — | — | — | — |
+| 6 | Run tests and lint verification | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 6 |
+| **Total Duration** | 5m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
