@@ -242,3 +242,4 @@
 | BEAN-218 | Add Category Field to ExpertiseInfo Model | App | High | Done | team-lead |
 | BEAN-219 | Add Category Metadata to All Expertise Files | Infra | High | Done | team-lead |
 | BEAN-220 | Group Expertise by Category in Wizard UI | App | High | Done | team-lead |
+| BEAN-221 | Fix Worktree Agent Merge Gap in Generated Apps | App | High | In Progress | team-lead |

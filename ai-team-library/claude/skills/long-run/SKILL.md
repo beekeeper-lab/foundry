@@ -188,31 +188,38 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits (no bare shell left behind). The launcher script self-deletes after use. No stagger delay needed — worktrees provide full isolation.
 9. **Record worker assignments** — Track which window name maps to which bean, worktree path, and status file.
 
-### Parallel Phase 4: Dashboard Monitoring
+### Parallel Phase 4: Continuous Assignment Dashboard Loop
 
-10. **Enter dashboard loop** — The main window displays a live dashboard by reading worker status files. See `/spawn-bean` Step 4 for the full dashboard specification. The loop runs every ~30 seconds:
-    - Read all `/tmp/agentic-worker-*.status` files and parse key-value pairs.
-    - Render a dashboard table with progress bars (█/░), percentage (tasks_done/tasks_total), and color-coded status emoji.
-    - Alert on `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no status file update for 5+ minutes).
-    - Cross-reference with `tmux list-windows` to detect closed windows (worker exited).
-11. **Report completions** — As each worker finishes (status file shows `done` or window disappears), report in the dashboard.
-12. **Merge, update index, and assign next bean** — When a worker completes:
-    - Remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
-    - Sync before merging: `git fetch origin && git pull origin test` — worktrees push to the remote, so the orchestrator's local `test` may be behind.
-    - Merge the bean: run `/merge-bean NNN` from the main repo (merges feature branch into `test`).
-    - Update `_index.md` on `test`: set the bean's status to `Done`. Commit and push. (The orchestrator is the sole writer of `_index.md`.)
-    - Move the Trello card to Completed (same logic as sequential step 17b — check bean Notes for Trello source, find matching card in In_Progress list, move to Completed). Best-effort; do not block on failure.
-    - Re-read the backlog for newly unblocked beans.
-    - If an independent actionable bean exists, update `_index.md` to mark it `In Progress`, commit, create a new worktree, write its status file, and spawn a new worker window using the same launcher script pattern.
-    - If no more beans, do not spawn.
+The main window enters a **persistent dashboard loop** that monitors workers, merges completed beans, and spawns replacements until the backlog is exhausted. This is the mechanism that keeps assigning beans — it is not just a passive monitor. See `/spawn-bean` Step 4 for the full specification.
+
+**Every iteration** of the loop performs these steps:
+
+10. **Read status files** — Read all `/tmp/agentic-worker-*.status` files and parse key-value pairs. Cross-reference with `tmux list-windows` to detect closed windows.
+11. **Process completed workers** — For each status file showing `status: done` (or whose tmux window has closed) that has not yet been merged:
+    a. Remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
+    b. Sync before merging: `git fetch origin && git pull origin test`
+    c. Merge the bean: run `/merge-bean NNN` from the main repo.
+    d. Update `_index.md` on `test`: set the bean's status to `Done`. Commit and push.
+    e. Move the Trello card to Completed (same logic as sequential step 17b). Best-effort; do not block on failure.
+    f. Mark this worker as merged in the orchestrator's tracking.
+12. **Assign replacement workers** — **Re-read `_index.md` fresh** (do NOT use a pre-computed queue — the backlog may have changed). For each merged worker slot with no replacement:
+    a. Find the next bean with status `Approved` that has no unmet inter-bean dependencies.
+    b. If found: update `_index.md` to mark it `In Progress`, commit and push, create a new worktree, write its status file, and spawn a new tmux window using the same launcher script pattern.
+    c. If no approved unblocked bean exists, leave the slot empty.
+13. **Render dashboard** — Display progress bars (█/░), percentages (tasks_done/tasks_total), and color-coded status emoji.
+14. **Alert** — Flag `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no update for 5+ minutes).
+15. **Check exit condition** — Exit the loop only when **both**: all workers are done/merged, AND no approved beans remain in `_index.md`. If either condition is false, continue.
+16. **Sleep ~30 seconds** — Then go back to step 10.
+
+The loop runs indefinitely until the backlog is exhausted. There is no maximum bean limit. To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`.
     - To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
 
 ### Parallel Phase 5: Completion
 
-13. **Check termination** — When all workers are done (status files show `done` or all windows closed) and no actionable beans remain, exit the dashboard loop.
-14. **Final report** — Output: total beans processed, parallel vs sequential breakdown, all branch names created, remaining backlog status. End with: `⚠ Work is on the test branch. Run /deploy to promote to main.`
-15. **Cleanup** — Remove status files: `rm -f /tmp/agentic-worker-*.status`. Run `git worktree prune` to clean up any stale worktree references.
-16. **Sync local branches** — Worktrees pushed to the remote, so the original repo's refs are stale. Bring them up to date:
+17. **Exit reached** — All workers are done/merged and no approved beans remain.
+18. **Final report** — Output: total beans processed, parallel vs sequential breakdown, all branch names created, remaining backlog status. End with: `⚠ Work is on the test branch. Run /deploy to promote to main.`
+19. **Cleanup** — Remove status files: `rm -f /tmp/agentic-worker-*.status`. Run `git worktree prune` to clean up any stale worktree references.
+20. **Sync local branches** — Worktrees pushed to the remote, so the original repo's refs are stale. Bring them up to date:
     - `git fetch origin && git pull origin test` (the orchestrator is already on `test`).
     - If local `main` is behind `origin/main`: `git branch -f main origin/main`.
     - This ensures the repo that launched `/long-run` has current refs when the user resumes work.

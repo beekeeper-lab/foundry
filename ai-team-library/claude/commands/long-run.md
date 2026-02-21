@@ -150,22 +150,26 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
 **Bean assignment rules:**
 - Only assign beans that have no unmet dependencies on other in-progress or pending beans.
 - If fewer than N independent beans are available, spawn only as many workers as there are beans.
-- As a worker completes its bean (its window disappears or status file shows `done`):
-  1. Remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
-  2. Merge the bean: run `/merge-bean NNN` from the main repo
-  3. Update `_index.md` on `test`: set the bean's status to `Done`, commit, and push. (The orchestrator is the sole writer of `_index.md`.)
-  4. Check for newly-unblocked beans and spawn a new worker with a fresh worktree for the next one.
+- Never assign the same bean to multiple workers.
+- The main window orchestrates only — it does not process beans itself.
 
-**Progress monitoring — dashboard loop:**
+**Continuous assignment dashboard loop:**
 
-The main window enters a dashboard loop after spawning workers. See `/spawn-bean` Step 4 for the full dashboard specification. Summary:
+The main window enters a **persistent dashboard loop** that monitors workers, merges completed beans, and spawns replacements until the backlog is exhausted. This is the mechanism that keeps assigning beans — it is not just a passive monitor.
 
-- Read all `/tmp/agentic-worker-*.status` files every ~30 seconds.
-- Render a dashboard table showing each bean's progress bar, percentage (tasks_done/tasks_total), and color-coded status.
-- Alert on `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no update for 5+ minutes).
-- When a worker finishes and beans remain, spawn a replacement worker for the next unblocked bean.
-- When all workers are done and no actionable beans remain, report completion, clean up status files (`rm -f /tmp/agentic-worker-*.status`), run `git worktree prune` to clean up any stale worktree references, and exit.
-- To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
+**Every iteration** (~30 seconds) performs these steps:
+1. **Read status files** — Read all `/tmp/agentic-worker-*.status` files. Cross-reference with `tmux list-windows` to detect closed windows.
+2. **Process completed workers** — For each worker showing `status: done` (or whose window has closed) that has not yet been merged:
+   - Remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
+   - Sync: `git fetch origin && git pull origin test`
+   - Merge: run `/merge-bean NNN` from the main repo
+   - Update `_index.md` on `test`: set status to `Done`, commit and push
+   - Mark this worker as merged
+3. **Assign replacements** — **Re-read `_index.md` fresh**. For each open slot, find the next `Approved` unblocked bean. If found, update `_index.md`, create worktree, spawn worker.
+4. **Render dashboard** — Progress bars, status emoji, alerts for blocked/stale workers.
+5. **Check exit** — Exit only when **both**: all workers are done/merged AND no approved beans remain.
+
+To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
 
 | Flag | Default | Description |
 |------|---------|-------------|

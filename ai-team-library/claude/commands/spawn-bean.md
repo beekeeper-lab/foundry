@@ -237,20 +237,29 @@ Work autonomously until the bean is Done. Do not ask for user input unless you e
 
 **When using `--count N`** (multiple workers), each bean is pre-assigned by the orchestrator with its own worktree. Use the **specific bean prompt** above — every worker knows its bean ID and runs in its isolated worktree.
 
-### Step 4: Dashboard — monitor workers from the main window
+### Step 4: Continuous Assignment Dashboard Loop
 
-After all workers are spawned, the main window enters a **dashboard monitoring loop**. This runs in the orchestrator's Claude session (the one that ran `/spawn-bean`).
+After all workers are spawned, the main window enters a **persistent dashboard loop** that monitors workers, merges completed beans, and spawns replacements until the backlog is exhausted. This is the mechanism that keeps assigning beans — it is not just a passive monitor.
 
-**Dashboard loop:**
+**Every iteration** of the loop performs these steps:
 
-1. Read all `/tmp/agentic-worker-*.status` files.
-2. For each file, parse the key-value pairs.
-3. Compute progress percentage: `tasks_done / tasks_total * 100` (show 0% if `tasks_total` is 0).
-4. Check for stale workers: if `updated` timestamp is older than 5 minutes and status is `running`, mark as `🟡 Stale` in the display.
-5. Render the dashboard table (see format below).
-6. If any worker has `status: blocked`, display an alert with the message and which window to switch to.
-7. If all workers show `status: done` or their status files are gone (window closed), report completion and exit the loop.
-8. Wait ~30 seconds, then repeat from step 1.
+1. **Read status files** — Read all `/tmp/agentic-worker-*.status` files and parse key-value pairs. Cross-reference with `tmux list-windows` to detect closed windows (worker exited).
+2. **Process completed workers** — For each status file showing `status: done` (or whose tmux window has closed) that has not yet been merged:
+   a. Remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
+   b. Sync before merging: `git fetch origin && git pull origin test`
+   c. Merge the bean: run `/merge-bean NNN` from the main repo to merge the feature branch into `test`. This ensures merges happen sequentially from the main repo (avoiding the worktree limitation where `test` can't be checked out from a worktree if it's in use elsewhere).
+   d. Update `_index.md` on `test`: set the bean's status to `Done`. Commit and push.
+   e. Mark this worker as merged in the orchestrator's tracking.
+3. **Assign replacement workers** — **Re-read `_index.md` fresh** (do NOT use a pre-computed queue — the backlog may have changed). For each merged worker slot with no replacement:
+   a. Find the next bean with status `Approved` that has no unmet inter-bean dependencies.
+   b. If found: update `_index.md` to mark it `In Progress`, commit and push, create a new worktree, write its status file, and spawn a new tmux window/pane using the same launcher script pattern.
+   c. If no approved unblocked bean exists, leave the slot empty.
+4. **Render dashboard** — Compute progress: `tasks_done / tasks_total * 100` (show 0% if `tasks_total` is 0). Display the dashboard table (see format below).
+5. **Alert** — Flag `blocked` workers (🔴 with message and window switch shortcut) and `stale` workers (🟡, no status file update for 5+ minutes).
+6. **Check exit condition** — Exit the loop only when **both**: all workers are done/merged, AND no approved beans remain in `_index.md`. If either condition is false, continue.
+7. **Sleep ~30 seconds** — Then go back to step 1.
+
+The loop runs indefinitely until the backlog is exhausted. There is no maximum bean limit. To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`.
 
 **Dashboard display format:**
 
@@ -282,21 +291,6 @@ When a worker has `status: blocked`:
 - The dashboard highlights that row with 🔴 and shows the `message` text
 - Below the table, print a prominent alert: `⚠  N worker(s) need attention`
 - Include the window switch shortcut so the user can jump there immediately
-
-**Worker completion — orchestrator merge:**
-
-When a worker's status changes to `done` (or its window/pane closes):
-
-1. **Remove the worktree**: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
-2. **Merge the bean**: Run `/merge-bean NNN` from the main repo to merge the feature branch into `test`.
-3. **Spawn replacement**: If actionable beans remain in the backlog, create a new worktree + launcher for the next bean and spawn a replacement worker.
-
-This ensures merges happen sequentially from the main repo (avoiding the worktree limitation where `test` can't be checked out from a worktree if it's in use elsewhere).
-
-**Dashboard exit conditions:**
-- All status files show `done` and all merges complete → print completion summary, clean up status files, exit
-- All worker windows/panes have closed → print completion summary, clean up any remaining status files, exit
-- User interrupts → exit cleanly (status files remain for inspection)
 
 ### Step 5: Cleanup
 
