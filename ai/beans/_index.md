@@ -216,8 +216,8 @@
 | BEAN-192 | Database Administrator Persona | Infra | Medium | In Progress | team-lead |
 | BEAN-193 | Legal Counsel / Lawyer Persona | Infra | Medium | In Progress | team-lead |
 | BEAN-194 | Contract Review & Analysis Skill | Infra | Medium | In Progress | team-lead |
-| BEAN-195 | Intellectual Property & Licensing Skill | Infra | Medium | Approved | (unassigned) |
-| BEAN-196 | Terms of Service & Privacy Policy Drafting Skill | Infra | Medium | Approved | (unassigned) |
+| BEAN-195 | Intellectual Property & Licensing Skill | Infra | Medium | In Progress | team-lead |
+| BEAN-196 | Terms of Service & Privacy Policy Drafting Skill | Infra | Medium | In Progress | team-lead |
 | BEAN-197 | Regulatory Compliance Assessment Skill | Infra | Medium | Approved | (unassigned) |
 | BEAN-198 | Risk Assessment & Liability Analysis Skill | Infra | Medium | Approved | (unassigned) |
 | BEAN-199 | Product Owner / Product Manager Persona | Infra | Medium | Approved | (unassigned) |
