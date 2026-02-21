@@ -230,7 +230,7 @@
 | BEAN-206 | Business Intelligence & Analytics Stack | Infra | Medium | Done | team-lead |
 | BEAN-207 | FinOps / Cloud Cost Management Stack | Infra | Medium | Done | team-lead |
 | BEAN-208 | Customer Enablement Stack | Infra | Medium | Done | team-lead |
-| BEAN-209 | Change Management Stack | Infra | Medium | In Progress | team-lead |
+| BEAN-209 | Change Management Stack | Infra | Medium | Done | team-lead |
 | BEAN-210 | Sales Engineering Stack | Infra | Medium | In Progress | team-lead |
 | BEAN-211 | ML/AI & LLM Operations Stack | Infra | Medium | In Progress | team-lead |
 | BEAN-212 | Accessibility Compliance (ADA/WCAG) Stack | Infra | Medium | In Progress | team-lead |
