@@ -41,6 +41,7 @@ EXPECTED_STACKS = [
     "aws-cloud-platform",
     "azure-cloud-platform",
     "business-intelligence",
+    "change-management",
     "clean-code",
     "customer-enablement",
     "data-engineering",
