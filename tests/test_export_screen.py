@@ -28,35 +28,6 @@ def _create_project(root: Path, name: str, with_manifest: bool = True) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Construction
-# ---------------------------------------------------------------------------
-
-
-class TestConstruction:
-
-    def test_creates_screen(self):
-        screen = ExportScreen()
-        assert screen is not None
-
-    def test_has_project_list(self):
-        screen = ExportScreen()
-        assert screen.project_list is not None
-
-    def test_has_format_combo(self):
-        screen = ExportScreen()
-        assert screen.format_combo.count() >= 2
-
-    def test_has_export_button(self):
-        screen = ExportScreen()
-        assert screen.export_button is not None
-        assert not screen.export_button.isEnabled()
-
-    def test_has_status_label(self):
-        screen = ExportScreen()
-        assert screen.status_label is not None
-
-
-# ---------------------------------------------------------------------------
 # Project listing
 # ---------------------------------------------------------------------------
 

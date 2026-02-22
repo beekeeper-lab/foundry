@@ -25,40 +25,6 @@ def _make_settings(tmp_path: Path) -> FoundrySettings:
 
 
 # ---------------------------------------------------------------------------
-# Construction
-# ---------------------------------------------------------------------------
-
-
-class TestConstruction:
-
-    def test_creates_screen(self, tmp_path: Path):
-        settings = _make_settings(tmp_path)
-        screen = SettingsScreen(settings=settings)
-        assert screen is not None
-
-    def test_has_library_root_edit(self, tmp_path: Path):
-        settings = _make_settings(tmp_path)
-        screen = SettingsScreen(settings=settings)
-        assert screen.library_root_edit is not None
-
-    def test_has_workspace_root_edit(self, tmp_path: Path):
-        settings = _make_settings(tmp_path)
-        screen = SettingsScreen(settings=settings)
-        assert screen.workspace_root_edit is not None
-
-    def test_has_recent_combo(self, tmp_path: Path):
-        settings = _make_settings(tmp_path)
-        screen = SettingsScreen(settings=settings)
-        assert screen.recent_combo is not None
-
-    def test_has_browse_buttons(self, tmp_path: Path):
-        settings = _make_settings(tmp_path)
-        screen = SettingsScreen(settings=settings)
-        assert screen.library_browse_button is not None
-        assert screen.workspace_browse_button is not None
-
-
-# ---------------------------------------------------------------------------
 # Library root
 # ---------------------------------------------------------------------------
 

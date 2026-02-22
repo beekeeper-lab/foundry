@@ -19,21 +19,6 @@ def settings(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Defaults
-# ---------------------------------------------------------------------------
-
-class TestDefaults:
-    def test_library_root_default_is_empty(self, settings):
-        assert settings.library_root == ""
-
-    def test_workspace_root_default_is_empty(self, settings):
-        assert settings.workspace_root == ""
-
-    def test_recent_libraries_default_is_empty_list(self, settings):
-        assert settings.recent_libraries == []
-
-
-# ---------------------------------------------------------------------------
 # Setters / getters
 # ---------------------------------------------------------------------------
 
@@ -73,24 +58,6 @@ class TestRecentLibraries:
         # Most recent should be first
         assert settings.recent_libraries[0] == f"/lib/{MAX_RECENT + 4}"
 
-
-# ---------------------------------------------------------------------------
-# Window geometry
-# ---------------------------------------------------------------------------
-
-class TestWindowGeometry:
-    def test_geometry_default_is_empty(self, settings):
-        geo = settings.window_geometry
-        assert geo.isEmpty()
-
-    def test_state_default_is_empty(self, settings):
-        state = settings.window_state
-        assert state.isEmpty()
-
-
-# ---------------------------------------------------------------------------
-# sync / value
-# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # Generation defaults

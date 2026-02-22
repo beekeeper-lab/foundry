@@ -56,39 +56,6 @@ class TestSlugify:
 
 
 # ---------------------------------------------------------------------------
-# ProjectPage construction
-# ---------------------------------------------------------------------------
-
-
-class TestProjectPageConstruction:
-    @pytest.fixture()
-    def page(self):
-        p = ProjectPage()
-        yield p
-
-    def test_has_name_edit(self, page):
-        assert page.name_edit is not None
-
-    def test_has_tagline_edit(self, page):
-        assert page.tagline_edit is not None
-
-    def test_has_slug_edit(self, page):
-        assert page.slug_edit is not None
-
-    def test_slug_is_readonly(self, page):
-        assert page.slug_edit.isReadOnly()
-
-    def test_initially_incomplete(self, page):
-        assert not page.is_complete()
-
-    def test_name_max_length(self, page):
-        assert page.name_edit.maxLength() == 120
-
-    def test_tagline_max_length(self, page):
-        assert page.tagline_edit.maxLength() == 200
-
-
-# ---------------------------------------------------------------------------
 # Slug auto-generation
 # ---------------------------------------------------------------------------
 

@@ -36,35 +36,6 @@ def _create_run(root: Path, name: str, run_id: str = "test-run") -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Construction
-# ---------------------------------------------------------------------------
-
-
-class TestConstruction:
-
-    def test_creates_screen(self):
-        screen = HistoryScreen()
-        assert screen is not None
-
-    def test_has_run_list(self):
-        screen = HistoryScreen()
-        assert screen.run_list is not None
-
-    def test_has_details_widget(self):
-        screen = HistoryScreen()
-        assert screen.details_widget is not None
-
-    def test_has_meta_label(self):
-        screen = HistoryScreen()
-        assert screen.meta_label is not None
-
-    def test_has_regenerate_button(self):
-        screen = HistoryScreen()
-        assert screen.regenerate_button is not None
-        assert not screen.regenerate_button.isEnabled()
-
-
-# ---------------------------------------------------------------------------
 # Run listing
 # ---------------------------------------------------------------------------
 

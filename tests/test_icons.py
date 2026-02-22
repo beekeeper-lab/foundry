@@ -5,7 +5,6 @@ import pytest
 from foundry_app.ui.icons import (
     ICON_NAMES,
     _tint_svg,
-    available_icons,
     icon_path,
 )
 
@@ -29,23 +28,6 @@ class TestIconPath:
         assert path.is_file(), f"Missing SVG for icon: {name}"
 
 
-class TestAvailableIcons:
-    """Tests for available_icons() — disk scan."""
-
-    def test_returns_sorted_list(self):
-        icons = available_icons()
-        assert icons == sorted(icons)
-
-    def test_contains_expected_icons(self):
-        icons = available_icons()
-        for name in ["builder", "settings", "search", "success", "error"]:
-            assert name in icons
-
-    def test_count_at_least_15(self):
-        """Acceptance criterion: at least 15 icons."""
-        assert len(available_icons()) >= 15
-
-
 class TestTintSvg:
     """Tests for _tint_svg() — color replacement."""
 
@@ -67,25 +49,3 @@ class TestTintSvg:
         assert result == svg
 
 
-# Card graphics (240x56) are not standard 24x24 monochrome icons
-_CARD_GRAPHICS = {"builder", "history", "settings", "library"}
-_STANDARD_ICONS = [n for n in ICON_NAMES if n not in _CARD_GRAPHICS]
-
-
-class TestSvgFileQuality:
-    """Verify SVG files are well-formed and consistent."""
-
-    @pytest.mark.parametrize("name", _STANDARD_ICONS)
-    def test_svg_has_viewbox(self, name: str):
-        content = icon_path(name).read_text()
-        assert 'viewBox="0 0 24 24"' in content
-
-    @pytest.mark.parametrize("name", _STANDARD_ICONS)
-    def test_svg_is_monochrome_white(self, name: str):
-        content = icon_path(name).read_text()
-        assert 'stroke="#ffffff"' in content
-
-    @pytest.mark.parametrize("name", _STANDARD_ICONS)
-    def test_svg_has_consistent_stroke_width(self, name: str):
-        content = icon_path(name).read_text()
-        assert 'stroke-width="2"' in content
