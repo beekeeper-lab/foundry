@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-227 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-02-22 |
 | **Started** | — |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Infra |
 
 ## Problem Statement
@@ -57,10 +57,11 @@ Migrate Foundry from git subtree (`.claude/` prefix) to git submodule (`.claude/
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Remove subtree, add submodule, create link script | Developer | — | Done |
+| 2 | Update documentation and scripts | Developer | 1 | Done |
+| 3 | Verify migration | Tech-QA | 1, 2 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default), Architect (spec already produced)
 
 ## Changes
 

@@ -1,96 +1,108 @@
 # Claude Kit — Shared Configuration Management
 
-This repo uses [claude-kit](https://github.com/beekeeper-lab/claude-kit) to share `.claude/` configuration (agents, skills, commands, hooks) across projects. Two integration patterns are supported: **git subtree** and **git submodule**.
+This repo uses [claude-kit](https://github.com/beekeeper-lab/claude-kit) to share `.claude/` configuration (agents, skills, commands, hooks) across projects via a **git submodule**.
 
-## Patterns
+## Architecture
 
-### Git Subtree (current default)
-
-The `.claude/` directory is a git subtree linked to the `claude-kit` remote. Content lives directly in `.claude/`.
-
-```bash
-# Add the remote (first time)
-git remote add claude-kit git@github.com:beekeeper-lab/claude-kit.git
-
-# Pull latest changes from claude-kit
-git subtree pull --prefix=.claude claude-kit main --squash
-
-# Push local .claude/ changes back to claude-kit
-git subtree push --prefix=.claude claude-kit main
+```
+.claude/
+  kit/                  # Git submodule → beekeeper-lab/claude-kit (read-only source)
+    .claude/shared/     # Kit content: agents, commands, skills, hooks, settings.json
+  local/                # Project-specific assets (never shared upstream)
+    commands/           # App-only commands
+    skills/             # App-only skills
+    agents/             # App-only agents
+  commands/             # Assembly: symlinks → kit + local commands
+  skills/               # Assembly: symlinks → kit + local skills
+  agents/               # Assembly: symlinks → kit + local agents
+  hooks                 # Symlink → kit/.claude/shared/hooks
+  shared                # Bridge symlink → kit/.claude/shared (for internal path refs)
+  settings.json         # Symlink → kit/.claude/shared/settings.json
 ```
 
-### Git Submodule
+Claude Code discovers assets at `.claude/{commands,skills,agents,hooks,settings.json}`. The assembly symlinks make content from both kit and local sources visible at these paths. Local assets override kit assets on name collision.
 
-The `.claude/kit/` directory is a git submodule pointing to the claude-kit repo.
+## First-Time Setup
 
 ```bash
-# Add the submodule (first time)
-git submodule add git@github.com:beekeeper-lab/claude-kit.git .claude/kit
-
-# Update after pull
+# After cloning, initialize the submodule and build symlinks
 git submodule update --init --recursive
+scripts/claude-link.sh
+
+# Install git hooks (also runs on post-checkout)
+scripts/claude-sync.sh
 ```
 
-## Two-Commit Workflow
+## Updating the Kit
 
-When you edit shared config files (anything inside `.claude/` or `.claude/kit/`), changes must be pushed in two steps to keep repos in sync:
+```bash
+# Pull latest kit + rebuild symlinks
+scripts/claude-sync.sh
+```
 
-### Subtree pattern
+Or manually:
 
-1. Commit changes normally in the consuming repo (they're already in-tree)
-2. Push shared changes to claude-kit: `git subtree push --prefix=.claude claude-kit main`
-3. Push the consuming repo: `git push`
+```bash
+cd .claude/kit
+git pull origin main
+cd ../..
+scripts/claude-link.sh
+git add .claude/kit
+git commit -m "Bump Claude-Kit submodule"
+```
 
-### Submodule pattern
+## Editing Shared Assets (Two-Commit Workflow)
 
-1. Commit and push inside `.claude/kit/`: `cd .claude/kit && git add . && git commit && git push`
-2. Commit the updated submodule pointer in the consuming repo: `git add .claude/kit && git commit`
-3. Push the consuming repo: `git push`
+When you edit shared config (anything inside `.claude/kit/`):
 
-### Use `claude-publish.sh` instead
-
-The `scripts/claude-publish.sh` script handles both patterns automatically:
+1. Edit and test inside `.claude/kit/`
+2. Run `scripts/claude-link.sh` if you added new files
+3. Use `scripts/claude-publish.sh` to push both repos:
 
 ```bash
 scripts/claude-publish.sh
 ```
 
-It detects which pattern is in use, pushes `.claude/` changes first, and only pushes the main repo if that succeeds.
+This pushes the submodule first, then bumps the pointer and pushes the parent repo.
+
+## Adding Project-Specific Assets
+
+Put app-only assets in `.claude/local/`:
+
+```bash
+# Example: add a project-specific command
+echo "..." > .claude/local/commands/my-command.md
+
+# Rebuild symlinks so Claude Code discovers it
+scripts/claude-link.sh
+```
+
+Local assets are never pushed to claude-kit.
 
 ## Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/claude-sync.sh` | Install git hooks + sync `.claude/` content |
-| `scripts/claude-publish.sh` | Safe two-step push (`.claude/` first, then repo) |
+| `scripts/claude-link.sh` | Rebuild assembly symlinks from kit + local |
+| `scripts/claude-sync.sh` | Install git hooks + sync submodule + rebuild symlinks |
+| `scripts/claude-publish.sh` | Safe two-step push (submodule first, then repo) |
 | `scripts/githooks/post-checkout` | Auto-heal `.claude/` on branch checkout |
 
-### claude-sync.sh
+### claude-link.sh
 
-Run after cloning or when hooks need updating:
-
-```bash
-scripts/claude-sync.sh
-```
-
-This will:
-- Copy all hooks from `scripts/githooks/` into `.git/hooks/`
-- Sync `.claude/` content (subtree pull or submodule update)
+The core assembly script. Creates symlinks in `.claude/{commands,skills,agents}` pointing to content in both `kit/.claude/shared/` and `local/`. Also symlinks `hooks`, `settings.json`, and the `shared` bridge. Idempotent — safe to run multiple times.
 
 ### post-checkout hook
 
-Automatically installed by `claude-sync.sh`. On every branch checkout, it:
-- Detects if `.claude/` content is missing or empty
-- In submodule mode: runs `git submodule update --init --recursive`
-- In subtree mode: warns and suggests running `claude-sync.sh`
-- Runs `claude-sync.sh` if available
-
-This ensures worktrees and fresh checkouts always have `.claude/` content.
+Automatically installed by `claude-sync.sh`. On every branch checkout, it initializes the submodule if missing and rebuilds symlinks. This ensures worktrees and fresh checkouts always have working `.claude/` content.
 
 ## Setup for New Projects
 
-To adopt these scripts in a new claude-kit consuming project:
+To adopt claude-kit in a new project:
 
-1. Copy `scripts/githooks/` and `scripts/claude-sync.sh` and `scripts/claude-publish.sh` into your project
-2. Run `scripts/claude-sync.sh` to install the hooks
-3. Commit the scripts to your repo
+1. Add the submodule: `git submodule add git@github.com:beekeeper-lab/claude-kit.git .claude/kit`
+2. Create local dirs: `mkdir -p .claude/local/{commands,skills,agents}`
+3. Copy `scripts/claude-link.sh`, `claude-sync.sh`, `claude-publish.sh`, and `githooks/` into your project
+4. Run `scripts/claude-link.sh` to create assembly symlinks
+5. Run `scripts/claude-sync.sh` to install hooks
+6. Commit: `git add .gitmodules .claude/ scripts/ && git commit`

@@ -9,7 +9,7 @@ foundry_app/          # Application source (core/, services/, ui/, io/)
 tests/                # pytest test suite (1811 tests)
 ai-team-library/      # Reusable library: personas, expertise, templates, workflows
 ai/                   # AI team workspace (context, outputs, beans, tasks)
-.claude/              # Claude Code config — git subtree from beekeeper-lab/claude-kit
+.claude/              # Claude Code config — git submodule from beekeeper-lab/claude-kit
 examples/             # Example composition YAMLs
 ```
 
@@ -59,23 +59,33 @@ uv run foundry-cli generate <yml> --library ai-team-library  # CLI generation
 /bg <command> [args...]                # Run any slash command in a background tmux window
 ```
 
-## Claude Kit Subtree
+## Claude Kit Submodule
 
-The `.claude/` directory is shared across projects via a git subtree linked to `beekeeper-lab/claude-kit`.
+The `.claude/` directory uses a **git submodule** at `.claude/kit/` linked to `beekeeper-lab/claude-kit`. Assembly symlinks in `.claude/{commands,skills,agents,hooks}` point into the submodule so Claude Code discovers everything at its expected paths.
 
-```bash
-# Pull latest changes from claude-kit into this repo
-git subtree pull --prefix=.claude claude-kit main --squash
-
-# Push local .claude/ changes back to claude-kit
-git subtree push --prefix=.claude claude-kit main
-
-# Add claude-kit to a new project
-git remote add claude-kit git@github.com:beekeeper-lab/claude-kit.git
-git subtree add --prefix=.claude claude-kit main --squash
+```
+.claude/
+  kit/                  # Submodule → beekeeper-lab/claude-kit (read-only source)
+  local/                # Project-specific assets (not shared)
+  commands/             # Symlinks → kit + local commands
+  skills/               # Symlinks → kit + local skills
+  agents/               # Symlinks → kit + local agents
+  hooks                 # Symlink → kit hooks
+  shared                # Symlink → kit/.claude/shared (bridge for internal paths)
+  settings.json         # Symlink → kit settings.json
 ```
 
-Edits to `.claude/` files are committed normally in this repo. Push them to `claude-kit` when ready to share with other projects.
+```bash
+# First clone / fresh checkout — initialize the submodule
+git submodule update --init --recursive
+./scripts/claude-link.sh
+
+# Pull latest kit changes
+./scripts/claude-sync.sh
+
+# Edit shared assets inside .claude/kit/, then push both repos
+./scripts/claude-publish.sh
+```
 
 ## Rules
 

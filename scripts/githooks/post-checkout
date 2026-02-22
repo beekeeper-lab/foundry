@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # post-checkout — self-heal .claude/ content after branch checkouts.
-# Supports both git-submodule (.claude/kit/) and git-subtree (.claude/) patterns.
+# Initializes the .claude/kit submodule and rebuilds assembly symlinks.
 # Install: copy to .git/hooks/post-checkout (or run scripts/claude-sync.sh).
 set -euo pipefail
 
@@ -12,24 +12,16 @@ fi
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-# --- Detect mode ---
-# Check .claude/kit/.git (initialized submodule) OR .gitmodules reference (uninitialized submodule).
+# --- Initialize submodule if missing ---
 if [ -e "$REPO_ROOT/.claude/kit/.git" ] || grep -q '\[submodule.*claude/kit' "$REPO_ROOT/.gitmodules" 2>/dev/null; then
-    # Submodule mode: .claude/kit is a git submodule
     if [ ! -d "$REPO_ROOT/.claude/kit" ] || [ -z "$(ls -A "$REPO_ROOT/.claude/kit" 2>/dev/null)" ]; then
         echo "[claude-kit] Submodule .claude/kit is missing or empty — initializing..."
         git submodule update --init --recursive
     fi
-elif [ -d "$REPO_ROOT/.claude" ]; then
-    # Subtree mode: .claude/ is managed as a git subtree
-    if [ -z "$(ls -A "$REPO_ROOT/.claude" 2>/dev/null)" ]; then
-        echo "[claude-kit] WARNING: .claude/ directory is empty."
-        echo "[claude-kit] Run 'scripts/claude-sync.sh' or 'git subtree pull' to restore content."
-    fi
 fi
 
-# --- Run claude-sync.sh if available ---
-SYNC_SCRIPT="$REPO_ROOT/scripts/claude-sync.sh"
-if [ -x "$SYNC_SCRIPT" ]; then
-    "$SYNC_SCRIPT"
+# --- Rebuild assembly symlinks ---
+LINK_SCRIPT="$REPO_ROOT/scripts/claude-link.sh"
+if [ -x "$LINK_SCRIPT" ]; then
+    "$LINK_SCRIPT"
 fi

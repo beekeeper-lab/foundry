@@ -1,36 +1,29 @@
 #!/usr/bin/env bash
-# claude-publish.sh — Safe two-step push: .claude/ changes first, then the main repo.
-# Supports both git-submodule (.claude/kit/) and git-subtree (.claude/) patterns.
+# claude-publish.sh — Safe two-step push: submodule first, then the main repo.
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+KIT_DIR="$REPO_ROOT/.claude/kit"
 
-# --- Step 1: Push .claude/ changes ---
-# Check .claude/kit/.git (initialized) OR .gitmodules reference (uninitialized).
-if [ -e "$REPO_ROOT/.claude/kit/.git" ] || grep -q '\[submodule.*claude/kit' "$REPO_ROOT/.gitmodules" 2>/dev/null; then
-    # Submodule mode: push from inside .claude/kit
-    echo "[claude-kit] Pushing submodule .claude/kit..."
-    if (cd "$REPO_ROOT/.claude/kit" && git push); then
-        echo "[claude-kit] Submodule push succeeded."
-    else
-        echo "[claude-kit] ERROR: Submodule push failed. Aborting."
-        echo "[claude-kit] Fix the issue in .claude/kit/ and retry."
-        exit 1
-    fi
-elif [ -d "$REPO_ROOT/.claude" ]; then
-    # Subtree mode: push via git subtree push
-    if git remote get-url claude-kit >/dev/null 2>&1; then
-        echo "[claude-kit] Pushing subtree .claude/ to claude-kit remote..."
-        if git subtree push --prefix=.claude claude-kit main; then
-            echo "[claude-kit] Subtree push succeeded."
+# --- Step 1: Push .claude/kit submodule if it has unpushed commits ---
+if [ -e "$KIT_DIR/.git" ] || [ -f "$KIT_DIR/.git" ]; then
+    cd "$KIT_DIR"
+    if [ -n "$(git status --porcelain)" ] || \
+       [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u} 2>/dev/null || echo '')" ]; then
+        echo "[claude-kit] Pushing submodule .claude/kit..."
+        if git push; then
+            echo "[claude-kit] Submodule push succeeded."
         else
-            echo "[claude-kit] ERROR: Subtree push failed. Aborting."
-            echo "[claude-kit] Check for upstream conflicts and retry."
+            echo "[claude-kit] ERROR: Submodule push failed. Aborting."
+            echo "[claude-kit] Fix the issue in .claude/kit/ and retry."
             exit 1
         fi
     else
-        echo "[claude-kit] No 'claude-kit' remote found. Skipping .claude/ push."
+        echo "[claude-kit] Submodule .claude/kit is up to date."
     fi
+    cd "$REPO_ROOT"
+else
+    echo "[claude-kit] WARNING: No .claude/kit submodule found. Skipping submodule push."
 fi
 
 # --- Step 2: Push the main repo ---
