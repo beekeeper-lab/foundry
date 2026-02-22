@@ -247,4 +247,4 @@
 | BEAN-223 | Share .claude/ Across Projects via Git Subtree | Infra | High | Done | team-lead |
 | BEAN-224 | Parallel Worker Reliability — Commit, Exit, and Watchdog | Process | High | Done | team-lead |
 | BEAN-225 | Generate Subtree Setup Instead of Asset Copy for .claude/ | App | High | Done | team-lead |
-| BEAN-226 | Claude Kit Lifecycle Scripts | Infra | High | In Progress | team-lead |
+| BEAN-226 | Claude Kit Lifecycle Scripts | Infra | High | Done | team-lead |
