@@ -204,11 +204,21 @@ Before creating tasks, the Team Lead scans for three categories of bottleneck:
 - The bean involves user-facing behavior that needs formal acceptance criteria elaboration
 - Stakeholder trade-offs need to be documented before implementation
 
-**Architect — include when:**
-- The bean creates a new subsystem, module, or package
-- The change modifies public APIs or data models used by 3+ modules
-- A new external dependency or framework is being introduced
-- An ADR (Architecture Decision Record) is needed
+**Architect — include when ANY of these apply:**
+
+1. **New subsystem or module** — creates a new module, service, package, or top-level directory
+2. **Refactoring driven by new functionality** — adds features that require restructuring existing code (moving functions between modules, changing class hierarchies, splitting/merging files)
+3. **Cross-cutting change** — modifies public APIs, data models, or interfaces used by 3+ modules
+4. **New external dependency** — introduces a new third-party library, framework, or external service
+5. **Data format or schema change** — changes, creates, or translates between data formats or configuration schemas
+6. **Architectural decision with alternatives** — involves a design choice with 2+ reasonable approaches and long-term consequences (triggers an ADR)
+7. **Project foundation or scaffold** — sets up initial project structure or establishes foundational patterns for subsequent work
+8. **Pipeline or workflow restructuring** — changes execution order, stage boundaries, or data flow of a processing pipeline
+9. **Cross-boundary integration** — connects previously independent subsystems or introduces new integration points
+
+**Do NOT engage the Architect for:** single-file bug fixes, UI text/styling changes, adding form elements to existing screens, config value changes, test-only beans, documentation-only beans, routine CRUD following established patterns.
+
+**When in doubt:** If the bean touches 3+ files across different directories and you hesitate, engage the architect. The cost of a lightweight review is low; the cost of unrecorded structural decisions is high.
 
 When BA or Architect are not included, note the reason with an inline skip tag:
 ```

@@ -249,3 +249,4 @@
 | BEAN-225 | Generate Subtree Setup Instead of Asset Copy for .claude/ | App | High | Done | team-lead |
 | BEAN-226 | Claude Kit Lifecycle Scripts | Infra | High | Done | team-lead |
 | BEAN-227 | Migrate Claude Kit from Subtree to Submodule | Infra | High | Done | team-lead |
+| BEAN-228 | Architect Engagement Rules | Process | High | In Progress | team-lead |
