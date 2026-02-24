@@ -62,11 +62,13 @@ Update all relevant agent and workflow files with the new BA engagement rules an
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/beans/BEAN-229-ba-engagement-rules/bean.md | +101 |
+| ai/beans/BEAN-229-ba-engagement-rules/tasks/01-developer-ba-rules.md | +88 |
+| ai/beans/BEAN-229-ba-engagement-rules/tasks/02-tech-qa-verify-rules.md | +41 |
+| ai/beans/_index.md | +1 |
+| ai/context/bean-workflow.md | +50/-4 |
 
 ## Notes
 
