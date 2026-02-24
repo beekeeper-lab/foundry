@@ -56,11 +56,13 @@ Define a concrete set of principles and rules that tell the team lead when to en
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/beans/BEAN-228-architect-engagement-rules/bean.md | +93 |
+| ai/beans/BEAN-228-architect-engagement-rules/tasks/01-developer-architect-rules.md | +61 |
+| ai/beans/BEAN-228-architect-engagement-rules/tasks/02-tech-qa-verify-rules.md | +38 |
+| ai/beans/_index.md | +1 |
+| ai/context/bean-workflow.md | +15/-5 |
 
 ## Notes
 
