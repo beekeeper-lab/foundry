@@ -3,27 +3,27 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-KIT_DIR="$REPO_ROOT/.claude/kit"
+KIT_DIR="$REPO_ROOT/.claude/shared"
 
-# --- Step 1: Push .claude/kit submodule if it has unpushed commits ---
+# --- Step 1: Push .claude/shared submodule if it has unpushed commits ---
 if [ -e "$KIT_DIR/.git" ] || [ -f "$KIT_DIR/.git" ]; then
     cd "$KIT_DIR"
     if [ -n "$(git status --porcelain)" ] || \
        [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u} 2>/dev/null || echo '')" ]; then
-        echo "[claude-kit] Pushing submodule .claude/kit..."
+        echo "[claude-kit] Pushing submodule .claude/shared..."
         if git push; then
             echo "[claude-kit] Submodule push succeeded."
         else
             echo "[claude-kit] ERROR: Submodule push failed. Aborting."
-            echo "[claude-kit] Fix the issue in .claude/kit/ and retry."
+            echo "[claude-kit] Fix the issue in .claude/shared/ and retry."
             exit 1
         fi
     else
-        echo "[claude-kit] Submodule .claude/kit is up to date."
+        echo "[claude-kit] Submodule .claude/shared is up to date."
     fi
     cd "$REPO_ROOT"
 else
-    echo "[claude-kit] WARNING: No .claude/kit submodule found. Skipping submodule push."
+    echo "[claude-kit] WARNING: No .claude/shared submodule found. Skipping submodule push."
 fi
 
 # --- Step 2: Push the main repo ---

@@ -34,6 +34,15 @@ build/
 .DS_Store
 Thumbs.db
 
+# Claude-Kit: generated layer (recreated by scripts/claude-sync.sh)
+.claude/agents/
+.claude/commands/
+.claude/skills/
+.claude/hooks/
+.claude/settings.json
+.claude/mcp.json
+!.claude/settings.local.json
+
 # Project-specific: keep generated-projects dir but not its contents
 generated-projects/*/
 !generated-projects/.gitkeep

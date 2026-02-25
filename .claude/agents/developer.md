@@ -1,1 +1,0 @@
-../kit/.claude/shared/agents/developer.md
