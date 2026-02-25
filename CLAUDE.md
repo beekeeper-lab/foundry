@@ -59,32 +59,20 @@ uv run foundry-cli generate <yml> --library ai-team-library  # CLI generation
 /bg <command> [args...]                # Run any slash command in a background tmux window
 ```
 
+@.claude/shared/CLAUDE.md
+
 ## Claude Kit Submodule
 
-The `.claude/` directory uses a **git submodule** at `.claude/kit/` linked to `beekeeper-lab/claude-kit`. Assembly symlinks in `.claude/{commands,skills,agents,hooks}` point into the submodule so Claude Code discovers everything at its expected paths.
-
-```
-.claude/
-  kit/                  # Submodule → beekeeper-lab/claude-kit (read-only source)
-  local/                # Project-specific assets (not shared)
-  commands/             # Symlinks → kit + local commands
-  skills/               # Symlinks → kit + local skills
-  agents/               # Symlinks → kit + local agents
-  hooks                 # Symlink → kit hooks
-  shared                # Symlink → kit/.claude/shared (bridge for internal paths)
-  settings.json         # Symlink → kit settings.json
-```
-
 ```bash
-# First clone / fresh checkout — initialize the submodule
+# First clone / fresh checkout
 git submodule update --init --recursive
-./scripts/claude-link.sh
+scripts/claude-sync.sh
 
 # Pull latest kit changes
-./scripts/claude-sync.sh
+scripts/claude-sync.sh
 
-# Edit shared assets inside .claude/kit/, then push both repos
-./scripts/claude-publish.sh
+# Edit shared assets inside .claude/shared/, then push both repos
+scripts/claude-publish.sh
 ```
 
 ## Rules
