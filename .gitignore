@@ -41,7 +41,7 @@ Thumbs.db
 .claude/hooks/
 .claude/settings.json
 .claude/mcp.json
-!.claude/settings.local.json
+.claude/settings.local.json
 
 # Project-specific: keep generated-projects dir but not its contents
 generated-projects/*/
