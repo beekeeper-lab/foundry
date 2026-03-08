@@ -1,12 +1,11 @@
 """Tests for foundry_app.core.settings — QSettings-backed preferences."""
 
 import pytest
-from PySide6.QtWidgets import QApplication
 
 from foundry_app.core.settings import MAX_RECENT, FoundrySettings
 
 # QApplication is required for QSettings to work
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 @pytest.fixture()

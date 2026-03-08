@@ -1,7 +1,8 @@
 """Pure-logic tests for BEAN-086 Expertise Create — no Qt/GPU dependencies.
 
-Mocks PySide6 at sys.modules level so the library_manager module can be imported
-in environments without libGL.so.1.
+When PySide6 is available (normal dev), imports library_manager directly.
+When PySide6 is missing (headless CI), mocks it at sys.modules level so the
+library_manager module can still be imported.
 """
 
 import sys
@@ -10,41 +11,43 @@ from types import ModuleType
 from unittest.mock import MagicMock
 
 # ---------------------------------------------------------------------------
-# Mock PySide6 modules before importing library_manager
+# Conditionally mock PySide6 — only when it's not available
 # ---------------------------------------------------------------------------
 
-_QT_MODS = [
-    "PySide6",
-    "PySide6.QtCore",
-    "PySide6.QtGui",
-    "PySide6.QtWidgets",
-]
+_NEED_MOCK = False
+try:
+    import PySide6.QtWidgets  # noqa: F401
+except ImportError:
+    _NEED_MOCK = True
 
-_saved = {}
-for _mod_name in _QT_MODS:
-    if _mod_name in sys.modules:
-        _saved[_mod_name] = sys.modules[_mod_name]
-    mock = MagicMock(spec=ModuleType)
-    sys.modules[_mod_name] = mock
+if _NEED_MOCK:
+    _QT_MODS = [
+        "PySide6",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "PySide6.QtWidgets",
+    ]
 
-# Provide minimal Qt constants needed by the module at import time
-sys.modules["PySide6.QtCore"].Qt = MagicMock()
-sys.modules["PySide6.QtGui"].QColor = MagicMock()
-sys.modules["PySide6.QtGui"].QFont = MagicMock()
-sys.modules["PySide6.QtWidgets"].QWidget = MagicMock
-sys.modules["PySide6.QtWidgets"].QTreeWidget = MagicMock
-sys.modules["PySide6.QtWidgets"].QTreeWidgetItem = MagicMock
-sys.modules["PySide6.QtWidgets"].QLabel = MagicMock
-sys.modules["PySide6.QtWidgets"].QPushButton = MagicMock
-sys.modules["PySide6.QtWidgets"].QSplitter = MagicMock
-sys.modules["PySide6.QtWidgets"].QHBoxLayout = MagicMock
-sys.modules["PySide6.QtWidgets"].QVBoxLayout = MagicMock
-sys.modules["PySide6.QtWidgets"].QInputDialog = MagicMock
-sys.modules["PySide6.QtWidgets"].QMessageBox = MagicMock
+    for _mod_name in _QT_MODS:
+        mock = MagicMock(spec=ModuleType)
+        sys.modules[_mod_name] = mock
 
-# Also mock the MarkdownEditor widget
-sys.modules["foundry_app.ui.widgets.markdown_editor"] = MagicMock()
-sys.modules["foundry_app.ui.theme"] = MagicMock()
+    sys.modules["PySide6.QtCore"].Qt = MagicMock()
+    sys.modules["PySide6.QtGui"].QColor = MagicMock()
+    sys.modules["PySide6.QtGui"].QFont = MagicMock()
+    sys.modules["PySide6.QtWidgets"].QWidget = MagicMock
+    sys.modules["PySide6.QtWidgets"].QTreeWidget = MagicMock
+    sys.modules["PySide6.QtWidgets"].QTreeWidgetItem = MagicMock
+    sys.modules["PySide6.QtWidgets"].QLabel = MagicMock
+    sys.modules["PySide6.QtWidgets"].QPushButton = MagicMock
+    sys.modules["PySide6.QtWidgets"].QSplitter = MagicMock
+    sys.modules["PySide6.QtWidgets"].QHBoxLayout = MagicMock
+    sys.modules["PySide6.QtWidgets"].QVBoxLayout = MagicMock
+    sys.modules["PySide6.QtWidgets"].QInputDialog = MagicMock
+    sys.modules["PySide6.QtWidgets"].QMessageBox = MagicMock
+
+    sys.modules["foundry_app.ui.widgets.markdown_editor"] = MagicMock()
+    sys.modules["foundry_app.ui.theme"] = MagicMock()
 
 from foundry_app.ui.screens.library_manager import (  # noqa: E402
     STARTER_EXPERTISE_CONVENTIONS,

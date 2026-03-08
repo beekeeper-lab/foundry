@@ -1,7 +1,6 @@
 """Tests for foundry_app.ui.screens.builder.wizard_pages.architecture_page."""
 
 import pytest
-from PySide6.QtWidgets import QApplication
 
 from foundry_app.core.models import (
     ArchitectureConfig,
@@ -15,7 +14,7 @@ from foundry_app.ui.screens.builder.wizard_pages.architecture_page import (
     ArchitectureCloudPage,
 )
 
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 # ---------------------------------------------------------------------------
