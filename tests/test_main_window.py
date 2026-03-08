@@ -1,12 +1,12 @@
 """Tests for foundry_app.ui.main_window — MainWindow shell and navigation."""
 
 import pytest
-from PySide6.QtWidgets import QApplication, QLabel, QWidget
+from PySide6.QtWidgets import QLabel, QWidget
 
 from foundry_app.core.settings import FoundrySettings
 from foundry_app.ui.main_window import SCREENS, MainWindow
 
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 @pytest.fixture()

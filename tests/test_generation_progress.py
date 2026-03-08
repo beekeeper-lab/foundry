@@ -1,13 +1,13 @@
 """Tests for foundry_app.ui.screens.generation_progress — progress screen."""
 
-from PySide6.QtWidgets import QApplication
+import pytest
 
 from foundry_app.ui.screens.generation_progress import (
     GenerationProgressScreen,
     StageStatusWidget,
 )
 
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 # ---------------------------------------------------------------------------

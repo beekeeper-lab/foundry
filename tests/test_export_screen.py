@@ -3,11 +3,11 @@
 import json
 from pathlib import Path
 
-from PySide6.QtWidgets import QApplication
+import pytest
 
 from foundry_app.ui.screens.export_screen import ExportScreen
 
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 # ---------------------------------------------------------------------------

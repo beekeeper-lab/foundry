@@ -1,7 +1,6 @@
 """Tests for foundry_app.ui.screens.builder.wizard_pages.project_page."""
 
 import pytest
-from PySide6.QtWidgets import QApplication
 
 from foundry_app.core.models import ProjectIdentity
 from foundry_app.ui.screens.builder.wizard_pages.project_page import (
@@ -9,7 +8,7 @@ from foundry_app.ui.screens.builder.wizard_pages.project_page import (
     _slugify,
 )
 
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 # ---------------------------------------------------------------------------

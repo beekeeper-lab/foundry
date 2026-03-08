@@ -1,7 +1,7 @@
 """Tests for BEAN-098 — command create feature (pure logic, no PySide6/libGL).
 
-We mock out PySide6 so the library_manager module can be imported without
-requiring libGL.so.1.
+When PySide6 is available (normal dev), imports library_manager directly.
+When PySide6 is missing (headless CI), mocks it at sys.modules level.
 """
 
 import sys
@@ -10,42 +10,35 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 # ---------------------------------------------------------------------------
-# Mock PySide6 before importing library_manager.
-# We use MagicMock as module stand-ins so any attribute access succeeds and
-# does not pollute other test modules that may also reference PySide6.
+# Conditionally mock PySide6 — only when it's not available
 # ---------------------------------------------------------------------------
 
-_qt_mods = [
-    "PySide6",
-    "PySide6.QtCore",
-    "PySide6.QtGui",
-    "PySide6.QtWidgets",
-    "foundry_app.ui.widgets.markdown_editor",
-]
-_saved: dict[str, types.ModuleType | None] = {}
-for _mod_name in _qt_mods:
-    _saved[_mod_name] = sys.modules.get(_mod_name)
-    sys.modules[_mod_name] = MagicMock()
+_NEED_MOCK = False
+try:
+    import PySide6.QtWidgets  # noqa: F401
+except ImportError:
+    _NEED_MOCK = True
 
-# QWidget must be a real type so that LibraryManagerScreen class definition
-# (which inherits from QWidget) succeeds.
-sys.modules["PySide6.QtWidgets"].QWidget = type(
-    "QWidget", (), {"__init__": lambda *a, **kw: None},
-)
+if _NEED_MOCK:
+    _qt_mods = [
+        "PySide6",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "PySide6.QtWidgets",
+        "foundry_app.ui.widgets.markdown_editor",
+    ]
+    for _mod_name in _qt_mods:
+        sys.modules[_mod_name] = MagicMock()
 
-# NOW it's safe to import the pure logic functions
+    sys.modules["PySide6.QtWidgets"].QWidget = type(
+        "QWidget", (), {"__init__": lambda *a, **kw: None},
+    )
+
 from foundry_app.ui.screens.library_manager import (  # noqa: E402
     _build_file_tree,
     starter_content,
     validate_asset_name,
 )
-
-# Restore sys.modules so PySide6 mocks don't leak into other test modules.
-for _mod_name, _orig in _saved.items():
-    if _orig is None:
-        sys.modules.pop(_mod_name, None)
-    else:
-        sys.modules[_mod_name] = _orig
 
 
 def _create_library(root: Path) -> Path:

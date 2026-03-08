@@ -10,14 +10,15 @@ These tests use mocks for QMessageBox to avoid needing a live display server.
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QMessageBox
+import pytest
+from PySide6.QtWidgets import QMessageBox
 
 from foundry_app.ui.screens.library_manager import (
     LibraryManagerScreen,
     _build_file_tree,
 )
 
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 # ---------------------------------------------------------------------------
