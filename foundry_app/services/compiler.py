@@ -286,17 +286,115 @@ def _compile_expertise_section(
     return None
 
 
+def _extract_first_sentence(text: str) -> str:
+    """Extract the first meaningful sentence from markdown text."""
+    for line in text.strip().splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#"):
+            # Take first sentence
+            parts = re.split(r"(?<=[.!?])\s+", stripped, maxsplit=1)
+            return parts[0] if parts else stripped[:120]
+    return ""
+
+
+def _build_lean_claude_md(
+    spec: CompositionSpec,
+    persona_descriptions: list[tuple[str, str]],
+    expertise_ids: list[str],
+) -> str:
+    """Build a lean CLAUDE.md with project summary, tech stack, and pointers.
+
+    Args:
+        spec: The composition spec.
+        persona_descriptions: List of (persona_id, one-line description) tuples.
+        expertise_ids: Sorted list of expertise IDs included in the project.
+
+    Returns:
+        The assembled lean CLAUDE.md content.
+    """
+    sections: list[str] = []
+
+    # --- Project header ---
+    header = f"# {spec.project.name}"
+    if spec.project.description:
+        header += f"\n\n{spec.project.description}"
+    sections.append(header)
+
+    # --- Tech Stack ---
+    if expertise_ids:
+        tech_lines = ["## Tech Stack", ""]
+        tech_lines.append("| Technology | Source |")
+        tech_lines.append("|------------|--------|")
+        for eid in expertise_ids:
+            display = eid.replace("-", " ").title()
+            tech_lines.append(
+                f"| {display} | `ai/generated/expertise/{eid}.md` |"
+            )
+        sections.append("\n".join(tech_lines))
+
+    # --- Directory Structure ---
+    dir_lines = [
+        "## Directory Structure",
+        "",
+        "```",
+        ".claude/            # Claude Code config (agents, commands, hooks, skills)",
+        "ai/",
+        "  context/          # Project context and decisions",
+        "  outputs/          # Persona working directories",
+        "  generated/        # Generated prompts (members + expertise)",
+        "  beans/            # Work tracking (bean workflow)",
+        "  tasks/            # Seeded task lists",
+        "```",
+    ]
+    sections.append("\n".join(dir_lines))
+
+    # --- Team ---
+    if persona_descriptions:
+        team_lines = ["## Team", ""]
+        team_lines.append("| Persona | Role | Agent | Full Prompt |")
+        team_lines.append("|---------|------|-------|-------------|")
+        for pid, desc in persona_descriptions:
+            display = pid.replace("-", " ").title()
+            team_lines.append(
+                f"| {display} | {desc} "
+                f"| `.claude/agents/{pid}.md` "
+                f"| `ai/generated/members/{pid}.md` |"
+            )
+        sections.append("\n".join(team_lines))
+
+    # --- Pointers ---
+    pointer_lines = [
+        "## Documentation",
+        "",
+        "Full persona prompts and expertise conventions are in `ai/generated/`:",
+        "",
+    ]
+    if persona_descriptions:
+        pointer_lines.append(
+            "- **Persona prompts:** `ai/generated/members/<persona>.md`"
+        )
+    if expertise_ids:
+        pointer_lines.append(
+            "- **Expertise conventions:** `ai/generated/expertise/<expertise>.md`"
+        )
+    pointer_lines.append("- **Agent files:** `.claude/agents/<persona>.md`")
+    pointer_lines.append("- **Project context:** `ai/context/`")
+    sections.append("\n".join(pointer_lines))
+
+    return "\n\n".join(sections) + "\n"
+
+
 def compile_project(
     spec: CompositionSpec,
     library_index: LibraryIndex,
     library_root: str | Path,
     output_dir: str | Path,
 ) -> StageResult:
-    """Compile CLAUDE.md from library components based on the composition spec.
+    """Compile CLAUDE.md and persona/expertise files from library components.
 
-    Reads persona source files (persona.md, outputs.md, prompts.md) and expertise
-    convention files (conventions.md) from the library, performs template variable
-    substitution, and assembles them into a single deterministic CLAUDE.md.
+    Generates a lean CLAUDE.md (~100 lines) with project summary, tech stack,
+    directory overview, team table, and pointers to detailed docs. Full persona
+    and expertise content is written to separate files under ai/generated/.
 
     Args:
         spec: The composition spec describing the project.
@@ -313,19 +411,17 @@ def compile_project(
     warnings: list[str] = []
 
     context = _build_context(spec)
-    sections: list[str] = []
 
     # Build persona name map and selected IDs for reference filtering
     name_to_id = _build_persona_name_map(library_index)
     selected_ids = {ps.id for ps in spec.team.personas}
 
-    # --- Project header ---
-    header = f"# {spec.project.name}"
-    sections.append(header)
-
-    # --- Persona sections (in spec order) ---
+    # --- Compile and write full persona files to ai/generated/members/ ---
+    persona_descriptions: list[tuple[str, str]] = []
     if spec.team.personas:
-        sections.append("## Team")
+        members_dir = root / "ai" / "generated" / "members"
+        members_dir.mkdir(parents=True, exist_ok=True)
+
         for persona_sel in spec.team.personas:
             persona_section = _compile_persona_section(
                 persona_sel.id, lib_root, library_index, context, warnings,
@@ -334,21 +430,39 @@ def compile_project(
                 persona_section = _filter_persona_references(
                     persona_section, selected_ids, name_to_id,
                 )
-                sections.append(persona_section)
+                # Write full content to separate file
+                member_path = members_dir / f"{persona_sel.id}.md"
+                member_path.write_text(persona_section + "\n", encoding="utf-8")
+                rel = str(member_path.relative_to(root))
+                wrote.append(rel)
+                logger.info("Wrote: %s", member_path)
 
-    # --- Expertise sections (sorted by order field, then alphabetically) ---
-    if spec.expertise:
-        sections.append("## Expertise")
-        sorted_expertise = sorted(spec.expertise, key=lambda s: (s.order, s.id))
+                # Extract one-line description for CLAUDE.md team table
+                desc = _extract_first_sentence(persona_section)
+                persona_descriptions.append((persona_sel.id, desc))
+
+    # --- Compile and write full expertise files to ai/generated/expertise/ ---
+    sorted_expertise = sorted(spec.expertise, key=lambda s: (s.order, s.id))
+    expertise_ids: list[str] = []
+    if sorted_expertise:
+        expertise_dir = root / "ai" / "generated" / "expertise"
+        expertise_dir.mkdir(parents=True, exist_ok=True)
+
         for expertise_sel in sorted_expertise:
             expertise_section = _compile_expertise_section(
                 expertise_sel.id, lib_root, library_index, context, warnings,
             )
             if expertise_section is not None:
-                sections.append(expertise_section)
+                # Write full content to separate file
+                exp_path = expertise_dir / f"{expertise_sel.id}.md"
+                exp_path.write_text(expertise_section + "\n", encoding="utf-8")
+                rel = str(exp_path.relative_to(root))
+                wrote.append(rel)
+                logger.info("Wrote: %s", exp_path)
+                expertise_ids.append(expertise_sel.id)
 
-    # --- Assemble and write ---
-    content = "\n\n".join(sections) + "\n"
+    # --- Build and write lean CLAUDE.md ---
+    content = _build_lean_claude_md(spec, persona_descriptions, expertise_ids)
 
     claude_md_path = root / "CLAUDE.md"
     claude_md_path.parent.mkdir(parents=True, exist_ok=True)
@@ -356,13 +470,17 @@ def compile_project(
     wrote.append("CLAUDE.md")
     logger.info("Wrote: %s", claude_md_path)
 
-    # Check for unresolved placeholders in output
-    unresolved = _PLACEHOLDER_RE.findall(content)
-    if unresolved:
-        unique = sorted(set(unresolved))
-        warnings.append(
-            f"Unresolved placeholders in CLAUDE.md: {', '.join(unique)}"
-        )
+    # Check for unresolved placeholders in member/expertise files
+    generated_dir = root / "ai" / "generated"
+    for fpath in generated_dir.rglob("*.md") if generated_dir.exists() else []:
+        file_content = fpath.read_text(encoding="utf-8")
+        unresolved = _PLACEHOLDER_RE.findall(file_content)
+        if unresolved:
+            unique = sorted(set(unresolved))
+            rel = str(fpath.relative_to(root))
+            warnings.append(
+                f"Unresolved placeholders in {rel}: {', '.join(unique)}"
+            )
 
     logger.info(
         "Compile complete: %d files written, %d warnings",
