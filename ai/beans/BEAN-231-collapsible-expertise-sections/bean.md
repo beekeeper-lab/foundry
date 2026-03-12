@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-231 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-03-12 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-03-12 03:16 |
+| **Completed** | 2026-03-12 03:18 |
+| **Duration** | 344h 42m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -33,18 +33,19 @@ Make the expertise selection sections (groups) collapsible so users can expand/c
 
 ## Acceptance Criteria
 
-- [ ] Each expertise group section has a clickable header that toggles collapse/expand
-- [ ] Collapsed sections hide their expertise items
-- [ ] Visual indicator shows current state (expanded vs collapsed)
-- [ ] All sections default to expanded on page load
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Each expertise group section has a clickable header that toggles collapse/expand
+- [x] Collapsed sections hide their expertise items
+- [x] Visual indicator shows current state (expanded vs collapsed)
+- [x] All sections default to expanded on page load
+- [x] All tests pass (`uv run pytest`)
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Implement collapsible expertise groups | Developer | — | Done |
+| 2 | Verify collapsible sections | Tech QA | 1 | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
@@ -55,7 +56,7 @@ Make the expertise selection sections (groups) collapsible so users can expand/c
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/ui/screens/builder/wizard_pages/expertise_page.py` | +45 −20 |
 
 ## Notes
 
@@ -76,12 +77,13 @@ Trello card #101. Related to BEAN-230 (persona sections) and BEAN-232 (architect
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Implement collapsible expertise groups | Developer | — | — | — | — |
+| 2 | Verify collapsible sections | Tech QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 344h 42m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

@@ -15,7 +15,6 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QFrame,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -143,22 +142,68 @@ QPushButton:disabled {{
 }}
 """
 
-CATEGORY_GROUP_STYLE = f"""
-QGroupBox {{
+COLLAPSE_HEADER_STYLE = f"""
+QPushButton {{
+    background-color: {BG_SURFACE};
+    color: {TEXT_PRIMARY};
     font-size: {FONT_SIZE_LG}px;
     font-weight: {FONT_WEIGHT_BOLD};
-    color: {TEXT_PRIMARY};
     border: 1px solid {BORDER_DEFAULT};
     border-radius: {RADIUS_MD}px;
-    margin-top: 12px;
-    padding-top: 24px;
+    padding: 8px 12px;
+    text-align: left;
 }}
-QGroupBox::title {{
-    subcontrol-origin: margin;
-    left: 10px;
-    padding: 0 6px;
+QPushButton:hover {{
+    background-color: {BG_INSET};
 }}
 """
+
+
+class CollapsibleSection(QWidget):
+    """A section with a clickable header that toggles visibility of its content."""
+
+    def __init__(self, title: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._expanded = True
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 8, 0, 0)
+        layout.setSpacing(0)
+
+        self._toggle_btn = QPushButton(f"\u25bc  {title}")
+        self._toggle_btn.setStyleSheet(COLLAPSE_HEADER_STYLE)
+        self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._toggle_btn.clicked.connect(self._toggle)
+        layout.addWidget(self._toggle_btn)
+
+        self._content = QWidget()
+        self._content_layout = QVBoxLayout(self._content)
+        self._content_layout.setContentsMargins(8, 8, 8, 8)
+        self._content_layout.setSpacing(8)
+        layout.addWidget(self._content)
+
+        self._title = title
+
+    @property
+    def content_layout(self) -> QVBoxLayout:
+        return self._content_layout
+
+    @property
+    def content_widget(self) -> QWidget:
+        return self._content
+
+    def title(self) -> str:
+        """Return the section title text."""
+        return self._title
+
+    @property
+    def is_expanded(self) -> bool:
+        return self._expanded
+
+    def _toggle(self) -> None:
+        self._expanded = not self._expanded
+        self._content.setVisible(self._expanded)
+        chevron = "\u25bc" if self._expanded else "\u25b6"
+        self._toggle_btn.setText(f"{chevron}  {self._title}")
 
 
 class ExpertiseCard(QFrame):
@@ -247,7 +292,7 @@ class ExpertiseSelectionPage(QWidget):
         super().__init__(parent)
         self._cards: dict[str, ExpertiseCard] = {}
         self._ordered_ids: list[str] = []
-        self._category_groups: dict[str, QGroupBox] = {}
+        self._category_groups: dict[str, CollapsibleSection] = {}
         self._warning_label: QLabel | None = None
         self._build_ui()
         if library_index is not None:
@@ -330,9 +375,9 @@ class ExpertiseSelectionPage(QWidget):
         self._cards.clear()
         self._ordered_ids.clear()
 
-        for group_box in self._category_groups.values():
-            self._card_layout.removeWidget(group_box)
-            group_box.deleteLater()
+        for section in self._category_groups.values():
+            self._card_layout.removeWidget(section)
+            section.deleteLater()
         self._category_groups.clear()
 
         # Group expertise by category
@@ -351,22 +396,16 @@ class ExpertiseSelectionPage(QWidget):
         insert_idx = 0
         for cat_name in sorted_cats:
             items_in_cat = groups[cat_name]
-            group_box = QGroupBox(f"{cat_name} ({len(items_in_cat)})")
-            group_box.setCheckable(False)
-            group_box.setStyleSheet(CATEGORY_GROUP_STYLE)
-            group_layout = QVBoxLayout()
-            group_layout.setContentsMargins(8, 8, 8, 8)
-            group_layout.setSpacing(8)
+            section = CollapsibleSection(f"{cat_name} ({len(items_in_cat)})")
 
             for expertise in items_in_cat:
                 card = ExpertiseCard(expertise)
                 card.toggled.connect(self._on_card_toggled)
-                group_layout.addWidget(card)
+                section.content_layout.addWidget(card)
                 self._cards[expertise.id] = card
 
-            group_box.setLayout(group_layout)
-            self._card_layout.insertWidget(insert_idx, group_box)
-            self._category_groups[cat_name] = group_box
+            self._card_layout.insertWidget(insert_idx, section)
+            self._category_groups[cat_name] = section
             insert_idx += 1
 
         self._empty_label.setVisible(len(self._cards) == 0)
@@ -411,8 +450,8 @@ class ExpertiseSelectionPage(QWidget):
         return list(self._ordered_ids)
 
     @property
-    def category_groups(self) -> dict[str, QGroupBox]:
-        """Access category group boxes by name (for testing)."""
+    def category_groups(self) -> dict[str, CollapsibleSection]:
+        """Access category sections by name (for testing)."""
         return dict(self._category_groups)
 
     def move_expertise_up(self, expertise_id: str) -> None:
