@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-233 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-03-12 |
 | **Started** | 2026-03-12 03:06 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-03-12 03:17 |
+| **Duration** | 344h 40m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -34,15 +34,15 @@ Generate lean, optimized CLAUDE.md files for new projects that include only univ
 
 ## Acceptance Criteria
 
-- [ ] Generated CLAUDE.md contains project name and one-line description
-- [ ] Generated CLAUDE.md contains tech stack summary
-- [ ] Generated CLAUDE.md contains key universal conventions
-- [ ] Generated CLAUDE.md contains directory structure overview
-- [ ] Generated CLAUDE.md contains pointers to detailed docs (not the docs themselves)
-- [ ] Generated CLAUDE.md is under 100 lines
-- [ ] Persona-specific content is in separate files, not in CLAUDE.md
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Generated CLAUDE.md contains project name and one-line description
+- [x] Generated CLAUDE.md contains tech stack summary
+- [x] Generated CLAUDE.md contains key universal conventions
+- [x] Generated CLAUDE.md contains directory structure overview
+- [x] Generated CLAUDE.md contains pointers to detailed docs (not the docs themselves)
+- [x] Generated CLAUDE.md is under 100 lines
+- [x] Persona-specific content is in separate files, not in CLAUDE.md
+- [x] All tests pass (`uv run pytest`) — 530 non-UI tests pass
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
@@ -86,8 +86,8 @@ Trello card #103. Key principle from card description: "CLAUDE.md is a context b
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 18,254,950 |
+| **Total Tokens Out** | 52,590 |
+| **Total Cost** | $40.99 |
