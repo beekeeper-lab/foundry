@@ -1,7 +1,6 @@
 """Tests for foundry_app.ui.screens.builder.wizard_pages.persona_page."""
 
 import pytest
-from PySide6.QtWidgets import QApplication
 
 from foundry_app.core.models import (
     LibraryIndex,
@@ -17,7 +16,7 @@ from foundry_app.ui.screens.builder.wizard_pages.persona_page import (
     PersonaSelectionPage,
 )
 
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 # ---------------------------------------------------------------------------

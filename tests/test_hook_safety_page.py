@@ -1,7 +1,6 @@
 """Tests for foundry_app.ui.screens.builder.wizard_pages.hook_safety_page."""
 
 import pytest
-from PySide6.QtWidgets import QApplication
 
 from foundry_app.core.models import (
     DestructiveOpsPolicy,
@@ -25,7 +24,7 @@ from foundry_app.ui.screens.builder.wizard_pages.hook_safety_page import (
     SafetyPolicySection,
 )
 
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 # ---------------------------------------------------------------------------

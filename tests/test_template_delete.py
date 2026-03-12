@@ -1,8 +1,8 @@
 """Tests for Library Manager template delete — BEAN-092.
 
-These tests mock PySide6 so they can run in headless environments
-without libGL.so.1. They verify the template delete flow end-to-end:
-button state, confirmation dialog, filesystem removal, and tree refresh.
+Verifies the template delete flow end-to-end: button state, confirmation
+dialog, filesystem removal, and tree refresh. When PySide6 is unavailable
+(headless CI), mocks are installed so library_manager can be imported.
 """
 
 from __future__ import annotations
@@ -13,79 +13,72 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 # ---------------------------------------------------------------------------
-# PySide6 mock layer — installed temporarily to import pure functions
+# Conditionally mock PySide6 — only when it's not available
 # ---------------------------------------------------------------------------
 
-_USER_ROLE = 0x0100  # Qt.ItemDataRole.UserRole
+_NEED_MOCK = False
+try:
+    import PySide6.QtWidgets  # noqa: F401
+except ImportError:
+    _NEED_MOCK = True
 
-# Save original sys.modules state for mocked keys
-_MOCK_KEYS = [
-    "PySide6",
-    "PySide6.QtCore",
-    "PySide6.QtGui",
-    "PySide6.QtWidgets",
-    "foundry_app.ui.theme",
-    "foundry_app.ui.widgets.markdown_editor",
-]
-_saved_modules: dict[str, object] = {}
-for _k in _MOCK_KEYS:
-    if _k in sys.modules:
-        _saved_modules[_k] = sys.modules[_k]
+if _NEED_MOCK:
+    _USER_ROLE = 0x0100  # Qt.ItemDataRole.UserRole
 
-# Install mocks
-_pyside6 = types.ModuleType("PySide6")
+    _MOCK_KEYS = [
+        "PySide6",
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "PySide6.QtWidgets",
+        "foundry_app.ui.theme",
+        "foundry_app.ui.widgets.markdown_editor",
+    ]
 
-_qt_core = types.ModuleType("PySide6.QtCore")
-_qt_mock = MagicMock()
-_qt_mock.ItemDataRole.UserRole = _USER_ROLE
-_qt_mock.Orientation.Horizontal = 1
-_qt_mock.AlignmentFlag.AlignCenter = 4
-_qt_core.Qt = _qt_mock
+    _pyside6 = types.ModuleType("PySide6")
 
-_qt_gui = types.ModuleType("PySide6.QtGui")
-_qt_gui.QColor = MagicMock()
-_qt_gui.QFont = MagicMock()
+    _qt_core = types.ModuleType("PySide6.QtCore")
+    _qt_mock = MagicMock()
+    _qt_mock.ItemDataRole.UserRole = _USER_ROLE
+    _qt_mock.Orientation.Horizontal = 1
+    _qt_mock.AlignmentFlag.AlignCenter = 4
+    _qt_core.Qt = _qt_mock
 
-_qt_widgets = types.ModuleType("PySide6.QtWidgets")
-for _cls in [
-    "QApplication", "QHBoxLayout", "QInputDialog", "QLabel",
-    "QMessageBox", "QPushButton", "QSplitter", "QTreeWidget",
-    "QTreeWidgetItem", "QVBoxLayout", "QWidget",
-]:
-    setattr(_qt_widgets, _cls, MagicMock())
-_qt_widgets.QMessageBox.StandardButton.Yes = 1
-_qt_widgets.QMessageBox.StandardButton.No = 0
+    _qt_gui = types.ModuleType("PySide6.QtGui")
+    _qt_gui.QColor = MagicMock()
+    _qt_gui.QFont = MagicMock()
 
-sys.modules["PySide6"] = _pyside6
-sys.modules["PySide6.QtCore"] = _qt_core
-sys.modules["PySide6.QtGui"] = _qt_gui
-sys.modules["PySide6.QtWidgets"] = _qt_widgets
+    _qt_widgets = types.ModuleType("PySide6.QtWidgets")
+    for _cls in [
+        "QApplication", "QHBoxLayout", "QInputDialog", "QLabel",
+        "QMessageBox", "QPushButton", "QSplitter", "QTreeWidget",
+        "QTreeWidgetItem", "QVBoxLayout", "QWidget",
+    ]:
+        setattr(_qt_widgets, _cls, MagicMock())
+    _qt_widgets.QMessageBox.StandardButton.Yes = 1
+    _qt_widgets.QMessageBox.StandardButton.No = 0
 
-_theme = types.ModuleType("foundry_app.ui.theme")
-for _const in [
-    "ACCENT_PRIMARY", "BG_BASE", "BG_SURFACE",
-    "BORDER_DEFAULT", "TEXT_PRIMARY", "TEXT_SECONDARY",
-]:
-    setattr(_theme, _const, "#000000")
-sys.modules["foundry_app.ui.theme"] = _theme
+    sys.modules["PySide6"] = _pyside6
+    sys.modules["PySide6.QtCore"] = _qt_core
+    sys.modules["PySide6.QtGui"] = _qt_gui
+    sys.modules["PySide6.QtWidgets"] = _qt_widgets
 
-_md_editor = types.ModuleType("foundry_app.ui.widgets.markdown_editor")
-_md_editor.MarkdownEditor = MagicMock()
-sys.modules["foundry_app.ui.widgets.markdown_editor"] = _md_editor
+    _theme = types.ModuleType("foundry_app.ui.theme")
+    for _const in [
+        "ACCENT_PRIMARY", "BG_BASE", "BG_SURFACE",
+        "BORDER_DEFAULT", "TEXT_PRIMARY", "TEXT_SECONDARY",
+    ]:
+        setattr(_theme, _const, "#000000")
+    sys.modules["foundry_app.ui.theme"] = _theme
 
-# Now import the pure functions we need
+    _md_editor = types.ModuleType("foundry_app.ui.widgets.markdown_editor")
+    _md_editor.MarkdownEditor = MagicMock()
+    sys.modules["foundry_app.ui.widgets.markdown_editor"] = _md_editor
+
 from foundry_app.ui.screens.library_manager import (  # noqa: E402
     _build_file_tree,
     starter_content,
     validate_asset_name,
 )
-
-# Restore sys.modules — remove mock entries or restore originals
-for _k in _MOCK_KEYS:
-    if _k in _saved_modules:
-        sys.modules[_k] = _saved_modules[_k]
-    else:
-        sys.modules.pop(_k, None)
 
 
 # ---------------------------------------------------------------------------

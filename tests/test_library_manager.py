@@ -3,7 +3,8 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QMessageBox
+import pytest
+from PySide6.QtWidgets import QMessageBox
 
 from foundry_app.ui.screens.library_manager import (
     STARTER_TEMPLATE,
@@ -15,7 +16,7 @@ from foundry_app.ui.screens.library_manager import (
 )
 from foundry_app.ui.widgets.markdown_editor import MarkdownEditor
 
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 # ---------------------------------------------------------------------------

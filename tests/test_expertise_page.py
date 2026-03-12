@@ -1,7 +1,6 @@
 """Tests for foundry_app.ui.screens.builder.wizard_pages.expertise_page."""
 
 import pytest
-from PySide6.QtWidgets import QApplication
 
 from foundry_app.core.models import (
     ExpertiseInfo,
@@ -14,7 +13,7 @@ from foundry_app.ui.screens.builder.wizard_pages.expertise_page import (
     ExpertiseSelectionPage,
 )
 
-_app = QApplication.instance() or QApplication([])
+pytestmark = pytest.mark.usefixtures("qapp")
 
 
 # ---------------------------------------------------------------------------

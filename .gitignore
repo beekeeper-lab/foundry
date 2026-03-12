@@ -46,3 +46,6 @@ Thumbs.db
 # Project-specific: keep generated-projects dir but not its contents
 generated-projects/*/
 !generated-projects/.gitkeep
+
+# Test artifacts: generated images and skill specs
+images/test/
