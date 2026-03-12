@@ -56,7 +56,8 @@ Make the persona selection sections (groups) collapsible so users can expand/col
 
 | File | Lines |
 |------|-------|
-| — | — |
+| foundry_app/ui/screens/builder/wizard_pages/persona_page.py | +93/-3 |
+| tests/test_persona_page.py | +5/-1 |
 
 ## Notes
 
