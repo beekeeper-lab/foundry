@@ -251,7 +251,7 @@
 | BEAN-227 | Migrate Claude Kit from Subtree to Submodule | Infra | High | Done | team-lead |
 | BEAN-228 | Architect Engagement Rules | Process | High | Done | team-lead |
 | BEAN-229 | BA Engagement Rules | Process | High | Done | team-lead |
-| BEAN-230 | Collapsible Persona Selection Sections | App | Medium | In Progress | team-lead |
+| BEAN-230 | Collapsible Persona Selection Sections | App | Medium | Done | team-lead |
 | BEAN-231 | Collapsible Expertise Selection Sections | App | Medium | In Progress | team-lead |
 | BEAN-232 | Collapsible Architecture Selection Sections | App | Medium | In Progress | team-lead |
 | BEAN-233 | Generate Optimized CLAUDE.md for Projects | App | Medium | Done | team-lead |
