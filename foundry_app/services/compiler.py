@@ -443,7 +443,7 @@ def compile_project(
 
     # --- Compile and write full expertise files to ai/generated/expertise/ ---
     sorted_expertise = sorted(spec.expertise, key=lambda s: (s.order, s.id))
-    expertise_ids: list[str] = []
+    expertise_ids: list[str] = [e.id for e in sorted_expertise]
     if sorted_expertise:
         expertise_dir = root / "ai" / "generated" / "expertise"
         expertise_dir.mkdir(parents=True, exist_ok=True)
@@ -459,7 +459,6 @@ def compile_project(
                 rel = str(exp_path.relative_to(root))
                 wrote.append(rel)
                 logger.info("Wrote: %s", exp_path)
-                expertise_ids.append(expertise_sel.id)
 
     # --- Build and write lean CLAUDE.md ---
     content = _build_lean_claude_md(spec, persona_descriptions, expertise_ids)

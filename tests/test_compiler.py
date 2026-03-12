@@ -213,14 +213,15 @@ class TestCompileProjectBasic:
         assert isinstance(result, type(result))
         assert "CLAUDE.md" in result.wrote
 
-    def test_wrote_contains_only_claude_md(self, tmp_path: Path):
+    def test_wrote_contains_claude_md_and_generated_files(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "# Developer"},
         })
         spec = _make_spec()
         result = compile_project(spec, index, lib_root, output)
-        assert result.wrote == ["CLAUDE.md"]
+        assert "CLAUDE.md" in result.wrote
+        assert "ai/generated/members/developer.md" in result.wrote
 
     def test_creates_output_dir_if_missing(self, tmp_path: Path):
         output = tmp_path / "deep" / "nested" / "project"
@@ -269,17 +270,21 @@ class TestCompileProjectContent:
         content = (output / "CLAUDE.md").read_text()
         assert "## Team" in content
 
-    def test_contains_persona_content(self, tmp_path: Path):
+    def test_persona_content_in_generated_file(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "# Developer\n\nBuild great code."},
         })
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
+        # Full content should be in generated file, not CLAUDE.md
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "Build great code." in gen
+        # CLAUDE.md should have pointer to the file
         content = (output / "CLAUDE.md").read_text()
-        assert "Build great code." in content
+        assert "ai/generated/members/developer.md" in content
 
-    def test_contains_expertise_heading(self, tmp_path: Path):
+    def test_contains_tech_stack_heading(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
@@ -289,9 +294,9 @@ class TestCompileProjectContent:
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
-        assert "## Expertise" in content
+        assert "## Tech Stack" in content
 
-    def test_contains_expertise_content(self, tmp_path: Path):
+    def test_expertise_content_in_generated_file(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
@@ -300,8 +305,12 @@ class TestCompileProjectContent:
         )
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "Use type hints everywhere." in content
+        # Expertise content should be in generated file, not CLAUDE.md
+        gen_content = (output / "ai/generated/expertise/python.md").read_text()
+        assert "Use type hints everywhere." in gen_content
+        # CLAUDE.md should have a pointer to the expertise file
+        claude_content = (output / "CLAUDE.md").read_text()
+        assert "ai/generated/expertise/python.md" in claude_content
 
     def test_ends_with_newline(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -321,17 +330,17 @@ class TestCompileProjectContent:
 
 class TestPersonaFileAssembly:
 
-    def test_includes_persona_md(self, tmp_path: Path):
+    def test_includes_persona_md_in_generated(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "PERSONA_CONTENT"},
         })
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "PERSONA_CONTENT" in content
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "PERSONA_CONTENT" in gen
 
-    def test_includes_outputs_md(self, tmp_path: Path):
+    def test_includes_outputs_md_in_generated(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {
@@ -341,10 +350,10 @@ class TestPersonaFileAssembly:
         })
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "OUTPUTS_CONTENT" in content
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "OUTPUTS_CONTENT" in gen
 
-    def test_includes_prompts_md(self, tmp_path: Path):
+    def test_includes_prompts_md_in_generated(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {
@@ -354,10 +363,10 @@ class TestPersonaFileAssembly:
         })
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "PROMPTS_CONTENT" in content
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "PROMPTS_CONTENT" in gen
 
-    def test_persona_files_in_order(self, tmp_path: Path):
+    def test_persona_files_in_order_in_generated(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {
@@ -368,9 +377,9 @@ class TestPersonaFileAssembly:
         })
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert content.index("AAA_PERSONA") < content.index("BBB_OUTPUTS")
-        assert content.index("BBB_OUTPUTS") < content.index("CCC_PROMPTS")
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert gen.index("AAA_PERSONA") < gen.index("BBB_OUTPUTS")
+        assert gen.index("BBB_OUTPUTS") < gen.index("CCC_PROMPTS")
 
     def test_missing_outputs_md_still_compiles(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -401,7 +410,7 @@ class TestPersonaFileAssembly:
 
 class TestMultiplePersonas:
 
-    def test_all_personas_included(self, tmp_path: Path):
+    def test_all_personas_in_generated_files(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "DEV_CONTENT"},
@@ -412,11 +421,12 @@ class TestMultiplePersonas:
             PersonaSelection(id="architect"),
         ]))
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "DEV_CONTENT" in content
-        assert "ARCH_CONTENT" in content
+        dev = (output / "ai/generated/members/developer.md").read_text()
+        arch = (output / "ai/generated/members/architect.md").read_text()
+        assert "DEV_CONTENT" in dev
+        assert "ARCH_CONTENT" in arch
 
-    def test_persona_order_matches_spec(self, tmp_path: Path):
+    def test_persona_order_matches_spec_in_wrote(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "DEV_FIRST"},
@@ -426,11 +436,12 @@ class TestMultiplePersonas:
             PersonaSelection(id="developer"),
             PersonaSelection(id="architect"),
         ]))
-        compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert content.index("DEV_FIRST") < content.index("ARCH_SECOND")
+        result = compile_project(spec, index, lib_root, output)
+        member_files = [w for w in result.wrote if "members" in w]
+        assert member_files.index("ai/generated/members/developer.md") < \
+            member_files.index("ai/generated/members/architect.md")
 
-    def test_reversed_persona_order(self, tmp_path: Path):
+    def test_reversed_persona_order_in_wrote(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "DEV_SECOND"},
@@ -440,11 +451,12 @@ class TestMultiplePersonas:
             PersonaSelection(id="architect"),
             PersonaSelection(id="developer"),
         ]))
-        compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert content.index("ARCH_FIRST") < content.index("DEV_SECOND")
+        result = compile_project(spec, index, lib_root, output)
+        member_files = [w for w in result.wrote if "members" in w]
+        assert member_files.index("ai/generated/members/architect.md") < \
+            member_files.index("ai/generated/members/developer.md")
 
-    def test_three_personas(self, tmp_path: Path):
+    def test_three_personas_all_generated(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "AAA"},
@@ -457,10 +469,9 @@ class TestMultiplePersonas:
             PersonaSelection(id="tech-qa"),
         ]))
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "AAA" in content
-        assert "BBB" in content
-        assert "CCC" in content
+        assert "AAA" in (output / "ai/generated/members/developer.md").read_text()
+        assert "BBB" in (output / "ai/generated/members/architect.md").read_text()
+        assert "CCC" in (output / "ai/generated/members/tech-qa.md").read_text()
 
 
 # ---------------------------------------------------------------------------
@@ -470,7 +481,7 @@ class TestMultiplePersonas:
 
 class TestMultipleExpertise:
 
-    def test_all_expertise_included(self, tmp_path: Path):
+    def test_all_expertise_in_generated_files(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
@@ -485,11 +496,12 @@ class TestMultipleExpertise:
             ExpertiseSelection(id="typescript", order=20),
         ])
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "PYTHON_CONV" in content
-        assert "TS_CONV" in content
+        py = (output / "ai/generated/expertise/python.md").read_text()
+        ts = (output / "ai/generated/expertise/typescript.md").read_text()
+        assert "PYTHON_CONV" in py
+        assert "TS_CONV" in ts
 
-    def test_expertise_sorted_by_order(self, tmp_path: Path):
+    def test_expertise_sorted_by_order_in_wrote(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
@@ -503,11 +515,13 @@ class TestMultipleExpertise:
             ExpertiseSelection(id="typescript", order=20),
             ExpertiseSelection(id="python", order=10),
         ])
-        compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert content.index("PYTHON_FIRST") < content.index("TS_SECOND")
+        result = compile_project(spec, index, lib_root, output)
+        # python should be written before typescript (sorted by order)
+        exp_files = [w for w in result.wrote if "expertise" in w]
+        assert exp_files.index("ai/generated/expertise/python.md") < \
+            exp_files.index("ai/generated/expertise/typescript.md")
 
-    def test_expertise_same_order_sorted_alphabetically(self, tmp_path: Path):
+    def test_expertise_same_order_sorted_alphabetically_in_wrote(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
@@ -521,12 +535,13 @@ class TestMultipleExpertise:
             ExpertiseSelection(id="typescript", order=0),
             ExpertiseSelection(id="python", order=0),
         ])
-        compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
+        result = compile_project(spec, index, lib_root, output)
+        exp_files = [w for w in result.wrote if "expertise" in w]
         # python comes before typescript alphabetically
-        assert content.index("PY_CONTENT") < content.index("TS_CONTENT")
+        assert exp_files.index("ai/generated/expertise/python.md") < \
+            exp_files.index("ai/generated/expertise/typescript.md")
 
-    def test_personas_before_expertise(self, tmp_path: Path):
+    def test_team_before_tech_stack_in_claude_md(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
@@ -536,7 +551,9 @@ class TestMultipleExpertise:
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
-        assert content.index("PERSONA_SECTION") < content.index("STACK_SECTION")
+        # In lean CLAUDE.md, Tech Stack comes before Team
+        assert "## Tech Stack" in content
+        assert "## Team" in content
 
 
 # ---------------------------------------------------------------------------
@@ -546,18 +563,18 @@ class TestMultipleExpertise:
 
 class TestTemplateSubstitutionInContent:
 
-    def test_project_name_substituted_in_persona(self, tmp_path: Path):
+    def test_project_name_substituted_in_generated_persona(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "Working on {{ project_name }}"},
         })
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "Working on Test Project" in content
-        assert "{{ project_name }}" not in content
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "Working on Test Project" in gen
+        assert "{{ project_name }}" not in gen
 
-    def test_expertise_join_substituted_in_persona(self, tmp_path: Path):
+    def test_expertise_join_substituted_in_generated_persona(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {
@@ -568,12 +585,11 @@ class TestTemplateSubstitutionInContent:
             ExpertiseSelection(id="python", order=10),
             ExpertiseSelection(id="typescript", order=20),
         ])
-        # Need expertise in library too for them to compile
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "Stack: python, typescript" in content
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "Stack: python, typescript" in gen
 
-    def test_substitution_in_outputs_md(self, tmp_path: Path):
+    def test_substitution_in_generated_outputs_md(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {
@@ -583,10 +599,10 @@ class TestTemplateSubstitutionInContent:
         })
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "Deliver for Test Project" in content
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "Deliver for Test Project" in gen
 
-    def test_substitution_in_prompts_md(self, tmp_path: Path):
+    def test_substitution_in_generated_prompts_md(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {
@@ -596,8 +612,8 @@ class TestTemplateSubstitutionInContent:
         })
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "Context for Test Project" in content
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "Context for Test Project" in gen
 
     def test_substitution_in_expertise_conventions(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -608,8 +624,8 @@ class TestTemplateSubstitutionInContent:
         )
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "For Test Project" in content
+        gen = (output / "ai/generated/expertise/python.md").read_text()
+        assert "For Test Project" in gen
 
 
 # ---------------------------------------------------------------------------
@@ -742,7 +758,7 @@ class TestEmptySelections:
         assert (output / "CLAUDE.md").exists()
         assert "CLAUDE.md" in result.wrote
 
-    def test_no_expertise_no_expertise_heading(self, tmp_path: Path):
+    def test_no_expertise_no_tech_stack_heading(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "# Dev"},
@@ -750,7 +766,7 @@ class TestEmptySelections:
         spec = _make_spec(expertise=[])
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
-        assert "## Expertise" not in content
+        assert "## Tech Stack" not in content
 
     def test_no_personas_no_expertise(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -872,8 +888,8 @@ class TestEdgeCases:
         })
         spec = _make_spec()
         result = compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "OUTPUTS_ONLY" in content
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "OUTPUTS_ONLY" in gen
         assert any("missing persona.md" in w for w in result.warnings)
 
     def test_persona_with_only_prompts_md(self, tmp_path: Path):
@@ -883,8 +899,8 @@ class TestEdgeCases:
         })
         spec = _make_spec()
         result = compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "PROMPTS_ONLY" in content
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "PROMPTS_ONLY" in gen
 
     def test_whitespace_stripping(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -906,21 +922,25 @@ class TestEdgeCases:
             project=ProjectIdentity(name="Acme & Sons (v2.0)", slug="acme-sons"),
         )
         compile_project(spec, index, lib_root, output)
+        # Check CLAUDE.md header
         content = (output / "CLAUDE.md").read_text()
         assert "Acme & Sons (v2.0)" in content
+        # Check substitution in generated file
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "Acme & Sons (v2.0)" in gen
 
-    def test_unicode_in_content(self, tmp_path: Path):
+    def test_unicode_in_generated_content(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={
             "developer": {"persona.md": "# Developer \u2014 Build \u2728"},
         })
         spec = _make_spec()
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
-        assert "\u2014" in content
-        assert "\u2728" in content
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "\u2014" in gen
+        assert "\u2728" in gen
 
-    def test_large_number_of_personas(self, tmp_path: Path):
+    def test_large_number_of_personas_in_generated(self, tmp_path: Path):
         output = tmp_path / "project"
         personas = {f"persona-{i}": {"persona.md": f"CONTENT_{i}"} for i in range(10)}
         index, lib_root = _make_library(tmp_path, personas=personas)
@@ -928,12 +948,12 @@ class TestEdgeCases:
             PersonaSelection(id=f"persona-{i}") for i in range(10)
         ]))
         result = compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
         for i in range(10):
-            assert f"CONTENT_{i}" in content
+            gen = (output / f"ai/generated/members/persona-{i}.md").read_text()
+            assert f"CONTENT_{i}" in gen
         assert "CLAUDE.md" in result.wrote
 
-    def test_large_number_of_expertise(self, tmp_path: Path):
+    def test_large_number_of_expertise_in_generated(self, tmp_path: Path):
         output = tmp_path / "project"
         expertise_items = {f"stack-{i}": {"conventions.md": f"STACK_{i}"} for i in range(10)}
         index, lib_root = _make_library(
@@ -945,9 +965,10 @@ class TestEdgeCases:
             ExpertiseSelection(id=f"stack-{i}", order=i) for i in range(10)
         ])
         result = compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
         for i in range(10):
-            assert f"STACK_{i}" in content
+            gen = (output / f"ai/generated/expertise/stack-{i}.md").read_text()
+            assert f"STACK_{i}" in gen
+        assert f"ai/generated/expertise/stack-0.md" in result.wrote
 
     def test_empty_persona_md_file(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -1000,6 +1021,120 @@ class TestProjectHeader:
         first_line = content.split("\n")[0]
         assert first_line == "# Test Project"
 
+    def test_header_includes_description_when_set(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec(
+            project=ProjectIdentity(
+                name="My Project",
+                slug="my-project",
+                description="A modern web framework for building APIs.",
+            ),
+        )
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "A modern web framework for building APIs." in content
+
+    def test_header_omits_description_when_none(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()  # default has no description
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        lines = content.splitlines()
+        # Second line should be empty (no description), then next section
+        assert lines[0] == "# Test Project"
+        assert lines[1] == ""
+
+
+# ---------------------------------------------------------------------------
+# compile_project — lean CLAUDE.md structure
+# ---------------------------------------------------------------------------
+
+
+class TestLeanClaudeMd:
+
+    def test_claude_md_under_100_lines(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "team-lead": {"persona.md": "# TL\n\nLead the team."},
+                "developer": {"persona.md": "# Dev\n\nBuild stuff."},
+                "architect": {"persona.md": "# Arch\n\nDesign systems."},
+                "tech-qa": {"persona.md": "# QA\n\nTest everything."},
+            },
+            expertise={
+                "python": {"conventions.md": "# Python\n\nUse type hints."},
+                "typescript": {"conventions.md": "# TS\n\nUse strict mode."},
+                "clean-code": {"conventions.md": "# CC\n\nSmall functions."},
+            },
+        )
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="team-lead"),
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="architect"),
+                PersonaSelection(id="tech-qa"),
+            ]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+                ExpertiseSelection(id="clean-code", order=30),
+            ],
+        )
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        line_count = len(content.splitlines())
+        assert line_count <= 100, f"CLAUDE.md has {line_count} lines, expected <= 100"
+
+    def test_claude_md_has_directory_structure(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "## Directory Structure" in content
+        assert ".claude/" in content
+        assert "ai/" in content
+
+    def test_claude_md_has_documentation_pointers(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={"developer": {"persona.md": "# Dev"}},
+            expertise={"python": {"conventions.md": "# Python"}},
+        )
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "## Documentation" in content
+        assert "ai/generated/members/" in content
+        assert "ai/generated/expertise/" in content
+
+    def test_persona_content_not_in_claude_md(self, tmp_path: Path):
+        output = tmp_path / "project"
+        long_content = "# Developer\n\n" + "\n".join(
+            f"Rule {i}: Do something important." for i in range(50)
+        )
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": long_content},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        # The detailed persona rules should NOT be in CLAUDE.md
+        assert "Rule 10: Do something important." not in content
+        # But should be in the generated file
+        gen = (output / "ai/generated/members/developer.md").read_text()
+        assert "Rule 10: Do something important." in gen
+
 
 # ---------------------------------------------------------------------------
 # compile_project — full integration
@@ -1009,7 +1144,7 @@ class TestProjectHeader:
 class TestFullIntegration:
 
     def test_full_compilation_structure(self, tmp_path: Path):
-        """Verify the full structure of a compiled CLAUDE.md."""
+        """Verify the full structure: lean CLAUDE.md + generated files."""
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
@@ -1044,31 +1179,38 @@ class TestFullIntegration:
         result = compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
 
-        # Structure checks
+        # Lean CLAUDE.md structure checks
         assert content.startswith("# Full Test")
         assert "## Team" in content
-        assert "## Expertise" in content
+        assert "## Tech Stack" in content
+        assert "## Directory Structure" in content
+        assert "## Documentation" in content
 
-        # Persona content
-        assert "# Team Lead for Full Test" in content
-        assert "# Team Lead Outputs" in content
-        assert "# Team Lead Prompts" in content
-        assert "# Developer using python, clean-code" in content
-        assert "# Developer Outputs" in content
-        assert "# Developer Prompts" in content
+        # CLAUDE.md should have pointers, not full content
+        assert "ai/generated/members/team-lead.md" in content
+        assert "ai/generated/members/developer.md" in content
+        assert "ai/generated/expertise/python.md" in content
 
-        # Expertise content
-        assert "# Python Conventions" in content
-        assert "# Clean Code" in content
+        # Full persona content in generated files
+        tl = (output / "ai/generated/members/team-lead.md").read_text()
+        assert "# Team Lead for Full Test" in tl
+        assert "# Team Lead Outputs" in tl
+        assert "# Team Lead Prompts" in tl
+        dev = (output / "ai/generated/members/developer.md").read_text()
+        assert "# Developer using python, clean-code" in dev
 
-        # Order: header -> team -> expertise
-        assert content.index("## Team") < content.index("## Expertise")
-        assert content.index("Team Lead") < content.index("Developer")
-        assert content.index("Python Conventions") < content.index("Clean Code")
+        # Full expertise content in generated files
+        py = (output / "ai/generated/expertise/python.md").read_text()
+        assert "# Python Conventions" in py
+        cc = (output / "ai/generated/expertise/clean-code.md").read_text()
+        assert "# Clean Code" in cc
+
+        # CLAUDE.md should be lean (under 100 lines)
+        assert len(content.splitlines()) <= 100
 
         # No warnings
         assert result.warnings == []
-        assert result.wrote == ["CLAUDE.md"]
+        assert "CLAUDE.md" in result.wrote
 
     def test_compilation_with_mixed_missing_files(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -1101,14 +1243,16 @@ class TestFullIntegration:
             ],
         )
         result = compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
 
-        # Both personas compiled
-        assert "# Dev" in content
-        assert "# Arch" in content
+        # Both personas in generated files
+        dev = (output / "ai/generated/members/developer.md").read_text()
+        assert "# Dev" in dev
+        arch = (output / "ai/generated/members/architect.md").read_text()
+        assert "# Arch" in arch
 
-        # Python stack compiled
-        assert "# Python" in content
+        # Python expertise in generated file
+        py = (output / "ai/generated/expertise/python.md").read_text()
+        assert "# Python" in py
 
         # Warning for missing stack
         assert any("missing-stack" in w for w in result.warnings)
@@ -1433,15 +1577,15 @@ class TestCompilePersonaFiltering:
             PersonaSelection(id="developer"),
         ]))
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
+        gen = (output / "ai/generated/members/team-lead.md").read_text()
 
         # Developer should be in the collab table
-        assert "| Developer" in content
+        assert "| Developer" in gen
         # Architect and Tech-QA should NOT be in the collab table
-        assert "| Architect" not in content
-        assert "| Tech-QA" not in content
+        assert "| Architect" not in gen
+        assert "| Tech-QA" not in gen
 
-    def test_filters_defer_references_in_compiled_output(self, tmp_path: Path):
+    def test_filters_defer_references_in_generated_output(self, tmp_path: Path):
         output = tmp_path / "project"
         persona_md = (
             "# Persona: Team Lead\n\n"
@@ -1462,14 +1606,14 @@ class TestCompilePersonaFiltering:
             PersonaSelection(id="developer"),
         ]))
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
+        gen = (output / "ai/generated/members/team-lead.md").read_text()
 
         # "(defer to Developer)" should remain
-        assert "(defer to Developer)" in content
+        assert "(defer to Developer)" in gen
         # "(defer to Technical Writer)" should be removed
-        assert "(defer to Technical Writer)" not in content
+        assert "(defer to Technical Writer)" not in gen
         # But the constraint itself should remain
-        assert "- Write docs" in content
+        assert "- Write docs" in gen
 
     def test_all_selected_nothing_filtered(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -1488,10 +1632,10 @@ class TestCompilePersonaFiltering:
             PersonaSelection(id="architect"),
         ]))
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
+        gen = (output / "ai/generated/members/team-lead.md").read_text()
 
-        assert "| Developer" in content
-        assert "| Architect" in content
+        assert "| Developer" in gen
+        assert "| Architect" in gen
 
     def test_empty_collab_table_section_removed(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -1509,11 +1653,11 @@ class TestCompilePersonaFiltering:
             PersonaSelection(id="team-lead"),
         ]))
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
+        gen = (output / "ai/generated/members/team-lead.md").read_text()
 
-        assert "## Collaboration" not in content
+        assert "## Collaboration" not in gen
 
-    def test_unknown_entities_preserved_in_collab_table(self, tmp_path: Path):
+    def test_unknown_entities_preserved_in_generated_collab_table(self, tmp_path: Path):
         output = tmp_path / "project"
         persona_md = (
             "# Persona: Team Lead\n\n"
@@ -1532,9 +1676,9 @@ class TestCompilePersonaFiltering:
             PersonaSelection(id="team-lead"),
         ]))
         compile_project(spec, index, lib_root, output)
-        content = (output / "CLAUDE.md").read_text()
+        gen = (output / "ai/generated/members/team-lead.md").read_text()
 
         # Stakeholders should remain (unknown entity)
-        assert "Stakeholders" in content
+        assert "Stakeholders" in gen
         # Developer should be removed (known, not selected)
-        assert "| Developer" not in content
+        assert "| Developer" not in gen

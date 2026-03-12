@@ -49,7 +49,7 @@ Generate lean, optimized CLAUDE.md files for new projects that include only univ
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
 | 1 | Add description field to ProjectIdentity and refactor compiler for lean CLAUDE.md | Developer | — | Done |
-| 2 | Test lean CLAUDE.md generation | Tech-QA | 1 | Pending |
+| 2 | Test lean CLAUDE.md generation | Tech-QA | 1 | Done |
 
 > Skipped: BA (no user-facing behavior change — internal generation output), Architect (no new subsystem — refactoring within existing compiler service)
 > Bottleneck check: no contention — task 1 modifies source, task 2 modifies tests
@@ -82,7 +82,7 @@ Trello card #103. Key principle from card description: "CLAUDE.md is a context b
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Add description field to ProjectIdentity and refactor compiler for lean CLAUDE.md | Developer | < 1m | 3,553,258 | 13,130 | $10.55 |
-| 2 | Test lean CLAUDE.md generation | Tech-QA | — | — | — | — |
+| 2 | Test lean CLAUDE.md generation | Tech-QA | < 1m | 14,701,692 | 39,460 | $30.44 |
 
 | Metric | Value |
 |--------|-------|
