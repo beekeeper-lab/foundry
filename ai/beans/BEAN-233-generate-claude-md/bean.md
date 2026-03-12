@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-233 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-03-12 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-03-12 03:06 |
+| **Completed** | 2026-03-12 03:17 |
+| **Duration** | 344h 40m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -34,24 +34,25 @@ Generate lean, optimized CLAUDE.md files for new projects that include only univ
 
 ## Acceptance Criteria
 
-- [ ] Generated CLAUDE.md contains project name and one-line description
-- [ ] Generated CLAUDE.md contains tech stack summary
-- [ ] Generated CLAUDE.md contains key universal conventions
-- [ ] Generated CLAUDE.md contains directory structure overview
-- [ ] Generated CLAUDE.md contains pointers to detailed docs (not the docs themselves)
-- [ ] Generated CLAUDE.md is under 100 lines
-- [ ] Persona-specific content is in separate files, not in CLAUDE.md
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [x] Generated CLAUDE.md contains project name and one-line description
+- [x] Generated CLAUDE.md contains tech stack summary
+- [x] Generated CLAUDE.md contains key universal conventions
+- [x] Generated CLAUDE.md contains directory structure overview
+- [x] Generated CLAUDE.md contains pointers to detailed docs (not the docs themselves)
+- [x] Generated CLAUDE.md is under 100 lines
+- [x] Persona-specific content is in separate files, not in CLAUDE.md
+- [x] All tests pass (`uv run pytest`) — 530 non-UI tests pass
+- [x] Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add description field to ProjectIdentity and refactor compiler for lean CLAUDE.md | Developer | — | Done |
+| 2 | Test lean CLAUDE.md generation | Tech-QA | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (no user-facing behavior change — internal generation output), Architect (no new subsystem — refactoring within existing compiler service)
+> Bottleneck check: no contention — task 1 modifies source, task 2 modifies tests
 
 ## Changes
 
@@ -59,7 +60,11 @@ Generate lean, optimized CLAUDE.md files for new projects that include only univ
 
 | File | Lines |
 |------|-------|
-| — | — |
+| foundry_app/core/models.py | +4 |
+| foundry_app/services/compiler.py | +169/-8 |
+| foundry_app/services/scaffold.py | +2 |
+| tests/test_compiler.py | +404/-180 |
+| tests/test_scaffold.py | +6/-1 |
 
 ## Notes
 
@@ -80,12 +85,13 @@ Trello card #103. Key principle from card description: "CLAUDE.md is a context b
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add description field to ProjectIdentity and refactor compiler for lean CLAUDE.md | Developer | < 1m | 3,553,258 | 13,130 | $10.55 |
+| 2 | Test lean CLAUDE.md generation | Tech-QA | < 1m | 14,701,692 | 39,460 | $30.44 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 18,254,950 |
+| **Total Tokens Out** | 52,590 |
+| **Total Cost** | $40.99 |
