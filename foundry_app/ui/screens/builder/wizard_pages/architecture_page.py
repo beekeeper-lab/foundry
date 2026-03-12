@@ -1,7 +1,8 @@
 """Wizard page 4 — Architecture & Cloud Configuration.
 
-Displays architecture patterns and cloud providers as selectable cards.
-This page is optional — users may skip it without selecting anything.
+Displays architecture patterns and cloud providers as selectable cards
+in collapsible sections. This page is optional — users may skip it
+without selecting anything.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QScrollArea,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -110,6 +112,67 @@ SUBHEADING_STYLE = f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
 SECTION_LABEL_STYLE = (
     f"color: {ACCENT_SECONDARY}; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD};"
 )
+CHEVRON_STYLE = (
+    f"color: {ACCENT_SECONDARY}; font-size: {FONT_SIZE_LG}px;"
+)
+
+
+class CollapsibleSection(QWidget):
+    """A section with a clickable header that toggles visibility of its content."""
+
+    def __init__(self, title: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._expanded = True
+        self._build_ui(title)
+
+    def _build_ui(self, title: str) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+
+        header = QWidget()
+        header.setCursor(Qt.CursorShape.PointingHandCursor)
+        header.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(0, 4, 0, 4)
+        header_layout.setSpacing(6)
+
+        self._chevron = QLabel("\u25bc")
+        self._chevron.setStyleSheet(CHEVRON_STYLE)
+        header_layout.addWidget(self._chevron)
+
+        label = QLabel(title)
+        label.setStyleSheet(SECTION_LABEL_STYLE)
+        header_layout.addWidget(label)
+        header_layout.addStretch(1)
+
+        self._header = header
+        layout.addWidget(header)
+
+        self._content = QWidget()
+        self._content_layout = QVBoxLayout(self._content)
+        self._content_layout.setContentsMargins(0, 0, 0, 0)
+        self._content_layout.setSpacing(8)
+        layout.addWidget(self._content)
+
+    @property
+    def content_layout(self) -> QVBoxLayout:
+        return self._content_layout
+
+    @property
+    def is_expanded(self) -> bool:
+        return self._expanded
+
+    def toggle(self) -> None:
+        self._expanded = not self._expanded
+        self._content.setVisible(self._expanded)
+        self._chevron.setText("\u25bc" if self._expanded else "\u25b6")
+
+    def mousePressEvent(self, event: object) -> None:
+        # Only toggle when clicking the header area
+        if self._header.geometry().contains(self.mapFromGlobal(self.cursor().pos())):
+            self.toggle()
+        super().mousePressEvent(event)  # type: ignore[arg-type]
 
 
 class ArchitectureCard(QFrame):
@@ -210,13 +273,8 @@ class ArchitectureCloudPage(QWidget):
         self._scroll_layout.setContentsMargins(0, 0, 0, 0)
         self._scroll_layout.setSpacing(12)
 
-        pattern_label = QLabel("Architecture Patterns")
-        pattern_label.setStyleSheet(SECTION_LABEL_STYLE)
-        self._scroll_layout.addWidget(pattern_label)
-
-        self._pattern_container = QVBoxLayout()
-        self._pattern_container.setSpacing(8)
-        self._scroll_layout.addLayout(self._pattern_container)
+        self._pattern_section = CollapsibleSection("Architecture Patterns")
+        self._scroll_layout.addWidget(self._pattern_section)
 
         for pattern in ArchitecturePattern:
             display_name, desc = PATTERN_DESCRIPTIONS.get(
@@ -224,16 +282,11 @@ class ArchitectureCloudPage(QWidget):
             )
             card = ArchitectureCard(pattern.value, display_name, desc)
             card.toggled.connect(self._on_card_toggled)
-            self._pattern_container.addWidget(card)
+            self._pattern_section.content_layout.addWidget(card)
             self._pattern_cards[pattern.value] = card
 
-        cloud_label = QLabel("Cloud Providers")
-        cloud_label.setStyleSheet(SECTION_LABEL_STYLE)
-        self._scroll_layout.addWidget(cloud_label)
-
-        self._cloud_container = QVBoxLayout()
-        self._cloud_container.setSpacing(8)
-        self._scroll_layout.addLayout(self._cloud_container)
+        self._cloud_section = CollapsibleSection("Cloud Providers")
+        self._scroll_layout.addWidget(self._cloud_section)
 
         for provider in CloudProvider:
             display_name, desc = CLOUD_DESCRIPTIONS.get(
@@ -241,7 +294,7 @@ class ArchitectureCloudPage(QWidget):
             )
             card = ArchitectureCard(provider.value, display_name, desc)
             card.toggled.connect(self._on_card_toggled)
-            self._cloud_container.addWidget(card)
+            self._cloud_section.content_layout.addWidget(card)
             self._cloud_cards[provider.value] = card
 
         self._scroll_layout.addStretch(1)
@@ -283,6 +336,14 @@ class ArchitectureCloudPage(QWidget):
     @property
     def cloud_cards(self) -> dict[str, ArchitectureCard]:
         return dict(self._cloud_cards)
+
+    @property
+    def pattern_section(self) -> CollapsibleSection:
+        return self._pattern_section
+
+    @property
+    def cloud_section(self) -> CollapsibleSection:
+        return self._cloud_section
 
     def _on_card_toggled(self, item_id: str, checked: bool) -> None:
         logger.debug("Architecture/cloud item %s toggled: %s", item_id, checked)
