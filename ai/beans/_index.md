@@ -254,4 +254,4 @@
 | BEAN-230 | Collapsible Persona Selection Sections | App | Medium | In Progress | team-lead |
 | BEAN-231 | Collapsible Expertise Selection Sections | App | Medium | In Progress | team-lead |
 | BEAN-232 | Collapsible Architecture Selection Sections | App | Medium | In Progress | team-lead |
-| BEAN-233 | Generate Optimized CLAUDE.md for Projects | App | Medium | In Progress | team-lead |
+| BEAN-233 | Generate Optimized CLAUDE.md for Projects | App | Medium | Done | team-lead |
