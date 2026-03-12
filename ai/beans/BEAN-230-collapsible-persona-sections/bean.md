@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-230 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-03-12 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-03-12 03:18 |
+| **Completed** | 2026-03-12 03:18 |
+| **Duration** | < 1h |
+| **Owner** | Developer |
 | **Category** | App |
 
 ## Problem Statement
@@ -44,7 +44,8 @@ Make the persona selection sections (groups) collapsible so users can expand/col
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Implement collapsible persona groups | Developer | — | Done |
+| 2 | Verify collapsible sections | Tech QA | 1 | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
@@ -76,12 +77,13 @@ Trello card #100. Related to BEAN-231 (expertise sections) and BEAN-232 (archite
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Implement collapsible persona groups | Developer | — | — | — | — |
+| 2 | Verify collapsible sections | Tech QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 344h 42m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

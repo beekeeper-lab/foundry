@@ -15,9 +15,9 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFrame,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
+    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -135,6 +135,81 @@ QGroupBox::title {{
     padding: 0 6px;
 }}
 """
+
+COLLAPSE_BUTTON_STYLE = f"""
+QPushButton {{
+    background: transparent;
+    border: none;
+    text-align: left;
+    font-size: {FONT_SIZE_LG}px;
+    font-weight: {FONT_WEIGHT_BOLD};
+    color: {TEXT_PRIMARY};
+    padding: 6px 10px;
+}}
+QPushButton:hover {{
+    color: {ACCENT_PRIMARY};
+}}
+"""
+
+
+# ---------------------------------------------------------------------------
+# CollapsibleGroupBox — group box with toggle header
+# ---------------------------------------------------------------------------
+
+
+class CollapsibleGroupBox(QFrame):
+    """A group container with a clickable header that toggles content visibility."""
+
+    def __init__(self, title: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._title = title
+        self._expanded = True
+        self.setStyleSheet(
+            f"QFrame#collapsible-group {{"
+            f"  border: 1px solid {BORDER_DEFAULT};"
+            f"  border-radius: {RADIUS_MD}px;"
+            f"  margin-top: 8px;"
+            f"}}"
+        )
+        self.setObjectName("collapsible-group")
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Header button with chevron
+        self._toggle_btn = QPushButton(f"▼  {title}")
+        self._toggle_btn.setStyleSheet(COLLAPSE_BUTTON_STYLE)
+        self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._toggle_btn.clicked.connect(self.toggle)
+        layout.addWidget(self._toggle_btn)
+
+        # Content container
+        self._content = QWidget()
+        self._content_layout = QVBoxLayout(self._content)
+        self._content_layout.setContentsMargins(8, 0, 8, 8)
+        self._content_layout.setSpacing(8)
+        layout.addWidget(self._content)
+
+    def title(self) -> str:
+        """Return the group title (for API compatibility)."""
+        return self._title
+
+    @property
+    def content_layout(self) -> QVBoxLayout:
+        """Layout to add child widgets into."""
+        return self._content_layout
+
+    @property
+    def is_expanded(self) -> bool:
+        return self._expanded
+
+    def toggle(self) -> None:
+        """Toggle the expanded/collapsed state."""
+        self._expanded = not self._expanded
+        self._content.setVisible(self._expanded)
+        chevron = "▼" if self._expanded else "▶"
+        self._toggle_btn.setText(f"{chevron}  {self._title}")
 
 
 # ---------------------------------------------------------------------------
@@ -282,7 +357,7 @@ class PersonaSelectionPage(QWidget):
     ) -> None:
         super().__init__(parent)
         self._cards: dict[str, PersonaCard] = {}
-        self._category_groups: dict[str, QGroupBox] = {}
+        self._category_groups: dict[str, CollapsibleGroupBox] = {}
         self._warning_label: QLabel | None = None
         self._build_ui()
         if library_index is not None:
@@ -370,20 +445,16 @@ class PersonaSelectionPage(QWidget):
         insert_idx = 0
         for cat_name in sorted_cats:
             personas_in_cat = groups[cat_name]
-            group_box = QGroupBox(f"{cat_name} ({len(personas_in_cat)})")
-            group_box.setCheckable(False)
-            group_box.setStyleSheet(CATEGORY_GROUP_STYLE)
-            group_layout = QVBoxLayout()
-            group_layout.setContentsMargins(8, 8, 8, 8)
-            group_layout.setSpacing(8)
+            group_box = CollapsibleGroupBox(
+                f"{cat_name} ({len(personas_in_cat)})"
+            )
 
             for persona in personas_in_cat:
                 card = PersonaCard(persona)
                 card.toggled.connect(self._on_card_toggled)
-                group_layout.addWidget(card)
+                group_box.content_layout.addWidget(card)
                 self._cards[persona.id] = card
 
-            group_box.setLayout(group_layout)
             self._card_layout.insertWidget(insert_idx, group_box)
             self._category_groups[cat_name] = group_box
             insert_idx += 1
@@ -428,7 +499,7 @@ class PersonaSelectionPage(QWidget):
         return dict(self._cards)
 
     @property
-    def category_groups(self) -> dict[str, QGroupBox]:
+    def category_groups(self) -> dict[str, CollapsibleGroupBox]:
         """Access category group boxes by name (for testing)."""
         return dict(self._category_groups)
 
