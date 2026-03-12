@@ -60,7 +60,11 @@ Generate lean, optimized CLAUDE.md files for new projects that include only univ
 
 | File | Lines |
 |------|-------|
-| — | — |
+| foundry_app/core/models.py | +4 |
+| foundry_app/services/compiler.py | +169/-8 |
+| foundry_app/services/scaffold.py | +2 |
+| tests/test_compiler.py | +404/-180 |
+| tests/test_scaffold.py | +6/-1 |
 
 ## Notes
 
