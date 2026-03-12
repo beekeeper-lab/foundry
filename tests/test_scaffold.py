@@ -91,6 +91,8 @@ class TestStandardStructure:
             ".claude/skills",
             "ai/context",
             "ai/outputs",
+            "ai/generated/members",
+            "ai/generated/expertise",
             "ai/beans",
             "ai/tasks",
         ]
@@ -182,8 +184,8 @@ class TestStageResult:
             team=TeamConfig(personas=[PersonaSelection(id="developer")]),
         )
         result = scaffold_project(spec, output)
-        # root + 4 .claude dirs + 4 ai dirs + 1 persona dir = 10
-        assert len(result.wrote) == 10
+        # root + 4 .claude dirs + 6 ai dirs + 1 persona dir = 12
+        assert len(result.wrote) == 12
 
 
 # ---------------------------------------------------------------------------

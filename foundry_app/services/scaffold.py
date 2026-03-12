@@ -20,6 +20,8 @@ _CLAUDE_DIRS = [
 _AI_DIRS = [
     "ai/context",
     "ai/outputs",
+    "ai/generated/members",
+    "ai/generated/expertise",
     "ai/beans",
     "ai/tasks",
 ]

@@ -75,6 +75,10 @@ class ProjectIdentity(BaseModel):
         ..., min_length=1, max_length=200,
         description="Human-readable project name",
     )
+    description: str | None = Field(
+        default=None, max_length=500,
+        description="One-line project description for CLAUDE.md header",
+    )
     slug: str = Field(
         ..., min_length=1, max_length=100, pattern=r"^[a-z0-9][a-z0-9-]*$",
         description="URL/filesystem-safe identifier",

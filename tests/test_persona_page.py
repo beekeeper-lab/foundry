@@ -1,7 +1,6 @@
 """Tests for foundry_app.ui.screens.builder.wizard_pages.persona_page."""
 
 import pytest
-from PySide6.QtWidgets import QGroupBox
 
 from foundry_app.core.models import (
     LibraryIndex,
@@ -12,6 +11,7 @@ from foundry_app.core.models import (
 )
 from foundry_app.ui.screens.builder.wizard_pages.persona_page import (
     PERSONA_DESCRIPTIONS,
+    CollapsibleGroupBox,
     PersonaCard,
     PersonaSelectionPage,
 )
@@ -347,7 +347,7 @@ class TestCategoryGrouping:
     def test_category_header_shows_count(self, loaded_page):
         groups = loaded_page.category_groups
         sw_group = groups["Software Development"]
-        assert isinstance(sw_group, QGroupBox)
+        assert isinstance(sw_group, CollapsibleGroupBox)
         # Should contain the count in parentheses
         title = sw_group.title()
         assert "Software Development" in title
