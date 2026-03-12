@@ -56,7 +56,7 @@ Make the architecture selection sections collapsible so users can expand/collaps
 
 | File | Lines |
 |------|-------|
-| — | — |
+| foundry_app/ui/screens/builder/wizard_pages/architecture_page.py | +97/-4 |
 
 ## Notes
 
