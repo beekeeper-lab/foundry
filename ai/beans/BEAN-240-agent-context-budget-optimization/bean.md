@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-240 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-03-27 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-03-27 11:41 |
+| **Completed** | 2026-03-27 11:45 |
+| **Duration** | 4m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -54,10 +54,8 @@ Agent instructions and key skills include explicit context budgeting guidance th
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Context Budget Guidance | Developer | — | Done |
+| 2 | Tech-QA Verification | Tech-QA | 01 | Done |
 
 ## Changes
 
@@ -65,7 +63,12 @@ Agent instructions and key skills include explicit context budgeting guidance th
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/shared (submodule) | +20 |
+| ai/beans/BEAN-240-agent-context-budget-optimization/bean.md | +29 -17 |
+| ai/beans/BEAN-240-agent-context-budget-optimization/tasks/01-developer-context-budget-guidance.md | +52 |
+| ai/beans/BEAN-240-agent-context-budget-optimization/tasks/02-tech-qa-verification.md | +37 |
+| ai/beans/_index.md | +1 -1 |
+| ai/context/bean-workflow.md | +26 |
 
 ## Notes
 
@@ -86,12 +89,13 @@ The first two beans cost as much as a complex 1.5-hour bean for trivially simple
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Context Budget Guidance | Developer | 2m | 3,671,581 | 3,943 | $6.05 |
+| 2 | Tech-QA Verification | Tech-QA | < 1m | 362,854 | 644 | $0.62 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 2m |
+| **Total Tokens In** | 4,034,435 |
+| **Total Tokens Out** | 4,587 |
+| **Total Cost** | $6.67 |
