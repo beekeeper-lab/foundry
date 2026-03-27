@@ -341,6 +341,10 @@ class TestCountDoneTasks:
 
 
 class TestHandleBeanFile:
+    @pytest.fixture(autouse=True)
+    def _mock_git_duration(self, monkeypatch):
+        monkeypatch.setattr(_mod, "git_branch_duration", lambda: None)
+
     def test_in_progress_stamps_started(self, tmp_path):
         p = tmp_path / "bean.md"
         p.write_text(make_bean(status="In Progress"))
@@ -395,7 +399,7 @@ class TestHandleBeanFile:
             task2_status="Done",
         ))
         now = "2026-02-09 13:30"
-        actions = handle_bean_file(p, now)
+        handle_bean_file(p, now)
         content = p.read_text()
         assert parse_metadata_field(content, "Total Tasks") == "2"
 
@@ -410,7 +414,7 @@ class TestHandleBeanFile:
             task2_status="Done",
         ))
         now = "2026-02-09 14:15"
-        actions = handle_bean_file(p, now)
+        handle_bean_file(p, now)
         content = p.read_text()
         assert parse_metadata_field(content, "Total Duration") == "1h 15m"
 
