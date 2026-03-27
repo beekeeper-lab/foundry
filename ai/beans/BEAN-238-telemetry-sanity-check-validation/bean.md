@@ -59,7 +59,11 @@ The telemetry-stamp hook validates token counts before writing them and flags im
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/shared (submodule) | +67 -2 |
+| ai/beans/BEAN-238-.../bean.md | +29 -17 |
+| ai/beans/BEAN-238-.../tasks/01-developer-sanity-checks.md | +43 |
+| ai/beans/BEAN-238-.../tasks/02-tech-qa-verification.md | +35 |
+| ai/beans/_index.md | +1 -1 |
 
 ## Notes
 
