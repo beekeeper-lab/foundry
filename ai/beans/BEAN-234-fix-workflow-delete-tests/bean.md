@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-234 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Low |
 | **Created** | 2026-03-08 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-03-27 15:07 |
+| **Completed** | 2026-03-27 15:09 |
+| **Duration** | 2m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -48,10 +48,8 @@ All 10 `test_workflow_delete.py` tests pass in both isolation and full suite.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Fix Test Construction | Developer | — | Done |
+| 2 | Tech-QA Verification | Tech-QA | 01 | Done |
 
 ## Changes
 
@@ -77,12 +75,13 @@ The 10 failing tests are in `TestWorkflowDeleteButtonState` (3 tests) and `TestW
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Fix Test Construction | Developer | 1m | 1,814,991 | 846 | $2.85 |
+| 2 | Tech-QA Verification | Tech-QA | < 1m | 333,214 | 201 | $0.54 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 2,148,205 |
+| **Total Tokens Out** | 1,047 |
+| **Total Cost** | $3.39 |
