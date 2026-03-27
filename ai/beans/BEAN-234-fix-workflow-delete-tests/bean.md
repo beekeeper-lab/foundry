@@ -57,7 +57,11 @@ All 10 `test_workflow_delete.py` tests pass in both isolation and full suite.
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/beans/BEAN-234-.../bean.md | +29 -21 |
+| ai/beans/BEAN-234-.../tasks/01-developer-fix-tests.md | +32 |
+| ai/beans/BEAN-234-.../tasks/02-tech-qa-verification.md | +27 |
+| ai/beans/_index.md | +1 -1 |
+| tests/test_workflow_delete.py | +5 -5 |
 
 ## Notes
 
