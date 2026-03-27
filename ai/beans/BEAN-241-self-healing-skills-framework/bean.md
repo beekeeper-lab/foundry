@@ -69,7 +69,14 @@ A health-check framework that skills can call to detect and respond to systemic 
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/local/commands/health-check.md | +14 |
+| .claude/local/skills/health-check/SKILL.md | +86 |
+| .claude/shared (submodule) | +11 |
+| ai/beans/BEAN-241-self-healing-skills-framework/bean.md | +29 -17 |
+| ai/beans/BEAN-241-self-healing-skills-framework/tasks/01-developer-health-checks.md | +58 |
+| ai/beans/BEAN-241-self-healing-skills-framework/tasks/02-tech-qa-verification.md | +38 |
+| ai/beans/_index.md | +1 -1 |
+| ai/context/health-checks.md | +88 |
 
 ## Notes
 
