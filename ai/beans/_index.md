@@ -262,4 +262,4 @@
 | BEAN-238 | Telemetry Sanity-Check Validation | Process | Medium | Approved | (unassigned) |
 | BEAN-239 | Telemetry Report Confidence Indicators | Process | Low | Approved | (unassigned) |
 | BEAN-240 | Agent Context Budget Optimization | Process | High | Done | team-lead |
-| BEAN-241 | Self-Healing Skills Framework | Process | High | Approved | (unassigned) |
+| BEAN-241 | Self-Healing Skills Framework | Process | High | In Progress | team-lead |
