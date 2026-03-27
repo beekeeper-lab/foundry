@@ -63,7 +63,12 @@ Agent instructions and key skills include explicit context budgeting guidance th
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/shared (submodule) | +20 |
+| ai/beans/BEAN-240-agent-context-budget-optimization/bean.md | +29 -17 |
+| ai/beans/BEAN-240-agent-context-budget-optimization/tasks/01-developer-context-budget-guidance.md | +52 |
+| ai/beans/BEAN-240-agent-context-budget-optimization/tasks/02-tech-qa-verification.md | +37 |
+| ai/beans/_index.md | +1 -1 |
+| ai/context/bean-workflow.md | +26 |
 
 ## Notes
 
