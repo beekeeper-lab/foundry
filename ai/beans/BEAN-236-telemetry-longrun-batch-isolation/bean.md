@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-236 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-03-27 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-03-27 11:27 |
+| **Completed** | 2026-03-27 11:37 |
+| **Duration** | 10m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -52,10 +52,8 @@ Token telemetry is accurate for beans processed sequentially in a single `/long-
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Watermark Checkpoint Mechanism | Developer | — | Done |
+| 2 | Tech-QA Verification | Tech-QA | 01 | Done |
 
 ## Changes
 
@@ -63,7 +61,12 @@ Token telemetry is accurate for beans processed sequentially in a single `/long-
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/shared (submodule) | +68 -4 |
+| ai/beans/BEAN-236-telemetry-longrun-batch-isolation/bean.md | +91 |
+| ai/beans/BEAN-236-telemetry-longrun-batch-isolation/tasks/01-developer-watermark-checkpoint.md | +56 |
+| ai/beans/BEAN-236-telemetry-longrun-batch-isolation/tasks/02-tech-qa-verification.md | +43 |
+| ai/beans/_index.md | +8 |
+| tests/test_telemetry_stamp.py | +6 -2 |
 
 ## Notes
 
@@ -81,12 +84,13 @@ The key insight: BEAN-142 through BEAN-152 were all Process beans executed in a 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Watermark Checkpoint Mechanism | Developer | 7m | 4,689,651 | 8,553 | $8.26 |
+| 2 | Tech-QA Verification | Tech-QA | < 1m | 525,811 | 833 | $0.93 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 7m |
+| **Total Tokens In** | 5,215,462 |
+| **Total Tokens Out** | 9,386 |
+| **Total Cost** | $9.19 |

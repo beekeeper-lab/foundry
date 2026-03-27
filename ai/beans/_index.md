@@ -257,7 +257,7 @@
 | BEAN-233 | Generate Optimized CLAUDE.md for Projects | App | Medium | Done | team-lead |
 | BEAN-234 | Fix Workflow Delete Tests | App | Low | Approved | (unassigned) |
 | BEAN-235 | Telemetry Worktree Session Resolution Fix | Process | High | Done | team-lead |
-| BEAN-236 | Telemetry Long-Run Batch Session Isolation | Process | High | Approved | (unassigned) |
+| BEAN-236 | Telemetry Long-Run Batch Session Isolation | Process | High | Done | team-lead |
 | BEAN-237 | Telemetry Missing Session Graceful Fallback | Process | Medium | Approved | (unassigned) |
 | BEAN-238 | Telemetry Sanity-Check Validation | Process | Medium | Approved | (unassigned) |
 | BEAN-239 | Telemetry Report Confidence Indicators | Process | Low | Approved | (unassigned) |
