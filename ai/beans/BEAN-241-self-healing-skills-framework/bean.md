@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-241 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-03-27 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-03-27 11:48 |
+| **Completed** | 2026-03-27 14:56 |
+| **Duration** | 8m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -60,10 +60,8 @@ A health-check framework that skills can call to detect and respond to systemic 
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Health-Check Framework | Developer | — | Done |
+| 2 | Tech-QA Verification | Tech-QA | 01 | Done |
 
 ## Changes
 
@@ -100,12 +98,13 @@ HEALTH CHECK — 2026-03-27
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Health-Check Framework | Developer | 3h 6m | 2,767,953 | 4,503 | $6.06 |
+| 2 | Tech-QA Verification | Tech-QA | < 1m | 194,412 | 583 | $0.36 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 3h 6m |
+| **Total Tokens In** | 2,962,365 |
+| **Total Tokens Out** | 5,086 |
+| **Total Cost** | $6.42 |
