@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-235 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-03-27 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-03-27 11:11 |
+| **Completed** | 2026-03-27 11:22 |
+| **Duration** | 758h 14m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -49,7 +49,8 @@ Confirmed: zero `.telemetry.json` watermark files exist for any worktree-execute
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Fix worktree session resolution in telemetry-stamp.py | Developer | — | Done |
+| 2 | Verify worktree session resolution fix | Tech-QA | 1 | Done |
 
 > Tasks are populated by the Team Lead during decomposition.
 > Task files go in `tasks/` subdirectory.
@@ -76,12 +77,13 @@ Part of a 3-bean split investigating telemetry accuracy. See also BEAN-236 (long
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Fix worktree session resolution in telemetry-stamp.py | Developer | — | — | — | — |
+| 2 | Verify worktree session resolution fix | Tech-QA | 4m | 1,991,165 | 1,720 | $3.26 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 4m |
+| **Total Tokens In** | 1,991,165 |
+| **Total Tokens Out** | 1,720 |
+| **Total Cost** | $3.26 |
