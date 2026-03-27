@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-237 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-03-27 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-03-27 14:58 |
+| **Completed** | 2026-03-27 15:01 |
+| **Duration** | 3m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -47,10 +47,8 @@ When no matching JSONL session can be found, the telemetry system degrades grace
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Graceful Fallback Implementation | Developer | — | Done |
+| 2 | Tech-QA Verification | Tech-QA | 01 | Done |
 
 ## Changes
 
@@ -58,7 +56,11 @@ When no matching JSONL session can be found, the telemetry system degrades grace
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/shared (submodule) | +20 -7 |
+| ai/beans/BEAN-237-.../bean.md | +29 -17 |
+| ai/beans/BEAN-237-.../tasks/01-developer-graceful-fallback.md | +38 |
+| ai/beans/BEAN-237-.../tasks/02-tech-qa-verification.md | +36 |
+| ai/beans/_index.md | +1 -1 |
 
 ## Notes
 
@@ -76,12 +78,13 @@ This bean addresses the "last resort" case. After BEAN-229 and BEAN-230, most se
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Graceful Fallback Implementation | Developer | 2m | 2,100,973 | 2,417 | $3.45 |
+| 2 | Tech-QA Verification | Tech-QA | < 1m | 254,118 | 365 | $0.43 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 2m |
+| **Total Tokens In** | 2,355,091 |
+| **Total Tokens Out** | 2,782 |
+| **Total Cost** | $3.88 |
