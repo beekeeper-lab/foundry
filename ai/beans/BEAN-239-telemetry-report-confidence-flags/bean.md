@@ -62,7 +62,11 @@ The telemetry report visually flags beans with suspect or missing data, and incl
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/shared (submodule) | +26 -1 |
+| ai/beans/BEAN-239-.../bean.md | +14 -15 |
+| ai/beans/BEAN-239-.../tasks/01-developer-confidence-indicators.md | +33 |
+| ai/beans/BEAN-239-.../tasks/02-tech-qa-verification.md | +26 |
+| ai/beans/_index.md | +1 -1 |
 
 ## Notes
 
