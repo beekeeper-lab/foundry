@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-238 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-03-27 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-03-27 15:03 |
+| **Completed** | 2026-03-27 15:06 |
+| **Duration** | 3m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -50,10 +50,8 @@ The telemetry-stamp hook validates token counts before writing them and flags im
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Sanity Check Implementation | Developer | — | Done |
+| 2 | Tech-QA Verification | Tech-QA | 01 | Done |
 
 ## Changes
 
@@ -77,12 +75,13 @@ This bean is a safety net. Even after BEAN-235/236/237 fix the root causes, new 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Sanity Check Implementation | Developer | 2m | 3,599,542 | 3,269 | $5.80 |
+| 2 | Tech-QA Verification | Tech-QA | < 1m | 296,032 | 313 | $0.49 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 2m |
+| **Total Tokens In** | 3,895,574 |
+| **Total Tokens Out** | 3,582 |
+| **Total Cost** | $6.29 |
