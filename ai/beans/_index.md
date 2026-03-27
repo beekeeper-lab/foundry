@@ -259,7 +259,7 @@
 | BEAN-235 | Telemetry Worktree Session Resolution Fix | Process | High | Done | team-lead |
 | BEAN-236 | Telemetry Long-Run Batch Session Isolation | Process | High | Done | team-lead |
 | BEAN-237 | Telemetry Missing Session Graceful Fallback | Process | Medium | Done | team-lead |
-| BEAN-238 | Telemetry Sanity-Check Validation | Process | Medium | In Progress | team-lead |
+| BEAN-238 | Telemetry Sanity-Check Validation | Process | Medium | Done | team-lead |
 | BEAN-239 | Telemetry Report Confidence Indicators | Process | Low | Approved | (unassigned) |
 | BEAN-240 | Agent Context Budget Optimization | Process | High | Done | team-lead |
 | BEAN-241 | Self-Healing Skills Framework | Process | High | Done | team-lead |
