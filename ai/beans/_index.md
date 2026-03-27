@@ -255,7 +255,7 @@
 | BEAN-231 | Collapsible Expertise Selection Sections | App | Medium | Done | team-lead |
 | BEAN-232 | Collapsible Architecture Selection Sections | App | Medium | Done | team-lead |
 | BEAN-233 | Generate Optimized CLAUDE.md for Projects | App | Medium | Done | team-lead |
-| BEAN-234 | Fix Workflow Delete Tests | App | Low | In Progress | team-lead |
+| BEAN-234 | Fix Workflow Delete Tests | App | Low | Done | team-lead |
 | BEAN-235 | Telemetry Worktree Session Resolution Fix | Process | High | Done | team-lead |
 | BEAN-236 | Telemetry Long-Run Batch Session Isolation | Process | High | Done | team-lead |
 | BEAN-237 | Telemetry Missing Session Graceful Fallback | Process | Medium | Done | team-lead |
