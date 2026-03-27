@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-239 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Low |
 | **Created** | 2026-03-27 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-03-27 15:10 |
+| **Completed** | 2026-03-27 15:13 |
+| **Duration** | 3m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -53,10 +53,8 @@ The telemetry report visually flags beans with suspect or missing data, and incl
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
-
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+| 1 | Confidence Indicators | Developer | — | Done |
+| 2 | Tech-QA Verification | Tech-QA | 01 | Done |
 
 ## Changes
 
@@ -64,7 +62,11 @@ The telemetry report visually flags beans with suspect or missing data, and incl
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/shared (submodule) | +26 -1 |
+| ai/beans/BEAN-239-.../bean.md | +14 -15 |
+| ai/beans/BEAN-239-.../tasks/01-developer-confidence-indicators.md | +33 |
+| ai/beans/BEAN-239-.../tasks/02-tech-qa-verification.md | +26 |
+| ai/beans/_index.md | +1 -1 |
 
 ## Notes
 
@@ -80,12 +82,13 @@ This is a reporting improvement, not a data fix. It depends on BEAN-238 for the 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Confidence Indicators | Developer | 1m | 2,173,325 | 1,795 | $3.51 |
+| 2 | Tech-QA Verification | Tech-QA | < 1m | 183,057 | 167 | $0.30 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 2,356,382 |
+| **Total Tokens Out** | 1,962 |
+| **Total Cost** | $3.81 |
