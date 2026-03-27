@@ -56,7 +56,11 @@ When no matching JSONL session can be found, the telemetry system degrades grace
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/shared (submodule) | +20 -7 |
+| ai/beans/BEAN-237-.../bean.md | +29 -17 |
+| ai/beans/BEAN-237-.../tasks/01-developer-graceful-fallback.md | +38 |
+| ai/beans/BEAN-237-.../tasks/02-tech-qa-verification.md | +36 |
+| ai/beans/_index.md | +1 -1 |
 
 ## Notes
 
