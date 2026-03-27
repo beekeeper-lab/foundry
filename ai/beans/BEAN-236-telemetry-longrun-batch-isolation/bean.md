@@ -61,7 +61,12 @@ Token telemetry is accurate for beans processed sequentially in a single `/long-
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/shared (submodule) | +68 -4 |
+| ai/beans/BEAN-236-telemetry-longrun-batch-isolation/bean.md | +91 |
+| ai/beans/BEAN-236-telemetry-longrun-batch-isolation/tasks/01-developer-watermark-checkpoint.md | +56 |
+| ai/beans/BEAN-236-telemetry-longrun-batch-isolation/tasks/02-tech-qa-verification.md | +43 |
+| ai/beans/_index.md | +8 |
+| tests/test_telemetry_stamp.py | +6 -2 |
 
 ## Notes
 
