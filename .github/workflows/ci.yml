@@ -15,6 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install system dependencies for PySide6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libopengl0 libxkbcommon0 libxcb-cursor0
+
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -26,4 +31,6 @@ jobs:
         run: uv run ruff check foundry_app/
 
       - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: uv run pytest
