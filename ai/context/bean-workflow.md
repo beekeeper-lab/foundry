@@ -41,6 +41,32 @@ Beans are locked by their Status + Owner fields in both `_index.md` and `bean.md
 5. **If you find a conflict** (you tried to pick a bean but it's already claimed when you go to write), abandon the pick and select a different bean.
 6. **Stale locks** — if a bean has been `In Progress` for an unusually long time with no file changes, it may indicate a crashed agent. Do NOT auto-unlock it. Report it to the user and let them decide.
 
+## §6a Context Diet
+
+Every API turn sends the full conversation context. A 20-turn session at ~250K tokens/turn costs 5M billed input tokens. Context discipline is the single biggest lever for reducing per-bean cost.
+
+**Core rule:** Read only what each task's Inputs list specifies. No speculative reads. Never re-read files already in context. Use targeted reads (offset/limit) for large files.
+
+**Per-category budgets:**
+
+| Category | What to read | What NOT to read |
+|----------|-------------|-----------------|
+| **Library content** | Template file + target output file only | Full library index, other personas, unrelated expertise files |
+| **Process** | Affected doc files (agent .md, skill .md, workflow .md) | Entire codebase, unrelated agent files, full bean history |
+| **App** | Affected module + its test file + direct imports | Full service layer, all test files, unrelated UI modules |
+
+**Practical guidelines:**
+- Before reading a file, ask: "Does this task's Inputs list reference it?" If no, don't read it.
+- Use `Glob` to find files, not `Read` on directories or broad searches.
+- For files >200 lines, use `offset` and `limit` to read only the relevant section.
+- When running tests, run only the specific test file, not the full suite (unless verifying no regressions).
+- Avoid reading `_index.md` repeatedly — once at the start of a bean is enough unless picking a new bean.
+
+**For `/long-run` workers:**
+- The orchestrator passes a `CONTEXT DIET` block in the worker prompt.
+- Workers must follow it: read only task Inputs, commit after each task, exit on completion.
+- Never read the full bean backlog or other beans' files from a worker.
+
 ## BA Engagement Mode
 
 | Setting | Value |

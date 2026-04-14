@@ -140,7 +140,7 @@ def _make_tree_item(name: str, file_path: str | None = None, parent=None):
 
 def _make_screen(lib: Path, workflow_name: str) -> LibraryManagerScreen:
     """Build a LibraryManagerScreen with mocked Qt internals."""
-    screen = object.__new__(LibraryManagerScreen)
+    screen = LibraryManagerScreen.__new__(LibraryManagerScreen)
     screen._library_root = lib
     screen._tree = MagicMock()
     screen._editor = MagicMock()
@@ -208,7 +208,7 @@ class TestWorkflowDeleteButtonState:
 
     def test_delete_enabled_for_workflow_file(self):
         """Delete button must be enabled when a workflow file leaf is selected."""
-        screen = object.__new__(LibraryManagerScreen)
+        screen = LibraryManagerScreen.__new__(LibraryManagerScreen)
         screen._library_root = Path("/fake")
         screen._delete_btn = MagicMock()
         screen._new_btn = MagicMock()
@@ -226,7 +226,7 @@ class TestWorkflowDeleteButtonState:
 
     def test_delete_disabled_for_workflow_category_node(self):
         """Delete button must be disabled when the Workflows category is selected."""
-        screen = object.__new__(LibraryManagerScreen)
+        screen = LibraryManagerScreen.__new__(LibraryManagerScreen)
         screen._library_root = Path("/fake")
         screen._delete_btn = MagicMock()
         screen._new_btn = MagicMock()
@@ -239,7 +239,7 @@ class TestWorkflowDeleteButtonState:
 
     def test_delete_disabled_when_no_selection(self):
         """Delete button disabled when nothing is selected."""
-        screen = object.__new__(LibraryManagerScreen)
+        screen = LibraryManagerScreen.__new__(LibraryManagerScreen)
         screen._library_root = Path("/fake")
         screen._delete_btn = MagicMock()
         screen._new_btn = MagicMock()
@@ -329,7 +329,7 @@ class TestWorkflowDeleteFile:
     def test_delete_refuses_path_outside_library_root(self, tmp_path: Path):
         """Safety guard: refuse to delete if resolved path escapes library root."""
         lib = _create_library(tmp_path)
-        screen = object.__new__(LibraryManagerScreen)
+        screen = LibraryManagerScreen.__new__(LibraryManagerScreen)
         screen._library_root = lib
         screen._tree = MagicMock()
         screen._editor = MagicMock()

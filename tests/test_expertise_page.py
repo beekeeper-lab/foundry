@@ -557,18 +557,18 @@ class TestFileBadge:
 # ---------------------------------------------------------------------------
 
 class TestExpertiseDescriptions:
-    def test_all_39_expertise_have_descriptions(self):
+    def test_all_41_expertise_have_descriptions(self):
         expected = {
             "accessibility-compliance", "api-design", "aws-cloud-platform",
             "azure-cloud-platform", "business-intelligence", "change-management",
-            "clean-code", "customer-enablement", "data-engineering", "devops",
-            "dotnet", "event-driven-messaging", "finops", "frontend-build-tooling",
-            "gcp-cloud-platform", "gdpr-data-privacy", "go", "hipaa-compliance",
-            "iso-9000", "java", "kotlin", "kubernetes", "microservices", "mlops",
-            "node", "pci-dss-compliance", "product-strategy", "python",
-            "python-qt-pyside6", "react", "react-native", "rust",
-            "sales-engineering", "security", "sox-compliance", "sql-dba",
-            "swift", "terraform", "typescript",
+            "clean-code", "customer-enablement", "dart", "data-engineering",
+            "devops", "dotnet", "event-driven-messaging", "finops", "flutter",
+            "frontend-build-tooling", "gcp-cloud-platform", "gdpr-data-privacy",
+            "go", "hipaa-compliance", "iso-9000", "java", "kotlin", "kubernetes",
+            "microservices", "mlops", "node", "pci-dss-compliance",
+            "product-strategy", "python", "python-qt-pyside6", "react",
+            "react-native", "rust", "sales-engineering", "security",
+            "sox-compliance", "sql-dba", "swift", "terraform", "typescript",
         }
         assert set(EXPERTISE_DESCRIPTIONS.keys()) == expected
 

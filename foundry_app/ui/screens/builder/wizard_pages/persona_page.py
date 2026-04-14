@@ -103,6 +103,24 @@ QFrame#persona-card {{
 QFrame#persona-card:hover {{
     border-color: {ACCENT_SECONDARY_MUTED};
 }}
+QFrame#persona-card > QCheckBox {{
+    spacing: 8px;
+}}
+QFrame#persona-card > QCheckBox::indicator {{
+    width: 20px;
+    height: 20px;
+    border: 2px solid {BORDER_DEFAULT};
+    border-radius: 4px;
+    background-color: {BG_SURFACE};
+}}
+QFrame#persona-card > QCheckBox::indicator:hover {{
+    border-color: {ACCENT_SECONDARY_MUTED};
+}}
+QFrame#persona-card > QCheckBox::indicator:checked {{
+    border-color: {ACCENT_PRIMARY};
+    background-color: {ACCENT_PRIMARY};
+    image: none;
+}}
 """
 
 CARD_SELECTED_BORDER = f"border-color: {ACCENT_PRIMARY};"
@@ -230,10 +248,20 @@ class PersonaCard(QFrame):
 
         self._build_ui()
 
+    def mousePressEvent(self, event):  # noqa: N802
+        """Toggle the main checkbox when clicking anywhere on the card background."""
+        # Let child interactive widgets (sub-checkboxes, combos) handle their own clicks
+        child = self.childAt(event.pos())
+        if isinstance(child, (QCheckBox, QComboBox)):
+            super().mousePressEvent(event)
+            return
+        self._checkbox.setChecked(not self._checkbox.isChecked())
+
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(6)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # --- Top row: checkbox + name + role ---
         top_row = QHBoxLayout()

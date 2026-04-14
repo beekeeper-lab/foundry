@@ -53,6 +53,7 @@ logger = logging.getLogger(__name__)
 
 EXPERTISE_DESCRIPTIONS: dict[str, tuple[str, str]] = {
     # Languages
+    "dart": ("Dart", "Type system, async/await, isolates, package conventions"),
     "dotnet": (".NET / C#", "ASP.NET Core, Entity Framework, NuGet packaging"),
     "go": ("Go", "Concurrency patterns, error handling, module system"),
     "java": ("Java", "Spring Boot, Maven/Gradle, JVM ecosystem conventions"),
@@ -65,6 +66,8 @@ EXPERTISE_DESCRIPTIONS: dict[str, tuple[str, str]] = {
     "rust": ("Rust", "Ownership, lifetimes, concurrency, cargo ecosystem"),
     "swift": ("Swift", "iOS/macOS development, SwiftUI, Combine framework"),
     "typescript": ("TypeScript", "Type safety, module patterns, build tooling"),
+    # Frameworks
+    "flutter": ("Flutter", "Dart cross-platform UI, Riverpod, GoRouter, Material 3"),
     # Architecture & Patterns
     "api-design": ("API Design", "REST/GraphQL conventions, versioning, error contracts"),
     "clean-code": ("Clean Code", "Code quality standards, naming conventions, SOLID principles"),
@@ -108,6 +111,24 @@ QFrame#expertise-card {{
 }}
 QFrame#expertise-card:hover {{
     border-color: {ACCENT_SECONDARY_MUTED};
+}}
+QCheckBox {{
+    spacing: 8px;
+}}
+QCheckBox::indicator {{
+    width: 20px;
+    height: 20px;
+    border: 2px solid {BORDER_DEFAULT};
+    border-radius: 4px;
+    background-color: {BG_SURFACE};
+}}
+QCheckBox::indicator:hover {{
+    border-color: {ACCENT_SECONDARY_MUTED};
+}}
+QCheckBox::indicator:checked {{
+    border-color: {ACCENT_PRIMARY};
+    background-color: {ACCENT_PRIMARY};
+    image: none;
 }}
 """
 
@@ -219,10 +240,15 @@ class ExpertiseCard(QFrame):
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self._build_ui()
 
+    def mousePressEvent(self, event):  # noqa: N802
+        """Toggle the checkbox when anywhere on the card is clicked."""
+        self._checkbox.setChecked(not self._checkbox.isChecked())
+
     def _build_ui(self) -> None:
         layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(10)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self._checkbox = QCheckBox()
         self._checkbox.stateChanged.connect(self._on_toggled)

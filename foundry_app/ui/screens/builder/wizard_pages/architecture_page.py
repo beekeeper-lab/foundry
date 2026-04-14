@@ -97,6 +97,24 @@ QFrame#arch-card {{
 QFrame#arch-card:hover {{
     border-color: {ACCENT_SECONDARY_MUTED};
 }}
+QCheckBox {{
+    spacing: 8px;
+}}
+QCheckBox::indicator {{
+    width: 20px;
+    height: 20px;
+    border: 2px solid {BORDER_DEFAULT};
+    border-radius: 4px;
+    background-color: {BG_SURFACE};
+}}
+QCheckBox::indicator:hover {{
+    border-color: {ACCENT_SECONDARY_MUTED};
+}}
+QCheckBox::indicator:checked {{
+    border-color: {ACCENT_PRIMARY};
+    background-color: {ACCENT_PRIMARY};
+    image: none;
+}}
 """
 
 CARD_SELECTED_BORDER = f"border-color: {ACCENT_PRIMARY};"
@@ -191,10 +209,15 @@ class ArchitectureCard(QFrame):
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self._build_ui()
 
+    def mousePressEvent(self, event):  # noqa: N802
+        """Toggle the checkbox when clicking anywhere on the card."""
+        self._checkbox.setChecked(not self._checkbox.isChecked())
+
     def _build_ui(self) -> None:
         layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(10)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self._checkbox = QCheckBox()
         self._checkbox.stateChanged.connect(self._on_toggled)
