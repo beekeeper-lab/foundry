@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 
 from foundry_app.core.models import (
+    ArchitectureConfig,
+    CloudProvider,
     CompositionSpec,
     ExpertiseSelection,
     HookMode,
@@ -436,3 +438,252 @@ class TestEdgeCases:
         data = _read_settings(tmp_path)
         assert len(data["hooks"]["PreToolUse"]) == 0
         assert len(data["hooks"]["PostToolUse"]) == 0
+
+
+# ---------------------------------------------------------------------------
+# Stack-aware selection — BEAN-255
+# ---------------------------------------------------------------------------
+
+
+def _all_commands(data: dict) -> list[str]:
+    return [
+        h["command"]
+        for key in ("PreToolUse", "PostToolUse")
+        for e in data["hooks"][key]
+        for h in e["hooks"]
+    ]
+
+
+class TestStackAwareLintSelection:
+    """Lint pack tracks the declared expertise, not a static default."""
+
+    def test_python_stack_gets_ruff_not_eslint(self, tmp_path: Path):
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="python")],
+            hooks=HooksConfig(posture=Posture.BASELINE),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert any("ruff" in c for c in commands)
+        assert not any("eslint" in c.lower() for c in commands)
+        assert not any("prettier" in c.lower() for c in commands)
+        assert not any("tsc" in c.lower() for c in commands)
+
+    def test_react_typescript_stack_gets_eslint_prettier_tsc(self, tmp_path: Path):
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="react"),
+                ExpertiseSelection(id="typescript"),
+            ],
+            hooks=HooksConfig(posture=Posture.BASELINE),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert any("eslint" in c.lower() for c in commands)
+        assert any("prettier" in c.lower() for c in commands)
+        assert any("tsc" in c.lower() for c in commands)
+        assert not any("ruff" in c for c in commands)
+
+    def test_node_only_stack_gets_js_lint(self, tmp_path: Path):
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="node")],
+            hooks=HooksConfig(posture=Posture.BASELINE),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert any("eslint" in c.lower() for c in commands)
+        assert not any("ruff" in c for c in commands)
+
+    def test_mixed_python_and_typescript_gets_both_lints(self, tmp_path: Path):
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="python"),
+                ExpertiseSelection(id="typescript"),
+            ],
+            hooks=HooksConfig(posture=Posture.BASELINE),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert any("ruff" in c for c in commands)
+        assert any("eslint" in c.lower() for c in commands)
+
+    def test_duplicate_js_expertises_add_pack_once(self, tmp_path: Path):
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="react"),
+                ExpertiseSelection(id="typescript"),
+                ExpertiseSelection(id="node"),
+            ],
+            hooks=HooksConfig(posture=Posture.BASELINE),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        # eslint should appear in one pack's command only
+        eslint_hits = sum(1 for c in commands if "eslint" in c.lower())
+        assert eslint_hits == 1
+
+    def test_unmapped_expertise_adds_no_lint(self, tmp_path: Path):
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="clean-code")],
+            hooks=HooksConfig(posture=Posture.BASELINE),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert not any("ruff" in c for c in commands)
+        assert not any("eslint" in c.lower() for c in commands)
+
+
+class TestStackAwareCloudSelection:
+    """Cloud hooks only appear for declared providers, and only above baseline."""
+
+    def test_no_cloud_no_cloud_hooks_at_baseline(self, tmp_path: Path):
+        spec = _make_spec(
+            architecture=ArchitectureConfig(cloud_providers=[]),
+            hooks=HooksConfig(posture=Posture.BASELINE),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert not any("az " in c or "'az" in c for c in commands)
+        assert not any("aws " in c or "'aws" in c for c in commands)
+
+    def test_no_cloud_no_cloud_hooks_at_hardened(self, tmp_path: Path):
+        spec = _make_spec(
+            architecture=ArchitectureConfig(cloud_providers=[]),
+            hooks=HooksConfig(posture=Posture.HARDENED),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert not any("az\\s" in c for c in commands)
+        assert not any("aws\\s" in c for c in commands)
+
+    def test_aws_hardened_gets_aws_hook_not_azure(self, tmp_path: Path):
+        spec = _make_spec(
+            architecture=ArchitectureConfig(cloud_providers=[CloudProvider.AWS]),
+            hooks=HooksConfig(posture=Posture.HARDENED),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert any("aws\\s" in c for c in commands)
+        assert not any("az\\s" in c for c in commands)
+
+    def test_azure_hardened_gets_azure_hook_not_aws(self, tmp_path: Path):
+        spec = _make_spec(
+            architecture=ArchitectureConfig(cloud_providers=[CloudProvider.AZURE]),
+            hooks=HooksConfig(posture=Posture.HARDENED),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert any("az\\s" in c for c in commands)
+        assert not any("aws\\s" in c for c in commands)
+
+    def test_aws_baseline_gets_no_cloud_hook(self, tmp_path: Path):
+        spec = _make_spec(
+            architecture=ArchitectureConfig(cloud_providers=[CloudProvider.AWS]),
+            hooks=HooksConfig(posture=Posture.BASELINE),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert not any("aws\\s" in c for c in commands)
+
+    def test_both_clouds_regulated_gets_both_hooks(self, tmp_path: Path):
+        spec = _make_spec(
+            architecture=ArchitectureConfig(
+                cloud_providers=[CloudProvider.AWS, CloudProvider.AZURE],
+            ),
+            hooks=HooksConfig(posture=Posture.REGULATED),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert any("aws\\s" in c for c in commands)
+        assert any("az\\s" in c for c in commands)
+
+
+class TestStackMismatchWarnings:
+    """Explicit pack selections that don't match the stack produce warnings."""
+
+    def test_ruff_on_typescript_project_warns(self, tmp_path: Path):
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="react"),
+                ExpertiseSelection(id="typescript"),
+            ],
+            hooks=HooksConfig(packs=[HookPackSelection(id="pre-commit-lint")]),
+        )
+        result = write_safety(spec, tmp_path)
+        assert any("pre-commit-lint" in w and "python" in w for w in result.warnings)
+        # Pack still written (backward compatibility)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert any("ruff" in c for c in commands)
+
+    def test_eslint_on_python_project_warns(self, tmp_path: Path):
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="python")],
+            hooks=HooksConfig(packs=[HookPackSelection(id="pre-commit-lint-js")]),
+        )
+        result = write_safety(spec, tmp_path)
+        assert any("pre-commit-lint-js" in w and "js" in w for w in result.warnings)
+
+    def test_azure_hook_without_azure_provider_warns(self, tmp_path: Path):
+        spec = _make_spec(
+            architecture=ArchitectureConfig(cloud_providers=[CloudProvider.AWS]),
+            hooks=HooksConfig(packs=[HookPackSelection(id="az-limited-ops")]),
+        )
+        result = write_safety(spec, tmp_path)
+        assert any("az-limited-ops" in w and "azure" in w for w in result.warnings)
+
+    def test_matched_explicit_pack_produces_no_warning(self, tmp_path: Path):
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="python")],
+            hooks=HooksConfig(packs=[HookPackSelection(id="pre-commit-lint")]),
+        )
+        result = write_safety(spec, tmp_path)
+        assert result.warnings == []
+
+    def test_stack_aware_defaults_never_warn(self, tmp_path: Path):
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="react")],
+            hooks=HooksConfig(posture=Posture.HARDENED),
+            architecture=ArchitectureConfig(cloud_providers=[CloudProvider.AWS]),
+        )
+        result = write_safety(spec, tmp_path)
+        assert result.warnings == []
+
+
+class TestStackAwareEndToEnd:
+    """Full-composition scenarios from the bean's acceptance criteria."""
+
+    def test_small_python_team_yields_ruff_no_azure(self, tmp_path: Path):
+        """Regenerating examples/small-python-team.yml shape."""
+        spec = CompositionSpec(
+            project=ProjectIdentity(name="Small Python Team", slug="small-python-team"),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="clean-code", order=20),
+            ],
+            team=TeamConfig(personas=[PersonaSelection(id="developer")]),
+            hooks=HooksConfig(posture=Posture.BASELINE),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert any("ruff" in c for c in commands)
+        assert not any("eslint" in c.lower() for c in commands)
+        assert not any("az\\s" in c for c in commands)
+        assert not any("aws\\s" in c for c in commands)
+
+    def test_react_ts_composition_yields_js_lint_no_ruff(self, tmp_path: Path):
+        spec = CompositionSpec(
+            project=ProjectIdentity(name="Web App", slug="web-app"),
+            expertise=[
+                ExpertiseSelection(id="react", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+                ExpertiseSelection(id="node", order=30),
+            ],
+            team=TeamConfig(personas=[PersonaSelection(id="developer")]),
+            hooks=HooksConfig(posture=Posture.BASELINE),
+        )
+        write_safety(spec, tmp_path)
+        commands = _all_commands(_read_settings(tmp_path))
+        assert any("eslint" in c.lower() for c in commands)
+        assert any("prettier" in c.lower() for c in commands)
+        assert any("tsc" in c.lower() for c in commands)
+        assert not any("ruff" in c for c in commands)

@@ -78,6 +78,8 @@ EXPECTED_EXPERTISE = [
 ]
 
 EXPECTED_HOOK_PACKS = [
+    "aws-limited-ops",
+    "aws-read-only",
     "az-limited-ops",
     "az-read-only",
     "compliance-gate",
@@ -88,6 +90,7 @@ EXPECTED_HOOK_PACKS = [
     "git-push-feature",
     "hook-policy",
     "post-task-qa",
+    "pre-commit-lint-js",
     "pre-commit-lint",
     "security-scan",
 ]
