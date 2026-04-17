@@ -279,15 +279,15 @@
 | BEAN-255 | Stack-Aware Hook Pack Selection | App | High | Done | team-lead |
 | BEAN-256 | Dev-Loop Commands + Stack-Aware Command Selection | App | High | Done | team-lead |
 | BEAN-257 | Activation Rules for Remaining Personas | Process | Medium | In Progress | team-lead |
-| BEAN-258 | Code-Quality-Reviewer vs Tech-QA Scope Split | Process | Low | In Progress | team-lead |
+| BEAN-258 | Code-Quality-Reviewer vs Tech-QA Scope Split | Process | Low | Done | team-lead |
 | BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | Approved | (unassigned) |
 | BEAN-260 | Approval Gate — Command + Criteria | Process | Medium | Done | team-lead |
 | BEAN-261 | Propagate Missing-Expertise Drop to Agent Headers and Member Files | App | High | Done | team-lead |
 | BEAN-262 | Detect Mutually-Exclusive Hook Pack Pairs at Generation Time | App | Medium | Done | team-lead |
-| BEAN-263 | Enforce Pack-Declared Posture Compatibility at Generation Time | App | Medium | In Progress | team-lead |
+| BEAN-263 | Enforce Pack-Declared Posture Compatibility at Generation Time | App | Medium | Done | team-lead |
 | BEAN-264 | Validate MCP Package References in Generated mcp.json | App | High | Done | team-lead |
 | BEAN-265 | Sync Library long-run Skill With New Wave Model | Process | High | Done | team-lead |
-| BEAN-266 | Fix CLAUDE.md Title-Casing for Acronyms and Slashed Names | App | Low | In Progress | team-lead |
+| BEAN-266 | Fix CLAUDE.md Title-Casing for Acronyms and Slashed Names | App | Low | Done | team-lead |
 | BEAN-267 | Investigate Reported Agent File Truncation in Multi-Expertise Compositions | App | Medium | Done | team-lead |
 | BEAN-268 | Add Workflow Pointers Section to Generated CLAUDE.md | App | Medium | Approved | (unassigned) |
 | BEAN-269 | Make Team Orchestration Model Explicit in Generated Artifacts | App | High | Done | team-lead |
