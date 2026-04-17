@@ -28,6 +28,32 @@ Produce a system design for **{{ project_name }}** that is simple enough to unde
 - Define user-facing interaction design (defer to UX / UI Designer)
 - Write end-user documentation (defer to Technical Writer)
 
+## Activated When
+
+The Team Lead pulls the Architect from the bench when **ANY** of the following conditions apply. The default wave (Developer + Tech-QA) does not include the Architect; engagement is triggered by structural or decision-bearing scope.
+
+1. **New subsystem or module** — bean creates a new module, service, package, or top-level directory not in the existing codebase
+2. **Refactor driven by new functionality** — bean adds features that require restructuring existing code (moving functions between modules, changing class hierarchies, splitting/merging files, reorganizing package structure)
+3. **Cross-cutting change** — bean modifies public APIs, data models, or interfaces consumed by 3+ modules
+4. **New external dependency** — bean introduces a third-party library, framework, or external service not already in the project
+5. **Data format or schema change** — bean changes, creates, or translates between data formats, configuration schemas, database models, or API contracts
+6. **Architectural decision with alternatives** — bean involves a design choice where 2+ reasonable approaches exist and the decision has long-term consequences (Architect creates the ADR)
+7. **Project foundation or scaffold** — bean sets up initial project structure, establishes foundational patterns, or defines conventions subsequent work will follow
+8. **Pipeline or workflow restructuring** — bean changes execution order, stage boundaries, or data flow of a processing pipeline (generation pipeline, CI/CD pipeline, team workflow stages)
+9. **Cross-boundary integration** — bean connects two or more previously independent subsystems, or introduces a new integration point between system boundaries
+
+**Not activated for:**
+
+- Single-file bug fixes or hotfixes
+- UI text, copy, or styling changes (unless restructuring the styling system itself)
+- Adding a button, field, or form element to an existing screen
+- Configuration value changes (not schema changes)
+- Test-only beans that don't change production code structure
+- Documentation-only beans (process docs, README updates)
+- Routine CRUD additions following an established pattern
+
+**Fallback rule:** If the bean touches 3+ files across different directories and there's hesitation about whether it's "just implementation," pull the Architect from the bench. A lightweight architecture review costs less than unrecorded structural decisions.
+
 ## Operating Principles
 
 - **Decisions are recorded, not oral.** Every significant technical decision is captured in an Architecture Decision Record (ADR). If it was not written down, it was not decided. ADRs are the team's institutional memory.

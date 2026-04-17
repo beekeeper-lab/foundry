@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-257 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-17 19:26 |
+| **Completed** | 2026-04-17 20:00 |
+| **Duration** | 34m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -44,24 +44,55 @@ Every persona shipped in the default library has an explicit "Activated When" (o
 
 ## Acceptance Criteria
 
-- [ ] Every persona file in `ai-team-library/personas/*/persona.md` has an "Activated When" section.
-- [ ] The section format matches BEAN-228/229's convention (bullet list with concrete triggers, plus a fallback rule).
-- [ ] Team Lead agent's decomposition guidance references these sections as authoritative.
-- [ ] A short audit note added to `ai/context/team-lead.md` or similar confirming every persona is now covered.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] Every persona file in `ai-team-library/personas/*/persona.md` has an "Activated When" section.
+- [x] The section format matches BEAN-228/229's convention (bullet list with concrete triggers, plus a fallback rule).
+- [x] Team Lead agent's decomposition guidance references these sections as authoritative.
+- [x] A short audit note added to `ai/context/persona-activation-audit.md` confirming every persona is now covered.
+- [x] All tests pass (`uv run pytest`) — 1903 passed.
+- [x] Lint clean (`uv run ruff check foundry_app/`) — All checks passed.
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add "Activated When" sections to all library personas + update team-lead agent | developer | — | Done |
+| 2 | Verify activation rules coverage and audit note | tech-qa | 1 | Done |
+
+> Skipped: BA (default — process/library-content work, not user-facing requirements), Architect (default — content additions, no system design or new module)
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai-team-library/personas/architect/persona.md | +30 |
+| ai-team-library/personas/ba/persona.md | +28 |
+| ai-team-library/personas/team-lead/persona.md | +20 |
+| ai-team-library/personas/developer/persona.md | +21 |
+| ai-team-library/personas/tech-qa/persona.md | +19 |
+| ai-team-library/personas/code-quality-reviewer/persona.md | +29 |
+| ai-team-library/personas/ux-ui-designer/persona.md | +27 |
+| ai-team-library/personas/devops-release/persona.md | +27 |
+| ai-team-library/personas/integrator-merge-captain/persona.md | +27 |
+| ai-team-library/personas/security-engineer/persona.md | +28 |
+| ai-team-library/personas/compliance-risk/persona.md | +28 |
+| ai-team-library/personas/researcher-librarian/persona.md | +27 |
+| ai-team-library/personas/technical-writer/persona.md | +27 |
+| ai-team-library/personas/data-analyst/persona.md | +27 |
+| ai-team-library/personas/data-engineer/persona.md | +27 |
+| ai-team-library/personas/database-administrator/persona.md | +27 |
+| ai-team-library/personas/legal-counsel/persona.md | +27 |
+| ai-team-library/personas/mobile-developer/persona.md | +27 |
+| ai-team-library/personas/platform-sre-engineer/persona.md | +27 |
+| ai-team-library/personas/product-owner/persona.md | +27 |
+| ai-team-library/personas/customer-success/persona.md | +27 |
+| ai-team-library/personas/financial-operations/persona.md | +27 |
+| ai-team-library/personas/change-management/persona.md | +27 |
+| ai-team-library/personas/sales-engineer/persona.md | +27 |
+| .claude/agents/team-lead.md | +18 |
+| ai/context/persona-activation-audit.md | +90 (new) |
+| ai/beans/BEAN-257-activation-rules-remaining-personas/bean.md | edits |
+| ai/beans/BEAN-257-activation-rules-remaining-personas/tasks/01-developer-activation-rules.md | new |
+| ai/beans/BEAN-257-activation-rules-remaining-personas/tasks/02-tech-qa-verify-activation-rules.md | new |
 
 ## Notes
 
@@ -81,12 +112,13 @@ Every persona shipped in the default library has an explicit "Activated When" (o
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add "Activated When" sections to all library personas + update team-lead agent | developer | — | — | — | — |
+| 2 | Verify activation rules coverage and audit note | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1270h 41m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

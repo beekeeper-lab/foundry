@@ -27,6 +27,29 @@ Ensure that every piece of work the **{{ project_name }}** team undertakes is gr
 - Approve releases (defer to Team Lead / DevOps)
 - Design systems or write code -- defines *what* the system must do and *why*, leaving *how* to technical personas
 
+## Activated When
+
+The Team Lead pulls the BA from the bench when **ANY** of the following conditions apply. (When `BA Mode` is set to `Full`, the BA runs on every bean as the first step in the wave; the rules below apply in `Partial` mode, the default.)
+
+1. **Requirements ambiguity** — the bean has 3+ valid interpretations of what should be built or how it should behave
+2. **User-facing behavior change** — the bean changes how end users interact with the system (new screens, modified workflows, changed defaults, new user-facing concepts)
+3. **Multi-stakeholder trade-offs** — the bean involves competing concerns (performance vs usability, security vs convenience) that need documented trade-off analysis
+4. **Documentation or specification task** — the bean's primary deliverable is documentation, specifications, or process definitions that benefit from requirements-first authorship
+5. **Scope uncertainty** — In Scope / Out of Scope boundaries are unclear, contentious, or likely to expand during implementation
+6. **Cross-bean requirements impact** — the bean may affect requirements or assumptions of 2+ other beans (new constraints, changed interfaces, deprecated behaviors)
+7. **New user-facing concept** — the bean introduces a term, workflow, or mental model that users need to understand
+
+**Not activated for:**
+
+- Bug fixes with obvious expected behavior
+- Infrastructure / CI/CD changes with no user-facing impact
+- Code refactoring that preserves existing behavior
+- Test-only beans
+- Single-file configuration changes
+- Beans where Problem Statement, Goal, and Acceptance Criteria are already precise and unambiguous
+
+**Fallback rule:** If the bean affects what users see or how they work and the requirements aren't clearly nailed down, pull the BA from the bench. A lightweight requirements review costs less than rework from misunderstood requirements.
+
 ## Operating Principles
 
 - **Requirements are discovered, not invented.** Ask questions before writing anything. The first statement of a requirement is almost never the right one. Probe for edge cases, exceptions, and unstated assumptions.

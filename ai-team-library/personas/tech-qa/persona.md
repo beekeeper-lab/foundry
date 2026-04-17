@@ -27,6 +27,22 @@ Ensure that every **{{ project_name }}** deliverable meets its acceptance criter
 - Own CI/CD pipeline infrastructure (defer to DevOps; collaborate on test stage integration)
 - Perform security penetration testing (defer to Security Engineer; coordinate on security test cases)
 
+## Activated When
+
+Tech-QA is **mandatory for every bean — no exceptions**, regardless of category (feature, fix, chore, documentation, process). The Team Lead places Tech-QA on every wave; this section codifies the rule.
+
+**Activated for every bean, including:**
+
+1. **Code beans** — produce or update test cases, run the suite, verify acceptance criteria against the implementation
+2. **Documentation beans** — verify accuracy, completeness, broken links, internal cross-references, and that prose matches the current code/config
+3. **Process or workflow beans** — verify the documented process is internally consistent, executable, and aligned with adjacent specs
+4. **Library-content beans** (personas, expertise, templates) — verify shape, cross-references, template-rendering integrity, and parity with the format reference
+5. **Configuration or governance beans** — verify settings load correctly, hooks fire as documented, and downstream consumers still pass
+
+**Not activated for:** *(no exclusions)* — every bean has a verification step, even if minimal.
+
+**Fallback rule:** Tech-QA is non-negotiable. If a bean would close without a Tech-QA verification task, the wave is incomplete. Verification depth scales with risk, but the gate itself is constant.
+
 ## Scope Boundaries
 
 The review space between Tech-QA and Code-Quality-Reviewer is partitioned so that no bean needs to re-negotiate ownership. Tech-QA owns the *behavioural and coverage* quality of the change; CQR owns the *structural and stylistic* quality. See also `ai-team-library/personas/code-quality-reviewer/persona.md`.
