@@ -120,6 +120,42 @@ def _check_hook_conflicts(
                 ))
 
 
+def _check_hook_posture_compatibility(
+    composition: CompositionSpec,
+    library_index: LibraryIndex,
+    messages: list[ValidationMessage],
+) -> None:
+    """Validate that each active hook pack supports the composition's posture.
+
+    Consults ``HookPackInfo.posture_compatibility`` (parsed from the pack's
+    ``## Posture Compatibility`` table). A pack whose row for the selected
+    posture has ``included == "No"`` is considered incompatible and surfaces
+    an error. Packs whose metadata is missing (older libraries) are skipped
+    so the check is backward compatible.
+    """
+    posture_key = composition.hooks.posture.value.lower()
+    for hp in composition.hooks.packs:
+        if not hp.enabled or hp.mode == HookMode.DISABLED:
+            continue
+        pack = library_index.hook_pack_by_id(hp.id)
+        if pack is None or not pack.posture_compatibility:
+            continue
+        row = pack.posture_compatibility.get(posture_key)
+        if row is None:
+            continue
+        if row.get("included", "").strip().lower() == "no":
+            messages.append(ValidationMessage(
+                severity=Severity.ERROR,
+                code="hook-pack-posture-incompatible",
+                message=(
+                    f"Hook pack '{hp.id}' declares posture '{posture_key}' as "
+                    f"incompatible (Posture Compatibility table says "
+                    f"Included: No). Remove the pack, lower enforcement, or "
+                    f"raise the composition's posture."
+                ),
+            ))
+
+
 def _check_required_fields(
     composition: CompositionSpec,
     messages: list[ValidationMessage],
@@ -221,6 +257,7 @@ def run_pre_generation_validation(
     _check_expertise(composition, library_index, messages)
     _check_hook_packs(composition, library_index, messages)
     _check_hook_conflicts(composition, library_index, messages)
+    _check_hook_posture_compatibility(composition, library_index, messages)
     _check_duplicates(composition, messages)
 
     messages = _apply_strictness(messages, strictness)

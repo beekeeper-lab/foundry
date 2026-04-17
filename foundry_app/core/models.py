@@ -567,6 +567,14 @@ class HookPackInfo(BaseModel):
         default_factory=list,
         description="Ids of hook packs that semantically conflict with this one",
     )
+    posture_compatibility: dict[str, dict[str, str]] = Field(
+        default_factory=dict,
+        description=(
+            "Posture → {included, default_mode} as parsed from the pack's "
+            "## Posture Compatibility table. Included values are raw "
+            "(e.g. 'Yes', 'No', 'Optional'); 'No' marks incompatibility."
+        ),
+    )
 
 
 class LibraryIndex(BaseModel):

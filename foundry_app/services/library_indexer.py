@@ -165,6 +165,59 @@ def _parse_hook_conflicts(path: Path) -> list[str]:
     return ids
 
 
+def _parse_hook_posture_compatibility(path: Path) -> dict[str, dict[str, str]]:
+    """Extract the ``## Posture Compatibility`` table as structured metadata.
+
+    Returns a dict keyed by lower-cased posture name. Each value is a dict
+    with ``included`` (raw value as-written, e.g. ``Yes``, ``No``,
+    ``Optional``, ``Yes (when ...)``) and ``default_mode`` (e.g.
+    ``enforcing``, ``advisory``, ``—``). Rows whose posture cell is wrapped
+    in backticks (``` `baseline` ```) are accepted. Returns an empty dict if
+    the section or a well-formed table is missing.
+    """
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return {}
+
+    result: dict[str, dict[str, str]] = {}
+    in_section = False
+    header_seen = False
+    separator_seen = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.lower().startswith("## "):
+            if in_section:
+                break
+            in_section = stripped.lower() == "## posture compatibility"
+            header_seen = False
+            separator_seen = False
+            continue
+        if not in_section or not stripped:
+            continue
+        if not stripped.startswith("|"):
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if not header_seen:
+            header_seen = True
+            continue
+        if not separator_seen:
+            # separator row like |---|---|---|
+            if all(set(c) <= {"-", ":"} for c in cells if c):
+                separator_seen = True
+            continue
+        if len(cells) < 3:
+            continue
+        posture = cells[0].strip("`").strip().lower()
+        if not posture:
+            continue
+        result[posture] = {
+            "included": cells[1].strip(),
+            "default_mode": cells[2].strip(),
+        }
+    return result
+
+
 def _scan_hook_packs(hooks_dir: Path) -> list[HookPackInfo]:
     """Scan the claude/hooks/ directory and return HookPackInfo for each .md file."""
     if not hooks_dir.is_dir():
@@ -183,6 +236,7 @@ def _scan_hook_packs(hooks_dir: Path) -> list[HookPackInfo]:
                 files=[entry.name],
                 category=_parse_hook_category(entry),
                 conflicts_with=_parse_hook_conflicts(entry),
+                posture_compatibility=_parse_hook_posture_compatibility(entry),
             )
         )
 

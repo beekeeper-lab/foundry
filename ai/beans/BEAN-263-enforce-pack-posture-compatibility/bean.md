@@ -66,7 +66,7 @@ in a posture they declared incompatible with.
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
 | 1 | Design posture_compatibility schema and integration | Architect | — | Done |
-| 2 | Implement parser, validator check, and safety-writer filter | Developer | 1 | Pending |
+| 2 | Implement parser, validator check, and safety-writer filter | Developer | 1 | Done |
 | 3 | Tests: parser, validator, safety-writer filter; full suite green | Tech-QA | 2 | Pending |
 
 > Skipped: BA (default — criteria unambiguous).
@@ -113,7 +113,7 @@ rebalance) so the schema is stable before encoding per-pack data.
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Design posture_compatibility schema and integration | Architect | < 1m | 494,391 | 0 | $0.83 |
-| 2 | Implement parser, validator check, and safety-writer filter | Developer | — | — | — | — |
+| 2 | Implement parser, validator check, and safety-writer filter | Developer | < 5m | 372,771 | 858 | $0.71 |
 | 3 | Tests: parser, validator, safety-writer filter; full suite green | Tech-QA | — | — | — | — |
 
 | Metric | Value |
