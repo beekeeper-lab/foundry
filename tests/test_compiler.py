@@ -17,9 +17,12 @@ from foundry_app.services.compiler import (
     _build_context,
     _build_persona_context,
     _build_persona_name_map,
+    _canonicalize_persona_header,
+    _display_name_from_id,
     _filter_collaboration_table,
     _filter_defer_references,
     _filter_persona_references,
+    _persona_display_name,
     _resolve_persona_name,
     _substitute,
     compile_project,
@@ -1993,3 +1996,151 @@ class TestCompilePersonaFiltering:
         assert "Stakeholders" in gen
         # Developer should be removed (known, not selected)
         assert "| Developer" not in gen
+
+
+# ---------------------------------------------------------------------------
+# Display-name casing (BEAN-266)
+# ---------------------------------------------------------------------------
+
+
+class TestDisplayNameFromId:
+
+    def test_tech_qa_uppercases_qa(self):
+        assert _display_name_from_id("tech-qa") == "Tech QA"
+
+    def test_ux_ui_designer_collapses_adjacent_acronyms_with_slash(self):
+        assert _display_name_from_id("ux-ui-designer") == "UX/UI Designer"
+
+    def test_sql_dba_two_acronyms(self):
+        assert _display_name_from_id("sql-dba") == "SQL/DBA"
+
+    def test_team_lead_non_acronyms(self):
+        assert _display_name_from_id("team-lead") == "Team Lead"
+
+    def test_single_acronym_id(self):
+        assert _display_name_from_id("ba") == "BA"
+
+    def test_no_hyphens(self):
+        assert _display_name_from_id("developer") == "Developer"
+
+    def test_technical_writer_title_cases(self):
+        assert _display_name_from_id("technical-writer") == "Technical Writer"
+
+    def test_api_design_acronym_then_word(self):
+        assert _display_name_from_id("api-design") == "API Design"
+
+    def test_empty_string(self):
+        assert _display_name_from_id("") == ""
+
+
+class TestCanonicalizePersonaHeader:
+
+    def test_takes_first_segment_for_role_tail(self):
+        assert (
+            _canonicalize_persona_header("Tech-QA / Test Engineer") == "Tech-QA"
+        )
+
+    def test_merges_short_acronyms_around_slash(self):
+        assert (
+            _canonicalize_persona_header("UX / UI Designer") == "UX/UI Designer"
+        )
+
+    def test_strips_parenthetical_annotation(self):
+        assert (
+            _canonicalize_persona_header("Business Analyst (BA)")
+            == "Business Analyst"
+        )
+
+    def test_single_segment_passes_through(self):
+        assert _canonicalize_persona_header("Team Lead") == "Team Lead"
+
+    def test_title_case_slash_non_acronym_tail_trimmed(self):
+        assert (
+            _canonicalize_persona_header("Integrator / Merge Captain")
+            == "Integrator"
+        )
+
+    def test_mixed_case_tail_trimmed(self):
+        assert (
+            _canonicalize_persona_header("DevOps / Release Engineer")
+            == "DevOps"
+        )
+
+
+class TestPersonaDisplayName:
+
+    def test_reads_from_persona_header(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "tech-qa": {"persona.md": "# Persona: Tech-QA / Test Engineer\n"},
+        })
+        assert _persona_display_name("tech-qa", index) == "Tech-QA"
+
+    def test_reads_ux_ui_header(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "ux-ui-designer": {"persona.md": "# Persona: UX / UI Designer\n"},
+        })
+        assert (
+            _persona_display_name("ux-ui-designer", index) == "UX/UI Designer"
+        )
+
+    def test_falls_back_to_id_when_header_missing(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "tech-qa": {"persona.md": "# Tech QA notes (no Persona header)\n"},
+        })
+        assert _persona_display_name("tech-qa", index) == "Tech QA"
+
+    def test_falls_back_to_id_when_persona_missing(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={})
+        assert _persona_display_name("ux-ui-designer", index) == "UX/UI Designer"
+
+
+class TestClaudeMdTableCasing:
+
+    def test_team_and_tech_stack_tables_use_correct_casing(
+        self, tmp_path: Path,
+    ):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "tech-qa": {
+                    "persona.md": "# Persona: Tech-QA / Test Engineer\n\nTest things.",
+                },
+                "ux-ui-designer": {
+                    "persona.md": "# Persona: UX / UI Designer\n\nDesign screens.",
+                },
+                "ba": {
+                    "persona.md": "# Persona: Business Analyst (BA)\n\nGather requirements.",
+                },
+            },
+            expertise={
+                "sql-dba": {"conventions.md": "# SQL DBA conventions"},
+                "api-design": {"conventions.md": "# API design conventions"},
+            },
+        )
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="tech-qa"),
+                PersonaSelection(id="ux-ui-designer"),
+                PersonaSelection(id="ba"),
+            ]),
+            expertise=[
+                ExpertiseSelection(id="sql-dba", order=10),
+                ExpertiseSelection(id="api-design", order=20),
+            ],
+        )
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        # Team table — no lower-case acronym artefacts
+        assert "Tech Qa" not in content
+        assert "Ux Ui" not in content
+        assert "| Tech-QA |" in content
+        assert "| UX/UI Designer |" in content
+        assert "| Business Analyst |" in content
+
+        # Tech Stack table — acronyms uppercased
+        assert "Sql Dba" not in content
+        assert "Api Design" not in content
+        assert "| SQL/DBA |" in content
+        assert "| API Design |" in content
