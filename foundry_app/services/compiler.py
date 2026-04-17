@@ -6,7 +6,12 @@ import logging
 import re
 from pathlib import Path
 
-from foundry_app.core.models import CompositionSpec, LibraryIndex, StageResult
+from foundry_app.core.models import (
+    CompositionSpec,
+    LibraryIndex,
+    PersonaSelection,
+    StageResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +66,12 @@ def _read_file(path: Path) -> str | None:
 
 
 def _build_context(spec: CompositionSpec) -> dict[str, str]:
-    """Build the template variable context from the composition spec."""
+    """Build the shared template variable context from the composition spec.
+
+    Use this for non-persona-scoped substitutions (e.g., expertise files).
+    For persona-scoped substitutions, use ``_build_persona_context`` so that
+    ``{{ strictness }}`` resolves to the per-persona strictness value.
+    """
     expertise_ids = sorted(
         (s.id for s in spec.expertise),
         key=lambda sid: next(
@@ -72,6 +82,18 @@ def _build_context(spec: CompositionSpec) -> dict[str, str]:
         "project_name": spec.project.name,
         "expertise": ",".join(expertise_ids),
     }
+
+
+def _build_persona_context(
+    spec: CompositionSpec,
+    persona_sel: PersonaSelection,
+) -> dict[str, str]:
+    """Build a context dict for substituting placeholders in a single persona's
+    source files. Includes every shared key plus the persona's own ``strictness``.
+    """
+    ctx = _build_context(spec)
+    ctx["strictness"] = persona_sel.strictness.value
+    return ctx
 
 
 def _build_persona_name_map(index: LibraryIndex) -> dict[str, str]:
@@ -217,6 +239,10 @@ def _compile_persona_section(
     warnings: list[str],
 ) -> str | None:
     """Compile the section for a single persona.
+
+    ``context`` must include ``strictness`` — callers build it via
+    ``_build_persona_context`` so ``{{ strictness }}`` resolves to this
+    persona's own strictness value.
 
     Returns the assembled markdown text, or None if the persona directory
     is missing from the library.
@@ -423,8 +449,9 @@ def compile_project(
         members_dir.mkdir(parents=True, exist_ok=True)
 
         for persona_sel in spec.team.personas:
+            persona_ctx = _build_persona_context(spec, persona_sel)
             persona_section = _compile_persona_section(
-                persona_sel.id, lib_root, library_index, context, warnings,
+                persona_sel.id, lib_root, library_index, persona_ctx, warnings,
             )
             if persona_section is not None:
                 persona_section = _filter_persona_references(

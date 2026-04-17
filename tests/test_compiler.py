@@ -10,10 +10,12 @@ from foundry_app.core.models import (
     PersonaInfo,
     PersonaSelection,
     ProjectIdentity,
+    Strictness,
     TeamConfig,
 )
 from foundry_app.services.compiler import (
     _build_context,
+    _build_persona_context,
     _build_persona_name_map,
     _filter_collaboration_table,
     _filter_defer_references,
@@ -185,6 +187,82 @@ class TestBuildContext:
         spec = _make_spec(expertise=[ExpertiseSelection(id="python", order=10)])
         ctx = _build_context(spec)
         assert ctx["expertise"] == "python"
+
+
+class TestBuildPersonaContext:
+    """Per-persona context must carry the persona's strictness into substitution."""
+
+    def test_includes_strictness_default(self):
+        spec = _make_spec()
+        persona_sel = spec.team.personas[0]
+        ctx = _build_persona_context(spec, persona_sel)
+        assert ctx["strictness"] == Strictness.STANDARD.value
+
+    def test_strictness_per_persona(self):
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer", strictness=Strictness.STRICT),
+            ]),
+        )
+        ctx = _build_persona_context(spec, spec.team.personas[0])
+        assert ctx["strictness"] == "strict"
+
+    def test_includes_shared_keys(self):
+        spec = _make_spec()
+        ctx = _build_persona_context(spec, spec.team.personas[0])
+        assert ctx["project_name"] == "Test Project"
+        assert "python" in ctx["expertise"]
+
+
+class TestCompilePersonaRendering:
+    """Persona source files must be fully rendered — no unresolved placeholders
+    in the compiled ai/generated/members/<persona>.md output.
+    """
+
+    def test_strictness_resolves_in_member_file(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {
+                "persona.md": (
+                    "# Developer\n\n"
+                    "Reviews for **{{ project_name }}** are calibrated at "
+                    "**{{ strictness }}** strictness."
+                ),
+            },
+        })
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer", strictness=Strictness.STRICT),
+            ]),
+        )
+        result = compile_project(spec, index, lib_root, output)
+        assert not any("Unresolved" in w for w in result.warnings), (
+            f"Unexpected unresolved-placeholder warning: {result.warnings}"
+        )
+
+        member = (output / "ai" / "generated" / "members" / "developer.md").read_text()
+        assert "{{" not in member and "}}" not in member
+        assert "strict" in member
+        assert "Test Project" in member
+
+    def test_strictness_varies_per_persona(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "Level=[{{ strictness }}]"},
+            "tech-qa": {"persona.md": "Level=[{{ strictness }}]"},
+        })
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer", strictness=Strictness.STANDARD),
+                PersonaSelection(id="tech-qa", strictness=Strictness.STRICT),
+            ]),
+        )
+        compile_project(spec, index, lib_root, output)
+
+        dev = (output / "ai" / "generated" / "members" / "developer.md").read_text()
+        qa = (output / "ai" / "generated" / "members" / "tech-qa.md").read_text()
+        assert "Level=[standard]" in dev
+        assert "Level=[strict]" in qa
 
 
 # ---------------------------------------------------------------------------

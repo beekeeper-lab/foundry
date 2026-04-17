@@ -314,6 +314,108 @@ class TestWriteAgents:
         assert result.warnings == []
 
 
+class TestAgentPlaceholderRendering:
+    """Persona source Jinja expressions must be resolved before they reach
+    the rendered agent file. Regression guard for BEAN-243.
+    """
+
+    def _make_persona_with_placeholders(self, tmp_path: Path) -> tuple[Path, LibraryIndex]:
+        lib_root = tmp_path / "library"
+        persona_dir = lib_root / "personas" / "developer"
+        persona_dir.mkdir(parents=True)
+        (persona_dir / "persona.md").write_text(
+            "# Persona: Developer\n\n"
+            "## Mission\n\n"
+            "Ship clean code for **{{ project_name }}** at "
+            "**{{ strictness }}** strictness using "
+            "**{{ expertise | join(\", \") }}**.\n\n"
+            "## Operating Principles\n\n"
+            "- **Match project.** Follow {{ project_name }} conventions.\n",
+            encoding="utf-8",
+        )
+        expertise_dir = lib_root / "stacks" / "python"
+        expertise_dir.mkdir(parents=True)
+        (expertise_dir / "conventions.md").write_text(
+            "# Python\n\n## Defaults\n\n- Use pytest for {{ project_name }}.\n",
+            encoding="utf-8",
+        )
+        index = LibraryIndex(
+            library_root=str(lib_root),
+            personas=[PersonaInfo(
+                id="developer",
+                name="Developer",
+                path=str(persona_dir),
+                templates=[],
+            )],
+            expertise=[ExpertiseInfo(
+                id="python",
+                name="Python",
+                path=str(expertise_dir),
+            )],
+        )
+        return lib_root, index
+
+    def test_no_unresolved_placeholders_in_output(self, tmp_path: Path):
+        lib_root, index = self._make_persona_with_placeholders(tmp_path)
+        spec = _make_spec()
+        output = tmp_path / "output"
+        output.mkdir()
+
+        result = write_agents(spec, index, lib_root, output)
+
+        content = (output / ".claude" / "agents" / "developer.md").read_text()
+        assert "{{" not in content, f"Unresolved Jinja in output:\n{content}"
+        assert "}}" not in content
+        assert "Test Project" in content
+        assert "standard" in content  # default strictness
+        assert "python" in content
+        # Placeholder-warning scan found nothing.
+        assert not any("Unresolved" in w for w in result.warnings), (
+            f"Unexpected warning: {result.warnings}"
+        )
+
+    def test_warning_emitted_for_unknown_placeholder(self, tmp_path: Path):
+        """If a persona uses an unknown variable, the agent writer still
+        writes the file but surfaces the leak via a warning."""
+        lib_root = tmp_path / "library"
+        persona_dir = lib_root / "personas" / "developer"
+        persona_dir.mkdir(parents=True)
+        (persona_dir / "persona.md").write_text(
+            "# Persona: Developer\n\n## Mission\n\nTarget: {{ unknown_var }}.\n",
+            encoding="utf-8",
+        )
+        expertise_dir = lib_root / "stacks" / "python"
+        expertise_dir.mkdir(parents=True)
+        (expertise_dir / "conventions.md").write_text(
+            "# Python\n\n## Defaults\n\n- ok\n",
+            encoding="utf-8",
+        )
+        index = LibraryIndex(
+            library_root=str(lib_root),
+            personas=[PersonaInfo(
+                id="developer",
+                name="Developer",
+                path=str(persona_dir),
+                templates=[],
+            )],
+            expertise=[ExpertiseInfo(
+                id="python",
+                name="Python",
+                path=str(expertise_dir),
+            )],
+        )
+        spec = _make_spec()
+        output = tmp_path / "output"
+        output.mkdir()
+
+        result = write_agents(spec, index, lib_root, output)
+
+        assert any(
+            "Unresolved placeholders" in w and "developer.md" in w and "unknown_var" in w
+            for w in result.warnings
+        ), f"Expected unresolved-placeholder warning; got: {result.warnings}"
+
+
 # ---------------------------------------------------------------------------
 # Team agent verification — real library, multiple personas
 # ---------------------------------------------------------------------------
