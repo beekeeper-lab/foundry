@@ -122,7 +122,7 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
    #!/bin/bash
    cd /tmp/agentic-worktree-BEAN-NNN
    claude --dangerously-skip-permissions --agent team-lead \
-     "Process BEAN-NNN-slug through the full team wave.
+     "Process BEAN-NNN-slug through the assigned team wave.
 
    You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.
    - Do NOT create or checkout branches.

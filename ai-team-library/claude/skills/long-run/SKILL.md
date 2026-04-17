@@ -2,7 +2,7 @@
 
 ## Description
 
-Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads the bean backlog, selects the best bean to work on, decomposes it into tasks, executes the full team wave, verifies acceptance criteria, commits the result, and loops to the next bean. Continues until no actionable beans remain or an unrecoverable error occurs.
+Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads the bean backlog, selects the best bean to work on, decomposes it into tasks, executes the assigned wave (Developer and Tech-QA are mandatory; other specialists are assigned only when the bean needs them), verifies acceptance criteria, commits the result, and loops to the next bean. Continues until no actionable beans remain or an unrecoverable error occurs.
 
 ## Trigger
 
@@ -162,7 +162,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    #!/bin/bash
    cd /tmp/agentic-worktree-BEAN-NNN
    claude --dangerously-skip-permissions --agent team-lead \
-     "Process BEAN-NNN-slug through the full team wave.
+     "Process BEAN-NNN-slug through the assigned team wave.
 
    You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.
    - Do NOT create or checkout branches.
