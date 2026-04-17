@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-262 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 18:44 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -67,7 +67,11 @@ writer verifies no conflict is active at emit time.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Design `conflicts_with` schema + ADR | architect | — | Pending |
+| 2 | Declare conflicts on az/aws pairs + detect in validator | developer | 1 | Pending |
+| 3 | Tests, lint, acceptance-criteria verification | tech-qa | 2 | Pending |
+
+> Skipped: BA (default — no user-facing behavior, no stakeholder trade-off)
 
 ## Changes
 
@@ -92,7 +96,9 @@ hook pack metadata — ADR-worthy.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Design `conflicts_with` schema + ADR | architect | — | — | — | — |
+| 2 | Declare conflicts on az/aws pairs + detect in validator | developer | — | — | — | — |
+| 3 | Tests, lint, acceptance-criteria verification | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
