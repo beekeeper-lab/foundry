@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-265 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-17 19:02 |
+| **Completed** | 2026-04-17 19:05 |
+| **Duration** | 1269h 58m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -54,26 +54,34 @@ skill instructing a phantom hand-off.
 
 ## Acceptance Criteria
 
-- [ ] `ai-team-library/claude/skills/long-run/SKILL.md` describes the
+- [x] `ai-team-library/claude/skills/long-run/SKILL.md` describes the
       Developer → Tech-QA default wave with BA/Architect opt-in.
-- [ ] Grep of `ai-team-library/claude/` finds no remaining references
+- [x] Grep of `ai-team-library/claude/` finds no remaining references
       to "BA → Architect → Developer → Tech-QA" as a mandatory sequence.
-- [ ] Regenerating `small-python-team.yml` yields a long-run skill file
+- [x] Regenerating `small-python-team.yml` yields a long-run skill file
       that matches the updated wording.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] All tests pass (`uv run pytest`) — 1886 passed.
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Update library wave-model references | developer | — | Done |
+| 2 | Verify library sync + regeneration + tests/lint | tech-qa | 1 | Done |
+
+> Skipped: BA (default — wave-model language already documented in Foundry; this is a straight library sync, no requirements ambiguity), Architect (default — no new subsystem, API change, or ADR needed; markdown-only sync).
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai-team-library/claude/skills/long-run/SKILL.md` | +4 / -3 |
+| `ai-team-library/claude/commands/long-run.md` | +2 / -2 |
+| `ai-team-library/claude/skills/new-work/SKILL.md` | +2 / -2 |
+| `ai-team-library/claude/commands/new-work.md` | +1 / -1 |
+| `ai/beans/BEAN-265-sync-library-long-run-wave-model/` | tasks + bean.md |
+| `ai/outputs/tech-qa/BEAN-265-verification.md` | new |
 
 ## Notes
 
@@ -94,12 +102,13 @@ established the new model; the library sync was missed.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Update library wave-model references | developer | 1m | 1,186,806 | 5,641 | $2.34 |
+| 2 | Verify library sync + regeneration + tests/lint | tech-qa | 1m | 1,376,836 | 5,879 | $2.72 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 2m |
+| **Total Tokens In** | 2,563,642 |
+| **Total Tokens Out** | 11,520 |
+| **Total Cost** | $5.06 |

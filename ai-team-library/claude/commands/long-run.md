@@ -36,7 +36,7 @@ Automates the manual loop of picking a bean, decomposing it into tasks, executin
 3. **Select best bean** — Apply selection heuristics (see Options below) to choose the single best bean to work on next.
 4. **Pick the bean** — Update status to `In Progress` in `bean.md`. Update `_index.md` on `main` to set status to `In Progress` and owner to `team-lead`.
 5. **Create feature branch** — Create and checkout `bean/BEAN-NNN-<slug>` from current HEAD. All work for this bean happens on this branch.
-6. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in the bean's `tasks/` directory. Assign owners and dependencies following the wave: BA → Architect → Developer → Tech-QA (skip roles not needed).
+6. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in the bean's `tasks/` directory. Default wave: **Developer → Tech-QA**. Include BA or Architect only when their activation criteria are met (see the Team Lead persona's Orchestration Rules). Tech-QA is mandatory for every bean; BA and Architect are opt-in — document any skip with an inline tag.
 7. **Execute the wave** — Process each task in dependency order:
    - Read the task file and all referenced inputs
    - Produce the required outputs in `ai/outputs/<persona>/`
@@ -132,7 +132,7 @@ When `--fast N` is specified, the Team Lead orchestrates N parallel workers inst
 
    1. Update bean.md status to In Progress
    2. Decompose into tasks
-   3. Execute the wave (BA → Architect → Developer → Tech-QA)
+   3. Execute the wave (Developer → Tech-QA default; include BA/Architect per activation criteria)
       — COMMIT AND PUSH after each task. Do not wait until the end.
    4. Verify acceptance criteria
    5. Update bean.md status to Done
