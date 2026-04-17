@@ -273,19 +273,19 @@
 | BEAN-249 | Audit Library Command/Skill Duplication | Infra | Medium | Approved | (unassigned) |
 | BEAN-250 | Rebalance Hook Posture Taxonomy | App | Medium | Approved | (unassigned) |
 | BEAN-251 | Clarify Agent Permission Scope in Generated Projects | App | Medium | Approved | (unassigned) |
-| BEAN-252 | Project Purpose Statement / Charter | App | High | Approved | (unassigned) |
+| BEAN-252 | Project Purpose Statement / Charter | App | High | In Progress | team-lead |
 | BEAN-253 | Decide App-Code Scaffolding Policy | Process | High | Approved | (unassigned) |
 | BEAN-254 | Bootstrap Bean for Seeded Tasks | App | High | Approved | (unassigned) |
-| BEAN-255 | Stack-Aware Hook Pack Selection | App | High | Approved | (unassigned) |
-| BEAN-256 | Dev-Loop Commands + Stack-Aware Command Selection | App | High | Approved | (unassigned) |
+| BEAN-255 | Stack-Aware Hook Pack Selection | App | High | In Progress | team-lead |
+| BEAN-256 | Dev-Loop Commands + Stack-Aware Command Selection | App | High | In Progress | team-lead |
 | BEAN-257 | Activation Rules for Remaining Personas | Process | Medium | Approved | (unassigned) |
 | BEAN-258 | Code-Quality-Reviewer vs Tech-QA Scope Split | Process | Low | Approved | (unassigned) |
 | BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | Approved | (unassigned) |
 | BEAN-260 | Approval Gate — Command + Criteria | Process | Medium | Approved | (unassigned) |
-| BEAN-261 | Propagate Missing-Expertise Drop to Agent Headers and Member Files | App | High | Approved | (unassigned) |
+| BEAN-261 | Propagate Missing-Expertise Drop to Agent Headers and Member Files | App | High | In Progress | team-lead |
 | BEAN-262 | Detect Mutually-Exclusive Hook Pack Pairs at Generation Time | App | Medium | Approved | (unassigned) |
 | BEAN-263 | Enforce Pack-Declared Posture Compatibility at Generation Time | App | Medium | Approved | (unassigned) |
-| BEAN-264 | Validate MCP Package References in Generated mcp.json | App | High | Approved | (unassigned) |
+| BEAN-264 | Validate MCP Package References in Generated mcp.json | App | High | In Progress | team-lead |
 | BEAN-265 | Sync Library long-run Skill With New Wave Model | Process | High | Approved | (unassigned) |
 | BEAN-266 | Fix CLAUDE.md Title-Casing for Acronyms and Slashed Names | App | Low | Approved | (unassigned) |
 | BEAN-267 | Investigate Reported Agent File Truncation in Multi-Expertise Compositions | App | Medium | Approved | (unassigned) |
