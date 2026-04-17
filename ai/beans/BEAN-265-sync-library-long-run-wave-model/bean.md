@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-265 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 19:02 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -67,7 +67,10 @@ skill instructing a phantom hand-off.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Update library wave-model references | developer | — | Pending |
+| 2 | Verify library sync + regeneration + tests/lint | tech-qa | 1 | Pending |
+
+> Skipped: BA (default — wave-model language already documented in Foundry; this is a straight library sync, no requirements ambiguity), Architect (default — no new subsystem, API change, or ADR needed; markdown-only sync).
 
 ## Changes
 
@@ -94,7 +97,8 @@ established the new model; the library sync was missed.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Update library wave-model references | developer | — | — | — | — |
+| 2 | Verify library sync + regeneration + tests/lint | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
