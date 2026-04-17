@@ -202,6 +202,8 @@ def _run_pipeline(
     # Stage 6: Seed tasks (only if enabled)
     if spec.generation.seed_tasks:
         _run_stage("seed_tasks", seed_tasks, spec, output_dir)
+    elif stage_callback:
+        stage_callback("seed_tasks", "skipped", 0)
 
     # Stage 7: Write safety config
     _run_stage("safety", write_safety, spec, output_dir)
@@ -210,6 +212,8 @@ def _run_pipeline(
     if spec.generation.write_diff_report:
         plan = overlay_plan if overlay_plan is not None else OverlayPlan()
         _run_stage("diff_report", write_diff_report, plan, output_dir)
+    elif stage_callback:
+        stage_callback("diff_report", "skipped", 0)
 
     return stages
 

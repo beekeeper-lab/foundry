@@ -448,11 +448,19 @@ class MainWindow(QMainWindow):
             self._progress_screen.mark_stage_running(stage_key)
         elif status == "done":
             self._progress_screen.mark_stage_done(stage_key, file_count)
+        elif status == "skipped":
+            self._progress_screen.mark_stage_skipped(stage_key)
 
-    def _on_generation_ok(self, total_files: int, warnings: int, output_path: str) -> None:
+    def _on_generation_ok(
+        self, total_files: int, warnings: list, output_path: str,
+    ) -> None:
         """Handle successful generation."""
         self._progress_screen.set_output_path(output_path)
-        self._progress_screen.finish(total_files=total_files, warnings=warnings)
+        self._progress_screen.finish(
+            total_files=total_files,
+            warnings=len(warnings),
+            warnings_list=warnings,
+        )
         logger.info("Generation complete: %d files at %s", total_files, output_path)
 
     def _on_generation_err(self, message: str) -> None:

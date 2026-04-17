@@ -1331,9 +1331,38 @@ class TestStageCallback:
         )
 
         actual_keys = {key for key, _, _ in calls}
-        assert actual_keys == self.DEFAULT_STAGES, (
-            f"Expected stages {self.DEFAULT_STAGES}, got {actual_keys}"
+        # Disabled stages fire a single "skipped" callback — so keys include
+        # both the always-run defaults and the opt-in stages.
+        expected = self.DEFAULT_STAGES | {"seed_tasks", "diff_report"}
+        assert actual_keys == expected, (
+            f"Expected stages {expected}, got {actual_keys}"
         )
+
+    def test_disabled_conditional_stages_emit_skipped(self, tmp_path: Path):
+        """Disabled seed_tasks/diff_report must emit exactly one skipped
+        callback each so the UI can differentiate skipped-by-design from
+        stuck-at-pending.
+        """
+        lib_root = _make_library_dir(tmp_path)
+        output_dir = tmp_path / "output" / "test-project"
+        spec = _make_spec(generation=GenerationOptions(
+            seed_tasks=False, write_diff_report=False,
+        ))
+        calls: list[tuple[str, str, int]] = []
+
+        generate_project(
+            spec, lib_root, output_root=output_dir,
+            stage_callback=lambda key, status, count: calls.append((key, status, count)),
+        )
+
+        skipped = [(k, s, c) for (k, s, c) in calls if s == "skipped"]
+        assert ("seed_tasks", "skipped", 0) in skipped
+        assert ("diff_report", "skipped", 0) in skipped
+        # No done/running calls for the disabled stages.
+        for key in ("seed_tasks", "diff_report"):
+            assert not any(k == key and s != "skipped" for (k, s, _) in calls), (
+                f"Disabled stage {key!r} should not emit non-skipped callbacks; got {calls}"
+            )
 
     def test_optional_seed_tasks_stage_fires_when_enabled(self, tmp_path: Path):
         lib_root = _make_library_dir(tmp_path)
