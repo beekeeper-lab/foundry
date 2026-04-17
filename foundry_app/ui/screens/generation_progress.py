@@ -423,9 +423,19 @@ class GenerationProgressScreen(QWidget):
         if widget:
             widget.set_skipped()
         self._update_progress()
+        self.append_log(f"Stage: {stage_key} \u2014 skipped")
 
-    def finish(self, total_files: int = 0, warnings: int = 0) -> None:
-        """Mark generation as complete and show summary."""
+    def finish(
+        self,
+        total_files: int = 0,
+        warnings: int = 0,
+        warnings_list: list[str] | None = None,
+    ) -> None:
+        """Mark generation as complete and show summary.
+
+        ``warnings_list`` carries the full warning messages so the user can
+        read them in the log area — previously only the count was surfaced.
+        """
         elapsed = self._elapsed()
         summary_parts = [f"Generation complete in {elapsed:.1f}s"]
         summary_parts.append(f"{total_files} files written")
@@ -440,6 +450,8 @@ class GenerationProgressScreen(QWidget):
         self._back_btn.setVisible(True)
         self._progress_bar.setValue(self._progress_bar.maximum())
         self._spinner.stop()
+        for warning in warnings_list or ():
+            self.append_log(f"\u26a0 {warning}")
         self.append_log(
             f"Finished: {total_files} files, {warnings} warnings, {elapsed:.1f}s"
         )

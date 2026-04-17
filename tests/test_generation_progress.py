@@ -138,6 +138,37 @@ class TestLifecycle:
         screen.append_log("custom message")
         assert "custom message" in screen.log_widget.toPlainText()
 
+    def test_finish_appends_warnings_to_log(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish(
+            total_files=3,
+            warnings=2,
+            warnings_list=[
+                "Expertise 'clean-code' missing conventions.md",
+                "Unresolved placeholders in foo.md: strictness",
+            ],
+        )
+        log_text = screen.log_widget.toPlainText()
+        assert "Expertise 'clean-code'" in log_text
+        assert "Unresolved placeholders" in log_text
+        assert log_text.count("\u26a0") == 2
+
+    def test_finish_without_warnings_list_is_backward_compatible(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish(total_files=3, warnings=0)
+        # No warning-prefixed lines appear.
+        assert "\u26a0" not in screen.log_widget.toPlainText()
+
+    def test_mark_stage_skipped_logs(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.mark_stage_skipped("diff_report")
+        log_text = screen.log_widget.toPlainText()
+        assert "diff_report" in log_text
+        assert "skipped" in log_text
+
     def test_multiple_stages_done(self):
         screen = GenerationProgressScreen()
         screen.start()
