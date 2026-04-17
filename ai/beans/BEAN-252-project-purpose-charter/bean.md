@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-252 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 18:16 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | worker-bean-252 |
 | **Category** | App |
 
 ## Problem Statement
@@ -57,7 +57,12 @@ Both are valid. The bean picks one after design.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Record decision (charter-file approach) + draft template structure | Architect | — | Pending |
+| 2 | Define charter section content guidance | BA | 1 | Pending |
+| 3 | Implement scaffold_project charter generation | Developer | 1, 2 | Pending |
+| 4 | Tests + verification | Tech-QA | 3 | Pending |
+
+> Bottleneck check: tasks are sequential; charter content (BA) blocks dev implementation. No shared-resource contention.
 
 ## Changes
 
@@ -81,7 +86,10 @@ Both are valid. The bean picks one after design.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Record decision (charter-file approach) + draft template structure | Architect | < 1m | N/A (suspect) | N/A (suspect) | — |
+| 2 | Define charter section content guidance | BA | — | — | — | — |
+| 3 | Implement scaffold_project charter generation | Developer | — | — | — | — |
+| 4 | Tests + verification | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
