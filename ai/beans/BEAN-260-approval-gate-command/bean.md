@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-260 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 19:02 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -53,9 +53,13 @@ Transitioning a bean from `Unapproved` → `Approved` is a deliberate, documente
 
 ## Tasks
 
+> Skipped: BA (default), Architect (default)
+> Bottleneck check: no contention — sequential Developer → Tech-QA is appropriate for this bean's shared-resource writes (single skill + command + doc).
+
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Implement approve-bean validator, skill, command, and workflow docs | developer | — | Pending |
+| 2 | Verify approval gate implementation meets acceptance criteria | tech-qa | 1 | Pending |
 
 ## Changes
 
@@ -79,7 +83,8 @@ Transitioning a bean from `Unapproved` → `Approved` is a deliberate, documente
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Implement approve-bean validator, skill, command, and workflow docs | developer | — | — | — | — |
+| 2 | Verify approval gate implementation meets acceptance criteria | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
