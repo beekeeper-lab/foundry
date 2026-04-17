@@ -1399,6 +1399,53 @@ class TestLeanClaudeMd:
         assert "bench of specialists" in text
         assert "Always assign Developer and Tech-QA" in text
 
+    def test_claude_md_has_scope_section(self, tmp_path: Path):
+        """BEAN-251 + BEAN-253: the generated CLAUDE.md must state the
+        planning-only scope — agents work under ai/, humans own the
+        application code. The section must name ai/ explicitly and
+        point users at docs/starter-stacks.md for initialization."""
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "## Scope" in content
+        assert "ai/" in content
+        assert "Edit(ai/**)" in content
+        assert "docs/starter-stacks.md" in content
+
+    def test_claude_md_scope_precedes_orchestration(self, tmp_path: Path):
+        """The Scope section answers 'what does this framework produce?'
+        and must appear before 'how do the agents coordinate?' — i.e.
+        before the Team Orchestration Model heading."""
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        scope_idx = content.index("## Scope")
+        orch_idx = content.index("## Team Orchestration Model")
+        assert scope_idx < orch_idx
+
+    def test_claude_md_scope_emitted_without_personas(
+        self, tmp_path: Path,
+    ):
+        """The Scope section is policy, not roster — it is emitted even
+        when no personas are selected."""
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path, expertise={"python": {"conventions.md": "# Py"}},
+        )
+        spec = _make_spec(team=TeamConfig(personas=[]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "## Scope" in content
+        assert "docs/starter-stacks.md" in content
+
 
 # ---------------------------------------------------------------------------
 # compile_project — full integration
