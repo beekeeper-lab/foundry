@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-254 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 18:45 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | worker-bean-254 |
 | **Category** | App |
 
 ## Problem Statement
@@ -48,9 +48,13 @@ Seeded work enters the project through the bean workflow, not around it. A fresh
 
 ## Tasks
 
+> Skipped: BA (default — goal is clear from audit).
+
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Decide seeder-to-bean task location (ADR) | architect | — | Done |
+| 2 | Rewrite seeder to emit starter bean + tasks | developer | 1 | Pending |
+| 3 | Update/add seeder and generator tests | tech-qa | 2 | Pending |
 
 ## Changes
 
@@ -74,7 +78,9 @@ Seeded work enters the project through the bean workflow, not around it. A fresh
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Decide seeder-to-bean task location (ADR) | architect | — | — | — | — |
+| 2 | Rewrite seeder to emit starter bean + tasks | developer | — | — | — | — |
+| 3 | Update/add seeder and generator tests | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
