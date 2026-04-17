@@ -48,7 +48,7 @@ This bean fixes the *content* side: supply real `clean-code` conventions so the 
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Author `ai-team-library/expertise/clean-code/conventions.md` following the standardized expertise template | Developer | — | Pending |
+| 1 | Author `ai-team-library/expertise/clean-code/conventions.md` following the standardized expertise template | Developer | — | Done |
 | 2 | Verify acceptance: regenerate `small-python-team`, confirm no `clean-code` warnings, confirm `clean-code.md` on disk + referenced from generated `CLAUDE.md`, run `uv run pytest` and `uv run ruff check foundry_app/` | Tech-QA | 1 | Pending |
 
 > Skipped: BA (default — requirements unambiguous, content-only change), Architect (default — no subsystem, module, or dependency changes).
@@ -79,7 +79,7 @@ This bean fixes the *content* side: supply real `clean-code` conventions so the 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 | Author `ai-team-library/expertise/clean-code/conventions.md` following the standardized expertise template | Developer | — | — | — | — |
+| 1 | Author `ai-team-library/expertise/clean-code/conventions.md` following the standardized expertise template | Developer | < 1m | N/A (suspect) | N/A (suspect) | — |
 | 2 | Verify acceptance: regenerate `small-python-team`, confirm no `clean-code` warnings, confirm `clean-code.md` on disk + referenced from generated `CLAUDE.md`, run `uv run pytest` and `uv run ruff check foundry_app/` | Tech-QA | — | — | — | — |
 
 | Metric | Value |
