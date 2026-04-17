@@ -281,7 +281,7 @@
 | BEAN-257 | Activation Rules for Remaining Personas | Process | Medium | Approved | (unassigned) |
 | BEAN-258 | Code-Quality-Reviewer vs Tech-QA Scope Split | Process | Low | Approved | (unassigned) |
 | BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | Approved | (unassigned) |
-| BEAN-260 | Approval Gate — Command + Criteria | Process | Medium | In Progress | team-lead |
+| BEAN-260 | Approval Gate — Command + Criteria | Process | Medium | Done | team-lead |
 | BEAN-261 | Propagate Missing-Expertise Drop to Agent Headers and Member Files | App | High | Done | team-lead |
 | BEAN-262 | Detect Mutually-Exclusive Hook Pack Pairs at Generation Time | App | Medium | Done | team-lead |
 | BEAN-263 | Enforce Pack-Declared Posture Compatibility at Generation Time | App | Medium | Approved | (unassigned) |
