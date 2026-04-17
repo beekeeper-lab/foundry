@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-256 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
+| **Started** | 2026-04-17 18:16 |
+| **Completed** | 2026-04-17 19:15 |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team |
 | **Category** | App |
 
 ## Problem Statement
@@ -54,15 +54,24 @@ The generated `.claude/commands/` set contains the ergonomic dev-loop commands a
 
 ## Tasks
 
+> Skipped: BA (default — clear acceptance criteria), Architect (default — change is contained to one module; design alternative noted in bean Notes).
+
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add dev-loop command files to library (python + node/react/ts variants) | Developer | — | Done |
+| 2 | Implement command/skill selection rules in `asset_copier.py` | Developer | 1 | Done |
+| 3 | Document selection rules in `ai/context/command-selection.md` | Developer | 2 | Done |
+| 4 | Add tests for dev-loop selection and governance gating; run full suite + ruff | Tech-QA | 2,3 | Done |
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai-team-library/claude/commands/dev-loop/python/{test,build,lint,format,dev}.md` | +149 (new) |
+| `ai-team-library/claude/commands/dev-loop/node/{test,build,lint,format,dev}.md` | +146 (new) |
+| `foundry_app/services/asset_copier.py` | +204/-10 |
+| `ai/context/command-selection.md` | +63 (new) |
+| `tests/test_asset_copier.py` | +234/-0 |
 
 ## Notes
 
@@ -84,12 +93,15 @@ The generated `.claude/commands/` set contains the ergonomic dev-loop commands a
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add dev-loop command files to library (python + node/react/ts variants) | Developer | — | — | — | — |
+| 2 | Implement command/skill selection rules in `asset_copier.py` | Developer | — | — | — | — |
+| 3 | Document selection rules in `ai/context/command-selection.md` | Developer | — | — | — | — |
+| 4 | Add tests for dev-loop selection and governance gating; run full suite + ruff | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 4 |
+| **Total Duration** | 1269h 50m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
