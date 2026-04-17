@@ -1098,9 +1098,12 @@ class TestEndToEnd:
 
     def test_seed_tasks_created(self, generated_project):
         output_dir, _, _ = generated_project
-        # small-python-team.yml has seed_tasks: true
-        tasks_dir = output_dir / "ai" / "tasks"
-        assert tasks_dir.is_dir()
+        # small-python-team.yml has seed_tasks: true — the Seeder now emits a
+        # starter bean (BEAN-254 / ADR-004) rather than ai/tasks/_index.md.
+        bean_dir = output_dir / "ai" / "beans" / "BEAN-001-bootstrap"
+        assert (bean_dir / "bean.md").is_file()
+        assert any((bean_dir / "tasks").glob("*.md"))
+        assert (output_dir / "ai" / "beans" / "_index.md").is_file()
 
     # -- Deep content checks ------------------------------------------------
 

@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-254 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
 | **Started** | 2026-04-17 18:45 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-17 18:51 |
+| **Duration** | ~6m |
 | **Owner** | worker-bean-254 |
 | **Category** | App |
 
@@ -38,13 +38,13 @@ Seeded work enters the project through the bean workflow, not around it. A fresh
 
 ## Acceptance Criteria
 
-- [ ] When `spec.generation.seed_tasks` is true, the generator emits `ai/beans/BEAN-001-bootstrap/bean.md` with status `Approved` and its `tasks/` directory populated with the same set of tasks the Seeder produces today.
-- [ ] `ai/tasks/` is either empty (no orphan tasks) or removed entirely — the audit's complaint is resolved.
-- [ ] `ai/beans/_index.md` lists BEAN-001.
-- [ ] The starter bean's `Problem Statement` references `ai/context/project-charter.md` (BEAN-252) if that bean is Done, or falls back to a generic "bootstrap" placeholder.
-- [ ] Existing seeder tests updated; new test asserts the starter bean exists and contains the expected task files.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] When `spec.generation.seed_tasks` is true, the generator emits `ai/beans/BEAN-001-bootstrap/bean.md` with status `Approved` and its `tasks/` directory populated with the same set of tasks the Seeder produces today.
+- [x] `ai/tasks/` is either empty (no orphan tasks) or removed entirely — the audit's complaint is resolved.
+- [x] `ai/beans/_index.md` lists BEAN-001.
+- [x] The starter bean's `Problem Statement` references `ai/context/project-charter.md` (BEAN-252) if that bean is Done, or falls back to a generic "bootstrap" placeholder.
+- [x] Existing seeder tests updated; new test asserts the starter bean exists and contains the expected task files.
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
@@ -54,13 +54,18 @@ Seeded work enters the project through the bean workflow, not around it. A fresh
 |---|------|-------|------------|--------|
 | 1 | Decide seeder-to-bean task location (ADR) | architect | — | Done |
 | 2 | Rewrite seeder to emit starter bean + tasks | developer | 1 | Done |
-| 3 | Update/add seeder and generator tests | tech-qa | 2 | Pending |
+| 3 | Update/add seeder and generator tests | tech-qa | 2 | Done |
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/services/seeder.py` | full rewrite: emit BEAN-001-bootstrap bean + tasks + backlog index |
+| `tests/test_seeder.py` | full rewrite: 40 tests against new starter-bean output shape |
+| `tests/test_generator.py` | `test_seed_tasks_created` now asserts starter-bean shape |
+| `ai/context/decisions.md` | +ADR-004 |
+| `ai/outputs/architect/BEAN-254-seeder-decision.md` | new |
+| `ai/outputs/tech-qa/BEAN-254-verification.md` | new |
 
 ## Notes
 
@@ -84,8 +89,8 @@ Seeded work enters the project through the bean workflow, not around it. A fresh
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 1269h 43m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

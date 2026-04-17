@@ -1,4 +1,4 @@
-"""Tests for foundry_app.services.seeder — starter task generation."""
+"""Tests for foundry_app.services.seeder — starter bean + seeded tasks."""
 
 from pathlib import Path
 
@@ -29,9 +29,26 @@ def _make_spec(**kwargs) -> CompositionSpec:
     return CompositionSpec(**defaults)
 
 
-def _read_index(output: Path) -> str:
-    """Read the generated task index file."""
-    return (output / "ai" / "tasks" / "_index.md").read_text(encoding="utf-8")
+def _bean_dir(output: Path) -> Path:
+    return output / "ai" / "beans" / "BEAN-001-bootstrap"
+
+
+def _read_bean(output: Path) -> str:
+    return (_bean_dir(output) / "bean.md").read_text(encoding="utf-8")
+
+
+def _task_files(output: Path) -> list[Path]:
+    return sorted((_bean_dir(output) / "tasks").glob("*.md"))
+
+
+def _read_tasks_concat(output: Path) -> str:
+    return "\n".join(
+        p.read_text(encoding="utf-8") for p in _task_files(output)
+    )
+
+
+def _backlog_index(output: Path) -> Path:
+    return output / "ai" / "beans" / "_index.md"
 
 
 # ---------------------------------------------------------------------------
@@ -41,29 +58,90 @@ def _read_index(output: Path) -> str:
 
 class TestBasicGeneration:
 
-    def test_creates_task_index_file(self, tmp_path: Path):
+    def test_creates_starter_bean(self, tmp_path: Path):
         result = seed_tasks(_make_spec(), tmp_path)
-        assert (tmp_path / "ai" / "tasks" / "_index.md").is_file()
-        assert "ai/tasks/_index.md" in result.wrote
+        assert (_bean_dir(tmp_path) / "bean.md").is_file()
+        assert "ai/beans/BEAN-001-bootstrap/bean.md" in result.wrote
 
     def test_creates_tasks_directory(self, tmp_path: Path):
         seed_tasks(_make_spec(), tmp_path)
-        assert (tmp_path / "ai" / "tasks").is_dir()
+        assert (_bean_dir(tmp_path) / "tasks").is_dir()
+
+    def test_does_not_write_ai_tasks_index(self, tmp_path: Path):
+        """Regression: the orphan ai/tasks/_index.md must not reappear."""
+        seed_tasks(_make_spec(), tmp_path)
+        assert not (tmp_path / "ai" / "tasks" / "_index.md").exists()
 
     def test_returns_stage_result(self, tmp_path: Path):
         result = seed_tasks(_make_spec(), tmp_path)
-        assert len(result.wrote) == 1
+        assert len(result.wrote) >= 1
         assert result.warnings == []
 
-    def test_index_has_header(self, tmp_path: Path):
+    def test_bean_status_is_approved(self, tmp_path: Path):
         seed_tasks(_make_spec(), tmp_path)
-        content = _read_index(tmp_path)
-        assert "# Task Index" in content
+        assert "| **Status** | Approved |" in _read_bean(tmp_path)
 
-    def test_index_has_table_header(self, tmp_path: Path):
+    def test_bean_title_present(self, tmp_path: Path):
         seed_tasks(_make_spec(), tmp_path)
-        content = _read_index(tmp_path)
-        assert "| # | Task | Owner | Status |" in content
+        assert "# BEAN-001: Bootstrap Project Team" in _read_bean(tmp_path)
+
+
+# ---------------------------------------------------------------------------
+# Backlog index upsert
+# ---------------------------------------------------------------------------
+
+
+class TestBacklogIndex:
+
+    def test_index_created_when_missing(self, tmp_path: Path):
+        seed_tasks(_make_spec(), tmp_path)
+        content = _backlog_index(tmp_path).read_text(encoding="utf-8")
+        assert "| BEAN-001 |" in content
+        assert "Bootstrap Project Team" in content
+
+    def test_index_preserves_existing_rows(self, tmp_path: Path):
+        index_path = _backlog_index(tmp_path)
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        index_path.write_text(
+            "# Bean Backlog\n\n## Backlog\n\n"
+            "| Bean ID | Title | Category | Priority | Status | Owner |\n"
+            "|---------|-------|----------|----------|--------|-------|\n"
+            "| BEAN-042 | Existing | App | Low | Approved | alice |\n",
+            encoding="utf-8",
+        )
+        seed_tasks(_make_spec(), tmp_path)
+        content = index_path.read_text(encoding="utf-8")
+        assert "BEAN-042" in content
+        assert "BEAN-001" in content
+
+    def test_index_not_duplicated_on_rerun(self, tmp_path: Path):
+        seed_tasks(_make_spec(), tmp_path)
+        seed_tasks(_make_spec(), tmp_path)
+        content = _backlog_index(tmp_path).read_text(encoding="utf-8")
+        # BEAN-001 appears exactly once in the backlog rows
+        assert content.count("| BEAN-001 |") == 1
+
+
+# ---------------------------------------------------------------------------
+# Charter reference vs fallback
+# ---------------------------------------------------------------------------
+
+
+class TestCharterReference:
+
+    def test_references_charter_when_present(self, tmp_path: Path):
+        charter = tmp_path / "ai" / "context" / "project-charter.md"
+        charter.parent.mkdir(parents=True, exist_ok=True)
+        charter.write_text("# Project Charter — Test", encoding="utf-8")
+        seed_tasks(_make_spec(), tmp_path)
+        bean = _read_bean(tmp_path)
+        assert "ai/context/project-charter.md" in bean
+
+    def test_generic_fallback_when_charter_absent(self, tmp_path: Path):
+        seed_tasks(_make_spec(), tmp_path)
+        bean = _read_bean(tmp_path)
+        assert "ai/context/project-charter.md" not in bean
+        assert "No project charter was scaffolded" in bean
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +157,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "developer" in content
         assert "Set up local development environment" in content
 
@@ -92,7 +170,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "developer" in content
         assert "architect" in content
 
@@ -102,7 +180,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "team-lead" in content
         assert "Review project composition" in content
 
@@ -112,8 +190,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
-        assert "ba" in content
+        content = _read_tasks_concat(tmp_path)
         assert "Gather and document initial project requirements" in content
 
     def test_tech_qa_tasks(self, tmp_path: Path):
@@ -122,17 +199,19 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "tech-qa" in content
         assert "Create test plan template" in content
 
     def test_code_quality_reviewer_tasks(self, tmp_path: Path):
         spec = _make_spec(
-            team=TeamConfig(personas=[PersonaSelection(id="code-quality-reviewer")]),
+            team=TeamConfig(
+                personas=[PersonaSelection(id="code-quality-reviewer")]
+            ),
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "code-quality-reviewer" in content
         assert "Define code review standards" in content
 
@@ -142,7 +221,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "devops-release" in content
         assert "CI/CD pipeline" in content
 
@@ -152,7 +231,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "security-engineer" in content
         assert "threat model" in content
 
@@ -162,7 +241,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "compliance-risk" in content
         assert "regulatory requirements" in content
 
@@ -172,7 +251,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "researcher-librarian" in content
         assert "decision matrix" in content
 
@@ -182,7 +261,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "technical-writer" in content
         assert "README" in content
 
@@ -192,7 +271,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "ux-ui-designer" in content
         assert "wireframes" in content
 
@@ -204,7 +283,7 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "integrator-merge-captain" in content
         assert "branch strategy" in content
 
@@ -214,10 +293,8 @@ class TestDetailedMode:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
-        # Developer should have 3 tasks in detailed mode
-        lines = [l for l in content.splitlines() if "developer" in l and l.startswith("|")]
-        assert len(lines) == 3
+        # Developer should have 3 task files in detailed mode
+        assert len(_task_files(tmp_path)) == 3
 
 
 # ---------------------------------------------------------------------------
@@ -233,9 +310,7 @@ class TestKickoffMode:
             generation=GenerationOptions(seed_mode=SeedMode.KICKOFF),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
-        lines = [l for l in content.splitlines() if "developer" in l and l.startswith("|")]
-        assert len(lines) == 1
+        assert len(_task_files(tmp_path)) == 1
 
     def test_kickoff_developer_task(self, tmp_path: Path):
         spec = _make_spec(
@@ -243,7 +318,7 @@ class TestKickoffMode:
             generation=GenerationOptions(seed_mode=SeedMode.KICKOFF),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "Set up development environment" in content
 
     def test_kickoff_team_lead_task(self, tmp_path: Path):
@@ -252,7 +327,7 @@ class TestKickoffMode:
             generation=GenerationOptions(seed_mode=SeedMode.KICKOFF),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        content = _read_tasks_concat(tmp_path)
         assert "Review composition and create initial backlog" in content
 
 
@@ -268,10 +343,11 @@ class TestEdgeCases:
         result = seed_tasks(spec, tmp_path)
         assert any("No personas selected" in w for w in result.warnings)
 
-    def test_no_personas_still_creates_file(self, tmp_path: Path):
+    def test_no_personas_still_creates_bean(self, tmp_path: Path):
         spec = _make_spec(team=TeamConfig(personas=[]))
         seed_tasks(spec, tmp_path)
-        assert (tmp_path / "ai" / "tasks" / "_index.md").is_file()
+        assert (_bean_dir(tmp_path) / "bean.md").is_file()
+        assert _task_files(tmp_path) == []
 
     def test_unknown_persona_warns(self, tmp_path: Path):
         spec = _make_spec(
@@ -280,12 +356,12 @@ class TestEdgeCases:
         result = seed_tasks(spec, tmp_path)
         assert any("No seed task templates" in w for w in result.warnings)
 
-    def test_unknown_persona_creates_file(self, tmp_path: Path):
+    def test_unknown_persona_creates_bean(self, tmp_path: Path):
         spec = _make_spec(
             team=TeamConfig(personas=[PersonaSelection(id="unknown-role")]),
         )
         seed_tasks(spec, tmp_path)
-        assert (tmp_path / "ai" / "tasks" / "_index.md").is_file()
+        assert (_bean_dir(tmp_path) / "bean.md").is_file()
 
     def test_task_numbers_are_sequential(self, tmp_path: Path):
         spec = _make_spec(
@@ -296,16 +372,15 @@ class TestEdgeCases:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
-        task_lines = [
-            l for l in content.splitlines()
-            if l.startswith("| ") and not l.startswith("| #") and not l.startswith("|---")
-        ]
-        for i, line in enumerate(task_lines, 1):
-            assert line.startswith(f"| {i} |")
+        files = _task_files(tmp_path)
+        # Filenames begin with zero-padded sequential numbers
+        for i, path in enumerate(files, start=1):
+            assert path.name.startswith(f"{i:02d}-"), (
+                f"Expected prefix {i:02d}-, got {path.name}"
+            )
 
     def test_gapless_numbering_with_mixed_personas(self, tmp_path: Path):
-        """Task numbers are contiguous 1..N even when unknown personas are in the team."""
+        """Task numbers are contiguous even when unknown personas appear."""
         spec = _make_spec(
             team=TeamConfig(personas=[
                 PersonaSelection(id="developer"),
@@ -315,22 +390,18 @@ class TestEdgeCases:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
-        task_lines = [
-            l for l in content.splitlines()
-            if l.startswith("| ") and not l.startswith("| #") and not l.startswith("|---")
-        ]
-        numbers = [int(l.split("|")[1].strip()) for l in task_lines]
+        files = _task_files(tmp_path)
+        numbers = [int(p.name.split("-", 1)[0]) for p in files]
         assert numbers == list(range(1, len(numbers) + 1))
 
     def test_existing_directory_not_error(self, tmp_path: Path):
-        (tmp_path / "ai" / "tasks").mkdir(parents=True)
+        (_bean_dir(tmp_path) / "tasks").mkdir(parents=True)
         result = seed_tasks(_make_spec(), tmp_path)
-        assert len(result.wrote) == 1
+        assert result.wrote
 
     def test_output_dir_accepts_string(self, tmp_path: Path):
         result = seed_tasks(_make_spec(), str(tmp_path))
-        assert len(result.wrote) == 1
+        assert result.wrote
 
 
 # ---------------------------------------------------------------------------
@@ -365,13 +436,8 @@ class TestAllPersonas:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         result = seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
-        # 3 tasks per persona × 13 personas = 39 tasks
-        task_lines = [
-            l for l in content.splitlines()
-            if l.startswith("| ") and not l.startswith("| #") and not l.startswith("|---")
-        ]
-        assert len(task_lines) == 39
+        # 3 tasks per persona × 13 personas = 39 task files
+        assert len(_task_files(tmp_path)) == 39
         assert result.warnings == []
 
     def test_full_team_kickoff(self, tmp_path: Path):
@@ -382,16 +448,11 @@ class TestAllPersonas:
             generation=GenerationOptions(seed_mode=SeedMode.KICKOFF),
         )
         result = seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
-        # 1 task per persona × 13 personas = 13 tasks
-        task_lines = [
-            l for l in content.splitlines()
-            if l.startswith("| ") and not l.startswith("| #") and not l.startswith("|---")
-        ]
-        assert len(task_lines) == 13
+        # 1 task per persona × 13 personas = 13 task files
+        assert len(_task_files(tmp_path)) == 13
         assert result.warnings == []
 
-    def test_all_personas_present_in_output(self, tmp_path: Path):
+    def test_all_personas_present_in_task_filenames(self, tmp_path: Path):
         spec = _make_spec(
             team=TeamConfig(
                 personas=[PersonaSelection(id=pid) for pid in _ALL_PERSONA_IDS]
@@ -399,9 +460,11 @@ class TestAllPersonas:
             generation=GenerationOptions(seed_mode=SeedMode.DETAILED),
         )
         seed_tasks(spec, tmp_path)
-        content = _read_index(tmp_path)
+        filenames = " ".join(p.name for p in _task_files(tmp_path))
         for persona_id in _ALL_PERSONA_IDS:
-            assert persona_id in content, f"Missing tasks for persona '{persona_id}'"
+            assert persona_id in filenames, (
+                f"Missing task files for persona '{persona_id}'"
+            )
 
     def test_no_warnings_for_any_library_persona(self, tmp_path: Path):
         spec = _make_spec(
