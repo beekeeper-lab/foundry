@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-255 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
 | **Started** | 2026-04-17 18:16 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-17 18:21 |
+| **Duration** | 1269h 14m |
 | **Owner** | Claude Code (worker) |
 | **Category** | App |
 
@@ -40,24 +40,24 @@ Hook pack selection responds to the selected expertise, personas, and cloud prov
 
 ## Acceptance Criteria
 
-- [ ] A documented mapping in `ai/context/hook-selection.md` (or in the library README) defines which hooks default-on for which expertise / cloud selections.
-- [ ] `safety_writer.py` (or equivalent) consults that mapping when building the default hook set.
-- [ ] Regenerating `examples/small-python-team.yml` yields Python-appropriate hooks and no Azure hooks.
-- [ ] Regenerating a React/TS composition yields ESLint/Prettier/tsc hooks and no ruff hook.
-- [ ] If a new ESLint/Prettier hook pack is needed in the library, it is added.
-- [ ] Tests cover at least two stacks end-to-end.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] A documented mapping in `ai/context/hook-selection.md` (or in the library README) defines which hooks default-on for which expertise / cloud selections.
+- [x] `safety_writer.py` (or equivalent) consults that mapping when building the default hook set.
+- [x] Regenerating `examples/small-python-team.yml` yields Python-appropriate hooks and no Azure hooks.
+- [x] Regenerating a React/TS composition yields ESLint/Prettier/tsc hooks and no ruff hook.
+- [x] If a new ESLint/Prettier hook pack is needed in the library, it is added.
+- [x] Tests cover at least two stacks end-to-end.
+- [x] All tests pass (`uv run pytest`) — 1830 passed.
+- [x] Lint clean (`uv run ruff check foundry_app/`) — All checks passed.
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Design stack→hook mapping, create hook-selection.md | Architect | — | Pending |
-| 2 | Add new hook pack library docs (lint-js, aws-*) | Developer | 1 | Pending |
-| 3 | Implement stack-aware resolution in safety_writer | Developer | 1,2 | Pending |
-| 4 | Add tests for stack-aware hook selection | Tech-QA | 3 | Pending |
-| 5 | Run pytest and ruff, verify acceptance criteria | Tech-QA | 4 | Pending |
+| 1 | Design stack→hook mapping, create hook-selection.md | Architect | — | Done |
+| 2 | Add new hook pack library docs (lint-js, aws-*) | Developer | 1 | Done |
+| 3 | Implement stack-aware resolution in safety_writer | Developer | 1,2 | Done |
+| 4 | Add tests for stack-aware hook selection | Tech-QA | 3 | Done |
+| 5 | Run pytest and ruff, verify acceptance criteria | Tech-QA | 4 | Done |
 
 > Skipped: BA (default — scope is well-defined by external audit)
 
@@ -65,7 +65,13 @@ Hook pack selection responds to the selected expertise, personas, and cloud prov
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/context/hook-selection.md | +117 |
+| ai-team-library/claude/hooks/pre-commit-lint-js.md | +36 |
+| ai-team-library/claude/hooks/aws-read-only.md | +35 |
+| ai-team-library/claude/hooks/aws-limited-ops.md | +36 |
+| foundry_app/services/safety_writer.py | +182/-26 |
+| tests/test_safety_writer.py | +251 |
+| tests/test_library_indexer.py | +3 |
 
 ## Notes
 
@@ -91,8 +97,8 @@ Hook pack selection responds to the selected expertise, personas, and cloud prov
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 5 |
+| **Total Duration** | 1269h 14m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
