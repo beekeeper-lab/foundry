@@ -265,6 +265,6 @@
 | BEAN-241 | Self-Healing Skills Framework | Process | High | Done | team-lead |
 | BEAN-242 | Generation Self-Consistency Integration Test | App | High | Done | team-lead |
 | BEAN-243 | Fix Compiler Placeholder Leakage | App | High | Done | team-lead |
-| BEAN-244 | Emit composition.yml and README.md in Generated Projects | App | High | Approved | (unassigned) |
+| BEAN-244 | Emit composition.yml and README.md in Generated Projects | App | High | In Progress | team-lead |
 | BEAN-245 | Fix Generation Progress — Skipped Stages and Warnings Display | App | Medium | Approved | (unassigned) |
 | BEAN-246 | Wizard Card UX — Collapsed Categories and Click-to-Toggle | App | Medium | Approved | (unassigned) |
