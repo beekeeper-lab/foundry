@@ -53,3 +53,7 @@ All read operations (same as az-read-only), plus:
 | `baseline` | Yes | advisory |
 | `hardened` | Yes | enforcing |
 | `regulated` | Yes | enforcing |
+
+## Conflicts With
+
+- `az-read-only` — the read-only guard blocks the mutating verbs this pack allows; enabling both neutralizes deployment operations.

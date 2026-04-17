@@ -32,3 +32,7 @@ sub-commands) while permitting standard deployment operations.
 
 Added only when `architecture.cloud_providers` includes `aws`. The Azure
 equivalent is `az-limited-ops`.
+
+## Conflicts With
+
+- `aws-read-only` — the read-only guard blocks the mutating verbs this pack allows; enabling both neutralizes deployment operations.

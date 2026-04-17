@@ -6,6 +6,7 @@ import logging
 
 from foundry_app.core.models import (
     CompositionSpec,
+    HookMode,
     LibraryIndex,
     Severity,
     Strictness,
@@ -74,6 +75,49 @@ def _check_hook_packs(
                 code="missing-hook-pack",
                 message=f"Hook pack '{hp.id}' not found in library",
             ))
+
+
+def _check_hook_conflicts(
+    composition: CompositionSpec,
+    library_index: LibraryIndex,
+    messages: list[ValidationMessage],
+) -> None:
+    """Validate that no pair of selected hook packs declare a mutual conflict.
+
+    A conflict is detected when either side of a pair lists the other under
+    its ``conflicts_with`` metadata. Declarations are expected to be symmetric,
+    but one-sided declarations are treated as binding to guard against drift.
+    Only enabled, non-disabled packs (as the writer would emit) are checked —
+    a conflict between a disabled pack and an active one is not surfaced.
+    """
+    active_ids = [
+        hp.id for hp in composition.hooks.packs
+        if hp.enabled and hp.mode != HookMode.DISABLED
+    ]
+    if len(active_ids) < 2:
+        return
+
+    reported: set[tuple[str, str]] = set()
+    for i, left_id in enumerate(active_ids):
+        left_pack = library_index.hook_pack_by_id(left_id)
+        for right_id in active_ids[i + 1:]:
+            right_pack = library_index.hook_pack_by_id(right_id)
+            left_conflicts = set(left_pack.conflicts_with) if left_pack else set()
+            right_conflicts = set(right_pack.conflicts_with) if right_pack else set()
+            if right_id in left_conflicts or left_id in right_conflicts:
+                pair = tuple(sorted((left_id, right_id)))
+                if pair in reported:
+                    continue
+                reported.add(pair)
+                messages.append(ValidationMessage(
+                    severity=Severity.ERROR,
+                    code="hook-pack-conflict",
+                    message=(
+                        f"Hook packs '{pair[0]}' and '{pair[1]}' are mutually "
+                        f"exclusive and cannot both be enabled in the same "
+                        f"composition. Remove one of them."
+                    ),
+                ))
 
 
 def _check_required_fields(
@@ -176,6 +220,7 @@ def run_pre_generation_validation(
     _check_personas(composition, library_index, messages)
     _check_expertise(composition, library_index, messages)
     _check_hook_packs(composition, library_index, messages)
+    _check_hook_conflicts(composition, library_index, messages)
     _check_duplicates(composition, messages)
 
     messages = _apply_strictness(messages, strictness)

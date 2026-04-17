@@ -563,6 +563,10 @@ class HookPackInfo(BaseModel):
     path: str = Field(..., description="Path to hook pack directory")
     files: list[str] = Field(default_factory=list, description="Hook policy filenames")
     category: str = Field(default="", description="Hook category (git, az, code-quality)")
+    conflicts_with: list[str] = Field(
+        default_factory=list,
+        description="Ids of hook packs that semantically conflict with this one",
+    )
 
 
 class LibraryIndex(BaseModel):

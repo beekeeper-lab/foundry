@@ -134,6 +134,37 @@ def _parse_hook_category(path: Path) -> str:
     return ""
 
 
+def _parse_hook_conflicts(path: Path) -> list[str]:
+    """Extract conflicting pack ids from a ``## Conflicts With`` section.
+
+    Each bullet line's first backticked token is taken as a pack id, e.g.:
+    ``- `az-limited-ops` — the read-only guard ...`` → ``az-limited-ops``.
+    Returns an empty list if the section is missing or malformed.
+    """
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    ids: list[str] = []
+    in_section = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.lower().startswith("## "):
+            in_section = stripped.lower() == "## conflicts with"
+            continue
+        if not in_section:
+            continue
+        if stripped.startswith(("-", "*")):
+            body = stripped[1:].strip()
+            if body.startswith("`"):
+                end = body.find("`", 1)
+                if end > 1:
+                    pack_id = body[1:end].strip()
+                    if pack_id and pack_id not in ids:
+                        ids.append(pack_id)
+    return ids
+
+
 def _scan_hook_packs(hooks_dir: Path) -> list[HookPackInfo]:
     """Scan the claude/hooks/ directory and return HookPackInfo for each .md file."""
     if not hooks_dir.is_dir():
@@ -151,6 +182,7 @@ def _scan_hook_packs(hooks_dir: Path) -> list[HookPackInfo]:
                 path=str(entry),
                 files=[entry.name],
                 category=_parse_hook_category(entry),
+                conflicts_with=_parse_hook_conflicts(entry),
             )
         )
 
