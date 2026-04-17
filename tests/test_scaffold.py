@@ -369,6 +369,26 @@ class TestCompositionSnapshot:
         result = scaffold_project(new_spec, output)
         assert "ai/team/composition.yml" in result.wrote
 
+    def test_composition_yml_has_orchestration_block(self, tmp_path: Path):
+        """BEAN-269: composition.yml must carry the static orchestration
+        policy block so cold-start agents and tooling can read the team
+        model machine-readably."""
+        import yaml
+
+        output = tmp_path / "my-project"
+        scaffold_project(_make_spec(), output)
+        composition = output / "ai" / "team" / "composition.yml"
+        data = yaml.safe_load(composition.read_text(encoding="utf-8"))
+        orch = data["orchestration"]
+        assert orch["orchestrator_role"] == "team-lead"
+        assert orch["team_model"] == "available-bench"
+        required = orch["required_roles"]["software-development"]
+        assert "developer" in required
+        assert "tech-qa" in required
+        optional = orch["optional_roles"]
+        assert "architect" in optional
+        assert "ba" in optional
+
 
 class TestStarterReadme:
     """Scaffold must emit a starter README.md at the project root on first run,

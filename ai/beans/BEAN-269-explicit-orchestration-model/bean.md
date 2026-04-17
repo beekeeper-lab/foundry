@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-269 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
 | **Started** | 2026-04-17 18:45 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-17 18:50 |
+| **Duration** | ~30m |
 | **Owner** | Team Lead |
 | **Category** | App |
 
@@ -104,29 +104,29 @@ surfaces, consistent in each:
 
 ## Acceptance Criteria
 
-- [ ] Generated `CLAUDE.md` contains a **Team Orchestration Model**
+- [x] Generated `CLAUDE.md` contains a **Team Orchestration Model**
       section that names the four-bullet policy (orchestrator, bench
       model, mandatory Developer + Tech-QA, opt-in specialists).
-- [ ] Generated `.claude/agents/team-lead.md` contains an
+- [x] Generated `.claude/agents/team-lead.md` contains an
       **Orchestration Rules** section that restates the policy in
       operational / imperative terms for the Team Lead persona.
-- [ ] Either `ai/team/composition.yml` gains a structured
+- [x] Either `ai/team/composition.yml` gains a structured
       `orchestration:` block, or the bean's Notes section documents
       why the YAML form was deferred to a follow-up.
-- [ ] A grep of the generated project for "all members", "entire team",
+- [x] A grep of the generated project for "all members", "entire team",
       or "full wave" finds no wording that contradicts the bench model.
-- [ ] Cold-start verification: reading only CLAUDE.md, an agent can
+- [x] Cold-start verification: reading only CLAUDE.md, an agent can
       state (a) who assigns tasks, (b) which roles are always on, and
       (c) which roles are opt-in.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
 | 1 | Implement orchestration model surfaces | Developer | — | Done |
-| 2 | Verify orchestration acceptance criteria | Tech-QA | 1 | In Progress |
+| 2 | Verify orchestration acceptance criteria | Tech-QA | 1 | Done |
 
 > Skipped: BA (requirements precise — reviewer's suggested wording adopted verbatim), Architect (no new subsystem; YAML block is additive, forward-compatible, no ADR needed).
 
@@ -152,6 +152,13 @@ this the single most important next improvement.
   agree.
 - BEAN-268 (Workflow pointers) adds *navigational* content to CLAUDE.md;
   this bean adds *policy* content. Complementary.
+
+**Implementation notes.** The `orchestration:` block is emitted as a
+static policy block appended by `scaffold.py` after `save_composition`
+writes the spec. It is policy, not user input — identical across all
+generated projects — so it does not live in the Pydantic model. Extra
+fields are ignored by the loader, so composition.yml still round-trips
+cleanly through `load_composition`.
 
 **Reviewer's suggested CLAUDE.md wording** (adopt or adapt):
 
@@ -182,12 +189,12 @@ this the single most important next improvement.
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Implement orchestration model surfaces | Developer | ~20m | N/A (suspect) | N/A (suspect) | — |
-| 2 | Verify orchestration acceptance criteria | Tech-QA | — | — | — | — |
+| 2 | Verify orchestration acceptance criteria | Tech-QA | ~10m | 1,763,303 | 0 | $3.83 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1269h 43m |
+| **Total Tokens In** | 1,763,303 |
+| **Total Tokens Out** | 0 |
+| **Total Cost** | $3.83 |

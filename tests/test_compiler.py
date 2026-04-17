@@ -1333,6 +1333,72 @@ class TestLeanClaudeMd:
         gen = (output / "ai/generated/members/developer.md").read_text()
         assert "Rule 10: Do something important." in gen
 
+    def test_claude_md_has_team_orchestration_model(self, tmp_path: Path):
+        """BEAN-269: generated CLAUDE.md must state the four-bullet
+        orchestration policy explicitly so cold-start agents can read
+        the team model without external context.
+        """
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "team-lead": {"persona.md": "# TL"},
+            "developer": {"persona.md": "# Dev"},
+            "tech-qa": {"persona.md": "# QA"},
+            "architect": {"persona.md": "# Arch"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "## Team Orchestration Model" in content
+        assert "Team Lead is the orchestrator" in content
+        assert "available bench of specialists" in content
+        # Mandatory roles for software development
+        assert "**Developer**" in content
+        assert "**Tech-QA**" in content
+        # At least one opt-in specialist named
+        assert "**Architect**" in content
+
+    def test_claude_md_orchestration_model_emitted_without_personas(
+        self, tmp_path: Path,
+    ):
+        """The orchestration model is policy, not roster — it is emitted
+        even when no personas are selected."""
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path, expertise={"python": {"conventions.md": "# Py"}},
+        )
+        spec = _make_spec(team=TeamConfig(personas=[]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "## Team Orchestration Model" in content
+
+    def test_claude_md_no_contradicting_phrases(self, tmp_path: Path):
+        """BEAN-269 acceptance: the generated CLAUDE.md must not contain
+        wording that contradicts the available-bench model."""
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+            "tech-qa": {"persona.md": "# QA"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text().lower()
+        for phrase in ("all members", "entire team", "full team wave"):
+            assert phrase not in content, (
+                f"CLAUDE.md contains contradicting phrase {phrase!r}"
+            )
+
+    def test_team_lead_library_source_has_orchestration_rules(self):
+        """BEAN-269: the team-lead library persona source must state the
+        orchestration rules operationally. Downstream regenerations
+        propagate this to .claude/agents/team-lead.md."""
+        import foundry_app
+        repo_root = Path(foundry_app.__file__).resolve().parent.parent
+        persona = repo_root / "ai-team-library" / "personas" / "team-lead" / "persona.md"
+        text = persona.read_text(encoding="utf-8")
+        assert "## Orchestration Rules" in text
+        assert "bench of specialists" in text
+        assert "Always assign Developer and Tech-QA" in text
+
 
 # ---------------------------------------------------------------------------
 # compile_project — full integration
