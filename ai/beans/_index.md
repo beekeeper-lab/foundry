@@ -263,3 +263,8 @@
 | BEAN-239 | Telemetry Report Confidence Indicators | Process | Low | Done | team-lead |
 | BEAN-240 | Agent Context Budget Optimization | Process | High | Done | team-lead |
 | BEAN-241 | Self-Healing Skills Framework | Process | High | Done | team-lead |
+| BEAN-242 | Generation Self-Consistency Integration Test | App | High | Approved | (unassigned) |
+| BEAN-243 | Fix Compiler Placeholder Leakage | App | High | Approved | (unassigned) |
+| BEAN-244 | Emit composition.yml and README.md in Generated Projects | App | High | Approved | (unassigned) |
+| BEAN-245 | Fix Generation Progress — Skipped Stages and Warnings Display | App | Medium | Approved | (unassigned) |
+| BEAN-246 | Wizard Card UX — Collapsed Categories and Click-to-Toggle | App | Medium | Approved | (unassigned) |
