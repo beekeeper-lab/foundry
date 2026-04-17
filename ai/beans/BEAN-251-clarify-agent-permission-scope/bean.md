@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-251 |
-| **Status** | Unapproved |
+| **Status** | Approved |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
 | **Started** | — |
@@ -22,31 +22,30 @@ Today neither is explicit. A new user sees docs that sound like end-to-end agent
 
 ## Goal
 
-A generated project's permission model matches its documented intent. The user can tell, from a single authoritative source (generated `CLAUDE.md` and `settings.local.json`), exactly what the agents are permitted to touch and why.
+A generated project states clearly that the AI team manages planning and design artifacts and that a human implements application code. The `settings.local.json` permission model (narrow `Edit(ai/**)`) matches that statement rather than contradicting it.
+
+**Decision (2026-04-17): Stance 1 — Planning-only.** Keep `Edit(ai/**)` as-is; do not expand permissions. Instead, make the intent explicit in the generated CLAUDE.md so there is no mismatch between what the docs imply and what the permissions allow. Paired with BEAN-253.
 
 ## Scope
 
 ### In Scope
-- Decide the intent for the default composition:
-  - **Option A — planning-only**: keep `Edit(ai/**)`, state explicitly in generated `CLAUDE.md` that the agents manage planning artifacts and a human implements app code.
-  - **Option B — full-development**: expand the default Edit permission to cover source directories (e.g., `src/**`, or no path restriction), keep `ai-team-library`-style read-only carve-outs, and state explicitly that agents will modify app code.
-  - **Option C — both, selectable**: add a wizard/CLI flag that picks the permission profile; default to one and document the other.
-- Implement the chosen direction in the generator: update `foundry_app/services/safety_writer.py` (or wherever `settings.local.json` is emitted), the default composition options, and the generated `CLAUDE.md`'s "Scope" section.
-- Ensure the chosen default is consistent across every example YAML.
-- Tests: assert the emitted `settings.local.json` matches the documented posture.
+- Add a **Scope** section (1–3 sentences) to the generated `CLAUDE.md` template stating: the AI team produces plans, designs, reviews, docs, and other artifacts under `ai/`; the human initializes and implements the application code.
+- Ensure the existing `Edit(ai/**)` permission in `settings.local.json` stays and is cross-referenced from the Scope section.
+- Tests: assert the generated CLAUDE.md contains the Scope statement and that its wording is consistent with the `settings.local.json` `Edit` list (same set of directories referenced).
+- Update every example YAML's generated output to match.
 
 ### Out of Scope
+- Expanding `Edit` permissions (explicitly rejected under Stance 1).
+- Adding a composition switch for full-development mode (explicitly rejected under Stance 1).
 - Redesigning the permission system itself.
 - Changing hook posture (BEAN-250).
-- Adding new permission categories beyond Edit/Read/Bash.
 
 ## Acceptance Criteria
 
-- [ ] Decision recorded in `ai/context/decisions.md` (new ADR) or in the bean's Notes before implementation begins.
-- [ ] Generated project's `CLAUDE.md` has a "Scope" section (1–3 sentences) stating what the agents are authorized to modify and what remains in human hands.
-- [ ] `settings.local.json` matches the scope statement. If planning-only: `Edit(ai/**)` remains, CLAUDE.md says so. If full-dev: broader Edit permission, and CLAUDE.md says the agents will modify source code.
-- [ ] If option C (selectable) is chosen: a new composition field controls the profile; both profiles covered by a test.
-- [ ] At least one test asserts the emitted `settings.local.json` permission list matches the scope declared in CLAUDE.md (structurally — same set of directories mentioned in both places).
+- [ ] Stance 1 recorded in `ai/context/decisions.md` as an ADR with the rationale.
+- [ ] Generated CLAUDE.md template has a visible Scope section in the first third of the document stating the planning-only intent.
+- [ ] The Scope section names `ai/` as the agent-editable tree and explicitly notes that application source code is the human's responsibility.
+- [ ] `settings.local.json` remains `Edit(ai/**)`; a test asserts the directories named in the Scope section match the `Edit` allow list.
 - [ ] All tests pass (`uv run pytest`).
 - [ ] Lint clean (`uv run ruff check foundry_app/`).
 

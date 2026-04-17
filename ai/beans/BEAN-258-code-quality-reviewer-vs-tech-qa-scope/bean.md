@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-258 |
-| **Status** | Unapproved |
+| **Status** | Approved |
 | **Priority** | Low |
 | **Created** | 2026-04-17 |
 | **Started** | — |

@@ -268,17 +268,17 @@
 | BEAN-244 | Emit composition.yml and README.md in Generated Projects | App | High | Done | team-lead |
 | BEAN-245 | Fix Generation Progress — Skipped Stages and Warnings Display | App | Medium | Done | team-lead |
 | BEAN-246 | Wizard Card UX — Collapsed Categories and Click-to-Toggle | App | Medium | Done | team-lead |
-| BEAN-247 | Drop Broken Expertise References from Generated CLAUDE.md | App | High | Unapproved | (unassigned) |
-| BEAN-248 | Add clean-code Expertise Conventions Content | Infra | Medium | Unapproved | (unassigned) |
-| BEAN-249 | Audit Library Command/Skill Duplication | Infra | Medium | Unapproved | (unassigned) |
-| BEAN-250 | Rebalance Hook Posture Taxonomy | App | Medium | Unapproved | (unassigned) |
-| BEAN-251 | Clarify Agent Permission Scope in Generated Projects | App | Medium | Unapproved | (unassigned) |
-| BEAN-252 | Project Purpose Statement / Charter | App | High | Unapproved | (unassigned) |
-| BEAN-253 | Decide App-Code Scaffolding Policy | Process | High | Unapproved | (unassigned) |
-| BEAN-254 | Bootstrap Bean for Seeded Tasks | App | High | Unapproved | (unassigned) |
-| BEAN-255 | Stack-Aware Hook Pack Selection | App | High | Unapproved | (unassigned) |
-| BEAN-256 | Dev-Loop Commands + Stack-Aware Command Selection | App | High | Unapproved | (unassigned) |
-| BEAN-257 | Activation Rules for Remaining Personas | Process | Medium | Unapproved | (unassigned) |
-| BEAN-258 | Code-Quality-Reviewer vs Tech-QA Scope Split | Process | Low | Unapproved | (unassigned) |
-| BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | Unapproved | (unassigned) |
-| BEAN-260 | Approval Gate — Command + Criteria | Process | Medium | Unapproved | (unassigned) |
+| BEAN-247 | Drop Broken Expertise References from Generated CLAUDE.md | App | High | Approved | (unassigned) |
+| BEAN-248 | Add clean-code Expertise Conventions Content | Infra | Medium | Approved | (unassigned) |
+| BEAN-249 | Audit Library Command/Skill Duplication | Infra | Medium | Approved | (unassigned) |
+| BEAN-250 | Rebalance Hook Posture Taxonomy | App | Medium | Approved | (unassigned) |
+| BEAN-251 | Clarify Agent Permission Scope in Generated Projects | App | Medium | Approved | (unassigned) |
+| BEAN-252 | Project Purpose Statement / Charter | App | High | Approved | (unassigned) |
+| BEAN-253 | Decide App-Code Scaffolding Policy | Process | High | Approved | (unassigned) |
+| BEAN-254 | Bootstrap Bean for Seeded Tasks | App | High | Approved | (unassigned) |
+| BEAN-255 | Stack-Aware Hook Pack Selection | App | High | Approved | (unassigned) |
+| BEAN-256 | Dev-Loop Commands + Stack-Aware Command Selection | App | High | Approved | (unassigned) |
+| BEAN-257 | Activation Rules for Remaining Personas | Process | Medium | Approved | (unassigned) |
+| BEAN-258 | Code-Quality-Reviewer vs Tech-QA Scope Split | Process | Low | Approved | (unassigned) |
+| BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | Approved | (unassigned) |
+| BEAN-260 | Approval Gate — Command + Criteria | Process | Medium | Approved | (unassigned) |

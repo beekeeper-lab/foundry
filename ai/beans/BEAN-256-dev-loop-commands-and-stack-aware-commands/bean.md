@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-256 |
-| **Status** | Unapproved |
+| **Status** | Approved |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
 | **Started** | — |
@@ -67,6 +67,8 @@ The generated `.claude/commands/` set contains the ergonomic dev-loop commands a
 ## Notes
 
 **Pairs with BEAN-255.** Both close the "generation is not stack-aware" gap.
+
+**Stance 1 alignment.** Per BEAN-251/253 (planning-only), the dev-loop commands *invoke* user-configured tooling — they do not install it. `/test` runs whatever test runner the user set up; it doesn't supply the test runner. The command docs should assume the user has initialized their stack and list which tool the command invokes (e.g., `/test (pytest)`, `/test (vitest)`).
 
 **Interaction with BEAN-249.** If BEAN-249 is in flight (audit command/skill duplication), that audit should include the new dev-loop commands from this bean.
 
