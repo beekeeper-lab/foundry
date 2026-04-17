@@ -1,0 +1,85 @@
+# BEAN-254: Bootstrap Bean for Seeded Tasks
+
+| Field | Value |
+|-------|-------|
+| **Bean ID** | BEAN-254 |
+| **Status** | Unapproved |
+| **Priority** | High |
+| **Created** | 2026-04-17 |
+| **Started** | — |
+| **Completed** | — |
+| **Duration** | — |
+| **Owner** | (unassigned) |
+| **Category** | App |
+
+## Problem Statement
+
+External audit (2026-04-17): "Seeded tasks are orphaned. `ai/tasks/_index.md` has 27 tasks assigned to roles, but `ai/beans/_index.md` is empty and tasks aren't linked to beans. The bean workflow is the unit of work, so these tasks live outside the system that tracks them."
+
+Today the Seeder produces per-persona tasks directly into `ai/tasks/<persona>/` and writes `_index.md`. The bean workflow is the declared unit of work (per `ai/context/bean-workflow.md`), but seeded tasks skip it entirely. A Team Lead's first action when opening a generated project is meant to be *picking a bean* — but there is no starter bean, and the 27 orphan tasks have no home in the bean-tracking system.
+
+## Goal
+
+Seeded work enters the project through the bean workflow, not around it. A freshly generated project contains **one starter bean** (e.g., `BEAN-001-bootstrap`) that owns whatever tasks the Seeder produces. `ai/tasks/` exists but is empty, or is removed entirely in favor of `ai/beans/BEAN-001-bootstrap/tasks/`.
+
+## Scope
+
+### In Scope
+- Decide: does the Seeder still produce `ai/tasks/<persona>/` files, or are those tasks created inside a starter bean's `tasks/` directory instead?
+- Implement the chosen direction in `foundry_app/services/seeder.py` and the pipeline.
+- If a starter bean is emitted: it should be `Approved` (so the Team Lead can pick it immediately), reference the project charter (BEAN-252), and have a bean.md stub that names the bootstrap goals.
+- Tests asserting a starter bean exists when seeding is enabled, and that its task count equals what the Seeder would have produced.
+- Update `ai/context/bean-workflow.md` if the seeding semantics change.
+
+### Out of Scope
+- Redesigning the Seeder's task-mapping rules (that's upstream content).
+- Creating starter beans for every stack/expertise combination (one generic starter is sufficient).
+- Changing seed mode taxonomy (`SeedMode.DETAILED` etc.).
+
+## Acceptance Criteria
+
+- [ ] When `spec.generation.seed_tasks` is true, the generator emits `ai/beans/BEAN-001-bootstrap/bean.md` with status `Approved` and its `tasks/` directory populated with the same set of tasks the Seeder produces today.
+- [ ] `ai/tasks/` is either empty (no orphan tasks) or removed entirely — the audit's complaint is resolved.
+- [ ] `ai/beans/_index.md` lists BEAN-001.
+- [ ] The starter bean's `Problem Statement` references `ai/context/project-charter.md` (BEAN-252) if that bean is Done, or falls back to a generic "bootstrap" placeholder.
+- [ ] Existing seeder tests updated; new test asserts the starter bean exists and contains the expected task files.
+- [ ] All tests pass (`uv run pytest`).
+- [ ] Lint clean (`uv run ruff check foundry_app/`).
+
+## Tasks
+
+| # | Task | Owner | Depends On | Status |
+|---|------|-------|------------|--------|
+| 1 | | | | Pending |
+
+## Changes
+
+| File | Lines |
+|------|-------|
+| — | — |
+
+## Notes
+
+**Depends on.** BEAN-252 (charter) is softly related — the starter bean's stated goals should reference the charter if it exists. Not a hard dependency.
+
+**Architect participation.** The pipeline change touches the seeder/scaffolder boundary. Architect may be warranted for the task-location decision.
+
+## Trello
+
+| Field | Value |
+|-------|-------|
+| **Source** | Manual |
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
+|---|------|-------|----------|-----------|------------|------|
+| 1 |      |       |          |           |            |      |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | — |
+| **Total Duration** | — |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+| **Total Cost** | — |
