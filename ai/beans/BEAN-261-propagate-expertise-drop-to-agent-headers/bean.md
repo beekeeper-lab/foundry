@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-261 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 18:17 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -71,7 +71,10 @@ The warning is still emitted.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Propagate Expertise Drop to Agent Headers and Member Files | Developer | — | Pending |
+| 2 | Verify Agent Header / Member File Expertise Invariants | Tech-QA | 01 | Pending |
+
+> Skipped: BA (default), Architect (default) — scoped propagation fix following BEAN-247 pattern; behavior is fully specified in the bean.
 
 ## Changes
 
@@ -98,7 +101,8 @@ here is still needed for any future missing-expertise case).
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Propagate Expertise Drop to Agent Headers and Member Files | Developer | — | — | — | — |
+| 2 | Verify Agent Header / Member File Expertise Invariants | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
