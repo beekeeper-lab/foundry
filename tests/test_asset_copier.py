@@ -841,3 +841,267 @@ class TestSubtreeMode:
         assert ".claude/commands/validate-repo.md" in result.wrote
         assert ".claude/skills/review-pr.md" in result.wrote
         assert ".claude/hooks/pre-commit-lint.md" in result.wrote
+
+
+# ---------------------------------------------------------------------------
+# Dev-loop command selection
+# ---------------------------------------------------------------------------
+
+
+def _make_devloop_library(tmp_path: Path) -> Path:
+    """Build a library with dev-loop command sets for python and node, plus
+    governance commands + skills for gating tests.
+    """
+    lib = tmp_path / "library"
+
+    # Default commands directory
+    cmd_dir = lib / "claude" / "commands"
+    cmd_dir.mkdir(parents=True)
+    (cmd_dir / "validate-repo.md").write_text("# Validate Repo\n")
+
+    # Governance commands
+    (cmd_dir / "threat-model.md").write_text("# Threat Model\n")
+    (cmd_dir / "risk-liability.md").write_text("# Risk Liability\n")
+
+    # Dev-loop commands per stack
+    dev = cmd_dir / "dev-loop"
+    (dev / "python").mkdir(parents=True)
+    (dev / "python" / "test.md").write_text("# /test (pytest)\n")
+    (dev / "python" / "build.md").write_text("# /build (uv build)\n")
+    (dev / "python" / "lint.md").write_text("# /lint (ruff)\n")
+    (dev / "node").mkdir(parents=True)
+    (dev / "node" / "test.md").write_text("# /test (npm test)\n")
+    (dev / "node" / "build.md").write_text("# /build (npm run build)\n")
+    (dev / "node" / "dev.md").write_text("# /dev (npm run dev)\n")
+
+    # Skills directory
+    skill_dir = lib / "claude" / "skills"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "review-pr.md").write_text("# Review PR\n")
+    # Governance skills (directory-form to match real library shape)
+    (skill_dir / "ip-licensing").mkdir()
+    (skill_dir / "ip-licensing" / "SKILL.md").write_text("# IP Licensing\n")
+    (skill_dir / "contract-review").mkdir()
+    (skill_dir / "contract-review" / "SKILL.md").write_text("# Contract Review\n")
+    (skill_dir / "threat-model").mkdir()
+    (skill_dir / "threat-model" / "SKILL.md").write_text("# Threat Model Skill\n")
+
+    return lib
+
+
+def _devloop_index(lib: Path) -> LibraryIndex:
+    return LibraryIndex(
+        library_root=str(lib),
+        personas=[
+            PersonaInfo(id="developer", path=str(lib / "personas" / "developer")),
+            PersonaInfo(id="legal-counsel", path=str(lib / "personas" / "legal-counsel")),
+            PersonaInfo(
+                id="security-engineer", path=str(lib / "personas" / "security-engineer")
+            ),
+            PersonaInfo(
+                id="compliance-risk", path=str(lib / "personas" / "compliance-risk")
+            ),
+        ],
+    )
+
+
+class TestDevLoopSelection:
+
+    def test_python_expertise_gets_python_devloop(self, tmp_path: Path):
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(expertise=[ExpertiseSelection(id="python")])
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/commands/test.md" in result.wrote
+        assert ".claude/commands/build.md" in result.wrote
+        assert ".claude/commands/lint.md" in result.wrote
+        py_test = (output / ".claude" / "commands" / "test.md").read_text()
+        assert "pytest" in py_test
+        # Node-flavored commands must NOT have leaked in
+        assert "npm" not in py_test
+
+    def test_react_typescript_expertise_gets_node_devloop(self, tmp_path: Path):
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="react", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+            ],
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/commands/test.md" in result.wrote
+        assert ".claude/commands/dev.md" in result.wrote
+        node_test = (output / ".claude" / "commands" / "test.md").read_text()
+        assert "npm" in node_test
+
+    def test_first_matching_expertise_wins(self, tmp_path: Path):
+        """python listed before node → python set wins."""
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="node", order=20),
+            ],
+        )
+        copy_assets(spec, idx, lib, output)
+
+        chosen = (output / ".claude" / "commands" / "test.md").read_text()
+        assert "pytest" in chosen
+        assert "npm" not in chosen
+
+    def test_no_devloop_when_no_matching_expertise(self, tmp_path: Path):
+        """Expertise without a dev-loop mapping yields no dev-loop commands."""
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(expertise=[ExpertiseSelection(id="clean-code")])
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/commands/test.md" not in result.wrote
+        assert not (output / ".claude" / "commands" / "test.md").exists()
+        # Default commands still copied
+        assert ".claude/commands/validate-repo.md" in result.wrote
+
+    def test_devloop_dir_not_copied_as_subdirectory(self, tmp_path: Path):
+        """The literal dev-loop/ tree must not appear in .claude/commands/."""
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(expertise=[ExpertiseSelection(id="python")])
+        copy_assets(spec, idx, lib, output)
+
+        assert not (output / ".claude" / "commands" / "dev-loop").exists()
+
+
+# ---------------------------------------------------------------------------
+# Governance command/skill gating
+# ---------------------------------------------------------------------------
+
+
+class TestGovernanceGating:
+
+    def test_governance_commands_excluded_when_no_unlocking_persona(
+        self, tmp_path: Path
+    ):
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="python")],
+            team=TeamConfig(personas=[PersonaSelection(id="developer")]),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/commands/threat-model.md" not in result.wrote
+        assert ".claude/commands/risk-liability.md" not in result.wrote
+        assert not (output / ".claude" / "commands" / "threat-model.md").exists()
+        assert not (output / ".claude" / "commands" / "risk-liability.md").exists()
+
+    def test_threat_model_unlocked_by_security_engineer(self, tmp_path: Path):
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="python")],
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="security-engineer"),
+            ]),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/commands/threat-model.md" in result.wrote
+        assert ".claude/skills/threat-model/SKILL.md" in result.wrote
+        # Legal-only commands still excluded
+        assert ".claude/commands/risk-liability.md" not in result.wrote
+
+    def test_risk_liability_unlocked_by_compliance_risk(self, tmp_path: Path):
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="python")],
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="compliance-risk"),
+            ]),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/commands/risk-liability.md" in result.wrote
+
+    def test_legal_skills_excluded_without_legal_counsel(self, tmp_path: Path):
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="python")],
+            team=TeamConfig(personas=[PersonaSelection(id="developer")]),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        legal_writes = [
+            w for w in result.wrote
+            if "ip-licensing" in w or "contract-review" in w
+        ]
+        assert legal_writes == []
+        assert not (output / ".claude" / "skills" / "ip-licensing").exists()
+        assert not (output / ".claude" / "skills" / "contract-review").exists()
+
+    def test_legal_skills_included_with_legal_counsel(self, tmp_path: Path):
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="python")],
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="legal-counsel"),
+            ]),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/skills/ip-licensing/SKILL.md" in result.wrote
+        assert ".claude/skills/contract-review/SKILL.md" in result.wrote
+
+    def test_default_skills_always_included(self, tmp_path: Path):
+        """Non-governance skills are not affected by gating."""
+        lib = _make_devloop_library(tmp_path)
+        idx = _devloop_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(
+            expertise=[ExpertiseSelection(id="python")],
+            team=TeamConfig(personas=[PersonaSelection(id="developer")]),
+        )
+        result = copy_assets(spec, idx, lib, output)
+
+        assert ".claude/skills/review-pr.md" in result.wrote

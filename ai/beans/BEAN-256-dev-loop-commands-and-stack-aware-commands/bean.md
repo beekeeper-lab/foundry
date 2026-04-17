@@ -3,11 +3,11 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-256 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
 | **Started** | 2026-04-17 18:16 |
-| **Completed** | — |
+| **Completed** | 2026-04-17 19:15 |
 | **Duration** | — |
 | **Owner** | team |
 | **Category** | App |
@@ -58,16 +58,20 @@ The generated `.claude/commands/` set contains the ergonomic dev-loop commands a
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Add dev-loop command files to library (python + node/react/ts variants) | Developer | — | Pending |
-| 2 | Implement command/skill selection rules in `asset_copier.py` | Developer | 1 | Pending |
-| 3 | Document selection rules in `ai/context/command-selection.md` | Developer | 2 | Pending |
-| 4 | Add tests for dev-loop selection and governance gating; run full suite + ruff | Tech-QA | 2,3 | Pending |
+| 1 | Add dev-loop command files to library (python + node/react/ts variants) | Developer | — | Done |
+| 2 | Implement command/skill selection rules in `asset_copier.py` | Developer | 1 | Done |
+| 3 | Document selection rules in `ai/context/command-selection.md` | Developer | 2 | Done |
+| 4 | Add tests for dev-loop selection and governance gating; run full suite + ruff | Tech-QA | 2,3 | Done |
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai-team-library/claude/commands/dev-loop/python/{test,build,lint,format,dev}.md` | +149 (new) |
+| `ai-team-library/claude/commands/dev-loop/node/{test,build,lint,format,dev}.md` | +146 (new) |
+| `foundry_app/services/asset_copier.py` | +204/-10 |
+| `ai/context/command-selection.md` | +63 (new) |
+| `tests/test_asset_copier.py` | +234/-0 |
 
 ## Notes
 
@@ -96,8 +100,8 @@ The generated `.claude/commands/` set contains the ergonomic dev-loop commands a
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 4 |
+| **Total Duration** | 1269h 50m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
