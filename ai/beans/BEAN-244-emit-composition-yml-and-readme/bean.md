@@ -63,11 +63,15 @@ The scaffold emits both `ai/team/composition.yml` and `README.md`. A freshly gen
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/beans/BEAN-244-emit-composition-yml-and-readme/bean.md` | ±41 |
+| `ai/beans/BEAN-244-emit-composition-yml-and-readme/tasks/01-developer-emit-composition-and-readme.md` | +50 |
+| `ai/beans/BEAN-244-emit-composition-yml-and-readme/tasks/02-tech-qa-verification.md` | +77 |
+| `foundry_app/services/scaffold.py` | +57 |
+| `tests/test_scaffold.py` | +101 |
+
+Totals: 5 files changed, +303 / -23.
 
 ## Notes
 
