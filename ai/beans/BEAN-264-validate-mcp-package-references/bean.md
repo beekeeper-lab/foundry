@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-264 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 18:15 |
 | **Completed** | — |
 | **Duration** | — |
 | **Owner** | (unassigned) |
@@ -73,9 +73,12 @@ that registry.
 
 ## Tasks
 
+> Skipped: BA (default), Architect (default)
+
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Vetted MCP registry + mcp_writer refactor | Developer | — | Done |
+| 2 | Registry invariant tests + full regression | Tech-QA | 1 | Pending |
 
 ## Changes
 
@@ -102,7 +105,8 @@ fictional `@anthropic/*` names.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Vetted MCP registry + mcp_writer refactor | Developer | < 1m | 338,750 | 0 | $0.68 |
+| 2 | Registry invariant tests + full regression | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
