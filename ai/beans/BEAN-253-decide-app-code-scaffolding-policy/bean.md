@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-253 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 19:02 |
 | **Completed** | — |
 | **Duration** | — |
 | **Owner** | (unassigned) |
