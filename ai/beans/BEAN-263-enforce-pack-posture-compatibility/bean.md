@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-263 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
 | **Started** | 2026-04-17 19:28 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-17 19:33 |
+| **Duration** | < 10m |
 | **Owner** | team-lead |
 | **Category** | App |
 
@@ -51,15 +51,15 @@ in a posture they declared incompatible with.
 
 ## Acceptance Criteria
 
-- [ ] Hook packs declare their posture compatibility in machine-readable
+- [x] Hook packs declare their posture compatibility in machine-readable
       metadata.
-- [ ] The generator consults that metadata when building
+- [x] The generator consults that metadata when building
       `settings.json` and refuses (or downgrades) incompatible packs.
-- [ ] A baseline composition with `compliance-gate` surfaces a
+- [x] A baseline composition with `compliance-gate` surfaces a
       validation error or downgrade warning.
-- [ ] Tests cover the incompatibility path.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] Tests cover the incompatibility path.
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
@@ -67,7 +67,7 @@ in a posture they declared incompatible with.
 |---|------|-------|------------|--------|
 | 1 | Design posture_compatibility schema and integration | Architect | — | Done |
 | 2 | Implement parser, validator check, and safety-writer filter | Developer | 1 | Done |
-| 3 | Tests: parser, validator, safety-writer filter; full suite green | Tech-QA | 2 | Pending |
+| 3 | Tests: parser, validator, safety-writer filter; full suite green | Tech-QA | 2 | Done |
 
 > Skipped: BA (default — criteria unambiguous).
 
@@ -114,12 +114,12 @@ rebalance) so the schema is stable before encoding per-pack data.
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Design posture_compatibility schema and integration | Architect | < 1m | 494,391 | 0 | $0.83 |
 | 2 | Implement parser, validator check, and safety-writer filter | Developer | < 5m | 372,771 | 858 | $0.71 |
-| 3 | Tests: parser, validator, safety-writer filter; full suite green | Tech-QA | — | — | — | — |
+| 3 | Tests: parser, validator, safety-writer filter; full suite green | Tech-QA | < 3m | 716,591 | 1,688 | $1.28 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | 867,162 |
+| **Total Tokens Out** | 858 |
+| **Total Cost** | $1.54 |
