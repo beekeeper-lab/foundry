@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-258 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Low |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 19:26 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -48,7 +48,10 @@ Each persona's scope explicitly names what it owns and what it defers to the oth
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add Scope Boundaries subsections to both personas | Developer | — | Pending |
+| 2 | Verify partition cleanliness + run tests and lint | Tech-QA | 1 | Pending |
+
+> Skipped: BA (default — wording is straightforward and the bean itself specifies ownership categories), Architect (default — no new subsystem, no cross-cutting API change).
 
 ## Changes
 
@@ -72,7 +75,8 @@ Each persona's scope explicitly names what it owns and what it defers to the oth
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add Scope Boundaries subsections to both personas | Developer | < 1m | N/A (suspect) | N/A (suspect) | — |
+| 2 | Verify partition cleanliness + run tests and lint | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
