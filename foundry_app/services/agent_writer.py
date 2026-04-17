@@ -13,6 +13,7 @@ from foundry_app.services.compiler import (
     _PLACEHOLDER_RE,
     _build_context,
     _build_persona_context,
+    _get_emitted_expertise_ids,
     _substitute,
 )
 
@@ -149,14 +150,18 @@ def write_agents(
     )
     template = env.get_template("agent.md.j2")
 
-    # Gather expertise info
-    expertise_ids = [s.id for s in spec.expertise]
-    expertise_names = ", ".join(expertise_ids) if expertise_ids else "General"
+    # Gather expertise info. Only list expertise whose source file will
+    # actually be emitted — a missing-source expertise produces a warning
+    # elsewhere but must not appear as a "zombie" entry in agent headers.
+    emitted_expertise_ids = _get_emitted_expertise_ids(spec, library_index)
+    expertise_names = (
+        ", ".join(emitted_expertise_ids) if emitted_expertise_ids else "General"
+    )
 
     # Shared context — used to render non-persona-scoped fragments such as
     # expertise conventions. Persona-scoped fragments get their own context
     # built inside the per-persona loop so {{ strictness }} resolves correctly.
-    shared_context = _build_context(spec)
+    shared_context = _build_context(spec, emitted_expertise_ids)
 
     # Gather expertise sections (shared across all personas)
     expertise_sections: list[dict[str, str]] = []
@@ -199,13 +204,21 @@ def write_agents(
         # The template's outer render does not recursively resolve Jinja
         # expressions that appear inside variable values, so extracted strings
         # like {{ project_name }} would otherwise leak through verbatim.
-        persona_ctx = _build_persona_context(spec, persona_sel)
+        persona_ctx = _build_persona_context(
+            spec, persona_sel, emitted_expertise_ids,
+        )
         persona_text = _substitute(
             persona_path.read_text(encoding="utf-8"), persona_ctx,
         )
 
-        # Build role name: expertise + persona (e.g., "Python Developer")
-        primary_expertise = expertise_ids[0].replace("-", " ").title() if expertise_ids else ""
+        # Build role name: expertise + persona (e.g., "Python Developer").
+        # Use the emitted list so the role name never derives from a
+        # missing-source expertise.
+        primary_expertise = (
+            emitted_expertise_ids[0].replace("-", " ").title()
+            if emitted_expertise_ids
+            else ""
+        )
         persona_title = persona_sel.id.replace("-", " ").title()
         role_name = (
             f"{primary_expertise} {persona_title}".strip()

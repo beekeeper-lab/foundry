@@ -65,19 +65,53 @@ def _read_file(path: Path) -> str | None:
     return None
 
 
-def _build_context(spec: CompositionSpec) -> dict[str, str]:
+def _get_emitted_expertise_ids(
+    spec: CompositionSpec,
+    library_index: LibraryIndex,
+) -> list[str]:
+    """Return the ordered list of expertise IDs whose source file will be
+    emitted (i.e. ``conventions.md`` exists on disk).
+
+    This is the same predicate ``_compile_expertise_section`` uses to decide
+    whether to write ``ai/generated/expertise/<id>.md``. Surfaces it as a
+    helper so other stages (agent headers, persona-scoped substitutions)
+    can stay in sync without re-implementing the check.
+    """
+    emitted: list[str] = []
+    for sel in sorted(spec.expertise, key=lambda s: (s.order, s.id)):
+        info = library_index.expertise_by_id(sel.id)
+        if info is None:
+            continue
+        if (Path(info.path) / "conventions.md").is_file():
+            emitted.append(sel.id)
+    return emitted
+
+
+def _build_context(
+    spec: CompositionSpec,
+    emitted_expertise_ids: list[str] | None = None,
+) -> dict[str, str]:
     """Build the shared template variable context from the composition spec.
 
     Use this for non-persona-scoped substitutions (e.g., expertise files).
     For persona-scoped substitutions, use ``_build_persona_context`` so that
     ``{{ strictness }}`` resolves to the per-persona strictness value.
+
+    When ``emitted_expertise_ids`` is provided, ``{{ expertise }}`` resolves
+    to only those IDs. Callers with access to a LibraryIndex should compute
+    this via ``_get_emitted_expertise_ids`` so missing-source expertise is
+    dropped from compiled prompts. When None, all spec expertise IDs are
+    used (legacy behavior for callers without library access).
     """
-    expertise_ids = sorted(
-        (s.id for s in spec.expertise),
-        key=lambda sid: next(
-            (s.order for s in spec.expertise if s.id == sid), 0
-        ),
-    )
+    if emitted_expertise_ids is None:
+        expertise_ids: list[str] = sorted(
+            (s.id for s in spec.expertise),
+            key=lambda sid: next(
+                (s.order for s in spec.expertise if s.id == sid), 0
+            ),
+        )
+    else:
+        expertise_ids = list(emitted_expertise_ids)
     return {
         "project_name": spec.project.name,
         "expertise": ",".join(expertise_ids),
@@ -87,11 +121,12 @@ def _build_context(spec: CompositionSpec) -> dict[str, str]:
 def _build_persona_context(
     spec: CompositionSpec,
     persona_sel: PersonaSelection,
+    emitted_expertise_ids: list[str] | None = None,
 ) -> dict[str, str]:
     """Build a context dict for substituting placeholders in a single persona's
     source files. Includes every shared key plus the persona's own ``strictness``.
     """
-    ctx = _build_context(spec)
+    ctx = _build_context(spec, emitted_expertise_ids)
     ctx["strictness"] = persona_sel.strictness.value
     return ctx
 
@@ -436,7 +471,10 @@ def compile_project(
     wrote: list[str] = []
     warnings: list[str] = []
 
-    context = _build_context(spec)
+    # Determine which expertise will actually be emitted so persona templates
+    # don't substitute {{ expertise | join(...) }} with missing-source IDs.
+    emitted_expertise_ids = _get_emitted_expertise_ids(spec, library_index)
+    context = _build_context(spec, emitted_expertise_ids)
 
     # Build persona name map and selected IDs for reference filtering
     name_to_id = _build_persona_name_map(library_index)
@@ -449,7 +487,9 @@ def compile_project(
         members_dir.mkdir(parents=True, exist_ok=True)
 
         for persona_sel in spec.team.personas:
-            persona_ctx = _build_persona_context(spec, persona_sel)
+            persona_ctx = _build_persona_context(
+                spec, persona_sel, emitted_expertise_ids,
+            )
             persona_section = _compile_persona_section(
                 persona_sel.id, lib_root, library_index, persona_ctx, warnings,
             )
@@ -469,8 +509,11 @@ def compile_project(
                 persona_descriptions.append((persona_sel.id, desc))
 
     # --- Compile and write full expertise files to ai/generated/expertise/ ---
+    # ``emitted_expertise_ids`` (computed above) already identifies the
+    # expertise whose source files will be written; iterate in that order so
+    # the warning-emitting path in ``_compile_expertise_section`` still runs
+    # for any missing-source expertise listed in the spec.
     sorted_expertise = sorted(spec.expertise, key=lambda s: (s.order, s.id))
-    emitted_expertise_ids: list[str] = []
     if sorted_expertise:
         expertise_dir = root / "ai" / "generated" / "expertise"
         expertise_dir.mkdir(parents=True, exist_ok=True)
@@ -480,12 +523,10 @@ def compile_project(
                 expertise_sel.id, lib_root, library_index, context, warnings,
             )
             if expertise_section is not None:
-                # Write full content to separate file
                 exp_path = expertise_dir / f"{expertise_sel.id}.md"
                 exp_path.write_text(expertise_section + "\n", encoding="utf-8")
                 rel = str(exp_path.relative_to(root))
                 wrote.append(rel)
-                emitted_expertise_ids.append(expertise_sel.id)
                 logger.info("Wrote: %s", exp_path)
 
     # --- Build and write lean CLAUDE.md ---

@@ -654,11 +654,18 @@ class TestTemplateSubstitutionInContent:
 
     def test_expertise_join_substituted_in_generated_persona(self, tmp_path: Path):
         output = tmp_path / "project"
-        index, lib_root = _make_library(tmp_path, personas={
-            "developer": {
-                "persona.md": 'Stack: {{ expertise | join(", ") }}',
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "developer": {
+                    "persona.md": 'Stack: {{ expertise | join(", ") }}',
+                },
             },
-        })
+            expertise={
+                "python": {"conventions.md": "# Python"},
+                "typescript": {"conventions.md": "# TS"},
+            },
+        )
         spec = _make_spec(expertise=[
             ExpertiseSelection(id="python", order=10),
             ExpertiseSelection(id="typescript", order=20),
@@ -824,6 +831,42 @@ class TestCompileWarnings:
                 f"CLAUDE.md references ai/generated/expertise/{eid}.md but "
                 f"the file was not written"
             )
+
+    def test_missing_expertise_excluded_from_member_file(self, tmp_path: Path):
+        """When an expertise has no conventions.md, the generated member
+        file's ``{{ expertise | join(", ") }}`` substitution must not list
+        the missing-source expertise ID.
+        """
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "developer": {
+                    "persona.md": (
+                        "# Dev\n\nStack: **{{ expertise | join(\", \") }}**"
+                    ),
+                },
+            },
+            expertise={
+                "python": {"conventions.md": "# Python"},
+                "clean-code": {"readme.md": "Not conventions"},
+            },
+        )
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="clean-code", order=20),
+            ],
+        )
+        compile_project(spec, index, lib_root, output)
+
+        member = (output / "ai/generated/members/developer.md").read_text(
+            encoding="utf-8",
+        )
+        # Missing-source expertise must not appear in the substituted list.
+        assert "clean-code" not in member
+        # Present expertise is still rendered.
+        assert "Stack: **python**" in member
 
     def test_warns_on_unresolved_placeholders(self, tmp_path: Path):
         output = tmp_path / "project"
