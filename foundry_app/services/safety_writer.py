@@ -1,4 +1,10 @@
-"""Safety writer service — generates .claude/settings.json with native Claude Code hooks."""
+"""Safety writer service — generates .claude/settings.json with native Claude Code hooks.
+
+Posture taxonomy (`baseline` / `hardened` / `regulated`) is documented in
+`ai/context/hook-posture.md`. Stack-aware layering on top is documented in
+`ai/context/hook-selection.md`. The decision to keep the posture names and
+lock the mapping behind `posture_base_packs` is recorded in ADR-006.
+"""
 
 from __future__ import annotations
 
@@ -182,10 +188,13 @@ _HOOK_PACK_REGISTRY: dict[str, tuple[list[dict[str, Any]], list[dict[str, Any]]]
 
 
 # ---------------------------------------------------------------------------
-# Stack-aware defaults — see ai/context/hook-selection.md
+# Posture taxonomy — see ai/context/hook-posture.md (intent) and
+# ai/context/hook-selection.md (stack-aware layering).
 # ---------------------------------------------------------------------------
 
 # Posture → always-on packs (stack-independent: git / secrets / compliance).
+# If you change this mapping, update ai/context/hook-posture.md and the
+# TestPostureTaxonomy lock-in test together.
 _POSTURE_BASE: dict[Posture, list[str]] = {
     Posture.BASELINE: ["git-commit-branch"],
     Posture.HARDENED: [
@@ -196,6 +205,19 @@ _POSTURE_BASE: dict[Posture, list[str]] = {
         "compliance-gate", "post-task-qa",
     ],
 }
+
+
+def posture_base_packs(posture: Posture) -> list[str]:
+    """Return the base (stack-independent) pack ids for a posture.
+
+    The returned list is a fresh copy — callers may mutate it. Stack-aware
+    layering (expertise lint, cloud guardrails) is applied on top of this
+    base in `_stack_aware_default_packs`.
+
+    Canonical reference for what each posture enables:
+    `ai/context/hook-posture.md`.
+    """
+    return list(_POSTURE_BASE.get(posture, []))
 
 # Expertise id → lint/type-check pack id. Multiple expertises that map to the
 # same pack only add the pack once. See ai/context/hook-selection.md.
@@ -261,7 +283,7 @@ def _stack_aware_default_packs(spec: CompositionSpec) -> list[str]:
     then one cloud pack per non-baseline cloud provider. Duplicates are
     preserved in insertion order.
     """
-    pack_ids: list[str] = list(_POSTURE_BASE.get(spec.hooks.posture, []))
+    pack_ids: list[str] = posture_base_packs(spec.hooks.posture)
 
     seen: set[str] = set(pack_ids)
     for exp in spec.expertise:
