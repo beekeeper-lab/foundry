@@ -270,7 +270,7 @@
 | BEAN-246 | Wizard Card UX — Collapsed Categories and Click-to-Toggle | App | Medium | Done | team-lead |
 | BEAN-247 | Drop Broken Expertise References from Generated CLAUDE.md | App | High | Done | team-lead |
 | BEAN-248 | Add clean-code Expertise Conventions Content | Infra | Medium | Done | team-lead |
-| BEAN-249 | Audit Library Command/Skill Duplication | Infra | Medium | In Progress | team-lead |
+| BEAN-249 | Audit Library Command/Skill Duplication | Infra | Medium | Approved | (unassigned) |
 | BEAN-250 | Rebalance Hook Posture Taxonomy | App | Medium | Done | team-lead |
 | BEAN-251 | Clarify Agent Permission Scope in Generated Projects | App | Medium | Approved | (unassigned) |
 | BEAN-252 | Project Purpose Statement / Charter | App | High | Done | team-lead |
