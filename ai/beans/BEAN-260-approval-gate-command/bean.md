@@ -58,7 +58,7 @@ Transitioning a bean from `Unapproved` → `Approved` is a deliberate, documente
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Implement approve-bean validator, skill, command, and workflow docs | developer | — | Pending |
+| 1 | Implement approve-bean validator, skill, command, and workflow docs | developer | — | Done |
 | 2 | Verify approval gate implementation meets acceptance criteria | tech-qa | 1 | Pending |
 
 ## Changes
@@ -83,7 +83,7 @@ Transitioning a bean from `Unapproved` → `Approved` is a deliberate, documente
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 | Implement approve-bean validator, skill, command, and workflow docs | developer | — | — | — | — |
+| 1 | Implement approve-bean validator, skill, command, and workflow docs | developer | < 1m | N/A (suspect) | N/A (suspect) | — |
 | 2 | Verify approval gate implementation meets acceptance criteria | tech-qa | — | — | — | — |
 
 | Metric | Value |

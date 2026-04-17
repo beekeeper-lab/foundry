@@ -153,6 +153,38 @@ Newly created beans have status `Unapproved`. The user must review and approve t
 
 **What `/long-run` checks:** When the Team Lead enters autonomous mode, it only processes beans with status `Approved`. Beans with status `Unapproved` are skipped entirely. This ensures the user has reviewed and signed off on every unit of work before it begins.
 
+#### Approval Gate
+
+Transitioning a bean from `Unapproved` to `Approved` is a deliberate, validated action. The gate is enforced by the `/internal:approve-bean` command, which refuses to approve beans that still contain template placeholders or empty required fields.
+
+**Entry point:**
+
+```
+/internal:approve-bean <NNN> [--rationale "<text>"]
+```
+
+**Approval checklist — every field must have real content (not placeholders, not the template's example lines):**
+
+- [ ] **Problem Statement** — states the problem and why it matters.
+- [ ] **Goal** — states the desired outcome.
+- [ ] **Scope — In Scope** — at least one concrete deliverable (beyond `- Item 1` placeholders).
+- [ ] **Acceptance Criteria** — at least one bean-specific criterion beyond the standard `pytest` / `ruff` lines.
+- [ ] **Priority** — set to a real value (not the template default cell).
+- [ ] **Category** — set to `App`, `Process`, or `Infra` (not the placeholder `(App | Process | Infra)`).
+
+**What happens on success:**
+
+1. `bean.md` Status is set to `Approved`.
+2. The matching row in `ai/beans/_index.md` is updated.
+3. A single commit captures both file changes. The commit message is `Approve BEAN-NNN: <title>`; when `--rationale` is supplied, it is recorded in the commit body.
+4. The commit author is the audit trail for **who approved** (derived from git identity).
+
+**What happens on failure:**
+
+The command prints the list of missing or placeholder fields and exits without modifying any file. No commit is created. The reviewer fixes the flagged fields in `bean.md` and retries.
+
+**Implementation note:** The criteria are encoded in `foundry_app/services/bean_approval.py` (`check_bean_approvable`). The same rules are exercised by `tests/test_bean_approval.py`, so the gate behaves identically whether invoked through the command or the Python helper.
+
 ### 3. Picking
 
 The Team Lead reviews the backlog (`ai/beans/_index.md`) and picks beans to work on:
