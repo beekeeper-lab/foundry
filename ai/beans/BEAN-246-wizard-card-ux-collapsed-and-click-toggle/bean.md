@@ -65,11 +65,21 @@ Two UX issues with the wizard's persona / expertise / architecture selection pag
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/beans/BEAN-246-wizard-card-ux-collapsed-and-click-toggle/bean.md` | ±49 |
+| `ai/beans/BEAN-246-wizard-card-ux-collapsed-and-click-toggle/tasks/01-developer-collapsed-and-click.md` | +47 |
+| `ai/beans/BEAN-246-wizard-card-ux-collapsed-and-click-toggle/tasks/02-tech-qa-verification.md` | +65 |
+| `foundry_app/ui/screens/builder/wizard_pages/architecture_page.py` | +13 / -1 |
+| `foundry_app/ui/screens/builder/wizard_pages/expertise_page.py` | +14 / -2 |
+| `foundry_app/ui/screens/builder/wizard_pages/hook_safety_page.py` | +12 |
+| `foundry_app/ui/screens/builder/wizard_pages/persona_page.py` | +25 / -3 |
+| `tests/test_architecture_page.py` | +17 |
+| `tests/test_expertise_page.py` | +17 |
+| `tests/test_hook_safety_page.py` | +17 |
+| `tests/test_persona_page.py` | +23 / -3 |
+
+Totals: 11 files changed, +275 / -33.
 
 ## Notes
 
