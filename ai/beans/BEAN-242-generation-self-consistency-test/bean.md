@@ -68,11 +68,14 @@ The test is **red on `test` at merge-time** and only goes green after BEAN-243 (
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/beans/BEAN-242-generation-self-consistency-test/bean.md` | ±45 |
+| `ai/beans/BEAN-242-generation-self-consistency-test/tasks/01-developer-self-consistency-test.md` | +45 |
+| `ai/beans/BEAN-242-generation-self-consistency-test/tasks/02-tech-qa-verification.md` | +72 |
+| `tests/test_generator.py` | +108 |
+
+Totals: 4 files changed, +248 / -22.
 
 ## Notes
 
