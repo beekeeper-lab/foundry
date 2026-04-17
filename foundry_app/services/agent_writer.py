@@ -86,14 +86,23 @@ def _extract_key_rules(persona_text: str) -> list[str]:
 
 
 def _extract_expertise_highlights(conventions_text: str) -> str:
-    """Extract the key highlights from an expertise conventions.md file."""
+    """Extract the key highlights from an expertise conventions.md file.
+
+    Captures the Defaults section, soft-capped at _MAX_EXPERTISE_HIGHLIGHT_LINES.
+    Truncation is fence-aware: if the cap is reached while inside a fenced code
+    block (``` ... ```), extraction continues until the fence closes so the
+    emitted excerpt never has an unbalanced fence. A hard cap bounds runaway
+    on malformed sources; if the source still ends with an open fence, the
+    dangling opener (and lines after it) are dropped.
+    """
     lines = conventions_text.strip().splitlines()
     highlights: list[str] = []
     in_defaults = False
+    fence_open = False
+    hard_cap = _MAX_EXPERTISE_HIGHLIGHT_LINES * 4
 
     for line in lines:
         stripped = line.strip()
-        # Skip the title and intro text
         if stripped.startswith("# "):
             continue
         if stripped.startswith("---"):
@@ -103,7 +112,6 @@ def _extract_expertise_highlights(conventions_text: str) -> str:
                 highlights.append("")
             continue
 
-        # Capture the Defaults table
         if stripped == "## Defaults":
             in_defaults = True
             continue
@@ -112,9 +120,22 @@ def _extract_expertise_highlights(conventions_text: str) -> str:
                 in_defaults = False
             else:
                 highlights.append(stripped)
+                if stripped.startswith("```"):
+                    fence_open = not fence_open
 
-        if len(highlights) >= _MAX_EXPERTISE_HIGHLIGHT_LINES:
+        if len(highlights) >= hard_cap:
             break
+        if len(highlights) >= _MAX_EXPERTISE_HIGHLIGHT_LINES and not fence_open:
+            break
+
+    # Safety net: if we still ended inside an open fence (malformed source or
+    # hard cap tripped mid-block), drop everything from the last opener
+    # onward so the output has balanced fences.
+    if fence_open:
+        for i in range(len(highlights) - 1, -1, -1):
+            if highlights[i].startswith("```"):
+                highlights = highlights[:i]
+                break
 
     return "\n".join(highlights).strip()
 
