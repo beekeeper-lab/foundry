@@ -67,11 +67,17 @@ The generation pipeline fully resolves all Jinja expressions in every generated 
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/beans/BEAN-243-fix-compiler-placeholder-leakage/bean.md` | ±41 |
+| `ai/beans/BEAN-243-fix-compiler-placeholder-leakage/tasks/01-developer-placeholder-fix.md` | +59 |
+| `ai/beans/BEAN-243-fix-compiler-placeholder-leakage/tasks/02-tech-qa-verification.md` | +76 |
+| `foundry_app/services/agent_writer.py` | +35 |
+| `foundry_app/services/compiler.py` | +33 |
+| `tests/test_agent_writer.py` | +102 |
+| `tests/test_compiler.py` | +78 |
+
+Totals: 7 files changed, +399 / -25.
 
 ## Notes
 
