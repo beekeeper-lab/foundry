@@ -9,8 +9,11 @@ from foundry_app.core.models import (
     CompositionSpec,
     ExpertiseSelection,
     HookMode,
+    HookPackInfo,
     HookPackSelection,
     HooksConfig,
+    LibraryIndex,
+    PersonaInfo,
     PersonaSelection,
     Posture,
     ProjectIdentity,
@@ -747,3 +750,105 @@ class TestPostureTaxonomy:
         first.append("rogue-pack")
         second = posture_base_packs(Posture.BASELINE)
         assert second == ["git-commit-branch"]
+
+
+# ---------------------------------------------------------------------------
+# Posture compatibility filter (BEAN-263)
+# ---------------------------------------------------------------------------
+
+
+def _library_with_compliance_gate() -> LibraryIndex:
+    """A library whose compliance-gate declares baseline/hardened excluded."""
+    return LibraryIndex(
+        library_root="/fake/library",
+        personas=[PersonaInfo(id="developer",
+                              path="/fake/library/personas/developer",
+                              has_persona_md=True)],
+        expertise=[],
+        hook_packs=[
+            HookPackInfo(
+                id="compliance-gate",
+                path="/fake/library/claude/hooks/compliance-gate.md",
+                files=["compliance-gate.md"],
+                posture_compatibility={
+                    "baseline": {"included": "No", "default_mode": "—"},
+                    "hardened": {"included": "No", "default_mode": "—"},
+                    "regulated": {
+                        "included": "Yes", "default_mode": "enforcing",
+                    },
+                },
+            ),
+            HookPackInfo(
+                id="git-commit-branch",
+                path="/fake/library/claude/hooks/git-commit-branch.md",
+                files=["git-commit-branch.md"],
+                posture_compatibility={
+                    "baseline": {"included": "Yes", "default_mode": "enforcing"},
+                    "hardened": {"included": "Yes", "default_mode": "enforcing"},
+                    "regulated": {"included": "Yes", "default_mode": "enforcing"},
+                },
+            ),
+        ],
+    )
+
+
+class TestPostureCompatibilityFilter:
+    """write_safety skips packs declared incompatible with the active posture."""
+
+    def test_baseline_filters_compliance_gate(self, tmp_path: Path):
+        spec = _make_spec(hooks=HooksConfig(
+            posture=Posture.BASELINE,
+            packs=[
+                HookPackSelection(id="git-commit-branch"),
+                HookPackSelection(id="compliance-gate"),
+            ],
+        ))
+        result = write_safety(
+            spec, tmp_path, library=_library_with_compliance_gate(),
+        )
+        assert any(
+            "compliance-gate" in w and "baseline" in w for w in result.warnings
+        )
+        data = _read_settings(tmp_path)
+        pre_commands = [
+            entry["hooks"][0]["command"] for entry in data["hooks"]["PreToolUse"]
+        ]
+        post_commands = [
+            entry["hooks"][0]["command"] for entry in data["hooks"]["PostToolUse"]
+        ]
+        assert not any("Compliance:" in c for c in pre_commands + post_commands)
+
+    def test_regulated_keeps_compliance_gate(self, tmp_path: Path):
+        spec = _make_spec(hooks=HooksConfig(
+            posture=Posture.REGULATED,
+            packs=[
+                HookPackSelection(id="git-commit-branch"),
+                HookPackSelection(id="compliance-gate"),
+            ],
+        ))
+        result = write_safety(
+            spec, tmp_path, library=_library_with_compliance_gate(),
+        )
+        assert not any("compliance-gate" in w for w in result.warnings)
+        data = _read_settings(tmp_path)
+        post_commands = [
+            entry["hooks"][0]["command"] for entry in data["hooks"]["PostToolUse"]
+        ]
+        assert any("Compliance:" in c for c in post_commands)
+
+    def test_no_library_preserves_existing_behavior(self, tmp_path: Path):
+        """Without a library, the writer cannot filter — legacy callers stay intact."""
+        spec = _make_spec(hooks=HooksConfig(
+            posture=Posture.BASELINE,
+            packs=[
+                HookPackSelection(id="git-commit-branch"),
+                HookPackSelection(id="compliance-gate"),
+            ],
+        ))
+        result = write_safety(spec, tmp_path)
+        assert result.warnings == []
+        data = _read_settings(tmp_path)
+        post_commands = [
+            entry["hooks"][0]["command"] for entry in data["hooks"]["PostToolUse"]
+        ]
+        assert any("Compliance:" in c for c in post_commands)

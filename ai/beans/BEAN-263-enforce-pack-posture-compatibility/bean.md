@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-263 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-17 19:28 |
+| **Completed** | 2026-04-17 19:33 |
+| **Duration** | < 10m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -51,21 +51,41 @@ in a posture they declared incompatible with.
 
 ## Acceptance Criteria
 
-- [ ] Hook packs declare their posture compatibility in machine-readable
+- [x] Hook packs declare their posture compatibility in machine-readable
       metadata.
-- [ ] The generator consults that metadata when building
+- [x] The generator consults that metadata when building
       `settings.json` and refuses (or downgrades) incompatible packs.
-- [ ] A baseline composition with `compliance-gate` surfaces a
+- [x] A baseline composition with `compliance-gate` surfaces a
       validation error or downgrade warning.
-- [ ] Tests cover the incompatibility path.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] Tests cover the incompatibility path.
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Design posture_compatibility schema and integration | Architect | — | Done |
+| 2 | Implement parser, validator check, and safety-writer filter | Developer | 1 | Done |
+| 3 | Tests: parser, validator, safety-writer filter; full suite green | Tech-QA | 2 | Done |
+
+> Skipped: BA (default — criteria unambiguous).
+
+## Decisions
+
+- **Schema location**: the existing `## Posture Compatibility` table in every
+  hook pack `.md` is the canonical machine-readable source. A parser in
+  `library_indexer.py` reads it into `HookPackInfo.posture_compatibility`.
+  No modification of `ai-team-library/` files required — the table format is
+  already deterministic (`Posture | Included | Default Mode`).
+- **Policy**: surface a **validation error** (`Severity.ERROR`, code
+  `hook-pack-posture-incompatible`) via `validator.py` when a pack whose
+  compatibility row declares `Included: No` is active in the selected
+  posture. `safety_writer.py` additionally skips the pack at emit time as a
+  defensive fallback (so malformed flows surface a clear warning rather than
+  producing a contradictory `settings.json`).
+- **Interpretation**: `Yes`, `Optional`, and `Yes (...)` all count as
+  compatible. Only a literal `No` triggers the error.
 
 ## Changes
 
@@ -92,12 +112,14 @@ rebalance) so the schema is stable before encoding per-pack data.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Design posture_compatibility schema and integration | Architect | < 1m | 494,391 | 0 | $0.83 |
+| 2 | Implement parser, validator check, and safety-writer filter | Developer | < 5m | 372,771 | 858 | $0.71 |
+| 3 | Tests: parser, validator, safety-writer filter; full suite green | Tech-QA | < 3m | 716,591 | 1,688 | $1.28 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | < 1m |
+| **Total Tokens In** | 867,162 |
+| **Total Tokens Out** | 858 |
+| **Total Cost** | $1.54 |

@@ -206,7 +206,7 @@ def _run_pipeline(
         stage_callback("seed_tasks", "skipped", 0)
 
     # Stage 7: Write safety config
-    _run_stage("safety", write_safety, spec, output_dir)
+    _run_stage("safety", write_safety, spec, output_dir, library)
 
     # Stage 8: Diff report (only if enabled)
     if spec.generation.write_diff_report:

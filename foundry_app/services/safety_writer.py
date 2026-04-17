@@ -18,6 +18,7 @@ from foundry_app.core.models import (
     CompositionSpec,
     HookMode,
     HookPackSelection,
+    LibraryIndex,
     Posture,
     StageResult,
 )
@@ -302,8 +303,40 @@ def _stack_aware_default_packs(spec: CompositionSpec) -> list[str]:
     return pack_ids
 
 
+def _filter_posture_incompatible(
+    spec: CompositionSpec,
+    packs: list[HookPackSelection],
+    library: LibraryIndex | None,
+) -> tuple[list[HookPackSelection], list[str]]:
+    """Drop packs whose library metadata declares the posture incompatible.
+
+    A defensive filter complementing :func:`validator.run_pre_generation_validation`
+    — when a caller bypasses validation (e.g. programmatic use of
+    ``write_safety``), this keeps the emitted ``settings.json`` consistent
+    with each pack's declared compatibility contract.
+    """
+    if library is None:
+        return packs, []
+
+    posture_key = spec.hooks.posture.value.lower()
+    kept: list[HookPackSelection] = []
+    warnings: list[str] = []
+    for pack in packs:
+        info = library.hook_pack_by_id(pack.id)
+        row = info.posture_compatibility.get(posture_key) if info else None
+        if row and row.get("included", "").strip().lower() == "no":
+            warnings.append(
+                f"Hook pack '{pack.id}' is incompatible with posture "
+                f"'{posture_key}' (pack declares Included: No). Skipped."
+            )
+            continue
+        kept.append(pack)
+    return kept, warnings
+
+
 def _resolve_packs(
     spec: CompositionSpec,
+    library: LibraryIndex | None = None,
 ) -> tuple[list[HookPackSelection], list[str]]:
     """Resolve active hook packs and collect any mismatch warnings.
 
@@ -311,6 +344,9 @@ def _resolve_packs(
     emit a warning for every pack that doesn't match the declared stack.
     Otherwise, build a stack-aware default set from posture + expertise +
     cloud providers.
+
+    When ``library`` is provided, packs whose declared posture compatibility
+    excludes the composition's posture are filtered out with a warning.
     """
     if spec.hooks.packs:
         active = [
@@ -318,10 +354,14 @@ def _resolve_packs(
             if p.enabled and p.mode != HookMode.DISABLED
         ]
         warnings = _mismatch_warnings(spec, active)
-        return active, warnings
+    else:
+        default_ids = _stack_aware_default_packs(spec)
+        active = [HookPackSelection(id=pid) for pid in default_ids]
+        warnings = []
 
-    default_ids = _stack_aware_default_packs(spec)
-    return [HookPackSelection(id=pid) for pid in default_ids], []
+    active, posture_warnings = _filter_posture_incompatible(spec, active, library)
+    warnings.extend(posture_warnings)
+    return active, warnings
 
 
 def _mismatch_warnings(
@@ -343,12 +383,13 @@ def _mismatch_warnings(
 
 def _build_hooks(
     spec: CompositionSpec,
+    library: LibraryIndex | None = None,
 ) -> tuple[dict[str, Any], list[str]]:
     """Build the native Claude Code hooks structure from the composition spec."""
     pre_tool_use: list[dict[str, Any]] = []
     post_tool_use: list[dict[str, Any]] = []
 
-    packs, warnings = _resolve_packs(spec)
+    packs, warnings = _resolve_packs(spec, library)
 
     for pack in packs:
         registry_entry = _HOOK_PACK_REGISTRY.get(pack.id)
@@ -373,7 +414,11 @@ def _build_hooks(
 # Public API
 # ---------------------------------------------------------------------------
 
-def write_safety(spec: CompositionSpec, output_dir: str | Path) -> StageResult:
+def write_safety(
+    spec: CompositionSpec,
+    output_dir: str | Path,
+    library: LibraryIndex | None = None,
+) -> StageResult:
     """Generate ``.claude/settings.json`` with native Claude Code hooks.
 
     Maps the spec's hook pack selections (or stack-aware defaults derived
@@ -383,10 +428,15 @@ def write_safety(spec: CompositionSpec, output_dir: str | Path) -> StageResult:
     Args:
         spec: The composition spec describing the project.
         output_dir: Root directory of the generated project.
+        library: Optional indexed library. When provided, packs whose
+            declared posture compatibility excludes the composition's
+            posture are filtered out with a warning — a defensive
+            complement to pre-generation validation.
 
     Returns:
         A StageResult listing files written and any warnings (e.g., explicit
-        pack selections that don't match the declared stack).
+        pack selections that don't match the declared stack, or packs
+        filtered for posture incompatibility).
     """
     root = Path(output_dir)
     wrote: list[str] = []
@@ -394,7 +444,7 @@ def write_safety(spec: CompositionSpec, output_dir: str | Path) -> StageResult:
     settings_dir = root / ".claude"
     settings_dir.mkdir(parents=True, exist_ok=True)
 
-    settings, warnings = _build_hooks(spec)
+    settings, warnings = _build_hooks(spec, library)
 
     settings_path = settings_dir / "settings.json"
     settings_path.write_text(

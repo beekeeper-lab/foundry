@@ -10,6 +10,7 @@ from foundry_app.core.models import (
     LibraryIndex,
     PersonaInfo,
     PersonaSelection,
+    Posture,
     ProjectIdentity,
     Severity,
     Strictness,
@@ -454,3 +455,129 @@ class TestHookPackConflictDetection:
         result = run_pre_generation_validation(spec, _library_with_az_pair())
         conflict_errors = [m for m in result.errors if m.code == "hook-pack-conflict"]
         assert len(conflict_errors) == 1
+
+
+# ---------------------------------------------------------------------------
+# Hook pack posture compatibility (BEAN-263)
+# ---------------------------------------------------------------------------
+
+
+def _library_with_compliance_gate() -> LibraryIndex:
+    """Library where compliance-gate declares baseline/hardened as excluded."""
+    return LibraryIndex(
+        library_root="/fake/library",
+        personas=[PersonaInfo(id="developer",
+                              path="/fake/library/personas/developer",
+                              has_persona_md=True)],
+        expertise=[ExpertiseInfo(id="python",
+                                 path="/fake/library/stacks/python",
+                                 files=["conventions.md"])],
+        hook_packs=[
+            HookPackInfo(
+                id="compliance-gate",
+                path="/fake/library/claude/hooks/compliance-gate.md",
+                files=["compliance-gate.md"],
+                posture_compatibility={
+                    "baseline": {"included": "No", "default_mode": "—"},
+                    "hardened": {"included": "No", "default_mode": "—"},
+                    "regulated": {
+                        "included": "Yes", "default_mode": "enforcing",
+                    },
+                },
+            ),
+            HookPackInfo(
+                id="pre-commit-lint",
+                path="/fake/library/claude/hooks/pre-commit-lint.md",
+                files=["pre-commit-lint.md"],
+                posture_compatibility={
+                    "baseline": {"included": "Yes", "default_mode": "enforcing"},
+                    "hardened": {"included": "Yes", "default_mode": "enforcing"},
+                    "regulated": {"included": "Yes", "default_mode": "enforcing"},
+                },
+            ),
+        ],
+    )
+
+
+class TestHookPackPostureCompatibility:
+    """Error when an active pack declares the composition's posture as excluded."""
+
+    def test_baseline_with_compliance_gate_errors(self):
+        spec = _make_spec(hooks=HooksConfig(
+            posture=Posture.BASELINE,
+            packs=[HookPackSelection(id="compliance-gate")],
+        ))
+        result = run_pre_generation_validation(
+            spec, _library_with_compliance_gate(),
+        )
+        errors = [
+            m for m in result.errors
+            if m.code == "hook-pack-posture-incompatible"
+        ]
+        assert len(errors) == 1
+        assert "compliance-gate" in errors[0].message
+        assert "baseline" in errors[0].message
+
+    def test_regulated_with_compliance_gate_ok(self):
+        spec = _make_spec(hooks=HooksConfig(
+            posture=Posture.REGULATED,
+            packs=[HookPackSelection(id="compliance-gate")],
+        ))
+        result = run_pre_generation_validation(
+            spec, _library_with_compliance_gate(),
+        )
+        assert not any(
+            m.code == "hook-pack-posture-incompatible" for m in result.messages
+        )
+
+    def test_compatible_pack_no_error(self):
+        spec = _make_spec(hooks=HooksConfig(
+            posture=Posture.BASELINE,
+            packs=[HookPackSelection(id="pre-commit-lint")],
+        ))
+        result = run_pre_generation_validation(
+            spec, _library_with_compliance_gate(),
+        )
+        assert not any(
+            m.code == "hook-pack-posture-incompatible" for m in result.messages
+        )
+
+    def test_disabled_incompatible_pack_ignored(self):
+        spec = _make_spec(hooks=HooksConfig(
+            posture=Posture.BASELINE,
+            packs=[HookPackSelection(id="compliance-gate", enabled=False)],
+        ))
+        result = run_pre_generation_validation(
+            spec, _library_with_compliance_gate(),
+        )
+        assert not any(
+            m.code == "hook-pack-posture-incompatible" for m in result.messages
+        )
+
+    def test_pack_without_metadata_skipped(self):
+        """Older library entries with no posture_compatibility don't raise."""
+        lib = LibraryIndex(
+            library_root="/fake/library",
+            personas=[PersonaInfo(id="developer",
+                                  path="/fake/library/personas/developer",
+                                  has_persona_md=True)],
+            expertise=[ExpertiseInfo(id="python",
+                                     path="/fake/library/stacks/python",
+                                     files=["conventions.md"])],
+            hook_packs=[
+                HookPackInfo(
+                    id="pre-commit-lint",
+                    path="/fake/library/claude/hooks/pre-commit-lint.md",
+                    files=["pre-commit-lint.md"],
+                    # posture_compatibility left empty
+                ),
+            ],
+        )
+        spec = _make_spec(hooks=HooksConfig(
+            posture=Posture.BASELINE,
+            packs=[HookPackSelection(id="pre-commit-lint")],
+        ))
+        result = run_pre_generation_validation(spec, lib)
+        assert not any(
+            m.code == "hook-pack-posture-incompatible" for m in result.messages
+        )

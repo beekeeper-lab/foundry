@@ -382,6 +382,93 @@ class TestHookPackConflictsWith:
 
 
 # ---------------------------------------------------------------------------
+# Hook pack posture_compatibility parsing (BEAN-263)
+# ---------------------------------------------------------------------------
+
+
+class TestHookPackPostureCompatibility:
+    """Test that ``## Posture Compatibility`` is parsed into HookPackInfo."""
+
+    def test_compliance_gate_excludes_baseline_and_hardened(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        pack = idx.hook_pack_by_id("compliance-gate")
+        assert pack is not None
+        compat = pack.posture_compatibility
+        assert compat["baseline"]["included"].lower() == "no"
+        assert compat["hardened"]["included"].lower() == "no"
+        assert compat["regulated"]["included"].lower() == "yes"
+        assert compat["regulated"]["default_mode"] == "enforcing"
+
+    def test_git_commit_branch_supports_every_posture(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        pack = idx.hook_pack_by_id("git-commit-branch")
+        assert pack is not None
+        for posture in ("baseline", "hardened", "regulated"):
+            assert pack.posture_compatibility[posture]["included"].lower() == "yes"
+
+    def test_every_real_pack_except_policy_has_three_postures(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        for pack in idx.hook_packs:
+            if pack.id == "hook-policy":
+                continue
+            assert set(pack.posture_compatibility.keys()) == {
+                "baseline", "hardened", "regulated",
+            }, f"{pack.id} missing postures"
+
+    def test_parse_yes_no_optional_and_conditional(self, tmp_path: Path):
+        hooks_dir = tmp_path / "claude" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "mixed.md").write_text(
+            "# Hook Pack: Mixed\n\n"
+            "## Posture Compatibility\n\n"
+            "| Posture | Included | Default Mode |\n"
+            "|---------|----------|--------------|\n"
+            "| `baseline` | No | — |\n"
+            "| `hardened` | Optional | advisory |\n"
+            "| `regulated` | Yes (when strict) | enforcing |\n"
+        )
+        idx = build_library_index(tmp_path)
+        pack = idx.hook_pack_by_id("mixed")
+        assert pack is not None
+        assert pack.posture_compatibility == {
+            "baseline": {"included": "No", "default_mode": "—"},
+            "hardened": {"included": "Optional", "default_mode": "advisory"},
+            "regulated": {
+                "included": "Yes (when strict)",
+                "default_mode": "enforcing",
+            },
+        }
+
+    def test_no_section_defaults_empty(self, tmp_path: Path):
+        hooks_dir = tmp_path / "claude" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "bare.md").write_text("# Hook Pack: Bare\n\n## Purpose\nT\n")
+        idx = build_library_index(tmp_path)
+        pack = idx.hook_pack_by_id("bare")
+        assert pack is not None
+        assert pack.posture_compatibility == {}
+
+    def test_section_terminates_at_next_heading(self, tmp_path: Path):
+        hooks_dir = tmp_path / "claude" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "scoped.md").write_text(
+            "# Hook Pack: Scoped\n\n"
+            "## Posture Compatibility\n\n"
+            "| Posture | Included | Default Mode |\n"
+            "|---------|----------|--------------|\n"
+            "| `baseline` | Yes | enforcing |\n\n"
+            "## Stack Signals\n\n"
+            "| Posture | Included | Default Mode |\n"
+            "|---------|----------|--------------|\n"
+            "| `bogus` | Yes | enforcing |\n"
+        )
+        idx = build_library_index(tmp_path)
+        pack = idx.hook_pack_by_id("scoped")
+        assert pack is not None
+        assert set(pack.posture_compatibility.keys()) == {"baseline"}
+
+
+# ---------------------------------------------------------------------------
 # Persona category tests
 # ---------------------------------------------------------------------------
 
