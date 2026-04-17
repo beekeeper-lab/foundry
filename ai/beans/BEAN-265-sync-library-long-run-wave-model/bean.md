@@ -67,7 +67,7 @@ skill instructing a phantom hand-off.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Update library wave-model references | developer | — | Pending |
+| 1 | Update library wave-model references | developer | — | Done |
 | 2 | Verify library sync + regeneration + tests/lint | tech-qa | 1 | Pending |
 
 > Skipped: BA (default — wave-model language already documented in Foundry; this is a straight library sync, no requirements ambiguity), Architect (default — no new subsystem, API change, or ADR needed; markdown-only sync).
@@ -97,7 +97,7 @@ established the new model; the library sync was missed.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 | Update library wave-model references | developer | — | — | — | — |
+| 1 | Update library wave-model references | developer | 1m | 1,186,806 | 5,641 | $2.34 |
 | 2 | Verify library sync + regeneration + tests/lint | tech-qa | — | — | — | — |
 
 | Metric | Value |

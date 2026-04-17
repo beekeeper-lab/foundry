@@ -66,7 +66,7 @@ One consistent funnel for all new work. Instead of separate commands for bugs, f
 ```
 /new-work feature "Add user authentication with OAuth2"
 ```
-Creates task spec, drafts a user story, seeds tasks for BA → Architect → Developer → Tech-QA.
+Creates task spec, drafts a user story, seeds tasks for Developer → Tech-QA (adding BA and Architect when their activation criteria are met).
 
 **Critical bug:**
 ```
