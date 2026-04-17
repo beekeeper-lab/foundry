@@ -335,3 +335,122 @@ class TestEdgeCases:
         assert not result.is_valid
         assert len(result.errors) == 1
         assert result.errors[0].code == "missing-persona"
+
+
+# ---------------------------------------------------------------------------
+# Hook pack conflict detection (BEAN-262)
+# ---------------------------------------------------------------------------
+
+
+def _library_with_az_pair() -> LibraryIndex:
+    """Library index where az-read-only and az-limited-ops declare mutual conflicts."""
+    return LibraryIndex(
+        library_root="/fake/library",
+        personas=[
+            PersonaInfo(id="developer", path="/fake/library/personas/developer",
+                        has_persona_md=True),
+        ],
+        expertise=[
+            ExpertiseInfo(id="python", path="/fake/library/stacks/python",
+                          files=["conventions.md"]),
+        ],
+        hook_packs=[
+            HookPackInfo(
+                id="az-read-only",
+                path="/fake/library/claude/hooks/az-read-only.md",
+                files=["az-read-only.md"],
+                conflicts_with=["az-limited-ops"],
+            ),
+            HookPackInfo(
+                id="az-limited-ops",
+                path="/fake/library/claude/hooks/az-limited-ops.md",
+                files=["az-limited-ops.md"],
+                conflicts_with=["az-read-only"],
+            ),
+            HookPackInfo(
+                id="pre-commit-lint",
+                path="/fake/library/claude/hooks/pre-commit-lint.md",
+                files=["pre-commit-lint.md"],
+            ),
+        ],
+    )
+
+
+class TestHookPackConflictDetection:
+
+    def test_az_pair_fails_validation(self):
+        spec = _make_spec(hooks=HooksConfig(packs=[
+            HookPackSelection(id="az-read-only"),
+            HookPackSelection(id="az-limited-ops"),
+        ]))
+        result = run_pre_generation_validation(spec, _library_with_az_pair())
+        assert not result.is_valid
+        conflict_errors = [m for m in result.errors if m.code == "hook-pack-conflict"]
+        assert len(conflict_errors) == 1
+        msg = conflict_errors[0].message
+        assert "az-limited-ops" in msg
+        assert "az-read-only" in msg
+        assert "mutually exclusive" in msg
+
+    def test_single_pack_from_conflicting_pair_passes(self):
+        spec = _make_spec(hooks=HooksConfig(packs=[
+            HookPackSelection(id="az-limited-ops"),
+        ]))
+        result = run_pre_generation_validation(spec, _library_with_az_pair())
+        assert not any(m.code == "hook-pack-conflict" for m in result.messages)
+
+    def test_non_conflicting_pair_passes(self):
+        spec = _make_spec(hooks=HooksConfig(packs=[
+            HookPackSelection(id="az-limited-ops"),
+            HookPackSelection(id="pre-commit-lint"),
+        ]))
+        result = run_pre_generation_validation(spec, _library_with_az_pair())
+        assert not any(m.code == "hook-pack-conflict" for m in result.messages)
+
+    def test_one_sided_declaration_still_detected(self):
+        lib = LibraryIndex(
+            library_root="/fake/library",
+            personas=[PersonaInfo(id="developer",
+                                  path="/fake/library/personas/developer",
+                                  has_persona_md=True)],
+            expertise=[ExpertiseInfo(id="python",
+                                     path="/fake/library/stacks/python",
+                                     files=["conventions.md"])],
+            hook_packs=[
+                HookPackInfo(
+                    id="az-read-only",
+                    path="/fake/library/claude/hooks/az-read-only.md",
+                    files=["az-read-only.md"],
+                    conflicts_with=["az-limited-ops"],
+                ),
+                HookPackInfo(
+                    id="az-limited-ops",
+                    path="/fake/library/claude/hooks/az-limited-ops.md",
+                    files=["az-limited-ops.md"],
+                    conflicts_with=[],
+                ),
+            ],
+        )
+        spec = _make_spec(hooks=HooksConfig(packs=[
+            HookPackSelection(id="az-read-only"),
+            HookPackSelection(id="az-limited-ops"),
+        ]))
+        result = run_pre_generation_validation(spec, lib)
+        assert any(m.code == "hook-pack-conflict" for m in result.errors)
+
+    def test_disabled_pack_not_counted_as_conflict(self):
+        spec = _make_spec(hooks=HooksConfig(packs=[
+            HookPackSelection(id="az-read-only"),
+            HookPackSelection(id="az-limited-ops", enabled=False),
+        ]))
+        result = run_pre_generation_validation(spec, _library_with_az_pair())
+        assert not any(m.code == "hook-pack-conflict" for m in result.messages)
+
+    def test_conflict_reported_once_per_pair(self):
+        spec = _make_spec(hooks=HooksConfig(packs=[
+            HookPackSelection(id="az-read-only"),
+            HookPackSelection(id="az-limited-ops"),
+        ]))
+        result = run_pre_generation_validation(spec, _library_with_az_pair())
+        conflict_errors = [m for m in result.errors if m.code == "hook-pack-conflict"]
+        assert len(conflict_errors) == 1
