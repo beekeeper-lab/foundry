@@ -163,7 +163,7 @@ class CollapsibleGroupBox(QFrame):
     def __init__(self, title: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._title = title
-        self._expanded = True
+        self._expanded = False
         self.setStyleSheet(
             f"QFrame#collapsible-group {{"
             f"  border: 1px solid {BORDER_DEFAULT};"
@@ -177,18 +177,19 @@ class CollapsibleGroupBox(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Header button with chevron
-        self._toggle_btn = QPushButton(f"▼  {title}")
+        # Header button with chevron (collapsed by default)
+        self._toggle_btn = QPushButton(f"▶  {title}")
         self._toggle_btn.setStyleSheet(COLLAPSE_BUTTON_STYLE)
         self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._toggle_btn.clicked.connect(self.toggle)
         layout.addWidget(self._toggle_btn)
 
-        # Content container
+        # Content container (hidden until user expands)
         self._content = QWidget()
         self._content_layout = QVBoxLayout(self._content)
         self._content_layout.setContentsMargins(8, 0, 8, 8)
         self._content_layout.setSpacing(8)
+        self._content.setVisible(False)
         layout.addWidget(self._content)
 
     def title(self) -> str:
@@ -249,10 +250,12 @@ class PersonaCard(QFrame):
 
         name_label = QLabel(display_name)
         name_label.setStyleSheet(LABEL_STYLE)
+        name_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         top_row.addWidget(name_label)
 
         role_label = QLabel(f"— {role_desc}" if role_desc else "")
         role_label.setStyleSheet(DESC_STYLE)
+        role_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         top_row.addWidget(role_label, stretch=1)
 
         # Template count badge
@@ -260,6 +263,7 @@ class PersonaCard(QFrame):
         if tmpl_count > 0:
             badge = QLabel(f"{tmpl_count} template{'s' if tmpl_count != 1 else ''}")
             badge.setStyleSheet(TEMPLATES_STYLE)
+            badge.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             top_row.addWidget(badge)
 
         layout.addLayout(top_row)
@@ -271,6 +275,7 @@ class PersonaCard(QFrame):
 
         agent_label = QLabel("Agent file:")
         agent_label.setStyleSheet(CONFIG_LABEL_STYLE)
+        agent_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._agent_check = QCheckBox()
         self._agent_check.setChecked(True)
         config_row.addWidget(agent_label)
@@ -278,6 +283,7 @@ class PersonaCard(QFrame):
 
         templates_label = QLabel("Templates:")
         templates_label.setStyleSheet(CONFIG_LABEL_STYLE)
+        templates_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._templates_check = QCheckBox()
         self._templates_check.setChecked(True)
         config_row.addWidget(templates_label)
@@ -285,6 +291,7 @@ class PersonaCard(QFrame):
 
         strictness_label = QLabel("Strictness:")
         strictness_label.setStyleSheet(CONFIG_LABEL_STYLE)
+        strictness_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._strictness_combo = QComboBox()
         self._strictness_combo.addItems(["light", "standard", "strict"])
         self._strictness_combo.setCurrentText("standard")
@@ -294,6 +301,19 @@ class PersonaCard(QFrame):
 
         config_row.addStretch(1)
         layout.addLayout(config_row)
+
+    def mousePressEvent(self, event) -> None:  # type: ignore[override]
+        """Toggle the selection checkbox when the card area is left-clicked.
+
+        Interactive child widgets (checkbox, combo box) absorb their own
+        clicks before this handler fires; the text labels are marked
+        ``WA_TransparentForMouseEvents`` so clicks on them fall through here.
+        """
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._checkbox.toggle()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
     # -- State access -------------------------------------------------------
 

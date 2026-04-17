@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-246 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-17 16:51 |
+| **Completed** | 2026-04-17 16:57 |
+| **Duration** | 1267h 50m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -41,35 +41,45 @@ Two UX issues with the wizard's persona / expertise / architecture selection pag
 
 ## Acceptance Criteria
 
-- [ ] Persona page: all category sections are collapsed on first page load. Clicking a section header expands it.
-- [ ] Expertise page: same — all sections collapsed on first page load.
-- [ ] Architecture page: same — all sections collapsed on first page load.
-- [ ] Clicking anywhere on a persona card toggles the checkbox state.
-- [ ] Clicking anywhere on an expertise card toggles the checkbox state.
-- [ ] Clicking anywhere on an architecture card toggles the checkbox state.
-- [ ] Clicking anywhere on a hook pack card toggles the checkbox state.
-- [ ] Clicking the combo box on a card (strictness selector, mode selector) does NOT toggle the checkbox.
-- [ ] Existing tests updated: `test_all_groups_expanded_by_default` inverted to `test_all_groups_collapsed_by_default` (or equivalent).
-- [ ] New test: clicking a card's label area toggles the checkbox.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] Persona page: all category sections are collapsed on first load. Clicking a section header expands it.
+- [x] Expertise page: same — all sections collapsed on first page load.
+- [x] Architecture page: same — all sections collapsed on first page load.
+- [x] Clicking anywhere on a persona card toggles the checkbox state.
+- [x] Clicking anywhere on an expertise card toggles the checkbox state.
+- [x] Clicking anywhere on an architecture card toggles the checkbox state.
+- [x] Clicking anywhere on a hook pack card toggles the checkbox state.
+- [x] Clicking the combo box on a card does NOT toggle the checkbox (QComboBox absorbs its own events; card's mousePressEvent never sees the click).
+- [x] `test_all_groups_expanded_by_default` renamed → `test_all_groups_collapsed_by_default` and asserts the new state.
+- [x] New `test_click_on_card_toggles_checkbox` added to each of the four wizard-page test files.
+- [x] All tests pass (`uv run pytest` → 1808 passed).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Collapsed default + click-to-toggle | Developer | — | Done |
+| 2 | Tech-QA Verification | Tech-QA | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default — criteria clear), Architect (default — per-file tweaks, no new widget).
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/beans/BEAN-246-wizard-card-ux-collapsed-and-click-toggle/bean.md` | ±49 |
+| `ai/beans/BEAN-246-wizard-card-ux-collapsed-and-click-toggle/tasks/01-developer-collapsed-and-click.md` | +47 |
+| `ai/beans/BEAN-246-wizard-card-ux-collapsed-and-click-toggle/tasks/02-tech-qa-verification.md` | +65 |
+| `foundry_app/ui/screens/builder/wizard_pages/architecture_page.py` | +13 / -1 |
+| `foundry_app/ui/screens/builder/wizard_pages/expertise_page.py` | +14 / -2 |
+| `foundry_app/ui/screens/builder/wizard_pages/hook_safety_page.py` | +12 |
+| `foundry_app/ui/screens/builder/wizard_pages/persona_page.py` | +25 / -3 |
+| `tests/test_architecture_page.py` | +17 |
+| `tests/test_expertise_page.py` | +17 |
+| `tests/test_hook_safety_page.py` | +17 |
+| `tests/test_persona_page.py` | +23 / -3 |
+
+Totals: 11 files changed, +275 / -33.
 
 ## Notes
 
@@ -104,12 +114,13 @@ Fits blast-radius budget (≤10 files, 1 boundary, small diff per file).
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Collapsed default + click-to-toggle | Developer | — | — | — | — |
+| 2 | Tech-QA Verification | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 1267h 50m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

@@ -240,10 +240,12 @@ class HookPackCard(QFrame):
 
         name_label = QLabel(display_name)
         name_label.setStyleSheet(LABEL_STYLE)
+        name_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(name_label)
 
         desc_label = QLabel(f"— {desc}" if desc else "")
         desc_label.setStyleSheet(DESC_STYLE)
+        desc_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(desc_label, stretch=1)
 
         # File count badge
@@ -251,11 +253,13 @@ class HookPackCard(QFrame):
         if file_count > 0:
             badge = QLabel(f"{file_count} file{'s' if file_count != 1 else ''}")
             badge.setStyleSheet(FILES_STYLE)
+            badge.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             layout.addWidget(badge)
 
         # Mode selector
         mode_label = QLabel("Mode:")
         mode_label.setStyleSheet(CONFIG_LABEL_STYLE)
+        mode_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(mode_label)
 
         self._mode_combo = QComboBox()
@@ -265,6 +269,14 @@ class HookPackCard(QFrame):
         self._mode_combo.setFixedWidth(100)
         self._mode_combo.currentTextChanged.connect(self._on_mode_changed)
         layout.addWidget(self._mode_combo)
+
+    def mousePressEvent(self, event) -> None:  # type: ignore[override]
+        """Toggle the enable checkbox when the card area is left-clicked."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._checkbox.toggle()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
     # -- State access -------------------------------------------------------
 
