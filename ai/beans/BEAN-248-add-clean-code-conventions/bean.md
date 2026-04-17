@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-248 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 19:01 |
 | **Completed** | — |
 | **Duration** | — |
 | **Owner** | (unassigned) |
@@ -48,9 +48,10 @@ This bean fixes the *content* side: supply real `clean-code` conventions so the 
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Author `ai-team-library/expertise/clean-code/conventions.md` following the standardized expertise template | Developer | — | Pending |
+| 2 | Verify acceptance: regenerate `small-python-team`, confirm no `clean-code` warnings, confirm `clean-code.md` on disk + referenced from generated `CLAUDE.md`, run `uv run pytest` and `uv run ruff check foundry_app/` | Tech-QA | 1 | Pending |
 
-> Tasks are populated by the Team Lead during decomposition.
+> Skipped: BA (default — requirements unambiguous, content-only change), Architect (default — no subsystem, module, or dependency changes).
 
 ## Changes
 
@@ -78,7 +79,8 @@ This bean fixes the *content* side: supply real `clean-code` conventions so the 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Author `ai-team-library/expertise/clean-code/conventions.md` following the standardized expertise template | Developer | — | — | — | — |
+| 2 | Verify acceptance: regenerate `small-python-team`, confirm no `clean-code` warnings, confirm `clean-code.md` on disk + referenced from generated `CLAUDE.md`, run `uv run pytest` and `uv run ruff check foundry_app/` | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
