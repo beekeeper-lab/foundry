@@ -1128,6 +1128,114 @@ class TestEndToEnd:
 
 
 # ---------------------------------------------------------------------------
+# Self-consistency: generated projects must satisfy validate-repo expectations
+# and must not leak Jinja template expressions.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(not _E2E_AVAILABLE, reason="ai-team-library or example YAML not present")
+class TestGenerationSelfConsistency:
+    """Generated projects must have no unrendered Jinja and must satisfy
+    validate-repo's documented structural contract.
+
+    TDD-first driver for BEAN-243 (placeholder leakage fix) and
+    BEAN-244 (composition.yml + README.md emission).
+    """
+
+    # File suffixes that may contain Jinja expressions worth scanning.
+    _SCANNED_SUFFIXES = {".md", ".json", ".yml", ".yaml"}
+    # Jinja markers that must not appear in any generated text file.
+    _JINJA_MARKERS = ("{{", "}}", "{%", "%}")
+
+    @pytest.fixture()
+    def generated_project(self, tmp_path: Path):
+        spec = load_composition(_EXAMPLE_YAML)
+        output_dir = tmp_path / spec.project.slug
+
+        manifest, validation, _ = generate_project(
+            spec,
+            _LIBRARY_ROOT,
+            output_root=output_dir,
+        )
+
+        assert validation.is_valid, f"Validation failed: {validation.errors}"
+        return output_dir, manifest, spec
+
+    def test_no_unresolved_jinja_in_generated_files(self, generated_project):
+        """No generated `.md`/`.json`/`.yml`/`.yaml` file may contain
+        `{{`, `}}`, `{%`, or `%}`. If any do, the compile pipeline failed
+        to render a fragment with the composition context.
+        """
+        output_dir, _, _ = generated_project
+
+        leaks: list[str] = []
+        for path in output_dir.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in self._SCANNED_SUFFIXES:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for line_no, line in enumerate(text.splitlines(), start=1):
+                if any(marker in line for marker in self._JINJA_MARKERS):
+                    rel = path.relative_to(output_dir)
+                    leaks.append(f"{rel}:{line_no}: {line.strip()}")
+                    break  # one occurrence per file is enough to fail
+
+        assert not leaks, (
+            "Unrendered Jinja expressions found in generated output "
+            "(fix: BEAN-243 — render persona/expertise fragments with full "
+            "composition context):\n  " + "\n  ".join(leaks)
+        )
+
+    def test_validate_repo_structural_paths_exist(self, generated_project):
+        """All paths expected by `ai-team-library/claude/skills/validate-repo`
+        must exist in a freshly generated project. Missing `ai/team/composition.yml`
+        or `README.md` is fixed by BEAN-244.
+        """
+        output_dir, _, spec = generated_project
+
+        missing: list[str] = []
+
+        # Root files
+        for rel in ("CLAUDE.md", "README.md", "ai/team/composition.yml"):
+            p = output_dir / rel
+            if not p.is_file() or p.stat().st_size == 0:
+                missing.append(rel)
+
+        # Shared directories
+        for rel in (
+            ".claude/agents",
+            "ai/context",
+            "ai/generated/members",
+            "ai/team",
+            "ai/tasks",
+            "ai/outputs",
+        ):
+            p = output_dir / rel
+            if not p.is_dir():
+                missing.append(rel + "/")
+
+        # Per-persona files and directories
+        for persona in spec.team.personas:
+            agent_file = output_dir / ".claude" / "agents" / f"{persona.id}.md"
+            member_file = output_dir / "ai" / "generated" / "members" / f"{persona.id}.md"
+            outputs_dir = output_dir / "ai" / "outputs" / persona.id
+            if not agent_file.is_file():
+                missing.append(f".claude/agents/{persona.id}.md")
+            if not member_file.is_file():
+                missing.append(f"ai/generated/members/{persona.id}.md")
+            if not outputs_dir.is_dir():
+                missing.append(f"ai/outputs/{persona.id}/")
+
+        assert not missing, (
+            "Generated project is missing paths required by validate-repo "
+            "(fix: BEAN-244 for composition.yml + README.md):\n  "
+            + "\n  ".join(missing)
+        )
+
+
+# ---------------------------------------------------------------------------
 # Stage callback contract
 # ---------------------------------------------------------------------------
 
