@@ -268,3 +268,8 @@
 | BEAN-244 | Emit composition.yml and README.md in Generated Projects | App | High | Done | team-lead |
 | BEAN-245 | Fix Generation Progress — Skipped Stages and Warnings Display | App | Medium | Done | team-lead |
 | BEAN-246 | Wizard Card UX — Collapsed Categories and Click-to-Toggle | App | Medium | Done | team-lead |
+| BEAN-247 | Drop Broken Expertise References from Generated CLAUDE.md | App | High | Unapproved | (unassigned) |
+| BEAN-248 | Add clean-code Expertise Conventions Content | Infra | Medium | Unapproved | (unassigned) |
+| BEAN-249 | Audit Library Command/Skill Duplication | Infra | Medium | Unapproved | (unassigned) |
+| BEAN-250 | Rebalance Hook Posture Taxonomy | App | Medium | Unapproved | (unassigned) |
+| BEAN-251 | Clarify Agent Permission Scope in Generated Projects | App | Medium | Unapproved | (unassigned) |
