@@ -164,12 +164,12 @@ class CollapsibleSection(QWidget):
 
     def __init__(self, title: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._expanded = True
+        self._expanded = False
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 8, 0, 0)
         layout.setSpacing(0)
 
-        self._toggle_btn = QPushButton(f"\u25bc  {title}")
+        self._toggle_btn = QPushButton(f"\u25b6  {title}")
         self._toggle_btn.setStyleSheet(COLLAPSE_HEADER_STYLE)
         self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._toggle_btn.clicked.connect(self._toggle)
@@ -179,6 +179,7 @@ class CollapsibleSection(QWidget):
         self._content_layout = QVBoxLayout(self._content)
         self._content_layout.setContentsMargins(8, 8, 8, 8)
         self._content_layout.setSpacing(8)
+        self._content.setVisible(False)
         layout.addWidget(self._content)
 
         self._title = title
@@ -234,17 +235,28 @@ class ExpertiseCard(QFrame):
 
         name_label = QLabel(display_name)
         name_label.setStyleSheet(LABEL_STYLE)
+        name_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(name_label)
 
         desc_label = QLabel(f"— {desc}" if desc else "")
         desc_label.setStyleSheet(DESC_STYLE)
+        desc_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(desc_label, stretch=1)
 
         file_count = len(self._expertise.files)
         if file_count > 0:
             badge = QLabel(f"{file_count} file{'s' if file_count != 1 else ''}")
             badge.setStyleSheet(FILES_STYLE)
+            badge.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             layout.addWidget(badge)
+
+    def mousePressEvent(self, event) -> None:  # type: ignore[override]
+        """Toggle the checkbox when the card area is left-clicked."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._checkbox.toggle()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
     @property
     def expertise_id(self) -> str:

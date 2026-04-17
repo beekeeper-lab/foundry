@@ -128,6 +128,23 @@ class TestHookPackCardToggle:
         assert len(received) == 1
         assert received[0] == ("pre-commit-lint", True)
 
+    def test_click_on_card_toggles_checkbox(self, card):
+        from PySide6.QtCore import QPointF, Qt
+        from PySide6.QtGui import QMouseEvent
+
+        assert card.is_enabled is True  # hook packs start enabled
+        event = QMouseEvent(
+            QMouseEvent.Type.MouseButtonPress,
+            QPointF(200, 10),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        card.mousePressEvent(event)
+        assert card.is_enabled is False
+        card.mousePressEvent(event)
+        assert card.is_enabled is True
+
 
 # ---------------------------------------------------------------------------
 # HookPackCard — mode

@@ -143,6 +143,25 @@ class TestPersonaCardSelection:
         assert len(received) == 1
         assert received[0] == ("developer", False)
 
+    def test_click_on_card_toggles_checkbox(self, card):
+        """Clicking the card (outside the checkbox/combo) toggles selection."""
+        from PySide6.QtCore import QPointF, Qt
+        from PySide6.QtGui import QMouseEvent
+
+        assert card.is_selected is False
+        event = QMouseEvent(
+            QMouseEvent.Type.MouseButtonPress,
+            QPointF(200, 10),  # well outside the checkbox
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        card.mousePressEvent(event)
+        assert card.is_selected is True
+
+        card.mousePressEvent(event)
+        assert card.is_selected is False
+
 
 # ---------------------------------------------------------------------------
 # PersonaCard — to_persona_selection
@@ -368,9 +387,12 @@ class TestCategoryGrouping:
         title = groups["Data & Analytics"].title()
         assert "(3)" in title
 
-    def test_all_groups_expanded_by_default(self, loaded_page):
+    def test_all_groups_collapsed_by_default(self, loaded_page):
         for name, group in loaded_page.category_groups.items():
-            assert not group.isHidden(), f"{name} group is hidden"
+            assert not group.isHidden(), f"{name} group header is hidden"
+            assert not group.is_expanded, (
+                f"{name} group expanded by default; expected collapsed"
+            )
 
     def test_personas_with_no_category_go_to_other(self):
         lib = LibraryIndex(
