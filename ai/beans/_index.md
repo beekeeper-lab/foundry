@@ -282,3 +282,12 @@
 | BEAN-258 | Code-Quality-Reviewer vs Tech-QA Scope Split | Process | Low | Approved | (unassigned) |
 | BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | Approved | (unassigned) |
 | BEAN-260 | Approval Gate — Command + Criteria | Process | Medium | Approved | (unassigned) |
+| BEAN-261 | Propagate Missing-Expertise Drop to Agent Headers and Member Files | App | High | Approved | (unassigned) |
+| BEAN-262 | Detect Mutually-Exclusive Hook Pack Pairs at Generation Time | App | Medium | Approved | (unassigned) |
+| BEAN-263 | Enforce Pack-Declared Posture Compatibility at Generation Time | App | Medium | Approved | (unassigned) |
+| BEAN-264 | Validate MCP Package References in Generated mcp.json | App | High | Approved | (unassigned) |
+| BEAN-265 | Sync Library long-run Skill With New Wave Model | Process | High | Approved | (unassigned) |
+| BEAN-266 | Fix CLAUDE.md Title-Casing for Acronyms and Slashed Names | App | Low | Approved | (unassigned) |
+| BEAN-267 | Investigate Reported Agent File Truncation in Multi-Expertise Compositions | App | Medium | Approved | (unassigned) |
+| BEAN-268 | Add Workflow Pointers Section to Generated CLAUDE.md | App | Medium | Approved | (unassigned) |
+| BEAN-269 | Make Team Orchestration Model Explicit in Generated Artifacts | App | High | Approved | (unassigned) |

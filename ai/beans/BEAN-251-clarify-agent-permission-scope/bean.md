@@ -73,6 +73,8 @@ A generated project states clearly that the AI team manages planning and design 
 
 **Safety posture interaction.** Check alignment with BEAN-250 (hook posture rebalance) before landing — they touch overlapping concepts and should agree on terminology.
 
+**Second-pass reviewer confirmation (2026-04-17).** The external review re-flagged the permission model as "conceptually confusing" — specifically the mismatch between docs that imply the agentic team builds software and a permission set that only allows `Edit(ai/**)`. Stance 1's resolution (explain the scope explicitly in CLAUDE.md) is still the right answer; this reinforces the Scope-section deliverable. Coordinate with BEAN-269's CLAUDE.md orchestration section so the scope statement and the orchestration policy read as one coherent policy, not two disconnected paragraphs.
+
 ## Trello
 
 | Field | Value |

@@ -69,6 +69,8 @@ Every persona shipped in the default library has an explicit "Activated When" (o
 
 **Interaction with BEAN-258.** The CQR and Tech-QA activation rules should partition clearly — each bean's activation criteria references the scope split documented in BEAN-258.
 
+**Interaction with BEAN-269 (orchestration clarity).** BEAN-269 states the project-level policy — *team is an available bench; Developer + Tech-QA mandatory; others opt-in*. This bean provides the per-persona activation triggers that make that bench model operational. Word the "Activated When" sections so they read as selection criteria *from a bench*, not as scheduled participation on every wave. External reviewer (2026-04-17, second pass) flagged that the bench model must be unmistakable in the generated artifacts.
+
 ## Trello
 
 | Field | Value |
