@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-258 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | Low |
 | **Created** | 2026-04-17 |
 | **Started** | 2026-04-17 19:26 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-17 19:28 |
+| **Duration** | 1270h 21m |
 | **Owner** | team-lead |
 | **Category** | Process |
 
@@ -37,19 +37,19 @@ Each persona's scope explicitly names what it owns and what it defers to the oth
 
 ## Acceptance Criteria
 
-- [ ] `code-quality-reviewer/persona.md` has a "Scope Boundaries" (or equivalent) subsection listing what it owns vs. defers.
-- [ ] `tech-qa/persona.md` has a symmetric "Scope Boundaries" subsection.
-- [ ] A quick readability check confirms the two lists partition the review space — no overlap, no gap.
-- [ ] If BEAN-257 is complete: both personas' "Activated When" sections cross-reference this bean's boundary.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] `code-quality-reviewer/persona.md` has a "Scope Boundaries" (or equivalent) subsection listing what it owns vs. defers.
+- [x] `tech-qa/persona.md` has a symmetric "Scope Boundaries" subsection.
+- [x] A quick readability check confirms the two lists partition the review space — no overlap, no gap.
+- [ ] If BEAN-257 is complete: both personas' "Activated When" sections cross-reference this bean's boundary. *(BEAN-257 is still Approved, not Done — deferred to that bean.)*
+- [x] All tests pass (`uv run pytest`) — 1903 passed.
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Add Scope Boundaries subsections to both personas | Developer | — | Pending |
-| 2 | Verify partition cleanliness + run tests and lint | Tech-QA | 1 | Pending |
+| 1 | Add Scope Boundaries subsections to both personas | Developer | — | Done |
+| 2 | Verify partition cleanliness + run tests and lint | Tech-QA | 1 | Done |
 
 > Skipped: BA (default — wording is straightforward and the bean itself specifies ownership categories), Architect (default — no new subsystem, no cross-cutting API change).
 
@@ -57,7 +57,8 @@ Each persona's scope explicitly names what it owns and what it defers to the oth
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai-team-library/personas/code-quality-reviewer/persona.md` | +22 |
+| `ai-team-library/personas/tech-qa/persona.md` | +22 |
 
 ## Notes
 
@@ -76,12 +77,12 @@ Each persona's scope explicitly names what it owns and what it defers to the oth
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Add Scope Boundaries subsections to both personas | Developer | < 1m | N/A (suspect) | N/A (suspect) | — |
-| 2 | Verify partition cleanliness + run tests and lint | Tech-QA | — | — | — | — |
+| 2 | Verify partition cleanliness + run tests and lint | Tech-QA | < 1m | 57,792 | 114 | $0.12 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 57,792 |
+| **Total Tokens Out** | 114 |
+| **Total Cost** | $0.12 |
