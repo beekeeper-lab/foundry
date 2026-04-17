@@ -33,3 +33,7 @@ command containing a mutating verb is blocked before it runs.
 
 Added only when `architecture.cloud_providers` includes `aws`. Never added to
 projects without an AWS footprint.
+
+## Conflicts With
+
+- `aws-limited-ops` — the read-only guard blocks every mutating verb that `aws-limited-ops` is supposed to allow; enabling both neutralizes deployment operations.

@@ -316,6 +316,72 @@ class TestHookPackCategories:
 
 
 # ---------------------------------------------------------------------------
+# Hook pack conflicts_with parsing (BEAN-262)
+# ---------------------------------------------------------------------------
+
+
+class TestHookPackConflictsWith:
+    """Test that ``## Conflicts With`` is parsed into HookPackInfo.conflicts_with."""
+
+    def test_az_pair_declares_mutual_conflict(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        read_only = idx.hook_pack_by_id("az-read-only")
+        limited = idx.hook_pack_by_id("az-limited-ops")
+        assert read_only is not None and limited is not None
+        assert "az-limited-ops" in read_only.conflicts_with
+        assert "az-read-only" in limited.conflicts_with
+
+    def test_aws_pair_declares_mutual_conflict(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        read_only = idx.hook_pack_by_id("aws-read-only")
+        limited = idx.hook_pack_by_id("aws-limited-ops")
+        assert read_only is not None and limited is not None
+        assert "aws-limited-ops" in read_only.conflicts_with
+        assert "aws-read-only" in limited.conflicts_with
+
+    def test_non_conflicting_pack_has_empty_list(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        pack = idx.hook_pack_by_id("pre-commit-lint")
+        assert pack is not None
+        assert pack.conflicts_with == []
+
+    def test_parse_conflicts_from_tmp_file(self, tmp_path: Path):
+        hooks_dir = tmp_path / "claude" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "my-hook.md").write_text(
+            "# Hook Pack: My Hook\n\n## Category\ncustom\n\n"
+            "## Conflicts With\n\n- `other-pack` — reason here\n"
+            "- `third-pack` — another reason\n"
+        )
+        idx = build_library_index(tmp_path)
+        pack = idx.hook_pack_by_id("my-hook")
+        assert pack is not None
+        assert pack.conflicts_with == ["other-pack", "third-pack"]
+
+    def test_no_conflicts_section_defaults_empty(self, tmp_path: Path):
+        hooks_dir = tmp_path / "claude" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "bare.md").write_text("# Hook Pack: Bare\n\n## Purpose\nTest\n")
+        idx = build_library_index(tmp_path)
+        pack = idx.hook_pack_by_id("bare")
+        assert pack is not None
+        assert pack.conflicts_with == []
+
+    def test_section_ends_at_next_heading(self, tmp_path: Path):
+        hooks_dir = tmp_path / "claude" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "scoped.md").write_text(
+            "# Hook Pack: Scoped\n\n"
+            "## Conflicts With\n\n- `pack-a`\n\n"
+            "## Stack Signals\n\n- `fake-pack-not-a-conflict`\n"
+        )
+        idx = build_library_index(tmp_path)
+        pack = idx.hook_pack_by_id("scoped")
+        assert pack is not None
+        assert pack.conflicts_with == ["pack-a"]
+
+
+# ---------------------------------------------------------------------------
 # Persona category tests
 # ---------------------------------------------------------------------------
 
