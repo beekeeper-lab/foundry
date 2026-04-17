@@ -53,7 +53,7 @@ Seeded work enters the project through the bean workflow, not around it. A fresh
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
 | 1 | Decide seeder-to-bean task location (ADR) | architect | — | Done |
-| 2 | Rewrite seeder to emit starter bean + tasks | developer | 1 | Pending |
+| 2 | Rewrite seeder to emit starter bean + tasks | developer | 1 | Done |
 | 3 | Update/add seeder and generator tests | tech-qa | 2 | Pending |
 
 ## Changes
