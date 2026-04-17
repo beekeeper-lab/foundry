@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-263 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 19:28 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -65,7 +65,27 @@ in a posture they declared incompatible with.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Design posture_compatibility schema and integration | Architect | — | Pending |
+| 2 | Implement parser, validator check, and safety-writer filter | Developer | 1 | Pending |
+| 3 | Tests: parser, validator, safety-writer filter; full suite green | Tech-QA | 2 | Pending |
+
+> Skipped: BA (default — criteria unambiguous).
+
+## Decisions
+
+- **Schema location**: the existing `## Posture Compatibility` table in every
+  hook pack `.md` is the canonical machine-readable source. A parser in
+  `library_indexer.py` reads it into `HookPackInfo.posture_compatibility`.
+  No modification of `ai-team-library/` files required — the table format is
+  already deterministic (`Posture | Included | Default Mode`).
+- **Policy**: surface a **validation error** (`Severity.ERROR`, code
+  `hook-pack-posture-incompatible`) via `validator.py` when a pack whose
+  compatibility row declares `Included: No` is active in the selected
+  posture. `safety_writer.py` additionally skips the pack at emit time as a
+  defensive fallback (so malformed flows surface a clear warning rather than
+  producing a contradictory `settings.json`).
+- **Interpretation**: `Yes`, `Optional`, and `Yes (...)` all count as
+  compatible. Only a literal `No` triggers the error.
 
 ## Changes
 
@@ -92,7 +112,9 @@ rebalance) so the schema is stable before encoding per-pack data.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Design posture_compatibility schema and integration | Architect | — | — | — | — |
+| 2 | Implement parser, validator check, and safety-writer filter | Developer | — | — | — | — |
+| 3 | Tests: parser, validator, safety-writer filter; full suite green | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
