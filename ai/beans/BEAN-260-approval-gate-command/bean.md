@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-260 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
 | **Started** | 2026-04-17 19:02 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-17 19:19 |
+| **Duration** | 1270h 11m |
 | **Owner** | team-lead |
 | **Category** | Process |
 
@@ -42,14 +42,14 @@ Transitioning a bean from `Unapproved` → `Approved` is a deliberate, documente
 
 ## Acceptance Criteria
 
-- [ ] New skill `/internal:approve-bean` (or `/approve-bean`) exists with a clear SKILL.md.
-- [ ] Matching short command doc in `.claude/commands/` that invokes the skill.
-- [ ] Skill validates required fields before approving; rejects with actionable messages listing missing fields.
-- [ ] Skill updates `bean.md` Status and `_index.md` Status atomically (one commit).
-- [ ] `ai/context/bean-workflow.md` gains an "Approval Gate" section with the checklist.
-- [ ] Tests cover the happy path (valid bean) and at least two failure cases (missing criterion, missing scope).
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] New skill `/internal:approve-bean` (or `/approve-bean`) exists with a clear SKILL.md.
+- [x] Matching short command doc in `.claude/commands/` that invokes the skill.
+- [x] Skill validates required fields before approving; rejects with actionable messages listing missing fields.
+- [x] Skill updates `bean.md` Status and `_index.md` Status atomically (one commit).
+- [x] `ai/context/bean-workflow.md` gains an "Approval Gate" section with the checklist.
+- [x] Tests cover the happy path (valid bean) and at least two failure cases (missing criterion, missing scope).
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
@@ -59,7 +59,7 @@ Transitioning a bean from `Unapproved` → `Approved` is a deliberate, documente
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
 | 1 | Implement approve-bean validator, skill, command, and workflow docs | developer | — | Done |
-| 2 | Verify approval gate implementation meets acceptance criteria | tech-qa | 1 | Pending |
+| 2 | Verify approval gate implementation meets acceptance criteria | tech-qa | 1 | Done |
 
 ## Changes
 
@@ -84,12 +84,12 @@ Transitioning a bean from `Unapproved` → `Approved` is a deliberate, documente
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Implement approve-bean validator, skill, command, and workflow docs | developer | < 1m | N/A (suspect) | N/A (suspect) | — |
-| 2 | Verify approval gate implementation meets acceptance criteria | tech-qa | — | — | — | — |
+| 2 | Verify approval gate implementation meets acceptance criteria | tech-qa | < 1m | N/A (suspect) | N/A (suspect) | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
