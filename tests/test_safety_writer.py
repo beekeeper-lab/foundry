@@ -16,7 +16,7 @@ from foundry_app.core.models import (
     ProjectIdentity,
     TeamConfig,
 )
-from foundry_app.services.safety_writer import write_safety
+from foundry_app.services.safety_writer import posture_base_packs, write_safety
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -687,3 +687,63 @@ class TestStackAwareEndToEnd:
         assert any("prettier" in c.lower() for c in commands)
         assert any("tsc" in c.lower() for c in commands)
         assert not any("ruff" in c for c in commands)
+
+
+# ---------------------------------------------------------------------------
+# Posture taxonomy lock-in — mirrors ai/context/hook-posture.md
+# ---------------------------------------------------------------------------
+
+
+class TestPostureTaxonomy:
+    """Lock-in test for the posture → base pack mapping.
+
+    If this test fails, the posture base packs changed. Update
+    `ai/context/hook-posture.md` (and the summary table in
+    `ai/context/hook-selection.md`) together with the mapping change, then
+    update this test. See ADR-006 in ai/context/decisions.md.
+    """
+
+    def test_baseline_base_packs(self):
+        assert posture_base_packs(Posture.BASELINE) == ["git-commit-branch"]
+
+    def test_hardened_base_packs(self):
+        assert posture_base_packs(Posture.HARDENED) == [
+            "git-commit-branch",
+            "git-push-feature",
+            "security-scan",
+        ]
+
+    def test_regulated_base_packs(self):
+        assert posture_base_packs(Posture.REGULATED) == [
+            "git-commit-branch",
+            "git-push-feature",
+            "security-scan",
+            "compliance-gate",
+            "post-task-qa",
+        ]
+
+    def test_baseline_count_is_less_than_hardened(self):
+        """The taxonomy ordering: baseline ⊂ hardened ⊂ regulated by pack count."""
+        assert len(posture_base_packs(Posture.BASELINE)) < len(
+            posture_base_packs(Posture.HARDENED)
+        )
+        assert len(posture_base_packs(Posture.HARDENED)) < len(
+            posture_base_packs(Posture.REGULATED)
+        )
+
+    def test_hardened_is_superset_of_baseline(self):
+        """Every baseline pack appears in hardened and regulated."""
+        baseline = set(posture_base_packs(Posture.BASELINE))
+        assert baseline.issubset(set(posture_base_packs(Posture.HARDENED)))
+        assert baseline.issubset(set(posture_base_packs(Posture.REGULATED)))
+
+    def test_regulated_is_superset_of_hardened(self):
+        hardened = set(posture_base_packs(Posture.HARDENED))
+        assert hardened.issubset(set(posture_base_packs(Posture.REGULATED)))
+
+    def test_returned_list_is_fresh_copy(self):
+        """Mutating the returned list must not affect the internal mapping."""
+        first = posture_base_packs(Posture.BASELINE)
+        first.append("rogue-pack")
+        second = posture_base_packs(Posture.BASELINE)
+        assert second == ["git-commit-branch"]
