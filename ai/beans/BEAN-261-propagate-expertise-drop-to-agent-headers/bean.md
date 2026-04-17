@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-261 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
 | **Started** | 2026-04-17 18:17 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-17 18:22 |
+| **Duration** | 1269h 14m |
 | **Owner** | team-lead |
 | **Category** | App |
 
@@ -57,22 +57,22 @@ The warning is still emitted.
 
 ## Acceptance Criteria
 
-- [ ] Generated `.claude/agents/<persona>.md` headers list only expertise
+- [x] Generated `.claude/agents/<persona>.md` headers list only expertise
       whose source file was written.
-- [ ] Generated `ai/generated/members/<persona>.md` expertise-context
+- [x] Generated `ai/generated/members/<persona>.md` expertise-context
       blocks reference only expertise whose source file was written.
-- [ ] The decision for `ai/team/composition.yml` (record-as-input vs
+- [x] The decision for `ai/team/composition.yml` (record-as-input vs
       record-as-emitted) is documented in the bean Notes or an ADR.
-- [ ] Tests cover the agent header and member file invariants.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] Tests cover the agent header and member file invariants.
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Propagate Expertise Drop to Agent Headers and Member Files | Developer | — | Pending |
-| 2 | Verify Agent Header / Member File Expertise Invariants | Tech-QA | 01 | Pending |
+| 1 | Propagate Expertise Drop to Agent Headers and Member Files | Developer | — | Done |
+| 2 | Verify Agent Header / Member File Expertise Invariants | Tech-QA | 01 | Done |
 
 > Skipped: BA (default), Architect (default) — scoped propagation fix following BEAN-247 pattern; behavior is fully specified in the bean.
 
@@ -80,7 +80,14 @@ The warning is still emitted.
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/beans/BEAN-261-propagate-expertise-drop-to-agent-headers/bean.md | ~40 |
+| ai/beans/BEAN-261-.../tasks/01-developer-propagate-expertise-drop.md | 60 |
+| ai/beans/BEAN-261-.../tasks/02-tech-qa-verify-invariants.md | 48 |
+| ai/outputs/tech-qa/BEAN-261-verification.md | 72 |
+| foundry_app/services/compiler.py | ~45 |
+| foundry_app/services/agent_writer.py | ~15 |
+| tests/test_compiler.py | 50 |
+| tests/test_agent_writer.py | 35 |
 
 ## Notes
 
@@ -119,12 +126,12 @@ headers, member files, CLAUDE.md).
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Propagate Expertise Drop to Agent Headers and Member Files | Developer | < 1m | 1,769,105 | 0 | $3.25 |
-| 2 | Verify Agent Header / Member File Expertise Invariants | Tech-QA | — | — | — | — |
+| 2 | Verify Agent Header / Member File Expertise Invariants | Tech-QA | < 1m | 2,119,822 | 2,011 | $4.00 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 3,888,927 |
+| **Total Tokens Out** | 2,011 |
+| **Total Cost** | $7.25 |
