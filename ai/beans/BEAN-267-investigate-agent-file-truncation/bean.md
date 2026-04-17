@@ -3,14 +3,16 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-267 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 18:45 |
 | **Completed** | — |
-| **Owner** | (unassigned) |
+| **Owner** | developer + tech-qa |
 | **Duration** | — |
 | **Category** | App |
+
+> Skipped: BA (default — defect is code-level, not requirements-ambiguous), Architect (default — fix is localized to one function in one service).
 
 ## Problem Statement
 
@@ -74,7 +76,10 @@ writer boundary-aware so it never truncates inside a fenced code block.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Reproduce truncation against `typescript` conventions (via `_extract_expertise_highlights`) | developer | — | Done |
+| 2 | Make the expertise-highlights extractor fence-aware | developer | 1 | Pending |
+| 3 | Add regression test: generated agent files always have balanced ` ``` ` fences | tech-qa | 2 | Pending |
+| 4 | Run `uv run pytest` + `uv run ruff check foundry_app/` | tech-qa | 3 | Pending |
 
 ## Changes
 
@@ -101,7 +106,10 @@ include logic.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Reproduce truncation against `typescript` conventions (via `_extract_expertise_highlights`) | developer | — | — | — | — |
+| 2 | Make the expertise-highlights extractor fence-aware | developer | — | — | — | — |
+| 3 | Add regression test: generated agent files always have balanced ` ``` ` fences | tech-qa | — | — | — | — |
+| 4 | Run `uv run pytest` + `uv run ruff check foundry_app/` | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
