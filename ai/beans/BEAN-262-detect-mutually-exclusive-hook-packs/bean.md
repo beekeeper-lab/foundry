@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-262 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
 | **Started** | 2026-04-17 18:44 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-17 18:48 |
+| **Duration** | 1269h 41m |
 | **Owner** | team-lead |
 | **Category** | App |
 
@@ -67,9 +67,9 @@ writer verifies no conflict is active at emit time.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Design `conflicts_with` schema + ADR | architect | — | Pending |
-| 2 | Declare conflicts on az/aws pairs + detect in validator | developer | 1 | Pending |
-| 3 | Tests, lint, acceptance-criteria verification | tech-qa | 2 | Pending |
+| 1 | Design `conflicts_with` schema + ADR | architect | — | Done |
+| 2 | Declare conflicts on az/aws pairs + detect in validator | developer | 1 | Done |
+| 3 | Tests, lint, acceptance-criteria verification | tech-qa | 2 | Done |
 
 > Skipped: BA (default — no user-facing behavior, no stakeholder trade-off)
 
@@ -77,7 +77,16 @@ writer verifies no conflict is active at emit time.
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/context/decisions.md` | +ADR-004 |
+| `ai-team-library/claude/hooks/az-read-only.md` | +4 |
+| `ai-team-library/claude/hooks/az-limited-ops.md` | +4 |
+| `ai-team-library/claude/hooks/aws-read-only.md` | +4 |
+| `ai-team-library/claude/hooks/aws-limited-ops.md` | +4 |
+| `foundry_app/core/models.py` | +4 |
+| `foundry_app/services/library_indexer.py` | +33 |
+| `foundry_app/services/validator.py` | +47 |
+| `tests/test_validator.py` | +119 |
+| `tests/test_library_indexer.py` | +64 |
 
 ## Notes
 
@@ -102,8 +111,8 @@ hook pack metadata — ADR-worthy.
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 1269h 41m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
