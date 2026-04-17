@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-256 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 18:16 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team |
 | **Category** | App |
 
 ## Problem Statement
@@ -54,9 +54,14 @@ The generated `.claude/commands/` set contains the ergonomic dev-loop commands a
 
 ## Tasks
 
+> Skipped: BA (default — clear acceptance criteria), Architect (default — change is contained to one module; design alternative noted in bean Notes).
+
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add dev-loop command files to library (python + node/react/ts variants) | Developer | — | Pending |
+| 2 | Implement command/skill selection rules in `asset_copier.py` | Developer | 1 | Pending |
+| 3 | Document selection rules in `ai/context/command-selection.md` | Developer | 2 | Pending |
+| 4 | Add tests for dev-loop selection and governance gating; run full suite + ruff | Tech-QA | 2,3 | Pending |
 
 ## Changes
 
@@ -84,7 +89,10 @@ The generated `.claude/commands/` set contains the ergonomic dev-loop commands a
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add dev-loop command files to library (python + node/react/ts variants) | Developer | — | — | — | — |
+| 2 | Implement command/skill selection rules in `asset_copier.py` | Developer | — | — | — | — |
+| 3 | Document selection rules in `ai/context/command-selection.md` | Developer | — | — | — | — |
+| 4 | Add tests for dev-loop selection and governance gating; run full suite + ruff | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
