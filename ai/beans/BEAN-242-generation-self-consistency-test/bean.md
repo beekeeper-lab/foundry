@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-242 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-17 16:26 |
+| **Completed** | 2026-04-17 16:29 |
+| **Duration** | 1267h 22m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -48,31 +48,34 @@ The test is **red on `test` at merge-time** and only goes green after BEAN-243 (
 
 ## Acceptance Criteria
 
-- [ ] New test class exists in `tests/test_generator.py`.
-- [ ] Test generates a project from `examples/small-python-team.yml` to `tmp_path` using real `ai-team-library/`.
-- [ ] Placeholder assertion: walk output tree and fail if any `.md`/`.json`/`.yml`/`.yaml` file contains `{{`, `}}`, `{%`, or `%}`.
-- [ ] Structural assertion: all paths expected by `validate-repo` exist (explicit list above).
-- [ ] Test is **red** when committed (before BEAN-243 and BEAN-244 ship).
-- [ ] Test goes **green** after BEAN-243 and BEAN-244 complete.
-- [ ] All other tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] New test class exists in `tests/test_generator.py`.
+- [x] Test generates a project from `examples/small-python-team.yml` to `tmp_path` using real `ai-team-library/`.
+- [x] Placeholder assertion: walk output tree and fail if any `.md`/`.json`/`.yml`/`.yaml` file contains `{{`, `}}`, `{%`, or `%}`.
+- [x] Structural assertion: all paths expected by `validate-repo` exist (explicit list above).
+- [x] Test is **red** when committed (before BEAN-243 and BEAN-244 ship).
+- [ ] Test goes **green** after BEAN-243 and BEAN-244 complete. *(deferred to those beans)*
+- [x] All other tests pass (`uv run pytest`) — 1785 passed; only the 2 new intentional reds fail.
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Self-Consistency Integration Test | Developer | — | Done |
+| 2 | Tech-QA Verification | Tech-QA | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default — criteria clear), Architect (default — no new subsystem).
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/beans/BEAN-242-generation-self-consistency-test/bean.md` | ±45 |
+| `ai/beans/BEAN-242-generation-self-consistency-test/tasks/01-developer-self-consistency-test.md` | +45 |
+| `ai/beans/BEAN-242-generation-self-consistency-test/tasks/02-tech-qa-verification.md` | +72 |
+| `tests/test_generator.py` | +108 |
+
+Totals: 4 files changed, +248 / -22.
 
 ## Notes
 
@@ -102,12 +105,13 @@ The test is **red on `test` at merge-time** and only goes green after BEAN-243 (
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Self-Consistency Integration Test | Developer | < 1m | 810,538 | 1,630 | $1.44 |
+| 2 | Tech-QA Verification | Tech-QA | < 1m | 320,754 | 3,073 | $0.73 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 1,131,292 |
+| **Total Tokens Out** | 4,703 |
+| **Total Cost** | $2.17 |
