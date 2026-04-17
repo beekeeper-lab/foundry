@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-243 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-17 16:31 |
+| **Completed** | 2026-04-17 16:39 |
+| **Duration** | 1267h 32m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -47,23 +47,23 @@ The generation pipeline fully resolves all Jinja expressions in every generated 
 
 ## Acceptance Criteria
 
-- [ ] Root cause identified and documented in the PR description (which step concatenates unrendered content).
-- [ ] Fix applied at the root cause — not via post-hoc string replacement on the output.
-- [ ] Unit tests at the compiler and/or agent-writer layer assert full rendering of persona/expertise fragments.
-- [ ] Generator's placeholder-warning system now scans `.claude/agents/*.md` in addition to `ai/generated/members/`.
-- [ ] Regenerated `small-python-team` project contains zero unresolved `{{`, `}}`, `{%`, `%}` in any file (verify: `grep -rn '{{' /tmp/<outdir> | grep -v '.git/'` returns nothing).
-- [ ] BEAN-242 placeholder assertion passes.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] Root cause identified and documented (per-persona context missing `strictness` in compiler; agent_writer embedded raw persona fragments into Jinja template variables without recursive render).
+- [x] Fix applied at the root cause (per-persona context + pre-extraction substitution).
+- [x] Unit tests at the compiler and agent-writer layer assert full rendering.
+- [x] Generator's placeholder-warning now scans `.claude/agents/*.md` (in `agent_writer.py` post-write scan).
+- [x] Regenerated `small-python-team` project contains zero unresolved `{{`/`}}`/`{%`/`%}` — verified via `grep -rn '{{' /tmp/bean243-check-new | grep -v '.git/'` → 0 matches.
+- [x] BEAN-242 placeholder assertion passes.
+- [x] All tests pass except the intentional BEAN-244 structural red (1 failed / 1793 passed).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Root-Cause Fix + Warning Extension | Developer | — | Done |
+| 2 | Tech-QA Verification | Tech-QA | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Skipped: BA (default — criteria clear), Architect (default — localized fix, no new subsystem).
 
 ## Changes
 
@@ -105,12 +105,13 @@ The generation pipeline fully resolves all Jinja expressions in every generated 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Root-Cause Fix + Warning Extension | Developer | — | — | — | — |
+| 2 | Tech-QA Verification | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 1 |
+| **Total Duration** | 1267h 32m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

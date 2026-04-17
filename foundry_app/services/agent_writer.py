@@ -9,6 +9,12 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from foundry_app.core.models import CompositionSpec, LibraryIndex, StageResult
+from foundry_app.services.compiler import (
+    _PLACEHOLDER_RE,
+    _build_context,
+    _build_persona_context,
+    _substitute,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +153,11 @@ def write_agents(
     expertise_ids = [s.id for s in spec.expertise]
     expertise_names = ", ".join(expertise_ids) if expertise_ids else "General"
 
+    # Shared context — used to render non-persona-scoped fragments such as
+    # expertise conventions. Persona-scoped fragments get their own context
+    # built inside the per-persona loop so {{ strictness }} resolves correctly.
+    shared_context = _build_context(spec)
+
     # Gather expertise sections (shared across all personas)
     expertise_sections: list[dict[str, str]] = []
     for expertise_sel in spec.expertise:
@@ -157,7 +168,9 @@ def write_agents(
 
         conventions_path = Path(expertise_info.path) / "conventions.md"
         if conventions_path.is_file():
-            conventions_text = conventions_path.read_text(encoding="utf-8")
+            conventions_text = _substitute(
+                conventions_path.read_text(encoding="utf-8"), shared_context,
+            )
             highlights = _extract_expertise_highlights(conventions_text)
             if highlights:
                 expertise_sections.append({
@@ -182,7 +195,14 @@ def write_agents(
             )
             continue
 
-        persona_text = persona_path.read_text(encoding="utf-8")
+        # Substitute placeholders in the source before extracting fragments.
+        # The template's outer render does not recursively resolve Jinja
+        # expressions that appear inside variable values, so extracted strings
+        # like {{ project_name }} would otherwise leak through verbatim.
+        persona_ctx = _build_persona_context(spec, persona_sel)
+        persona_text = _substitute(
+            persona_path.read_text(encoding="utf-8"), persona_ctx,
+        )
 
         # Build role name: expertise + persona (e.g., "Python Developer")
         primary_expertise = expertise_ids[0].replace("-", " ").title() if expertise_ids else ""
@@ -210,6 +230,17 @@ def write_agents(
         rel_path = str(agent_file.relative_to(out_root))
         wrote.append(rel_path)
         logger.info("Wrote agent file: %s", rel_path)
+
+    # Placeholder-leakage guard: scan every written agent file and surface
+    # any remaining {{ ... }} expressions as warnings so the leak isn't silent.
+    for rel in wrote:
+        fpath = out_root / rel
+        unresolved = _PLACEHOLDER_RE.findall(fpath.read_text(encoding="utf-8"))
+        if unresolved:
+            unique = sorted(set(unresolved))
+            warnings.append(
+                f"Unresolved placeholders in {rel}: {', '.join(unique)}"
+            )
 
     logger.info(
         "Agent writer complete: %d files written, %d warnings",
