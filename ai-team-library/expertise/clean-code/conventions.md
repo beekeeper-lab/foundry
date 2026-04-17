@@ -1,7 +1,7 @@
 # Clean Code Conventions
 
 ## Category
-Practices
+Architecture & Patterns
 
 These conventions are language-agnostic rules for day-to-day coding. They
 complement `principles.md` (the *why*) by spelling out the *what* and *when* --
