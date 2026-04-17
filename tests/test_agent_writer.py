@@ -528,3 +528,166 @@ class TestTeamAgentVerification:
     def test_no_warnings_for_real_library(self, team_output):
         _, result, _ = team_output
         assert result.warnings == []
+
+
+# ---------------------------------------------------------------------------
+# Balanced code fences — regression guard for BEAN-267
+# ---------------------------------------------------------------------------
+
+
+class TestExpertiseHighlightsFenceBalance:
+    """Regression guard for BEAN-267: an expertise Defaults section that
+    embeds a fenced code block must not leak an unbalanced ``` into the
+    agent header when the soft line cap is hit mid-fence.
+    """
+
+    _JSONC_CONVENTIONS = """\
+# TypeScript Conventions
+
+## Defaults
+
+- **Strict mode:** `"strict": true`. No exceptions.
+- **Target:** ES2022.
+- **Module system:** ESM.
+- **Linting:** ESLint.
+- **Formatting:** Prettier.
+- **Type preference:** `type` over `interface`.
+- **No `any`:** Use `unknown`.
+
+### tsconfig Baseline
+
+```jsonc
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  }
+}
+```
+
+## Next Section
+
+Other stuff.
+"""
+
+    def test_jsonc_fence_closes_when_cap_hits_mid_block(self):
+        highlights = _extract_expertise_highlights(self._JSONC_CONVENTIONS)
+        assert highlights.count("```") % 2 == 0, (
+            f"Unbalanced fence in highlights:\n{highlights}"
+        )
+        # The closing fence must be emitted when the source's fence closes.
+        assert highlights.rstrip().endswith("```"), (
+            f"Highlights must end with a closing fence:\n{highlights}"
+        )
+
+    def test_malformed_unclosed_fence_is_dropped(self):
+        """If the source itself never closes a fence, the opener (and the
+        lines after it) are dropped so the output remains balanced."""
+        malformed = (
+            "# Conv\n\n## Defaults\n\n- first\n- second\n\n"
+            "```jsonc\n" + "line\n" * 80
+        )
+        highlights = _extract_expertise_highlights(malformed)
+        assert highlights.count("```") % 2 == 0, (
+            f"Unbalanced fence from malformed source:\n{highlights}"
+        )
+        assert "```jsonc" not in highlights
+        # Bullets before the dangling fence survive.
+        assert "first" in highlights
+        assert "second" in highlights
+
+
+class TestGeneratedAgentFilesHaveBalancedFences:
+    """End-to-end guard: every .claude/agents/<persona>.md written by
+    write_agents must contain a balanced number of ``` fences, regardless of
+    which expertise is included. Exercises the BEAN-267 scenario: a persona
+    built against a jsonc-embedded expertise.
+    """
+
+    _JSONC_CONVENTIONS = TestExpertiseHighlightsFenceBalance._JSONC_CONVENTIONS
+
+    def _make_library_with_jsonc(
+        self, tmp_path: Path,
+    ) -> tuple[Path, LibraryIndex]:
+        lib_root = tmp_path / "library"
+        persona_dir = lib_root / "personas" / "developer"
+        persona_dir.mkdir(parents=True)
+        (persona_dir / "persona.md").write_text(_SAMPLE_PERSONA_MD, encoding="utf-8")
+
+        expertise_dir = lib_root / "stacks" / "typescript"
+        expertise_dir.mkdir(parents=True)
+        (expertise_dir / "conventions.md").write_text(
+            self._JSONC_CONVENTIONS, encoding="utf-8",
+        )
+
+        index = LibraryIndex(
+            library_root=str(lib_root),
+            personas=[PersonaInfo(
+                id="developer",
+                name="Developer",
+                path=str(persona_dir),
+                templates=[],
+            )],
+            expertise=[ExpertiseInfo(
+                id="typescript",
+                name="TypeScript",
+                path=str(expertise_dir),
+            )],
+        )
+        return lib_root, index
+
+    def test_agent_file_has_balanced_code_fences(self, tmp_path: Path):
+        lib_root, index = self._make_library_with_jsonc(tmp_path)
+        spec = _make_spec(expertise=[ExpertiseSelection(id="typescript")])
+        output = tmp_path / "output"
+        output.mkdir()
+
+        write_agents(spec, index, lib_root, output)
+
+        content = (output / ".claude" / "agents" / "developer.md").read_text(
+            encoding="utf-8",
+        )
+        fence_count = content.count("```")
+        assert fence_count % 2 == 0, (
+            f"Unbalanced ``` fences ({fence_count}) in agent file:\n{content}"
+        )
+
+
+@pytest.mark.skipif(not _TEAM_TEST_AVAILABLE, reason="ai-team-library not present")
+class TestRealLibraryAgentFencesBalanced:
+    """Regression guard for BEAN-267 against the shipped library. Uses the
+    full-stack-web example which includes typescript (jsonc block) + react +
+    node across ~9 personas — the exact composition shape the external
+    review reported as truncated.
+    """
+
+    def test_full_stack_web_agents_have_balanced_fences(self, tmp_path: Path):
+        from foundry_app.io.composition_io import load_composition
+        from foundry_app.services.library_indexer import build_library_index
+
+        example = _REPO_ROOT / "examples" / "full-stack-web.yml"
+        if not example.is_file():
+            pytest.skip("full-stack-web.yml not present")
+
+        spec = load_composition(example)
+        index = build_library_index(_LIBRARY_ROOT)
+        output = tmp_path / "output"
+        output.mkdir()
+
+        write_agents(spec, index, _LIBRARY_ROOT, output)
+
+        agents_dir = output / ".claude" / "agents"
+        unbalanced: list[str] = []
+        for agent_file in sorted(agents_dir.glob("*.md")):
+            content = agent_file.read_text(encoding="utf-8")
+            if content.count("```") % 2 != 0:
+                unbalanced.append(agent_file.name)
+        assert not unbalanced, (
+            f"Agent files with unbalanced ``` fences: {unbalanced}"
+        )

@@ -3,14 +3,16 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-267 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Owner** | (unassigned) |
-| **Duration** | — |
+| **Started** | 2026-04-17 18:45 |
+| **Completed** | 2026-04-17 18:47 |
+| **Owner** | developer + tech-qa |
+| **Duration** | 1269h 39m |
 | **Category** | App |
+
+> Skipped: BA (default — defect is code-level, not requirements-ambiguous), Architect (default — fix is localized to one function in one service).
 
 ## Problem Statement
 
@@ -60,36 +62,57 @@ writer boundary-aware so it never truncates inside a fenced code block.
 
 ## Acceptance Criteria
 
-- [ ] A regeneration of a React/TS-flavored composition is performed
+- [x] A regeneration of a React/TS-flavored composition is performed
       and its agent files inspected.
-- [ ] The investigation's findings are recorded in the bean Notes.
-- [ ] If the defect is confirmed: the fix lands with a regression test
+- [x] The investigation's findings are recorded in the bean Notes.
+- [x] The defect was confirmed and the fix landed with a regression test
       that asserts balanced code fences in every generated agent file.
-- [ ] If not reproducible: the bean is closed as Deferred with a
-      documented rationale.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] All tests pass (`uv run pytest` → 1852 passed).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Reproduce truncation against `typescript` conventions (via `_extract_expertise_highlights`) | developer | — | Done |
+| 2 | Make the expertise-highlights extractor fence-aware | developer | 1 | Done |
+| 3 | Add regression test: generated agent files always have balanced ` ``` ` fences | tech-qa | 2 | Done |
+| 4 | Run `uv run pytest` + `uv run ruff check foundry_app/` | tech-qa | 3 | Done |
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/services/agent_writer.py` | `_extract_expertise_highlights` — fence-aware truncation |
+| `tests/test_agent_writer.py` | +3 test classes / 4 tests (unit + end-to-end + real-library) |
 
 ## Notes
 
 **Source.** External review (2026-04-17).
 
-**Reproducer hint.** Likely surfaces when the agent writer truncates an
-expertise excerpt at a hard character/line count without checking fence
-balance. Check `agent_writer.py` or the agent template's expertise
-include logic.
+**Reproduction.** Confirmed. `_extract_expertise_highlights` captures the
+Defaults section and hard-breaks at 15 lines. For `typescript/conventions.md`
+the 15th highlight lands at `"target": "ES2022",` — inside the `jsonc`
+`tsconfig Baseline` fence, exactly as the external review described. Every
+`.claude/agents/<persona>.md` rendered against the typescript expertise
+therefore ended with an unclosed `` ``` `` fence.
+
+**Fix.** `_extract_expertise_highlights` now tracks fence state during the
+scan. When the soft cap (`_MAX_EXPERTISE_HIGHLIGHT_LINES = 15`) is hit
+while a `` ``` `` fence is open, extraction continues until the fence
+closes — bounded by a hard cap (4× the soft cap) to prevent runaway on
+malformed input. A final safety net drops any dangling opener that a
+malformed source leaves unclosed. Net effect: every generated agent file
+has a balanced number of `` ``` `` fences.
+
+**Verification.**
+- Direct call on `ai-team-library/expertise/typescript/conventions.md`
+  now produces a balanced 2-fence excerpt ending with the closing `` ``` ``.
+- `TestRealLibraryAgentFencesBalanced` runs the full `full-stack-web.yml`
+  composition (react + typescript + node + clean-code × 9 personas) against
+  the real library and asserts every written agent file has an even fence
+  count.
+- Full suite: **1852 passed**, 0 failures. `ruff` clean.
 
 ## Trello
 
@@ -101,12 +124,15 @@ include logic.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Reproduce truncation against `typescript` conventions (via `_extract_expertise_highlights`) | developer | — | — | — | — |
+| 2 | Make the expertise-highlights extractor fence-aware | developer | — | — | — | — |
+| 3 | Add regression test: generated agent files always have balanced ` ``` ` fences | tech-qa | — | — | — | — |
+| 4 | Run `uv run pytest` + `uv run ruff check foundry_app/` | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 4 |
+| **Total Duration** | 1269h 39m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
