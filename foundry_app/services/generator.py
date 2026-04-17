@@ -197,7 +197,7 @@ def _run_pipeline(
         )
 
     # Stage 5: Write MCP config
-    _run_stage("mcp_config", write_mcp_config, spec, output_dir)
+    _run_stage("mcp_config", write_mcp_config, spec, library_root, output_dir)
 
     # Stage 6: Seed tasks (only if enabled)
     if spec.generation.seed_tasks:

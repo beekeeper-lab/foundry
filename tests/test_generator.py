@@ -47,6 +47,21 @@ def _make_spec(**kwargs) -> CompositionSpec:
     return CompositionSpec(**defaults)
 
 
+def _seed_mcp_registry(lib_root: Path) -> None:
+    """Write a minimal vetted MCP registry alongside the test library."""
+    workflows = lib_root / "workflows"
+    workflows.mkdir(parents=True, exist_ok=True)
+    (workflows / "mcp-registry.yaml").write_text(
+        "servers:\n"
+        "  filesystem:\n"
+        "    type: stdio\n"
+        "    command: npx\n"
+        "    args: [-y, '@modelcontextprotocol/server-filesystem', '.']\n"
+        "baseline: [filesystem]\n"
+        "by_expertise: {}\n"
+    )
+
+
 def _make_library(tmp_path: Path) -> LibraryIndex:
     """Build a minimal on-disk library with real persona and expertise directories."""
     lib_root = tmp_path / "library"
@@ -60,6 +75,8 @@ def _make_library(tmp_path: Path) -> LibraryIndex:
     expertise_dir = lib_root / "expertise" / "python"
     expertise_dir.mkdir(parents=True)
     (expertise_dir / "conventions.md").write_text("# Python conventions")
+
+    _seed_mcp_registry(lib_root)
 
     return LibraryIndex(
         library_root=str(lib_root),
@@ -95,6 +112,8 @@ def _make_library_dir(tmp_path: Path) -> Path:
     expertise_dir = lib_root / "expertise" / "python"
     expertise_dir.mkdir(parents=True)
     (expertise_dir / "conventions.md").write_text("# Python conventions")
+
+    _seed_mcp_registry(lib_root)
 
     return lib_root
 

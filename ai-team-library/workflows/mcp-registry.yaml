@@ -1,0 +1,62 @@
+# Vetted MCP server registry.
+#
+# Single source of truth for every MCP server reference emitted into a
+# generated project's `.claude/mcp.json`. Each server entry must point at
+# a package that is actually published and installable at review time.
+#
+# Schema:
+#   servers.<id>:
+#     type:     stdio | http                 (transport)
+#     command:  npx | uvx | ...              (launcher)
+#     args:     [...]                        (args passed to the launcher)
+#     package:  "<npm or pypi ref>"          (documentation-only pointer)
+#     notes:    "<why this is vetted>"       (documentation-only)
+#   baseline:            [<id>, ...]         (always emitted)
+#   by_expertise.<id>:   [<id>, ...]         (emitted if expertise selected)
+#
+# Only `type`, `command`, and `args` flow into the generated mcp.json.
+# `package` and `notes` exist so humans can audit the registry without
+# running the generator.
+
+servers:
+  filesystem:
+    type: stdio
+    command: npx
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-filesystem"
+      - "."
+    package: "@modelcontextprotocol/server-filesystem"
+    notes: "Official MCP filesystem server from the modelcontextprotocol org."
+
+  obsidian:
+    type: stdio
+    command: uvx
+    args:
+      - "mcp-obsidian"
+    package: "mcp-obsidian (pypi)"
+    notes: "Third-party Obsidian MCP server, installed via uvx."
+
+  trello:
+    type: stdio
+    command: npx
+    args:
+      - "-y"
+      - "@delorenj/mcp-server-trello"
+    package: "@delorenj/mcp-server-trello"
+    notes: "Third-party Trello MCP server published on npm."
+
+baseline:
+  - filesystem
+  - obsidian
+  - trello
+
+# Expertise-specific servers. Each key is an expertise ID from the
+# library; each value is the list of server IDs to add on top of the
+# baseline when that expertise is selected.
+#
+# Intentionally empty today: the previous `@anthropic/mcp-<lang>-docs`
+# entries were fictional (unpublished) and produced npm 404s on first
+# MCP spin-up. Re-add entries only when a real package exists and has
+# been vetted — add the server under `servers:` and list its ID here.
+by_expertise: {}

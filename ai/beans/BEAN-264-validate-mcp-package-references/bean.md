@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-264 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-04-17 18:15 |
+| **Completed** | 2026-04-17 18:20 |
+| **Duration** | 1269h 13m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 
@@ -61,27 +61,34 @@ that registry.
 
 ## Acceptance Criteria
 
-- [ ] Every MCP reference in the default generated `mcp.json` corresponds
+- [x] Every MCP reference in the default generated `mcp.json` corresponds
       to an npm/pypi package that exists as of the bean's completion date.
-- [ ] A vetted registry file lives in the library and is the single
+- [x] A vetted registry file lives in the library and is the single
       source of truth for MCP references.
-- [ ] `foundry_app/services/mcp_writer.py` consults that registry.
-- [ ] Tests cover the invariant: generated `mcp.json` has no references
+- [x] `foundry_app/services/mcp_writer.py` consults that registry.
+- [x] Tests cover the invariant: generated `mcp.json` has no references
       outside the registry.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
+> Skipped: BA (default), Architect (default)
+
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Vetted MCP registry + mcp_writer refactor | Developer | — | Done |
+| 2 | Registry invariant tests + full regression | Tech-QA | 1 | Done |
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai-team-library/workflows/mcp-registry.yaml` (new) | +62 |
+| `foundry_app/services/mcp_writer.py` | ~120 (rewrite) |
+| `foundry_app/services/generator.py` | 1 |
+| `tests/test_mcp_writer.py` | ~250 (rewrite + invariant) |
+| `tests/test_generator.py` | +17 (seed registry in fixtures) |
 
 ## Notes
 
@@ -102,12 +109,13 @@ fictional `@anthropic/*` names.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Vetted MCP registry + mcp_writer refactor | Developer | < 1m | 338,750 | 0 | $0.68 |
+| 2 | Registry invariant tests + full regression | Tech-QA | < 1m | N/A (suspect) | N/A (suspect) | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 338,750 |
+| **Total Tokens Out** | 0 |
+| **Total Cost** | $0.68 |

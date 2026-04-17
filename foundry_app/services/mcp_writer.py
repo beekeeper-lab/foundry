@@ -5,100 +5,114 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from typing import Any
+
+import yaml
 
 from foundry_app.core.models import CompositionSpec, StageResult
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Expertise-to-MCP-server mappings
-# ---------------------------------------------------------------------------
+REGISTRY_RELPATH = Path("workflows") / "mcp-registry.yaml"
 
-# Baseline servers included in every generated project.
-_BASELINE_SERVERS: dict[str, dict] = {
-    "filesystem": {
-        "type": "stdio",
-        "command": "npx",
-        "args": ["-y", "@anthropic/mcp-filesystem"],
-    },
-    "obsidian": {
-        "type": "stdio",
-        "command": "uvx",
-        "args": ["mcp-obsidian"],
-    },
-    "trello": {
-        "type": "stdio",
-        "command": "npx",
-        "args": ["-y", "@delorenj/mcp-server-trello"],
-    },
-}
+_EMITTED_FIELDS = ("type", "command", "args")
 
-# Expertise-specific MCP servers suggested per expertise ID.
-_EXPERTISE_SERVERS: dict[str, dict[str, dict]] = {
-    "python": {
-        "python-docs": {
-            "type": "stdio",
-            "command": "npx",
-            "args": ["-y", "@anthropic/mcp-python-docs"],
-        },
-    },
-    "node": {
-        "node-docs": {
-            "type": "stdio",
-            "command": "npx",
-            "args": ["-y", "@anthropic/mcp-node-docs"],
-        },
-    },
-    "react": {
-        "react-docs": {
-            "type": "stdio",
-            "command": "npx",
-            "args": ["-y", "@anthropic/mcp-react-docs"],
-        },
-    },
-    "typescript": {
-        "typescript-docs": {
-            "type": "stdio",
-            "command": "npx",
-            "args": ["-y", "@anthropic/mcp-typescript-docs"],
-        },
-    },
-}
+
+def _load_registry(library_root: Path) -> dict[str, Any]:
+    """Load and minimally validate the vetted MCP registry YAML."""
+    registry_path = library_root / REGISTRY_RELPATH
+    data = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"MCP registry must be a mapping: {registry_path}")
+
+    servers = data.get("servers") or {}
+    baseline = data.get("baseline") or []
+    by_expertise = data.get("by_expertise") or {}
+
+    if not isinstance(servers, dict):
+        raise ValueError(f"MCP registry 'servers' must be a mapping: {registry_path}")
+    if not isinstance(baseline, list):
+        raise ValueError(f"MCP registry 'baseline' must be a list: {registry_path}")
+    if not isinstance(by_expertise, dict):
+        raise ValueError(
+            f"MCP registry 'by_expertise' must be a mapping: {registry_path}"
+        )
+
+    for sid, entry in servers.items():
+        if not isinstance(entry, dict):
+            raise ValueError(f"MCP registry server '{sid}' must be a mapping")
+        for field in ("type", "command", "args"):
+            if field not in entry:
+                raise ValueError(
+                    f"MCP registry server '{sid}' missing required field '{field}'"
+                )
+
+    return {"servers": servers, "baseline": baseline, "by_expertise": by_expertise}
+
+
+def _select_server_ids(
+    registry: dict[str, Any], expertise_ids: list[str]
+) -> list[str]:
+    """Return the ordered, de-duplicated list of server IDs to emit."""
+    selected: list[str] = []
+    seen: set[str] = set()
+
+    for sid in registry["baseline"]:
+        if sid not in seen:
+            selected.append(sid)
+            seen.add(sid)
+
+    for exp_id in expertise_ids:
+        for sid in registry["by_expertise"].get(exp_id, []):
+            if sid not in seen:
+                selected.append(sid)
+                seen.add(sid)
+
+    return selected
 
 
 def write_mcp_config(
     spec: CompositionSpec,
+    library_root: str | Path,
     output_dir: str | Path,
 ) -> StageResult:
-    """Generate .claude/mcp.json for the project.
+    """Generate .claude/mcp.json for the project from the vetted registry.
 
-    Produces a baseline filesystem MCP server for every project,
-    plus expertise-specific servers for recognized expertise.
+    The registry at ``<library_root>/workflows/mcp-registry.yaml`` is the
+    single source of truth for MCP server references. Baseline servers are
+    always emitted; expertise-specific servers are added when the matching
+    expertise is selected in the spec.
 
     Args:
         spec: The composition spec describing the project.
+        library_root: Root of the ai-team-library directory.
         output_dir: Root directory of the generated project.
 
     Returns:
         A StageResult listing files written and any warnings.
     """
+    lib_root = Path(library_root)
     out_root = Path(output_dir)
     wrote: list[str] = []
     warnings: list[str] = []
 
-    # Start with baseline servers
-    servers: dict[str, dict] = dict(_BASELINE_SERVERS)
+    registry = _load_registry(lib_root)
+    expertise_ids = [sel.id for sel in spec.expertise]
 
-    # Add expertise-specific servers
-    for expertise_sel in spec.expertise:
-        expertise_servers = _EXPERTISE_SERVERS.get(expertise_sel.id)
-        if expertise_servers:
-            servers.update(expertise_servers)
-            logger.debug("Added MCP servers for expertise '%s'", expertise_sel.id)
+    server_ids = _select_server_ids(registry, expertise_ids)
+    missing = [sid for sid in server_ids if sid not in registry["servers"]]
+    if missing:
+        raise ValueError(
+            f"MCP registry references undefined server(s): {', '.join(missing)}"
+        )
+
+    servers: dict[str, dict] = {}
+    for sid in server_ids:
+        entry = registry["servers"][sid]
+        servers[sid] = {field: entry[field] for field in _EMITTED_FIELDS}
 
     mcp_config = {"mcpServers": servers}
 
-    # Write the file
     mcp_path = out_root / ".claude" / "mcp.json"
     mcp_path.parent.mkdir(parents=True, exist_ok=True)
     mcp_path.write_text(
