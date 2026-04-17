@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-266 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Low |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 19:28 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | Team Lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -55,9 +55,12 @@ Persona display names render acronyms in uppercase (`Tech QA`,
 
 ## Tasks
 
+> Skipped: BA (default), Architect (default).
+
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Casing helper + compiler display-name fix | Developer | — | Pending |
+| 2 | Tests for casing helper and generated CLAUDE.md tables | Tech-QA | 1 | Pending |
 
 ## Changes
 
@@ -84,7 +87,8 @@ the name-to-id map) is more robust than a hard-coded acronym list.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Casing helper + compiler display-name fix | Developer | — | — | — | — |
+| 2 | Tests for casing helper and generated CLAUDE.md tables | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
