@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -1095,9 +1096,15 @@ class TestEndToEnd:
     def test_claude_md_contains_expertise_content(self, generated_project):
         output_dir, _, spec = generated_project
         claude_md = (output_dir / "CLAUDE.md").read_text(encoding="utf-8").lower()
+        expertise_dir = output_dir / "ai" / "generated" / "expertise"
+        # Only expertise whose source file was emitted is referenced from
+        # CLAUDE.md (see BEAN-247 — missing sources are dropped from the
+        # reference list rather than leaving broken links).
         for exp in spec.expertise:
+            if not (expertise_dir / f"{exp.id}.md").is_file():
+                continue
             assert exp.id in claude_md, (
-                f"CLAUDE.md missing reference to expertise: {exp.id}"
+                f"CLAUDE.md missing reference to emitted expertise: {exp.id}"
             )
 
     def test_manifest_json_valid_structure(self, generated_project):
@@ -1232,6 +1239,28 @@ class TestGenerationSelfConsistency:
             "Generated project is missing paths required by validate-repo "
             "(fix: BEAN-244 for composition.yml + README.md):\n  "
             + "\n  ".join(missing)
+        )
+
+    def test_claude_md_expertise_references_exist_on_disk(self, generated_project):
+        """Every `ai/generated/expertise/<id>.md` path referenced from the
+        generated CLAUDE.md must correspond to a file that was actually
+        emitted. Guards against BEAN-247's class of defect — a missing
+        expertise source silently producing a broken reference.
+        """
+        output_dir, _, _ = generated_project
+        claude_md = (output_dir / "CLAUDE.md").read_text(encoding="utf-8")
+        referenced = re.findall(
+            r"ai/generated/expertise/([A-Za-z0-9_-]+)\.md",
+            claude_md,
+        )
+        broken = [
+            eid for eid in referenced
+            if not (output_dir / "ai" / "generated" / "expertise" / f"{eid}.md").is_file()
+        ]
+        assert not broken, (
+            "CLAUDE.md references expertise files that were not written "
+            "(fix: BEAN-247 — drop missing-source expertise from the "
+            "reference list):\n  " + "\n  ".join(broken)
         )
 
 

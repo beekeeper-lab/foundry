@@ -752,6 +752,79 @@ class TestCompileWarnings:
         result = compile_project(spec, index, lib_root, output)
         assert any("missing conventions.md" in w for w in result.warnings)
 
+    def test_missing_expertise_excluded_from_claude_md(self, tmp_path: Path):
+        """When an expertise has no conventions.md, CLAUDE.md must not
+        reference the expertise's ai/generated/expertise/<id>.md path
+        (the file is never written). The warning is still emitted.
+        """
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={"developer": {"persona.md": "# Dev"}},
+            expertise={
+                "python": {"conventions.md": "# Python"},
+                "clean-code": {"readme.md": "Not conventions"},
+            },
+        )
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="clean-code", order=20),
+            ],
+        )
+        result = compile_project(spec, index, lib_root, output)
+
+        # Warning is still surfaced.
+        assert any("clean-code" in w and "missing" in w for w in result.warnings)
+
+        # Missing-source file must not exist on disk.
+        assert not (output / "ai/generated/expertise/clean-code.md").exists()
+
+        # Generated CLAUDE.md must not reference the missing file.
+        claude_md = (output / "CLAUDE.md").read_text(encoding="utf-8")
+        assert "ai/generated/expertise/clean-code.md" not in claude_md
+
+        # The present expertise is still referenced.
+        assert "ai/generated/expertise/python.md" in claude_md
+
+    def test_all_expertise_references_in_claude_md_exist_on_disk(
+        self, tmp_path: Path,
+    ):
+        """Every `ai/generated/expertise/<id>.md` reference in the generated
+        CLAUDE.md must correspond to a file that was actually written.
+        """
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={"developer": {"persona.md": "# Dev"}},
+            expertise={
+                "python": {"conventions.md": "# Python"},
+                "clean-code": {"readme.md": "Not conventions"},
+                "rust": {"conventions.md": "# Rust"},
+            },
+        )
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="clean-code", order=20),
+                ExpertiseSelection(id="rust", order=30),
+            ],
+        )
+        compile_project(spec, index, lib_root, output)
+
+        claude_md = (output / "CLAUDE.md").read_text(encoding="utf-8")
+        import re as _re
+        referenced = _re.findall(
+            r"ai/generated/expertise/([A-Za-z0-9_-]+)\.md",
+            claude_md,
+        )
+        assert referenced, "expected at least one expertise reference in CLAUDE.md"
+        for eid in referenced:
+            assert (output / "ai/generated/expertise" / f"{eid}.md").is_file(), (
+                f"CLAUDE.md references ai/generated/expertise/{eid}.md but "
+                f"the file was not written"
+            )
+
     def test_warns_on_unresolved_placeholders(self, tmp_path: Path):
         output = tmp_path / "project"
         index, lib_root = _make_library(tmp_path, personas={

@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-247 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-17 17:40 |
+| **Completed** | 2026-04-17 17:45 |
+| **Duration** | 1268h 37m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -41,20 +41,21 @@ A generated project contains zero references to files that were not actually emi
 
 ## Acceptance Criteria
 
-- [ ] When an expertise source is missing, the generated `CLAUDE.md` does not list `ai/generated/expertise/<id>.md` as a reference path.
-- [ ] The existing warning is still emitted via `StageResult.warnings`.
-- [ ] A new test (in `tests/test_compiler.py` or `tests/test_generator.py`) asserts every `ai/generated/expertise/*.md` reference in the generated CLAUDE.md corresponds to a file on disk.
-- [ ] Manual verification: regenerate `small-python-team.yml` → `CLAUDE.md` no longer lists `clean-code.md` under references, and no broken links remain.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] When an expertise source is missing, the generated `CLAUDE.md` does not list `ai/generated/expertise/<id>.md` as a reference path.
+- [x] The existing warning is still emitted via `StageResult.warnings`.
+- [x] A new test (in `tests/test_compiler.py` or `tests/test_generator.py`) asserts every `ai/generated/expertise/*.md` reference in the generated CLAUDE.md corresponds to a file on disk.
+- [x] Manual verification: regenerate `small-python-team.yml` → `CLAUDE.md` no longer lists `clean-code.md` under references, and no broken links remain.
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Drop Missing Expertise References from Generated CLAUDE.md | Developer | — | Done |
+| 2 | Verify Generated CLAUDE.md Reference Integrity | Tech-QA | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
+> Skipped: BA (default), Architect (default) — scoped compiler integrity fix; behavior is fully specified in the bean.
 
 ## Changes
 
@@ -62,7 +63,14 @@ A generated project contains zero references to files that were not actually emi
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/beans/BEAN-247-generator-drop-broken-expertise-refs/bean.md | 40 |
+| ai/beans/BEAN-247-.../tasks/01-developer-drop-missing-expertise-refs.md | 50 |
+| ai/beans/BEAN-247-.../tasks/02-tech-qa-verify-generated-claude-md-integrity.md | 50 |
+| ai/beans/_index.md | 2 |
+| ai/outputs/tech-qa/BEAN-247-verification.md | 33 |
+| foundry_app/services/compiler.py | 7 |
+| tests/test_compiler.py | 73 |
+| tests/test_generator.py | 31 |
 
 ## Notes
 
@@ -82,12 +90,13 @@ A generated project contains zero references to files that were not actually emi
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Drop Missing Expertise References from Generated CLAUDE.md | Developer | 1m | 781,955 | 6,343 | $1.80 |
+| 2 | Verify Generated CLAUDE.md Reference Integrity | Tech-QA | 1m | 3,845,486 | 14,173 | $7.59 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 2m |
+| **Total Tokens In** | 4,627,441 |
+| **Total Tokens Out** | 20,516 |
+| **Total Cost** | $9.39 |
