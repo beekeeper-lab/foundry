@@ -418,6 +418,18 @@ class TestStarterReadme:
         assert "README.md" not in result.wrote
         assert (output / "README.md").read_text() == "# Customized\n"
 
+    def test_readme_points_at_starter_stacks(self, tmp_path: Path):
+        """BEAN-253: the generated README's Getting Started section must
+        tell users to initialize the app with the stack-appropriate
+        command and link to docs/starter-stacks.md in the Foundry repo
+        (not inside the generated project — the cheat sheet lives with
+        Foundry, not with the project)."""
+        output = tmp_path / "my-project"
+        scaffold_project(_make_spec(), output)
+        content = (output / "README.md").read_text(encoding="utf-8")
+        assert "docs/starter-stacks.md" in content
+        assert "stack-appropriate command" in content
+
 
 # ---------------------------------------------------------------------------
 # Project charter (BEAN-252 / ADR-003)
