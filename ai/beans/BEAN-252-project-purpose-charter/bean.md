@@ -89,7 +89,7 @@ Both are valid. The bean picks one after design.
 | 1 | Record decision (charter-file approach) + draft template structure | Architect | < 1m | N/A (suspect) | N/A (suspect) | — |
 | 2 | Define charter section content guidance | BA | < 1m | 845,992 | 10,302 | $2.43 |
 | 3 | Implement scaffold_project charter generation | Developer | < 1m | 373,830 | 21,229 | $4.40 |
-| 4 | Tests + verification | Tech-QA | — | — | — | — |
+| 4 | Tests + verification | Tech-QA | < 1m | N/A (suspect) | N/A (suspect) | — |
 
 | Metric | Value |
 |--------|-------|
