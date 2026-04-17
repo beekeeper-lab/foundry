@@ -313,6 +313,40 @@ class TestWriteAgents:
 
         assert result.warnings == []
 
+    def test_missing_expertise_excluded_from_agent_header(self, tmp_path: Path):
+        """When an expertise has no conventions.md, its ID must not appear
+        in the agent header's ``**Expertise:** ...`` line. Regression guard
+        for BEAN-261: the CLAUDE.md drop must propagate to agent files.
+        """
+        lib_root, index = _make_library(tmp_path)
+
+        # Add a second expertise directory without conventions.md so it is
+        # indexed (present on disk) but not emittable.
+        clean_code_dir = lib_root / "stacks" / "clean-code"
+        clean_code_dir.mkdir(parents=True)
+        (clean_code_dir / "readme.md").write_text("not conventions", encoding="utf-8")
+        index.expertise.append(ExpertiseInfo(
+            id="clean-code",
+            name="Clean Code",
+            path=str(clean_code_dir),
+        ))
+
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id="python"),
+            ExpertiseSelection(id="clean-code"),
+        ])
+        output = tmp_path / "output"
+        output.mkdir()
+
+        write_agents(spec, index, lib_root, output)
+
+        content = (output / ".claude" / "agents" / "developer.md").read_text()
+        # Missing-source expertise must be absent from the header.
+        assert "clean-code" not in content
+        # Present expertise still renders, as does the role name.
+        assert "**Expertise:** python" in content
+        assert "# Python Developer" in content
+
 
 class TestAgentPlaceholderRendering:
     """Persona source Jinja expressions must be resolved before they reach

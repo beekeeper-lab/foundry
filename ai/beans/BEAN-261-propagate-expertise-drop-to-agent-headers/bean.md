@@ -91,6 +91,23 @@ review noted the CLAUDE.md fix did not propagate to agent headers.
 `clean-code` content — addresses the root cause but the resilience fix
 here is still needed for any future missing-expertise case).
 
+**Decision — composition.yml.** We keep
+`ai/team/composition.yml` as the user's unfiltered input spec (record
+what was *requested*, not what was *emitted*). Reasons:
+- Re-running generation against the snapshot must produce the same
+  spec that the user wrote; filtering would silently amend their
+  input.
+- The missing-source expertise is already surfaced via the warning
+  path in `StageResult.warnings` and via the absent
+  `ai/generated/expertise/<id>.md` file — so "what was emitted" is
+  auditable from the file tree, not from composition.yml.
+- composition.yml is the closest thing to a "saved project file";
+  users may edit the source expertise and regenerate, at which point
+  the spec would produce the correct artifact without needing to be
+  re-added.
+The drop is therefore scoped to compiled artifacts only (agent
+headers, member files, CLAUDE.md).
+
 ## Trello
 
 | Field | Value |
@@ -101,7 +118,7 @@ here is still needed for any future missing-expertise case).
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 | Propagate Expertise Drop to Agent Headers and Member Files | Developer | — | — | — | — |
+| 1 | Propagate Expertise Drop to Agent Headers and Member Files | Developer | < 1m | 1,769,105 | 0 | $3.25 |
 | 2 | Verify Agent Header / Member File Expertise Invariants | Tech-QA | — | — | — | — |
 
 | Metric | Value |
