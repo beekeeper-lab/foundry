@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-255 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 18:16 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | Claude Code (worker) |
 | **Category** | App |
 
 ## Problem Statement
@@ -53,7 +53,13 @@ Hook pack selection responds to the selected expertise, personas, and cloud prov
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Design stack→hook mapping, create hook-selection.md | Architect | — | Pending |
+| 2 | Add new hook pack library docs (lint-js, aws-*) | Developer | 1 | Pending |
+| 3 | Implement stack-aware resolution in safety_writer | Developer | 1,2 | Pending |
+| 4 | Add tests for stack-aware hook selection | Tech-QA | 3 | Pending |
+| 5 | Run pytest and ruff, verify acceptance criteria | Tech-QA | 4 | Pending |
+
+> Skipped: BA (default — scope is well-defined by external audit)
 
 ## Changes
 
@@ -77,7 +83,11 @@ Hook pack selection responds to the selected expertise, personas, and cloud prov
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Design stack→hook mapping, create hook-selection.md | Architect | — | — | — | — |
+| 2 | Add new hook pack library docs (lint-js, aws-*) | Developer | — | — | — | — |
+| 3 | Implement stack-aware resolution in safety_writer | Developer | — | — | — | — |
+| 4 | Add tests for stack-aware hook selection | Tech-QA | — | — | — | — |
+| 5 | Run pytest and ruff, verify acceptance criteria | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
