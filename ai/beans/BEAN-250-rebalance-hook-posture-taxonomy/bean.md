@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-250 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
 | **Started** | 2026-04-17 19:02 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-17 19:06 |
+| **Duration** | 1269h 59m |
 | **Owner** | team-lead |
 | **Category** | App |
 
@@ -42,20 +42,20 @@ A user can read the posture level (`baseline`, or whatever we rename it to) and 
 
 ## Acceptance Criteria
 
-- [ ] A one-page `ai/context/hook-posture.md` (new, or an update to an existing doc) documents the final posture taxonomy: each level's intent, pack list, and default enforcement mode.
-- [ ] The chosen direction (rename or slim) is applied to code, library, examples, and tests consistently — no mixed terminology.
-- [ ] The generated project's `CLAUDE.md` (or hook-posture-related section) accurately reflects which packs are enabled at the chosen level.
-- [ ] Existing hook-related tests updated to match; at least one test asserts that `Posture.BASELINE` (or its successor name) matches the documented pack list.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] A one-page `ai/context/hook-posture.md` (new, or an update to an existing doc) documents the final posture taxonomy: each level's intent, pack list, and default enforcement mode.
+- [x] The chosen direction (rename or slim) is applied to code, library, examples, and tests consistently — no mixed terminology. (Chose: document + lock in; see ADR-006.)
+- [x] The generated project's `CLAUDE.md` (or hook-posture-related section) accurately reflects which packs are enabled at the chosen level. (`hook-posture.md` is the canonical reference; `hook-selection.md` cross-links.)
+- [x] Existing hook-related tests updated to match; at least one test asserts that `Posture.BASELINE` (or its successor name) matches the documented pack list. (`TestPostureTaxonomy` — 7 tests, all 3 levels.)
+- [x] All tests pass (`uv run pytest`). (1893 passed.)
+- [x] Lint clean (`uv run ruff check foundry_app/`). (All checks passed.)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | ADR — posture taxonomy direction | Architect | — | Pending |
-| 2 | Author `ai/context/hook-posture.md` + expose posture base-pack API | Developer | 1 | Pending |
-| 3 | Lock-in test asserting posture → base pack list | Tech-QA | 2 | Pending |
+| 1 | ADR — posture taxonomy direction | Architect | — | Done |
+| 2 | Author `ai/context/hook-posture.md` + expose posture base-pack API | Developer | 1 | Done |
+| 3 | Lock-in test asserting posture → base pack list | Tech-QA | 2 | Done |
 
 > Skipped: BA (default — no ambiguous requirements). Architect included because this is a taxonomy decision worth recording in an ADR.
 
@@ -91,8 +91,8 @@ A user can read the posture level (`baseline`, or whatever we rename it to) and 
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 1269h 59m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
