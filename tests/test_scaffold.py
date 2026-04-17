@@ -184,8 +184,9 @@ class TestStageResult:
             team=TeamConfig(personas=[PersonaSelection(id="developer")]),
         )
         result = scaffold_project(spec, output)
-        # root + 4 .claude dirs + 6 ai dirs + 1 persona dir = 12
-        assert len(result.wrote) == 12
+        # root + 4 .claude dirs + 7 ai dirs (incl. ai/team) + 1 persona dir
+        # + ai/team/composition.yml + README.md = 15
+        assert len(result.wrote) == 15
 
 
 # ---------------------------------------------------------------------------
@@ -300,3 +301,99 @@ class TestEdgeCases:
         for i in range(10):
             assert (output / "ai" / "outputs" / f"persona-{i}").is_dir()
             assert f"ai/outputs/persona-{i}" in result.wrote
+
+
+# ---------------------------------------------------------------------------
+# Composition snapshot + starter README (BEAN-244)
+# ---------------------------------------------------------------------------
+
+
+class TestCompositionSnapshot:
+    """Scaffold must emit ai/team/composition.yml so the generated project
+    round-trips and satisfies validate-repo's structural contract.
+    """
+
+    def test_writes_composition_yml(self, tmp_path: Path):
+        import yaml
+
+        output = tmp_path / "my-project"
+        spec = _make_spec()
+        result = scaffold_project(spec, output)
+
+        composition = output / "ai" / "team" / "composition.yml"
+        assert composition.is_file()
+        assert "ai/team/composition.yml" in result.wrote
+
+        data = yaml.safe_load(composition.read_text(encoding="utf-8"))
+        assert data["project"]["slug"] == spec.project.slug
+        assert data["project"]["name"] == spec.project.name
+        assert "team" in data
+        assert "expertise" in data
+
+    def test_composition_roundtrip(self, tmp_path: Path):
+        """The emitted composition.yml must be loadable via load_composition
+        and produce an equivalent spec.
+        """
+        from foundry_app.io.composition_io import load_composition
+
+        output = tmp_path / "my-project"
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="developer")]),
+        )
+        scaffold_project(spec, output)
+
+        reloaded = load_composition(output / "ai" / "team" / "composition.yml")
+        assert reloaded.project.slug == spec.project.slug
+        assert [p.id for p in reloaded.team.personas] == ["developer"]
+
+    def test_idempotent_second_pass(self, tmp_path: Path):
+        """Re-running scaffold with an unchanged spec must not list the
+        composition snapshot as newly written."""
+        output = tmp_path / "my-project"
+        spec = _make_spec()
+        scaffold_project(spec, output)
+        result = scaffold_project(spec, output)
+        assert "ai/team/composition.yml" not in result.wrote
+
+    def test_reemits_when_spec_changes(self, tmp_path: Path):
+        """If the spec changed between runs, the composition snapshot is
+        rewritten and appears in the wrote list."""
+        output = tmp_path / "my-project"
+        scaffold_project(_make_spec(), output)
+        new_spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="architect"),
+            ]),
+        )
+        result = scaffold_project(new_spec, output)
+        assert "ai/team/composition.yml" in result.wrote
+
+
+class TestStarterReadme:
+    """Scaffold must emit a starter README.md at the project root on first run,
+    and preserve any README the user has customized on later runs.
+    """
+
+    def test_writes_readme_at_root(self, tmp_path: Path):
+        output = tmp_path / "my-project"
+        spec = _make_spec()
+        result = scaffold_project(spec, output)
+
+        readme = output / "README.md"
+        assert readme.is_file()
+        assert "README.md" in result.wrote
+        content = readme.read_text(encoding="utf-8")
+        assert spec.project.name in content
+        assert "CLAUDE.md" in content
+        assert "Foundry" in content
+
+    def test_preserves_existing_readme(self, tmp_path: Path):
+        output = tmp_path / "my-project"
+        output.mkdir()
+        (output / "README.md").write_text("# Customized\n", encoding="utf-8")
+
+        result = scaffold_project(_make_spec(), output)
+
+        assert "README.md" not in result.wrote
+        assert (output / "README.md").read_text() == "# Customized\n"
