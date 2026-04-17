@@ -63,7 +63,14 @@ A generated project contains zero references to files that were not actually emi
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/beans/BEAN-247-generator-drop-broken-expertise-refs/bean.md | 40 |
+| ai/beans/BEAN-247-.../tasks/01-developer-drop-missing-expertise-refs.md | 50 |
+| ai/beans/BEAN-247-.../tasks/02-tech-qa-verify-generated-claude-md-integrity.md | 50 |
+| ai/beans/_index.md | 2 |
+| ai/outputs/tech-qa/BEAN-247-verification.md | 33 |
+| foundry_app/services/compiler.py | 7 |
+| tests/test_compiler.py | 73 |
+| tests/test_generator.py | 31 |
 
 ## Notes
 
