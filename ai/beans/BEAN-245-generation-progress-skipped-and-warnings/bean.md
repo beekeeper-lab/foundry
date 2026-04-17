@@ -61,11 +61,19 @@ Two UX bugs in the generation-progress screen, both observed on `test` branch to
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/beans/BEAN-245-generation-progress-skipped-and-warnings/bean.md` | ±41 |
+| `ai/beans/BEAN-245-generation-progress-skipped-and-warnings/tasks/01-developer-skipped-and-warnings.md` | +54 |
+| `ai/beans/BEAN-245-generation-progress-skipped-and-warnings/tasks/02-tech-qa-verification.md` | +67 |
+| `foundry_app/services/generator.py` | +4 |
+| `foundry_app/ui/generation_worker.py` | +5 / -4 |
+| `foundry_app/ui/main_window.py` | +10 / -2 |
+| `foundry_app/ui/screens/generation_progress.py` | +16 / -2 |
+| `tests/test_generation_progress.py` | +31 |
+| `tests/test_generator.py` | +30 / -3 |
+
+Totals: 9 files changed, +238 / -31.
 
 ## Notes
 
