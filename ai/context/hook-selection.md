@@ -36,6 +36,10 @@ tech the project actually uses.
 
 ## Posture base
 
+See `ai/context/hook-posture.md` for the authoritative per-posture intent and
+pack list. The mapping is exposed as `safety_writer.posture_base_packs()` and
+reproduced here for quick reference:
+
 | Posture | Always-on packs |
 |---------|-----------------|
 | `baseline` | `git-commit-branch` |
