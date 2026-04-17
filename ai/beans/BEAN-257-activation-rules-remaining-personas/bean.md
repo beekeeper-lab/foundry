@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-257 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 19:26 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -55,7 +55,10 @@ Every persona shipped in the default library has an explicit "Activated When" (o
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add "Activated When" sections to all library personas + update team-lead agent | developer | — | Pending |
+| 2 | Verify activation rules coverage and audit note | tech-qa | 1 | Pending |
+
+> Skipped: BA (default — process/library-content work, not user-facing requirements), Architect (default — content additions, no system design or new module)
 
 ## Changes
 
@@ -81,7 +84,8 @@ Every persona shipped in the default library has an explicit "Activated When" (o
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add "Activated When" sections to all library personas + update team-lead agent | developer | — | — | — | — |
+| 2 | Verify activation rules coverage and audit note | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
