@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-248 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-04-17 19:01 |
+| **Completed** | 2026-04-17 19:05 |
+| **Duration** | 1269h 57m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 
@@ -37,20 +37,21 @@ This bean fixes the *content* side: supply real `clean-code` conventions so the 
 
 ## Acceptance Criteria
 
-- [ ] `ai-team-library/expertise/clean-code/conventions.md` exists and is non-empty.
-- [ ] Follows the standardized expertise template used by other expertise in the library (Defaults table, Do/Don't sections, Common Pitfalls, Checklist).
-- [ ] Regenerating `examples/small-python-team.yml` produces no warnings mentioning `clean-code`.
-- [ ] Regenerated `CLAUDE.md` includes `ai/generated/expertise/clean-code.md` as a reference and the file exists on disk.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`) — content-only change, but sanity check.
+- [x] `ai-team-library/expertise/clean-code/conventions.md` exists and is non-empty.
+- [x] Follows the standardized expertise template used by other expertise in the library (Defaults table, Do/Don't sections, Common Pitfalls, Checklist).
+- [x] Regenerating `examples/small-python-team.yml` produces no warnings mentioning `clean-code`.
+- [x] Regenerated `CLAUDE.md` includes `ai/generated/expertise/clean-code.md` as a reference and the file exists on disk.
+- [x] All tests pass (`uv run pytest`) — 1886 passed.
+- [x] Lint clean (`uv run ruff check foundry_app/`) — all checks passed.
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Author `ai-team-library/expertise/clean-code/conventions.md` following the standardized expertise template | Developer | — | Done |
+| 2 | Verify acceptance: regenerate `small-python-team`, confirm no `clean-code` warnings, confirm `clean-code.md` on disk + referenced from generated `CLAUDE.md`, run `uv run pytest` and `uv run ruff check foundry_app/` | Tech-QA | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
+> Skipped: BA (default — requirements unambiguous, content-only change), Architect (default — no subsystem, module, or dependency changes).
 
 ## Changes
 
@@ -78,12 +79,13 @@ This bean fixes the *content* side: supply real `clean-code` conventions so the 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Author `ai-team-library/expertise/clean-code/conventions.md` following the standardized expertise template | Developer | < 1m | N/A (suspect) | N/A (suspect) | — |
+| 2 | Verify acceptance: regenerate `small-python-team`, confirm no `clean-code` warnings, confirm `clean-code.md` on disk + referenced from generated `CLAUDE.md`, run `uv run pytest` and `uv run ruff check foundry_app/` | Tech-QA | < 1m | N/A (suspect) | N/A (suspect) | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
