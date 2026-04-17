@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-250 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 19:02 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -53,9 +53,11 @@ A user can read the posture level (`baseline`, or whatever we rename it to) and 
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | ADR — posture taxonomy direction | Architect | — | Pending |
+| 2 | Author `ai/context/hook-posture.md` + expose posture base-pack API | Developer | 1 | Pending |
+| 3 | Lock-in test asserting posture → base pack list | Tech-QA | 2 | Pending |
 
-> Tasks are populated by the Team Lead during decomposition. An Architect task is likely — this is a taxonomy decision worth recording in an ADR.
+> Skipped: BA (default — no ambiguous requirements). Architect included because this is a taxonomy decision worth recording in an ADR.
 
 ## Changes
 
@@ -83,7 +85,9 @@ A user can read the posture level (`baseline`, or whatever we rename it to) and 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | ADR — posture taxonomy direction | Architect | — | — | — | — |
+| 2 | Author `ai/context/hook-posture.md` + expose posture base-pack API | Developer | — | — | — | — |
+| 3 | Lock-in test asserting posture → base pack list | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
