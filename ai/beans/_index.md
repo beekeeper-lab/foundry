@@ -278,7 +278,7 @@
 | BEAN-254 | Bootstrap Bean for Seeded Tasks | App | High | Done | team-lead |
 | BEAN-255 | Stack-Aware Hook Pack Selection | App | High | Done | team-lead |
 | BEAN-256 | Dev-Loop Commands + Stack-Aware Command Selection | App | High | Done | team-lead |
-| BEAN-257 | Activation Rules for Remaining Personas | Process | Medium | In Progress | team-lead |
+| BEAN-257 | Activation Rules for Remaining Personas | Process | Medium | Done | team-lead |
 | BEAN-258 | Code-Quality-Reviewer vs Tech-QA Scope Split | Process | Low | Done | team-lead |
 | BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | Approved | (unassigned) |
 | BEAN-260 | Approval Gate — Command + Criteria | Process | Medium | Done | team-lead |
