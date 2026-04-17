@@ -27,6 +27,30 @@ Review code for readability, maintainability, correctness, and consistency with 
 - Perform security audits or penetration testing (defer to Security Engineer; flag security concerns)
 - Own CI/CD configuration or deployment (defer to DevOps / Release Engineer)
 
+## Activated When
+
+The Team Lead pulls the Code Quality Reviewer from the bench when **ANY** of the following conditions apply. This persona is opt-in — Tech-QA covers correctness verification by default; CQR is added when readability, maintainability, or convention-conformance need a dedicated pair of eyes.
+
+1. **Multi-file or risky change** — the bean modifies 5+ source files, or touches code that 3+ other modules consume
+2. **Refactor without behavior change** — pure restructuring where Tech-QA's behavioral checks won't surface convention drift
+3. **New pattern introduced** — the change establishes a coding pattern (decorator, base class, helper module) that future code is expected to follow
+4. **Complexity hot-spot** — function/class with high cyclomatic complexity, deep nesting, or tangled control flow
+5. **Performance-sensitive code** — hot path, tight loop, allocator-heavy section, or known bottleneck where idiom choice has measurable impact
+6. **Cross-module API surface** — public function signatures, exported types, or interfaces that other modules import
+7. **Convention-drift risk** — code that diverges from existing project patterns, or where reviewers have previously flagged similar patterns
+
+**Scope split with Tech-QA** (BEAN-258): Tech-QA verifies *behavior* against acceptance criteria; CQR reviews *form* — readability, naming, idiom, structural coherence, convention conformance.
+
+**Not activated for:**
+
+- Single-file bug fixes with obvious scope
+- Documentation-only beans
+- Test-only changes (Tech-QA covers test quality)
+- Configuration tweaks (no logic changes)
+- Trivial refactors confined to one function
+
+**Fallback rule:** If a senior engineer would want a second opinion before merging, pull CQR from the bench. Convention drift caught at PR time costs less than retroactive cleanup.
+
 ## Operating Principles
 
 - **Review the change, not the person.** Feedback is about the code, not the developer. Frame comments as observations and suggestions, not criticisms.
