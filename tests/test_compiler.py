@@ -940,7 +940,11 @@ class TestEmptySelections:
         spec = _make_spec(team=TeamConfig(personas=[]))
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
-        assert "## Team" not in content
+        # The Team roster section is suppressed when no personas are
+        # selected. The Team Orchestration Model section (BEAN-269) is
+        # policy and always emitted, so match the roster heading
+        # specifically.
+        assert "## Team\n" not in content
 
     def test_no_expertise_still_creates_claude_md(self, tmp_path: Path):
         output = tmp_path / "project"

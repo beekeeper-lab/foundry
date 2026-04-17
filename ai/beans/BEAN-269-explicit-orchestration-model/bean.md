@@ -125,8 +125,8 @@ surfaces, consistent in each:
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Implement orchestration model surfaces | Developer | — | Pending |
-| 2 | Verify orchestration acceptance criteria | Tech-QA | 1 | Pending |
+| 1 | Implement orchestration model surfaces | Developer | — | Done |
+| 2 | Verify orchestration acceptance criteria | Tech-QA | 1 | In Progress |
 
 > Skipped: BA (requirements precise — reviewer's suggested wording adopted verbatim), Architect (no new subsystem; YAML block is additive, forward-compatible, no ADR needed).
 
@@ -181,7 +181,7 @@ this the single most important next improvement.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 | Implement orchestration model surfaces | Developer | — | — | — | — |
+| 1 | Implement orchestration model surfaces | Developer | ~20m | N/A (suspect) | N/A (suspect) | — |
 | 2 | Verify orchestration acceptance criteria | Tech-QA | — | — | — | — |
 
 | Metric | Value |

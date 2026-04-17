@@ -423,6 +423,24 @@ def _build_lean_claude_md(
             )
         sections.append("\n".join(team_lines))
 
+    # --- Team Orchestration Model ---
+    orchestration_lines = [
+        "## Team Orchestration Model",
+        "",
+        "- **Team Lead is the orchestrator.** The Team Lead selects beans, "
+        "decomposes work into tasks, assigns roles, and sequences execution.",
+        "- The listed personas are an **available bench of specialists**, "
+        "not the default active participants for every bean or task.",
+        "- For **software development work**, the Team Lead must always "
+        "assign:",
+        "  - **Developer**",
+        "  - **Tech-QA**",
+        "- Other specialists such as **Architect**, **UX/UI Designer**, "
+        "**Integrator Merge Captain**, and **BA** are assigned only when "
+        "the bean or task requires them.",
+    ]
+    sections.append("\n".join(orchestration_lines))
+
     # --- Pointers ---
     pointer_lines = [
         "## Documentation",

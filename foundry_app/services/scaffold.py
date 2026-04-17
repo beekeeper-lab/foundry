@@ -30,6 +30,21 @@ _AI_DIRS = [
     "ai/team",
 ]
 
+_ORCHESTRATION_YAML_BLOCK = """
+orchestration:
+  orchestrator_role: team-lead
+  team_model: available-bench
+  required_roles:
+    software-development:
+      - developer
+      - tech-qa
+  optional_roles:
+    - architect
+    - ux-ui-designer
+    - integrator-merge-captain
+    - ba
+"""
+
 
 def _render_readme(spec: CompositionSpec) -> str:
     """Render the starter README.md content for a generated project."""
@@ -210,6 +225,15 @@ def scaffold_project(
         else None
     )
     save_composition(spec, composition_path)
+    # Append the static orchestration policy block so tooling and
+    # cold-start agents can read the team model from composition.yml
+    # directly. This is policy, not input — it is identical across
+    # projects and not driven by the spec. See BEAN-269.
+    composition_path.write_text(
+        composition_path.read_text(encoding="utf-8")
+        + _ORCHESTRATION_YAML_BLOCK,
+        encoding="utf-8",
+    )
     if previous_composition != composition_path.read_text(encoding="utf-8"):
         created.append(str(composition_path.relative_to(root)))
         logger.info("Wrote composition snapshot: %s", composition_path)
