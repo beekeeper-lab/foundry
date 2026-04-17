@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-252 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-17 18:16 |
+| **Completed** | 2026-04-17 18:20 |
+| **Duration** | 1269h 13m |
+| **Owner** | worker-bean-252 |
 | **Category** | App |
 
 ## Problem Statement
@@ -45,25 +45,33 @@ Both are valid. The bean picks one after design.
 
 ## Acceptance Criteria
 
-- [ ] Decision recorded in `ai/context/decisions.md` or in this bean's Notes before implementation begins.
-- [ ] Chosen approach implemented: either `ai/context/project-charter.md` is scaffolded with a structured TODO template, OR `spec.project.description` is required with minimum length.
-- [ ] If charter-file approach: the generated file contains labeled sections for **Purpose**, **Audience**, **Success Criteria**, **Non-Goals**, and **Constraints**.
-- [ ] If required-description approach: the validator rejects compositions with missing/short descriptions; wizard surfaces the error before Generate is clickable.
-- [ ] Tests cover both the happy path and the missing/weak-description rejection.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] Decision recorded in `ai/context/decisions.md` (ADR-003) — charter-file approach chosen over required-description.
+- [x] Chosen approach implemented: `ai/context/project-charter.md` is scaffolded with a structured TODO template via `_render_project_charter()` in `foundry_app/services/scaffold.py`.
+- [x] Charter file contains labeled sections for **Purpose**, **Audience**, **Success Criteria**, **Non-Goals**, and **Constraints**.
+- [x] Tests cover the happy path and the missing-description path (`test_charter_echoes_description_when_present` + `test_charter_shows_todo_when_description_absent`).
+- [x] All tests pass: `uv run pytest` → 1819 passed.
+- [x] Lint clean: `uv run ruff check foundry_app/` → All checks passed.
+
+> The required-description criteria were not exercised because Option 2 was not chosen (see ADR-003).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Record decision (charter-file approach) + draft template structure | Architect | — | Done |
+| 2 | Define charter section content guidance | BA | 1 | Done |
+| 3 | Implement scaffold_project charter generation | Developer | 1, 2 | Done |
+| 4 | Tests + verification | Tech-QA | 3 | Done |
+
+> Bottleneck check: tasks are sequential; charter content (BA) blocks dev implementation. No shared-resource contention.
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/services/scaffold.py` | +90 (new `_render_project_charter()` + emission block in `scaffold_project()`) |
+| `tests/test_scaffold.py` | +102 / −2 (new `TestProjectCharter` 8-test class + dir-count update) |
+| `ai/context/decisions.md` | +44 (ADR-003) |
 
 ## Notes
 
@@ -81,12 +89,15 @@ Both are valid. The bean picks one after design.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Record decision (charter-file approach) + draft template structure | Architect | < 1m | N/A (suspect) | N/A (suspect) | — |
+| 2 | Define charter section content guidance | BA | < 1m | 845,992 | 10,302 | $2.43 |
+| 3 | Implement scaffold_project charter generation | Developer | < 1m | 373,830 | 21,229 | $4.40 |
+| 4 | Tests + verification | Tech-QA | < 1m | N/A (suspect) | N/A (suspect) | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 4 |
+| **Total Duration** | 2m |
+| **Total Tokens In** | 1,219,822 |
+| **Total Tokens Out** | 31,531 |
+| **Total Cost** | $6.83 |
