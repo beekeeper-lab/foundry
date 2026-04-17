@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-269 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-17 |
-| **Started** | — |
+| **Started** | 2026-04-17 18:45 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | Team Lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -125,7 +125,10 @@ surfaces, consistent in each:
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Implement orchestration model surfaces | Developer | — | Pending |
+| 2 | Verify orchestration acceptance criteria | Tech-QA | 1 | Pending |
+
+> Skipped: BA (requirements precise — reviewer's suggested wording adopted verbatim), Architect (no new subsystem; YAML block is additive, forward-compatible, no ADR needed).
 
 ## Changes
 
@@ -178,7 +181,8 @@ this the single most important next improvement.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Implement orchestration model surfaces | Developer | — | — | — | — |
+| 2 | Verify orchestration acceptance criteria | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
