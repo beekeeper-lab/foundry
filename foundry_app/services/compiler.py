@@ -24,6 +24,95 @@ _PERSONA_HEADER_RE = re.compile(r"^#\s+Persona:\s*(.+)", re.MULTILINE)
 # Pattern for "(defer to X)" or "(defer to X; extra text)" parentheticals
 _DEFER_TO_RE = re.compile(r"\s*\(defer to ([^;)]+)(?:;[^)]+)?\)")
 
+# Acronyms that should be uppercased when rendering display names derived
+# from kebab-case identifiers (e.g. ``tech-qa`` -> ``Tech QA``). Extend when
+# a new acronym-bearing persona or expertise id is introduced.
+_ACRONYMS: frozenset[str] = frozenset({
+    "qa", "ui", "ux", "api", "sre", "ml", "ai", "ba",
+    "sql", "dba", "aws", "gcp", "ci", "cd",
+})
+
+
+def _display_name_from_id(identifier: str) -> str:
+    """Convert a kebab-case id into a human-readable display name.
+
+    Acronyms listed in ``_ACRONYMS`` are uppercased; other segments are
+    title-cased. Consecutive acronym segments collapse with ``/`` so that
+    ``ux-ui-designer`` renders as ``UX/UI Designer`` rather than
+    ``Ux Ui Designer``.
+    """
+    parts = identifier.split("-")
+    words: list[str] = []
+    run: list[str] = []
+
+    def _flush() -> None:
+        if run:
+            words.append("/".join(run))
+            run.clear()
+
+    for part in parts:
+        if part.lower() in _ACRONYMS:
+            run.append(part.upper())
+        else:
+            _flush()
+            words.append(part.capitalize())
+    _flush()
+    return " ".join(words)
+
+
+def _canonicalize_persona_header(name: str) -> str:
+    """Trim a ``# Persona: <Name>`` header down to its short display form.
+
+    Rules applied in order:
+
+    1. Remove trailing parenthetical annotations (``Business Analyst (BA)``
+       -> ``Business Analyst``).
+    2. Split on `` / ``. Merge consecutive segments whose adjoining tokens
+       are short (<= 3 char) all-upper acronyms using ``/`` — this turns
+       ``UX / UI Designer`` into ``UX/UI Designer``. Otherwise keep only
+       the first segment (``Tech-QA / Test Engineer`` -> ``Tech-QA``).
+    """
+    name = re.sub(r"\s*\([^)]+\)\s*", "", name).strip()
+    if " / " not in name:
+        return name
+
+    segments = [s.strip() for s in name.split(" / ") if s.strip()]
+    merged = [segments[0]]
+    for seg in segments[1:]:
+        prev_tokens = merged[-1].split()
+        cur_tokens = seg.split()
+        if not prev_tokens or not cur_tokens:
+            break
+        prev_last = prev_tokens[-1]
+        cur_first = cur_tokens[0]
+        if (
+            prev_last.isupper() and len(prev_last) <= 3
+            and cur_first.isupper() and len(cur_first) <= 3
+        ):
+            merged[-1] = f"{merged[-1]}/{cur_first}"
+            rest = cur_tokens[1:]
+            if rest:
+                merged.append(" ".join(rest))
+        else:
+            break
+    return " ".join(merged)
+
+
+def _persona_display_name(persona_id: str, index: LibraryIndex) -> str:
+    """Return the display name for a persona.
+
+    Prefers the persona's own ``# Persona: <Name>`` header (canonicalized),
+    falling back to ``_display_name_from_id`` when the header is missing.
+    """
+    persona_info = index.persona_by_id(persona_id)
+    if persona_info is not None:
+        persona_md = _read_file(Path(persona_info.path) / "persona.md")
+        if persona_md is not None:
+            match = _PERSONA_HEADER_RE.search(persona_md)
+            if match:
+                return _canonicalize_persona_header(match.group(1).strip())
+    return _display_name_from_id(persona_id)
+
 
 def _resolve_placeholder(match: re.Match[str], context: dict[str, str]) -> str:
     """Resolve a single {{ ... }} placeholder against the context dict.
@@ -360,14 +449,17 @@ def _extract_first_sentence(text: str) -> str:
 
 def _build_lean_claude_md(
     spec: CompositionSpec,
-    persona_descriptions: list[tuple[str, str]],
+    persona_descriptions: list[tuple[str, str, str]],
     expertise_ids: list[str],
 ) -> str:
     """Build a lean CLAUDE.md with project summary, tech stack, and pointers.
 
     Args:
         spec: The composition spec.
-        persona_descriptions: List of (persona_id, one-line description) tuples.
+        persona_descriptions: List of ``(persona_id, display_name, one-line
+            description)`` tuples. ``display_name`` is resolved upstream via
+            ``_persona_display_name`` so acronyms and slashed names render
+            correctly in the Team table.
         expertise_ids: Sorted list of expertise IDs included in the project.
 
     Returns:
@@ -411,7 +503,7 @@ def _build_lean_claude_md(
         tech_lines.append("| Technology | Source |")
         tech_lines.append("|------------|--------|")
         for eid in expertise_ids:
-            display = eid.replace("-", " ").title()
+            display = _display_name_from_id(eid)
             tech_lines.append(
                 f"| {display} | `ai/generated/expertise/{eid}.md` |"
             )
@@ -438,8 +530,7 @@ def _build_lean_claude_md(
         team_lines = ["## Team", ""]
         team_lines.append("| Persona | Role | Agent | Full Prompt |")
         team_lines.append("|---------|------|-------|-------------|")
-        for pid, desc in persona_descriptions:
-            display = pid.replace("-", " ").title()
+        for pid, display, desc in persona_descriptions:
             team_lines.append(
                 f"| {display} | {desc} "
                 f"| `.claude/agents/{pid}.md` "
@@ -523,7 +614,7 @@ def compile_project(
     selected_ids = {ps.id for ps in spec.team.personas}
 
     # --- Compile and write full persona files to ai/generated/members/ ---
-    persona_descriptions: list[tuple[str, str]] = []
+    persona_descriptions: list[tuple[str, str, str]] = []
     if spec.team.personas:
         members_dir = root / "ai" / "generated" / "members"
         members_dir.mkdir(parents=True, exist_ok=True)
@@ -548,7 +639,8 @@ def compile_project(
 
                 # Extract one-line description for CLAUDE.md team table
                 desc = _extract_first_sentence(persona_section)
-                persona_descriptions.append((persona_sel.id, desc))
+                display = _persona_display_name(persona_sel.id, library_index)
+                persona_descriptions.append((persona_sel.id, display, desc))
 
     # --- Compile and write full expertise files to ai/generated/expertise/ ---
     # ``emitted_expertise_ids`` (computed above) already identifies the

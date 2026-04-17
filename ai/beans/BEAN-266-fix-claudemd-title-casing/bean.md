@@ -59,7 +59,7 @@ Persona display names render acronyms in uppercase (`Tech QA`,
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Casing helper + compiler display-name fix | Developer | — | Pending |
+| 1 | Casing helper + compiler display-name fix | Developer | — | Done |
 | 2 | Tests for casing helper and generated CLAUDE.md tables | Tech-QA | 1 | Pending |
 
 ## Changes
@@ -87,7 +87,7 @@ the name-to-id map) is more robust than a hard-coded acronym list.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 | Casing helper + compiler display-name fix | Developer | — | — | — | — |
+| 1 | Casing helper + compiler display-name fix | Developer | < 10m | 889,500 | 33,781 | $6.04 |
 | 2 | Tests for casing helper and generated CLAUDE.md tables | Tech-QA | — | — | — | — |
 
 | Metric | Value |
