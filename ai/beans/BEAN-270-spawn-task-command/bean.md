@@ -69,7 +69,7 @@ Either way, the worker receives only the task's `Inputs:` files plus the persona
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 01 | ADR — `/spawn-task` dispatch mechanism | Architect | — | Pending |
+| 01 | ADR — `/spawn-task` dispatch mechanism | Architect | — | Done |
 | 02 | Implement skill, command, persona wiring | Developer | 01 | Pending |
 | 03 | Verify acceptance criteria | Tech-QA | 02 | Pending |
 
