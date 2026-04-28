@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-270 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
 | **Started** | 2026-04-28 17:56 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-28 19:32 |
+| **Duration** | 1534h 24m |
 | **Owner** | team-lead |
 | **Category** | Process |
 
@@ -71,7 +71,7 @@ Either way, the worker receives only the task's `Inputs:` files plus the persona
 |---|------|-------|------------|--------|
 | 01 | ADR — `/spawn-task` dispatch mechanism | Architect | — | Done |
 | 02 | Implement skill, command, persona wiring | Developer | 01 | Done |
-| 03 | Verify acceptance criteria | Tech-QA | 02 | Pending |
+| 03 | Verify acceptance criteria | Tech-QA | 02 | Done |
 
 > Skipped: BA (default — requirements are concrete and unambiguous).
 
@@ -109,8 +109,8 @@ Either way, the worker receives only the task's `Inputs:` files plus the persona
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 1534h 24m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
