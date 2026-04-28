@@ -1,0 +1,125 @@
+# BEAN-279: Orchestration Architecture Doc + Comprehensive Documentation Update
+
+| Field | Value |
+|-------|-------|
+| **Bean ID** | BEAN-279 |
+| **Status** | Unapproved |
+| **Priority** | High |
+| **Created** | 2026-04-28 |
+| **Started** | — |
+| **Completed** | — |
+| **Duration** | — |
+| **Owner** | (unassigned) |
+| **Category** | Process |
+
+## Problem Statement
+
+Once BEAN-270 through BEAN-278 land, the orchestration model has fundamentally changed:
+
+- Real per-task delegation via `/spawn-task` (BEAN-270)
+- Tiered persona library (BEAN-271)
+- Validated `Inputs:` and contract graph (BEAN-272, 274)
+- Typed produces/consumes contracts (BEAN-273)
+- Resolved role boundaries (BEAN-275)
+- Typed handoffs (BEAN-276)
+- Programmatic VDD (BEAN-277)
+- Architecture-aware telemetry (BEAN-278)
+
+If the documentation doesn't catch up, the rest of the cluster is invisible to anyone (human or agent) coming in cold. Per `MEMORY.md`'s documentation checklist, every active behavior doc, agent file, and skill summary needs review.
+
+This bean is the synthesis: write the long-form architecture document, record the ADR, and propagate the changes through every document on the checklist.
+
+## Goal
+
+Two new artifacts plus a checklist sweep:
+
+1. `ai/context/orchestration-architecture.md` — the canonical long-form architectural document. Explains supervisor pattern, context engineering, specialist contracts, and architecture-aware evaluation as Foundry implements them. Lives flat alongside the other policy docs (`bean-workflow.md`, `vdd-policy.md`, etc.) so it's discoverable and easy to maintain.
+2. ADR entry in `ai/context/decisions.md` — short record of the architectural decision with a pointer to the long-form doc.
+3. Sweep update of the documentation checklist from `MEMORY.md`.
+
+## Scope
+
+### In Scope
+
+- **Write `ai/context/orchestration-architecture.md`** covering:
+  - The three principles (supervisor, context engineering, specialist contracts) and how each maps to a Foundry artifact.
+  - Diagrams or sequence descriptions for: bean execution under `/spawn-task`, contract graph validation at compose time, typed handoff flow, VDD gate, orchestration telemetry loop.
+  - The architecture-aware evaluation methodology — how `/orchestration-report` answers "is the orchestration paying for itself?"
+  - References to the source beans (BEAN-270 through BEAN-278) for traceability.
+- **Add ADR** to `ai/context/decisions.md` summarizing the architectural shift with pointer to the long-form doc.
+- **Sweep update** of every document in `MEMORY.md`'s "Always check" list:
+  - `CLAUDE.md` — link orchestration architecture doc; reflect new commands; update Beans Workflow section if affected.
+  - `README.md` — top-level pipeline / lifecycle paragraph reflects the new orchestration.
+  - `ai/context/bean-workflow.md` — incorporate `/spawn-task` dispatch path, `Inputs:` validation, typed handoffs, programmatic VDD.
+  - `ai/context/project.md` — module map updates for new services (`contract_validator.py`, etc.).
+  - `.claude/agents/team-lead.md` — orchestration rules name `/spawn-task`, contract checks, AC ownership rule, VDD gate.
+  - `.claude/agents/ba.md`, `architect.md`, `developer.md`, `tech-qa.md` — Scope Boundaries (BEAN-275), produces/consumes (BEAN-273), context bundle.
+  - `.claude/skills/long-run/SKILL.md` and `.claude/commands/long-run.md` — describe how `/long-run` integrates with `/spawn-task`.
+  - `CHANGELOG.md` — add an entry for the orchestration cluster (likely a v1.1.0 release).
+- **Sweep update** of "Check when relevant" docs as needed (deploy, backlog-refinement, backlog-consolidate, trello-load, bg, docs-update skills).
+- **Library README** (`ai-team-library/README.md`) — update the persona table for tiering (BEAN-271), add the new commands/skills, mention contracts.
+- **Update `MEMORY.md`'s documentation checklist** to add `ai/context/orchestration-architecture.md` and any new active-behavior docs introduced in the cluster.
+- Single-pass review: spot-check the generated project from one example composition to confirm the documentation reads coherently from a cold start.
+
+### Out of Scope
+
+- Slide deck / external publication (could be a follow-up bean if the user wants).
+- Backfilling other historical bean records.
+- Restructuring `ai/context/` beyond adding the new doc.
+- Diagrams as image files — text-based diagrams (mermaid or ASCII) are fine; image generation is out of scope.
+
+## Acceptance Criteria
+
+- [ ] `ai/context/orchestration-architecture.md` exists and covers the three principles + evaluation methodology with bean references.
+- [ ] ADR entry in `ai/context/decisions.md` points to the long-form doc.
+- [ ] Every "Always check" doc in `MEMORY.md` has been reviewed and updated where impacted by BEAN-270 through BEAN-278.
+- [ ] `MEMORY.md`'s documentation checklist now includes `ai/context/orchestration-architecture.md`.
+- [ ] Library README's persona table reflects tiering (BEAN-271).
+- [ ] CHANGELOG.md has the cluster entry.
+- [ ] Cold-start spot-check: a generated project's CLAUDE.md + agent files + skill docs read coherently and consistently with the new orchestration model.
+- [ ] All tests pass (`uv run pytest`).
+- [ ] Lint clean (`uv run ruff check foundry_app/`).
+
+## Tasks
+
+| # | Task | Owner | Depends On | Status |
+|---|------|-------|------------|--------|
+| 1 | | | | Pending |
+
+> Tasks populated by Team-Lead. Likely wave: BA (long-form doc structure), Architect (cross-references and accuracy), Developer (the writing + sweep edits), Tech-QA (cold-start verification + checklist coverage).
+
+## Changes
+
+| File | Lines |
+|------|-------|
+| — | — |
+
+## Notes
+
+**Runs LAST.** This bean depends on BEAN-270 through BEAN-278 being Done — otherwise the docs document things that don't exist yet. Team-Lead must verify all 9 prior beans are Done before starting.
+
+**Doc location decision.** Long-form doc at `ai/context/orchestration-architecture.md` (flat with `bean-workflow.md` and `vdd-policy.md`) — not in a new `architecture/` subdir. Rationale: easy to maintain alongside other policy docs, single discoverable location, no path-fragmentation.
+
+**Checklist enforcement.** Use `MEMORY.md`'s documentation checklist as the work list. Any doc the cluster impacted but isn't on the checklist gets *added* to the checklist.
+
+**Coordinate with BEAN-251 and BEAN-268.** Both are still Approved (not Done). If they land before this bean, fold their CLAUDE.md additions into the orchestration narrative. If they land after, this bean's CLAUDE.md edits should leave room for theirs.
+
+## Trello
+
+| Field | Value |
+|-------|-------|
+| **Source** | Manual |
+
+## Telemetry
+
+| # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
+|---|------|-------|----------|-----------|------------|------|
+| 1 |      |       |          |           |            |      |
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | — |
+| **Total Duration** | — |
+| **Total Tokens In** | — |
+| **Total Tokens Out** | — |
+| **Total Cost** | — |

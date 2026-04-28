@@ -291,3 +291,13 @@
 | BEAN-267 | Investigate Reported Agent File Truncation in Multi-Expertise Compositions | App | Medium | Done | team-lead |
 | BEAN-268 | Add Workflow Pointers Section to Generated CLAUDE.md | App | Medium | Approved | (unassigned) |
 | BEAN-269 | Make Team Orchestration Model Explicit in Generated Artifacts | App | High | Done | team-lead |
+| BEAN-270 | `/spawn-task` Persona-Scoped Delegation Command | Process | High | Approved | (unassigned) |
+| BEAN-271 | Tier Library Personas — `core/` vs `extended/` | Infra | High | Approved | (unassigned) |
+| BEAN-272 | Validate Task `Inputs:` at Dispatch (Pre-Execution Hook) | Process | High | Approved | (unassigned) |
+| BEAN-273 | Persona `produces:` / `consumes:` Contracts | Infra | High | Approved | (unassigned) |
+| BEAN-274 | Compose-Time Contract Graph Validator | App | High | Unapproved | (unassigned) |
+| BEAN-275 | Resolve Acceptance Criteria & ADR Boundary Ownership | Process | Medium | Approved | (unassigned) |
+| BEAN-276 | Role-Aware Handoff Schemas | Process | Medium | Unapproved | (unassigned) |
+| BEAN-277 | Programmatic VDD Gate Skill | Process | Medium | Approved | (unassigned) |
+| BEAN-278 | Architecture-Aware Telemetry & `/orchestration-report` | Process | Medium | Unapproved | (unassigned) |
+| BEAN-279 | Orchestration Architecture Doc + Comprehensive Documentation Update | Process | High | Unapproved | (unassigned) |
