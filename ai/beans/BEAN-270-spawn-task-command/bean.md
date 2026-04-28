@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-270 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-28 17:56 |
+| **Completed** | 2026-04-28 19:32 |
+| **Duration** | 1534h 24m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -69,9 +69,11 @@ Either way, the worker receives only the task's `Inputs:` files plus the persona
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | ADR — `/spawn-task` dispatch mechanism | Architect | — | Done |
+| 02 | Implement skill, command, persona wiring | Developer | 01 | Done |
+| 03 | Verify acceptance criteria | Tech-QA | 02 | Done |
 
-> Tasks populated by Team-Lead during decomposition. Likely wave: Architect (ADR for the dispatch mechanism), Developer (skill + command + persona edits), Tech-QA (verification of both execution paths).
+> Skipped: BA (default — requirements are concrete and unambiguous).
 
 ## Changes
 
@@ -101,12 +103,14 @@ Either way, the worker receives only the task's `Inputs:` files plus the persona
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 01 | ADR — `/spawn-task` dispatch mechanism | Architect | — | — | — | — |
+| 02 | Implement skill, command, persona wiring | Developer | — | — | — | — |
+| 03 | Verify acceptance criteria | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 1534h 24m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |

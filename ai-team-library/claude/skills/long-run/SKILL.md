@@ -73,10 +73,20 @@ Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads 
 
 ### Phase 4: Wave Execution
 
+**Preferred dispatch: `/spawn-task`.** For each task in the bean's wave,
+prefer dispatching with `/spawn-task <task-file>`. The command auto-detects
+tmux and chooses a worktree-isolated worker (in tmux) or a fresh `Agent`-tool
+subagent (not in tmux). The dispatched worker reads only the task's
+`Inputs:` plus its persona context, preserving the supervisor pattern's
+context isolation. See `claude/skills/spawn-task/SKILL.md` and ADR-008.
+
+In-conversation role-switching (you reading the task and playing the
+persona yourself in this same window) remains a fallback for tiny tasks
+where dispatch overhead is not justified. Do not use it as the default.
+
 12. **Execute tasks in dependency order** — For each task:
     - Record the `Started` timestamp (`YYYY-MM-DD HH:MM`) in the task file metadata when beginning execution.
-    - Read the task file and all referenced inputs.
-    - Perform the work as the assigned persona.
+    - Dispatch the task with `/spawn-task` (preferred) or read the task file and execute in-conversation as the assigned persona (fallback).
     - On completion, run the `/close-loop` telemetry recording: record `Completed` timestamp, compute `Duration`, prompt for token self-report, and update the bean's Telemetry per-task table row.
     - Update the task status to `Done` in the task file and the bean's task table.
     - Reprint the **Header Block + Task Progress Table** after each status change.
