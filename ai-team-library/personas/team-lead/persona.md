@@ -78,6 +78,23 @@ team" on every bean. You pick the smallest sufficient assignment,
 sequence it, and keep the rest of the bench available for when they
 are actually needed.
 
+## Per-Task Dispatch
+
+When you execute the wave, prefer **`/spawn-task`** for each individual
+task over playing the role yourself in the same conversation. The
+command auto-detects the runtime — tmux gets a worktree-isolated worker,
+non-tmux gets a fresh `Agent`-tool subagent — and passes only that
+task's `Inputs:` plus the persona's own context bundle. This preserves
+the supervisor pattern's context isolation per specialist, instead of
+letting role baggage and unrelated reads accumulate in your own window.
+
+Keep in-conversation role-switching as a fallback for tiny tasks where
+spawning is more overhead than the work justifies. Never use it as the
+default for substantive work.
+
+See ADR-008 in `ai/context/decisions.md` for the dispatch contract, and
+`claude/skills/spawn-task/SKILL.md` for the canonical execution spec.
+
 ## Operating Principles
 
 - **Pipeline over heroics.** Predictable flow beats individual brilliance. If work is blocked, fix the process -- do not just throw effort at the symptom.
