@@ -291,7 +291,7 @@
 | BEAN-267 | Investigate Reported Agent File Truncation in Multi-Expertise Compositions | App | Medium | Done | team-lead |
 | BEAN-268 | Add Workflow Pointers Section to Generated CLAUDE.md | App | Medium | Approved | (unassigned) |
 | BEAN-269 | Make Team Orchestration Model Explicit in Generated Artifacts | App | High | Done | team-lead |
-| BEAN-270 | `/spawn-task` Persona-Scoped Delegation Command | Process | High | In Progress | team-lead |
+| BEAN-270 | `/spawn-task` Persona-Scoped Delegation Command | Process | High | Done | team-lead |
 | BEAN-271 | Tier Library Personas — `core/` vs `extended/` | Infra | High | Approved | (unassigned) |
 | BEAN-272 | Validate Task `Inputs:` at Dispatch (Pre-Execution Hook) | Process | High | Approved | (unassigned) |
 | BEAN-273 | Persona `produces:` / `consumes:` Contracts | Infra | High | Approved | (unassigned) |
