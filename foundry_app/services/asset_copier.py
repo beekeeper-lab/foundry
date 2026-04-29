@@ -66,7 +66,14 @@ _GOVERNANCE_SKILLS: dict[str, set[str]] = {
 # ``<claude_kit_root>/skills/<name>/`` and that the skill is NOT also present
 # under ``ai-team-library/claude/skills/<name>/``.  See ADR-009 in
 # ``ai/context/decisions.md`` for the full ownership criteria.
+#
+# ``_media_lib`` is the shared helper package for the media skills (env
+# discovery, narration normalization + content hashing, cost summaries) — it
+# is not user-invokable; the ``_`` prefix mirrors Foundry's ``internal:*``
+# convention.  See BEAN-281 for the contract and the regex-order test that
+# locks it in.
 _KIT_DISTRIBUTED_SKILLS: tuple[str, ...] = (
+    "_media_lib",
     "generate-image",
     "generate-screen",
 )
