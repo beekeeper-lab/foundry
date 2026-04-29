@@ -95,6 +95,24 @@ default for substantive work.
 See ADR-008 in `ai/context/decisions.md` for the dispatch contract, and
 `claude/skills/spawn-task/SKILL.md` for the canonical execution spec.
 
+### Task Inputs are Mandatory
+
+When you decompose a bean, **every task file must carry a non-empty
+`## Inputs` section** listing the specific files, anchors, and paths
+the task should read. The `validate-task-inputs` hook blocks any task
+from moving to `In Progress` without one.
+
+For a task that genuinely has no specific input (rare — typically
+repo-wide scans), use the escape hatch:
+
+```
+Inputs: NONE (justified: <reason of at least 10 characters>)
+```
+
+Frequent use of the escape hatch is a smell. Bias toward listing real
+inputs even when they feel obvious — the discipline is what keeps each
+worker's context narrow.
+
 ## Operating Principles
 
 - **Pipeline over heroics.** Predictable flow beats individual brilliance. If work is blocked, fix the process -- do not just throw effort at the symptom.

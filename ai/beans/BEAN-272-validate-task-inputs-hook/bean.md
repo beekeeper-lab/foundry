@@ -58,7 +58,7 @@ Context engineering only works if the discipline is enforced at the boundary. Ri
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 01 | validate-task-inputs hook + tests + doc updates | Developer | — | Pending |
+| 01 | validate-task-inputs hook + tests + doc updates | Developer | — | Done |
 | 02 | Verify acceptance criteria | Tech-QA | 01 | Pending |
 
 > Skipped: BA (default — requirements concrete), Architect (default — single hook, follows existing telemetry-stamp.py conventions).

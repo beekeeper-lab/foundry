@@ -43,7 +43,18 @@ What is the desired outcome when this bean is complete?
 | 1 | | | | Pending |
 
 > Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Task files go in `tasks/` subdirectory. **Every task file must have a
+> non-empty `## Inputs` section** — the validate-task-inputs hook blocks
+> a task from moving to `In Progress` without one. Example:
+>
+> ```
+> ## Inputs
+> - foundry_app/services/generator.py — `generate_project()` entry point
+> - ai/beans/BEAN-NNN-x/bean.md — full scope
+> ```
+>
+> Escape hatch (rare, repo-wide scans only):
+> `Inputs: NONE (justified: <reason of at least 10 characters>)`
 
 ## Changes
 
