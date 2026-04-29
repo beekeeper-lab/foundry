@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-281 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-29 |
-| **Started** | — |
+| **Started** | 2026-04-29 18:46 |
 | **Completed** | — |
 | **Duration** | — |
 | **Owner** | (unassigned) |
@@ -62,10 +62,11 @@ A small `.claude/shared/skills/_media_lib/` (or similar) module that both genera
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | _media_lib shared library + tests | Developer | — | Pending |
+| 02 | Verify acceptance criteria | Tech-QA | 01 | Pending |
 
-> Activated: Architect (new module boundary; portability contract for content-hash), Developer, Tech-QA.
-> Skipped: BA (requirements concrete from spec).
+> Activated: Developer, Tech-QA.
+> Skipped: BA (requirements concrete from spec). Architect (default — small library, portability contract captured inline as docstring + locked-down regex-order test rather than a separate ADR; the architectural decision for kit distribution is already in ADR-009 from BEAN-280).
 
 ## Changes
 
@@ -93,3 +94,5 @@ A small `.claude/shared/skills/_media_lib/` (or similar) module that both genera
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
+| 01 | _media_lib shared library + tests | Developer | — | — | — | — |
+| 02 | Verify acceptance criteria | Tech-QA | — | — | — | — |
