@@ -71,7 +71,7 @@ Library-copy-mode and subtree-mode generated projects ship with the same set of 
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 01 | ADR — kit-distributed skills pattern | Architect | — | Pending |
+| 01 | ADR — kit-distributed skills pattern | Architect | — | Done |
 | 02 | asset_copier extension + tests | Developer | 01 | Pending |
 | 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Pending |
 

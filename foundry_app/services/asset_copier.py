@@ -56,12 +56,39 @@ _GOVERNANCE_SKILLS: dict[str, set[str]] = {
     "legal-drafting": {"legal-counsel"},
 }
 
+# Cross-project skills owned by ClaudeKit (`.claude/shared/skills/<name>/`) rather
+# than by ai-team-library.  In library-copy mode, these names resolve from
+# ``<claude_kit_root>/skills/<name>/`` instead of from the library's
+# ``claude/skills/<name>/``.  Subtree mode does not consult this registry — the
+# subtree already includes ``.claude/shared/skills/`` wholesale.
+#
+# Adding a skill here requires that its source files live at
+# ``<claude_kit_root>/skills/<name>/`` and that the skill is NOT also present
+# under ``ai-team-library/claude/skills/<name>/``.  See ADR-009 in
+# ``ai/context/decisions.md`` for the full ownership criteria.
+_KIT_DISTRIBUTED_SKILLS: tuple[str, ...] = (
+    "generate-image",
+    "generate-screen",
+)
+
+
+def _default_claude_kit_root() -> Path:
+    """Return the bundled ClaudeKit submodule path (``<foundry_root>/.claude/shared/``).
+
+    Resolved relative to this module's location: ``foundry_app/services/asset_copier.py``
+    sits two parents below the foundry repo root, so ``parents[2]`` is the repo root.
+    Callers may override the resolved path by passing ``claude_kit_root`` explicitly
+    (useful for tests and for non-checkout-based invocations).
+    """
+    return Path(__file__).resolve().parents[2] / ".claude" / "shared"
+
 
 def copy_assets(
     spec: CompositionSpec,
     library_index: LibraryIndex,
     library_root: str | Path,
     output_dir: str | Path,
+    claude_kit_root: str | Path | None = None,
 ) -> StageResult:
     """Copy library assets (templates, commands, hooks) into a generated project.
 
@@ -70,6 +97,17 @@ def copy_assets(
     2. **Commands** — from ``library/claude/commands/`` to ``.claude/commands/``
     3. **Hooks** — from ``library/claude/hooks/`` to ``.claude/hooks/``
 
+    Skills are sourced from two locations:
+
+    - **Kit-distributed skills** (names in ``_KIT_DISTRIBUTED_SKILLS``) resolve
+      from ``<claude_kit_root>/skills/<name>/``.  These are cross-project skills
+      owned by ClaudeKit.
+    - **All other skills** resolve from ``<library_root>/claude/skills/<name>/``
+      (the existing project-template skill location).
+
+    Subtree mode skips ALL skill copying because ``.claude/shared/skills/``
+    is already pulled in by ``git subtree add``.
+
     Overlay-safe: existing identical files are skipped; conflicts produce warnings.
 
     Args:
@@ -77,12 +115,19 @@ def copy_assets(
         library_index: Index of library contents (from library indexer).
         library_root: Absolute path to the library root directory.
         output_dir: Root directory of the generated project.
+        claude_kit_root: Path to the ClaudeKit checkout (typically
+            ``<foundry_root>/.claude/shared/``).  Defaults to the foundry repo's
+            bundled submodule.  Callers may pass an explicit path for testing
+            or for non-checkout-based invocations.  When the resolved path does
+            not exist, kit-distributed skills are warned and skipped — generation
+            continues so library-copy-mode remains best-effort.
 
     Returns:
         A StageResult listing all files copied and any warnings.
     """
     lib_root = Path(library_root)
     out_root = Path(output_dir)
+    kit_root = Path(claude_kit_root) if claude_kit_root is not None else _default_claude_kit_root()
     wrote: list[str] = []
     warnings: list[str] = []
 
@@ -100,7 +145,7 @@ def copy_assets(
         _copy_commands(
             team_personas, dev_loop_stack, lib_root, out_root, wrote, warnings,
         )
-        _copy_skills(team_personas, lib_root, out_root, wrote, warnings)
+        _copy_skills(team_personas, lib_root, kit_root, out_root, wrote, warnings)
 
     # --- Other global assets (settings, process dirs) ---
     for src_subdir, dest_subdir in _GLOBAL_ASSET_DIRS:
@@ -251,31 +296,86 @@ def _copy_commands(
 def _copy_skills(
     team_personas: set[str],
     lib_root: Path,
+    kit_root: Path,
     out_root: Path,
     wrote: list[str],
     warnings: list[str],
 ) -> None:
-    """Copy ``claude/skills/`` to ``.claude/skills/`` with governance gating.
+    """Copy skills to ``.claude/skills/`` with governance gating.
 
-    Skill entries (file or directory) listed in ``_GOVERNANCE_SKILLS`` are
-    skipped unless one of their unlocking personas is on the team.  All other
-    skills copy unconditionally.
+    Resolves each skill's source from one of two roots:
+
+    - **Kit-distributed skills** (names in ``_KIT_DISTRIBUTED_SKILLS``) resolve
+      from ``<kit_root>/skills/<name>/``.  When the kit path is missing, the
+      skill is warned and skipped; generation does not abort.
+    - **All other skills** resolve from ``<lib_root>/claude/skills/<name>/``
+      (the existing project-template location).
+
+    The set of skills to copy is the union of:
+
+    - every entry under ``<lib_root>/claude/skills/`` (file or directory), and
+    - every name in ``_KIT_DISTRIBUTED_SKILLS``.
+
+    A name appearing in both the library and the registry resolves from the kit
+    (the registry wins — that is its purpose).
+
+    Skill entries listed in ``_GOVERNANCE_SKILLS`` are skipped unless one of
+    their unlocking personas is on the team.  The governance gate applies
+    equally to both sources.
     """
-    src_root = lib_root / "claude" / "skills"
-    if not src_root.is_dir():
-        logger.debug("Skills source directory does not exist: %s", src_root)
+    lib_skills_root = lib_root / "claude" / "skills"
+    kit_skills_root = kit_root / "skills"
+    dest_root = out_root / ".claude" / "skills"
+
+    # Map each skill name to its source path. Registry entries win over library.
+    sources: dict[str, Path] = {}
+
+    if lib_skills_root.is_dir():
+        for src_entry in sorted(lib_skills_root.iterdir()):
+            if src_entry.is_symlink():
+                warnings.append(f"Skipping symlink: {src_entry.name}")
+                continue
+            if src_entry.is_dir() and src_entry.name == "__pycache__":
+                continue
+            if not (src_entry.is_dir() or src_entry.is_file()):
+                continue
+            skill_id = src_entry.name if src_entry.is_dir() else src_entry.stem
+            if skill_id in _KIT_DISTRIBUTED_SKILLS:
+                # Registry overrides library: skip the library copy entirely.
+                logger.debug(
+                    "Skill '%s' is kit-distributed; ignoring library copy at %s",
+                    skill_id,
+                    src_entry,
+                )
+                continue
+            sources[skill_id] = src_entry
+    else:
+        logger.debug("Skills source directory does not exist: %s", lib_skills_root)
+
+    # Resolve kit-distributed skills from the kit.
+    for skill_id in _KIT_DISTRIBUTED_SKILLS:
+        kit_skill_path = kit_skills_root / skill_id
+        if not kit_skill_path.exists():
+            warnings.append(
+                f"Kit-distributed skill '{skill_id}' missing from kit at "
+                f"{kit_skill_path}"
+            )
+            logger.warning(
+                "Kit-distributed skill '%s' missing at %s — skipping",
+                skill_id,
+                kit_skill_path,
+            )
+            continue
+        sources[skill_id] = kit_skill_path
+
+    if not sources:
         return
 
-    dest_root = out_root / ".claude" / "skills"
     dest_root.mkdir(parents=True, exist_ok=True)
 
-    for src_entry in sorted(src_root.iterdir()):
-        if src_entry.is_symlink():
-            warnings.append(f"Skipping symlink: {src_entry.name}")
-            continue
+    for skill_id in sorted(sources):
+        src_entry = sources[skill_id]
 
-        # Skill identifier: directory name, or file stem for flat-file skills.
-        skill_id = src_entry.name if src_entry.is_dir() else src_entry.stem
         unlockers = _GOVERNANCE_SKILLS.get(skill_id)
         if unlockers is not None and team_personas.isdisjoint(unlockers):
             logger.debug(
@@ -285,8 +385,6 @@ def _copy_skills(
             continue
 
         if src_entry.is_dir():
-            if src_entry.name == "__pycache__":
-                continue
             _copy_directory_files(
                 src_entry, dest_root / src_entry.name, out_root, wrote, warnings,
             )
