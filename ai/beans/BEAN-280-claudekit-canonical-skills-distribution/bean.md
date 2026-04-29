@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-280 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-29 |
-| **Started** | — |
+| **Started** | 2026-04-29 18:29 |
 | **Completed** | — |
 | **Duration** | — |
 | **Owner** | (unassigned) |
@@ -71,7 +71,9 @@ Library-copy-mode and subtree-mode generated projects ship with the same set of 
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | ADR — kit-distributed skills pattern | Architect | — | Pending |
+| 02 | asset_copier extension + tests | Developer | 01 | Pending |
+| 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Pending |
 
 > Activated: Architect (cross-cutting service change + ADR + new module boundary), Developer, Tech-QA.
 > Skipped: BA (requirements concrete from spec).
@@ -102,3 +104,6 @@ Library-copy-mode and subtree-mode generated projects ship with the same set of 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
+| 01 | ADR — kit-distributed skills pattern | Architect | — | — | — | — |
+| 02 | asset_copier extension + tests | Developer | — | — | — | — |
+| 03 | Verify acceptance criteria | Tech-QA | — | — | — | — |
