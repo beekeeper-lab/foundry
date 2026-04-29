@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-280 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-29 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-04-29 18:29 |
+| **Completed** | 2026-04-29 18:44 |
+| **Duration** | 1557h 37m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 | **Depends On** | — |
@@ -71,7 +71,9 @@ Library-copy-mode and subtree-mode generated projects ship with the same set of 
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | ADR — kit-distributed skills pattern | Architect | — | Done |
+| 02 | asset_copier extension + tests | Developer | 01 | Done |
+| 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Done |
 
 > Activated: Architect (cross-cutting service change + ADR + new module boundary), Developer, Tech-QA.
 > Skipped: BA (requirements concrete from spec).
@@ -80,7 +82,16 @@ Library-copy-mode and subtree-mode generated projects ship with the same set of 
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/beans/BEAN-280-.../bean.md` | 15 |
+| `ai/beans/BEAN-280-.../tasks/01-architect-kit-distributed-skills-adr.md` | 64 |
+| `ai/beans/BEAN-280-.../tasks/02-developer-asset-copier-extension.md` | 84 |
+| `ai/beans/BEAN-280-.../tasks/03-tech-qa-verify-acceptance.md` | 97 |
+| `ai/context/decisions.md` | 301 |
+| `foundry_app/services/asset_copier.py` | 132 |
+| `foundry_app/services/generator.py` | 24 |
+| `tests/test_asset_copier.py` | 19 |
+| `tests/test_asset_copier_kit_distribution.py` | 343 |
+| **Total** | **1050 insertions, 29 deletions** |
 
 ## Notes
 
@@ -102,3 +113,6 @@ Library-copy-mode and subtree-mode generated projects ship with the same set of 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
+| 01 | ADR — kit-distributed skills pattern | Architect | — | — | — | — |
+| 02 | asset_copier extension + tests | Developer | — | — | — | — |
+| 03 | Verify acceptance criteria | Tech-QA | — | — | — | — |

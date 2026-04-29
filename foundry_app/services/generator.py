@@ -166,14 +166,15 @@ def _run_pipeline(
     output_dir: Path,
     overlay_plan: OverlayPlan | None = None,
     stage_callback: StageCallback | None = None,
+    claude_kit_root: Path | None = None,
 ) -> dict[str, StageResult]:
     """Execute all pipeline stages in order and return per-stage results."""
     stages: dict[str, StageResult] = {}
 
-    def _run_stage(key: str, func, *args) -> None:
+    def _run_stage(key: str, func, *args, **kwargs) -> None:
         if stage_callback:
             stage_callback(key, "running", 0)
-        result = func(*args)
+        result = func(*args, **kwargs)
         stages[key] = result
         if stage_callback:
             stage_callback(key, "done", len(result.wrote))
@@ -188,7 +189,15 @@ def _run_pipeline(
     _run_stage("agent_writer", write_agents, spec, library, library_root, output_dir)
 
     # Stage 4: Copy assets
-    _run_stage("copy_assets", copy_assets, spec, library, library_root, output_dir)
+    _run_stage(
+        "copy_assets",
+        copy_assets,
+        spec,
+        library,
+        library_root,
+        output_dir,
+        claude_kit_root=claude_kit_root,
+    )
 
     # Stage 4b: Subtree setup (when claude_kit_url is configured)
     if spec.generation.claude_kit_url:
@@ -227,6 +236,7 @@ def generate_project(
     dry_run: bool = False,
     force: bool = False,
     stage_callback: StageCallback | None = None,
+    claude_kit_root: str | Path | None = None,
 ) -> tuple[GenerationManifest, ValidationResult, OverlayPlan | None]:
     """Orchestrate the full project generation pipeline.
 
@@ -240,6 +250,11 @@ def generate_project(
         dry_run: If True (and overlay=True), compute the overlay plan but
             don't apply it. Ignored when overlay=False.
         force: If True, proceed even when validation produces errors.
+        claude_kit_root: Path to the ClaudeKit checkout used to source
+            kit-distributed skills (e.g. ``generate-image``) in library-copy
+            mode.  When ``None``, ``copy_assets`` derives a default from the
+            foundry repo's bundled ``.claude/shared/`` submodule.  Subtree-mode
+            generations ignore this — the subtree itself supplies the kit.
 
     Returns:
         A tuple of:
@@ -248,6 +263,7 @@ def generate_project(
         - OverlayPlan | None: overlay plan (only when overlay=True)
     """
     library_path = Path(library_root)
+    kit_root = Path(claude_kit_root) if claude_kit_root is not None else None
 
     # Resolve output directory
     if output_root is not None:
@@ -306,6 +322,7 @@ def generate_project(
             stages = _run_pipeline(
                 composition, library, library_path, tmp_path,
                 stage_callback=stage_callback,
+                claude_kit_root=kit_root,
             )
             manifest.stages = stages
 
@@ -336,6 +353,7 @@ def generate_project(
         stages = _run_pipeline(
             composition, library, library_path, output_dir,
             stage_callback=stage_callback,
+            claude_kit_root=kit_root,
         )
         manifest.stages = stages
 

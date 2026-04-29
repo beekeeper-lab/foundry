@@ -542,7 +542,11 @@ class TestStageResult:
             ),
             hooks=_all_hooks_config(),
         )
-        result = copy_assets(spec, idx, lib, output)
+        # Empty claude_kit_root keeps kit-distributed skills out of this count
+        # (asserts only the library-sourced behavior).
+        empty_kit = tmp_path / "empty-kit"
+        empty_kit.mkdir()
+        result = copy_assets(spec, idx, lib, output, claude_kit_root=empty_kit)
 
         # 2 templates + 2 commands + 2 hooks + 2 skills = 8
         assert len(result.wrote) == 8
@@ -658,12 +662,19 @@ class TestEdgeCases:
         output = tmp_path / "project"
         output.mkdir()
 
+        # Empty claude_kit_root: registry-named skills are reported as missing
+        # warnings rather than copied.  This test isolates "library is empty"
+        # behavior — kit-distributed skill resolution is exercised elsewhere.
+        empty_kit = tmp_path / "empty-kit"
+        empty_kit.mkdir()
         spec = _make_spec(team=TeamConfig(personas=[]))
-        result = copy_assets(spec, idx, lib, output)
+        result = copy_assets(spec, idx, lib, output, claude_kit_root=empty_kit)
 
-        # Should not error, just copy nothing
+        # Should not error, just copy nothing.
         assert result.wrote == []
-        assert result.warnings == []
+        # Kit-distributed skills missing from the empty kit produce warnings.
+        for warning in result.warnings:
+            assert "missing from kit" in warning
 
     def test_library_dir_with_subdirectories_only_copies_files(self, tmp_path: Path):
         lib = _make_library(tmp_path)
