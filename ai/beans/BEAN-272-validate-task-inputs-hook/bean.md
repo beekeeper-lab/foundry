@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-272 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-29 10:51 |
+| **Completed** | 2026-04-29 10:59 |
+| **Duration** | 1549h 52m |
+| **Owner** | team-lead |
 | **Category** | Process |
 
 ## Problem Statement
@@ -58,9 +58,10 @@ Context engineering only works if the discipline is enforced at the boundary. Ri
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | validate-task-inputs hook + tests + doc updates | Developer | — | Done |
+| 02 | Verify acceptance criteria | Tech-QA | 01 | Done |
 
-> Tasks populated by Team-Lead. Likely wave: Developer (hook + tests + persona doc edits), Tech-QA (verification + escape-hatch coverage).
+> Skipped: BA (default — requirements concrete), Architect (default — single hook, follows existing telemetry-stamp.py conventions).
 
 ## Changes
 
@@ -86,12 +87,13 @@ Context engineering only works if the discipline is enforced at the boundary. Ri
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 01 | validate-task-inputs hook + tests + doc updates | Developer | — | — | — | — |
+| 02 | Verify acceptance criteria | Tech-QA | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1549h 52m |
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
