@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-281 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-29 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Started** | 2026-04-29 18:46 |
+| **Completed** | 2026-04-29 19:15 |
+| **Duration** | 1558h 8m |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 | **Depends On** | BEAN-280 |
@@ -62,16 +62,24 @@ A small `.claude/shared/skills/_media_lib/` (or similar) module that both genera
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | _media_lib shared library + tests | Developer | — | Done |
+| 02 | Verify acceptance criteria | Tech-QA | 01 | Done |
 
-> Activated: Architect (new module boundary; portability contract for content-hash), Developer, Tech-QA.
-> Skipped: BA (requirements concrete from spec).
+> Activated: Developer, Tech-QA.
+> Skipped: BA (requirements concrete from spec). Architect (default — small library, portability contract captured inline as docstring + locked-down regex-order test rather than a separate ADR; the architectural decision for kit distribution is already in ADR-009 from BEAN-280).
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `.claude/shared` (submodule pointer bump) | 1 |
+| `ai/beans/BEAN-281-.../bean.md` | 13 |
+| `ai/beans/BEAN-281-.../tasks/01-developer-media-lib-implementation.md` | 79 |
+| `ai/beans/BEAN-281-.../tasks/02-tech-qa-verify-media-lib.md` | 127 |
+| `ai/context/decisions.md` | 12 |
+| `foundry_app/services/asset_copier.py` | 7 |
+| `tests/test_media_lib.py` | 366 |
+| **Total** | **596 insertions, 10 deletions** |
 
 ## Notes
 
@@ -93,3 +101,5 @@ A small `.claude/shared/skills/_media_lib/` (or similar) module that both genera
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
+| 01 | _media_lib shared library + tests | Developer | — | — | — | — |
+| 02 | Verify acceptance criteria | Tech-QA | — | — | — | — |
