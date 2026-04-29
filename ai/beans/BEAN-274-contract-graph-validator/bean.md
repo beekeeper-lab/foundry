@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-274 |
-| **Status** | Unapproved |
+| **Status** | Deferred |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
 | **Started** | — |
@@ -11,6 +11,7 @@
 | **Duration** | — |
 | **Owner** | (unassigned) |
 | **Category** | App |
+| **Depends On** | BEAN-273 |
 
 ## Problem Statement
 

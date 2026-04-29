@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-271 |
-| **Status** | Approved |
+| **Status** | Deferred |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
 | **Started** | — |

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-279 |
-| **Status** | Unapproved |
+| **Status** | Deferred |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
 | **Started** | — |
@@ -11,6 +11,7 @@
 | **Duration** | — |
 | **Owner** | (unassigned) |
 | **Category** | Process |
+| **Depends On** | BEAN-273, BEAN-274, BEAN-275, BEAN-276, BEAN-277, BEAN-278 |
 
 ## Problem Statement
 

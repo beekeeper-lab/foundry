@@ -11,6 +11,7 @@
 | **Duration** | — |
 | **Owner** | (unassigned) |
 | **Category** | (App \| Process \| Infra) |
+| **Depends On** | — (or comma-separated BEAN-NNN list) |
 
 ## Problem Statement
 
