@@ -303,7 +303,7 @@
 | BEAN-279 | Orchestration Architecture Doc + Comprehensive Documentation Update | Process | High | Deferred | (unassigned) |
 | BEAN-280 | ClaudeKit as Canonical Source for Cross-Project Skills | Infra | High | Done | team-lead |
 | BEAN-281 | Media-Skills Shared Library (`_lib/`) | Infra | High | Done | team-lead |
-| BEAN-282 | `generate-image` Plan-Driven Rewrite (Multi-Provider) | App | High | Approved | (unassigned) |
+| BEAN-282 | `generate-image` Plan-Driven Rewrite (Multi-Provider) | App | High | In Progress | team-lead |
 | BEAN-283 | `generate-audio` Skill (ElevenLabs Narration) | App | High | Approved | (unassigned) |
 | BEAN-284 | Media Plan Templates + Foundry Scaffolder Integration | Infra | Medium | Approved | (unassigned) |
 | BEAN-285 | Documentation + CLAUDE.md Updates for Media Skills | Process | Medium | Approved | (unassigned) |
