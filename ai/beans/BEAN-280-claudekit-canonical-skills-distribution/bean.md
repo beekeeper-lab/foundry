@@ -82,7 +82,16 @@ Library-copy-mode and subtree-mode generated projects ship with the same set of 
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/beans/BEAN-280-.../bean.md` | 15 |
+| `ai/beans/BEAN-280-.../tasks/01-architect-kit-distributed-skills-adr.md` | 64 |
+| `ai/beans/BEAN-280-.../tasks/02-developer-asset-copier-extension.md` | 84 |
+| `ai/beans/BEAN-280-.../tasks/03-tech-qa-verify-acceptance.md` | 97 |
+| `ai/context/decisions.md` | 301 |
+| `foundry_app/services/asset_copier.py` | 132 |
+| `foundry_app/services/generator.py` | 24 |
+| `tests/test_asset_copier.py` | 19 |
+| `tests/test_asset_copier_kit_distribution.py` | 343 |
+| **Total** | **1050 insertions, 29 deletions** |
 
 ## Notes
 
