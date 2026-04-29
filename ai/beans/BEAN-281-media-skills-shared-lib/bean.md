@@ -62,8 +62,8 @@ A small `.claude/shared/skills/_media_lib/` (or similar) module that both genera
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 01 | _media_lib shared library + tests | Developer | — | Pending |
-| 02 | Verify acceptance criteria | Tech-QA | 01 | Pending |
+| 01 | _media_lib shared library + tests | Developer | — | Done |
+| 02 | Verify acceptance criteria | Tech-QA | 01 | Done |
 
 > Activated: Developer, Tech-QA.
 > Skipped: BA (requirements concrete from spec). Architect (default — small library, portability contract captured inline as docstring + locked-down regex-order test rather than a separate ADR; the architectural decision for kit distribution is already in ADR-009 from BEAN-280).
