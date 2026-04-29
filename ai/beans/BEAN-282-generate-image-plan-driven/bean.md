@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-282 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-29 |
-| **Started** | — |
+| **Started** | 2026-04-29 19:49 |
 | **Completed** | — |
 | **Duration** | — |
 | **Owner** | (unassigned) |
@@ -98,7 +98,9 @@ A single `generate-image` skill in ClaudeKit that supports both **plan-driven ba
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | ADR — multi-provider routing | Architect | — | Pending |
+| 02 | generate-image plan-driven rewrite | Developer | 01 | Pending |
+| 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Pending |
 
 > Activated: Architect (new external dependency: OpenAI SDK; provider-routing format), Developer, Tech-QA.
 > Skipped: BA (requirements concrete from `AGENTIC-MEDIA-SKILLS.md`).
@@ -133,3 +135,6 @@ A single `generate-image` skill in ClaudeKit that supports both **plan-driven ba
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
+| 01 | ADR — multi-provider routing | Architect | — | — | — | — |
+| 02 | generate-image plan-driven rewrite | Developer | — | — | — | — |
+| 03 | Verify acceptance criteria | Tech-QA | — | — | — | — |
