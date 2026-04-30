@@ -294,7 +294,7 @@
 | BEAN-270 | `/spawn-task` Persona-Scoped Delegation Command | Process | High | Done | team-lead |
 | BEAN-271 | Tier Library Personas — `core/` vs `extended/` | Infra | High | Deferred | (unassigned) |
 | BEAN-272 | Validate Task `Inputs:` at Dispatch (Pre-Execution Hook) | Process | High | Done | team-lead |
-| BEAN-273 | Persona `produces:` / `consumes:` Contracts | Infra | High | In Progress | team-lead |
+| BEAN-273 | Persona `produces:` / `consumes:` Contracts | Infra | High | Done | team-lead |
 | BEAN-274 | Compose-Time Contract Graph Validator | App | High | Deferred | (unassigned) |
 | BEAN-275 | Resolve Acceptance Criteria & ADR Boundary Ownership | Process | Medium | Approved | (unassigned) |
 | BEAN-276 | Role-Aware Handoff Schemas | Process | Medium | Deferred | (unassigned) |
