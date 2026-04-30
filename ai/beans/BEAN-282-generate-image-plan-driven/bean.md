@@ -98,8 +98,8 @@ A single `generate-image` skill in ClaudeKit that supports both **plan-driven ba
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 01 | ADR — multi-provider routing | Architect | — | Pending |
-| 02 | generate-image plan-driven rewrite | Developer | 01 | Pending |
+| 01 | ADR — multi-provider routing | Architect | — | Done |
+| 02 | generate-image plan-driven rewrite | Developer | 01 | Done |
 | 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Pending |
 
 > Activated: Architect (new external dependency: OpenAI SDK; provider-routing format), Developer, Tech-QA.
