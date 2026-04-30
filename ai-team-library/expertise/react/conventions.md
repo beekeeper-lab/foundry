@@ -3,6 +3,14 @@
 ## Category
 Languages
 
+## Applies To
+
+- developer
+- tech-qa
+- ux-ui-designer
+- architect
+- code-quality-reviewer
+
 These conventions apply to all React projects on this team. They are opinionated
 by design -- consistency across the codebase matters more than individual
 preference. Deviations require an ADR with justification.

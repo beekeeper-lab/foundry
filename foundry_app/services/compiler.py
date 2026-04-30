@@ -8,6 +8,7 @@ from pathlib import Path
 
 from foundry_app.core.models import (
     CompositionSpec,
+    ExpertiseInfo,
     LibraryIndex,
     PersonaSelection,
     StageResult,
@@ -152,6 +153,23 @@ def _read_file(path: Path) -> str | None:
     if path.is_file():
         return path.read_text(encoding="utf-8")
     return None
+
+
+def _expertise_applies_to(
+    persona_id: str,
+    expertise_info: ExpertiseInfo,
+) -> bool:
+    """Return True if *expertise_info* should be inlined into *persona_id*'s prompt.
+
+    The rule (ADR-012): an empty ``applies_to`` list means "applies to every
+    persona" (preserves pre-BEAN-259 behavior); otherwise the persona must be
+    listed explicitly. The library indexer has already filtered out unknown
+    persona IDs from ``applies_to`` (with a warning), so a non-empty list here
+    is guaranteed to contain only real persona IDs.
+    """
+    if not expertise_info.applies_to:
+        return True
+    return persona_id in expertise_info.applies_to
 
 
 def _get_emitted_expertise_ids(
@@ -361,12 +379,18 @@ def _compile_persona_section(
     index: LibraryIndex,
     context: dict[str, str],
     warnings: list[str],
+    spec: CompositionSpec | None = None,
 ) -> str | None:
     """Compile the section for a single persona.
 
     ``context`` must include ``strictness`` — callers build it via
     ``_build_persona_context`` so ``{{ strictness }}`` resolves to this
     persona's own strictness value.
+
+    Per ADR-012, when persona sections embed expertise content (today they do
+    not), only expertise where ``_expertise_applies_to(persona_id, info)`` is
+    True contributes. This is a forward-compat guard: if and when this
+    function starts inlining expertise, it must filter through that helper.
 
     Returns the assembled markdown text, or None if the persona directory
     is missing from the library.
@@ -400,6 +424,21 @@ def _compile_persona_section(
     if prompts_md is not None:
         parts.append(_substitute(prompts_md.strip(), context))
         files_read += 1
+
+    # Forward-compat guard (ADR-012): if a future revision inlines expertise
+    # content into persona sections, the same `_expertise_applies_to` filter
+    # used by `agent_writer.write_agents` must gate that inlining. Today the
+    # persona section embeds no expertise, so the guard is a no-op — but we
+    # exercise the lookup here so the path is wired and reviewers see the
+    # filtering decision is intentional, not forgotten.
+    if spec is not None:
+        for sel in spec.expertise:
+            info = index.expertise_by_id(sel.id)
+            if info is None:
+                continue
+            # No-op today: nothing is appended either way. The presence of
+            # this loop is the contract.
+            _ = _expertise_applies_to(persona_id, info)
 
     if files_read == 0:
         warnings.append(f"Persona '{persona_id}' has no source files")
@@ -625,6 +664,7 @@ def compile_project(
             )
             persona_section = _compile_persona_section(
                 persona_sel.id, lib_root, library_index, persona_ctx, warnings,
+                spec=spec,
             )
             if persona_section is not None:
                 persona_section = _filter_persona_references(

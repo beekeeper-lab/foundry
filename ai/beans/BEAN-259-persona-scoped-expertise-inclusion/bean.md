@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-259 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-30 09:17 |
+| **Completed** | 2026-04-30 09:38 |
+| **Duration** | 1572h 31m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -40,27 +40,50 @@ Each persona's compiled member prompt contains only the expertise it actually us
 
 ## Acceptance Criteria
 
-- [ ] ADR recorded in `ai/context/decisions.md` with the chosen mechanism (A or B) and rationale.
-- [ ] Library metadata updated to support the filter (either on expertise or on personas).
-- [ ] Compiler and agent-writer respect the filter.
-- [ ] Regenerating `small-python-team.yml`: Developer member prompt contains Python/clean-code expertise; DevOps-Release member prompt (if present in the team) contains deploy-relevant expertise only.
-- [ ] Regenerating a React/TS composition: DevOps-Release and UX-UI-Designer member prompts do NOT contain `tsconfig` or language-specific lint config detail.
-- [ ] Token-count measurement: verify the filter reduces per-persona prompt size by a meaningful amount (target: ≥20% reduction for non-Developer personas).
-- [ ] Tests cover the filter end-to-end for at least two personas.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] ADR recorded in `ai/context/decisions.md` with the chosen mechanism (A or B) and rationale.
+- [x] Library metadata updated to support the filter (either on expertise or on personas).
+- [x] Compiler and agent-writer respect the filter.
+- [x] Regenerating `small-python-team.yml`: Developer member prompt contains Python/clean-code expertise; DevOps-Release member prompt (if present in the team) contains deploy-relevant expertise only.
+- [x] Regenerating a React/TS composition: DevOps-Release and UX-UI-Designer member prompts do NOT contain `tsconfig` or language-specific lint config detail.
+- [x] Token-count measurement: verify the filter reduces per-persona prompt size by a meaningful amount (target: ≥20% reduction for non-Developer personas).
+- [x] Tests cover the filter end-to-end for at least two personas.
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Mechanism choice ADR | architect | — | Done |
+| 2 | Implement persona-scoped expertise filter | developer | 1 | Done |
+| 3 | Verify filter | tech-qa | 2 | Done |
+
+> Skipped: BA (default) — requirements are clear, two candidate mechanisms documented in the bean. Architect engaged per bean's "Architect required" note.
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai-team-library/expertise/accessibility-compliance/accessibility-audits.md | 8 |
+| ai-team-library/expertise/python/conventions.md | 8 |
+| ai-team-library/expertise/react/conventions.md | 8 |
+| ai-team-library/expertise/typescript/conventions.md | 7 |
+| ai/beans/BEAN-259-persona-scoped-expertise-inclusion/bean.md | 48 |
+| ai/beans/BEAN-259-persona-scoped-expertise-inclusion/tasks/01-architect-mechanism-adr.md | 57 |
+| ai/beans/BEAN-259-persona-scoped-expertise-inclusion/tasks/02-developer-implement-filter.md | 70 |
+| ai/beans/BEAN-259-persona-scoped-expertise-inclusion/tasks/03-tech-qa-verify.md | 45 |
+| ai/beans/_index.md | 2 |
+| ai/context/decisions.md | 85 |
+| ai/outputs/tech-qa/bean-259-verification.md | 88 |
+| foundry_app/core/models.py | 8 |
+| foundry_app/services/agent_writer.py | 30 |
+| foundry_app/services/compiler.py | 40 |
+| foundry_app/services/library_indexer.py | 92 |
+| scripts/measure_bean_259_savings.py | 137 |
+| tests/test_agent_writer.py | 357 |
+| tests/test_compiler.py | 166 |
+| tests/test_library_indexer.py | 174 |
+| **Total** | **19 files: +1404 / -26** |
 
 ## Notes
 
@@ -80,12 +103,14 @@ Each persona's compiled member prompt contains only the expertise it actually us
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Mechanism choice ADR | architect | 3m | 665,012 | 4,736 | $1.40 |
+| 2 | Implement persona-scoped expertise filter | developer | 11m | 1,247,966 | 5,733 | $2.63 |
+| 3 | Verify filter | tech-qa | 5m | 746,248 | 6,416 | $1.63 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 19m |
+| **Total Tokens In** | 2,659,226 |
+| **Total Tokens Out** | 16,885 |
+| **Total Cost** | $5.66 |

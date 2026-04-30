@@ -21,6 +21,7 @@ from foundry_app.services.compiler import (
     _build_persona_name_map,
     _canonicalize_persona_header,
     _display_name_from_id,
+    _expertise_applies_to,
     _filter_collaboration_table,
     _filter_defer_references,
     _filter_persona_references,
@@ -2196,3 +2197,168 @@ class TestClaudeMdTableCasing:
         assert "Api Design" not in content
         assert "| SQL/DBA |" in content
         assert "| API Design |" in content
+
+
+# ---------------------------------------------------------------------------
+# ADR-012 / BEAN-259: per-expertise persona relevance
+# ---------------------------------------------------------------------------
+
+
+class TestExpertiseAppliesToHelper:
+    """Pure unit tests for the ``_expertise_applies_to`` predicate."""
+
+    def test_empty_applies_to_matches_every_persona(self):
+        info = ExpertiseInfo(id="x", path="/tmp/x", applies_to=[])
+        assert _expertise_applies_to("developer", info) is True
+        assert _expertise_applies_to("ux-ui-designer", info) is True
+        assert _expertise_applies_to("anything", info) is True
+
+    def test_listed_persona_matches(self):
+        info = ExpertiseInfo(id="x", path="/tmp/x", applies_to=["developer", "tech-qa"])
+        assert _expertise_applies_to("developer", info) is True
+        assert _expertise_applies_to("tech-qa", info) is True
+
+    def test_unlisted_persona_does_not_match(self):
+        info = ExpertiseInfo(id="x", path="/tmp/x", applies_to=["developer"])
+        assert _expertise_applies_to("ux-ui-designer", info) is False
+        assert _expertise_applies_to("devops-release", info) is False
+
+
+class TestCompilerExpertiseFilterIntegration:
+    """End-to-end checks that the per-persona filter does not leak into
+    standalone expertise files or the lean CLAUDE.md (Tech Stack)."""
+
+    def _build_python_ts_lib(self, tmp_path: Path):
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "developer": {
+                    "persona.md": "# Persona: Developer\n\n## Mission\nBuild.",
+                },
+                "devops-release": {
+                    "persona.md": "# Persona: DevOps-Release\n\n## Mission\nShip.",
+                },
+                "ux-ui-designer": {
+                    "persona.md": "# Persona: UX/UI Designer\n\n## Mission\nDesign.",
+                },
+            },
+            expertise={
+                "python": {
+                    "conventions.md": (
+                        "# Python\n\n## Category\nLanguages\n\n"
+                        "## Applies To\n\n- developer\n\n"
+                        "## Defaults\n\n- ruff is the formatter\n"
+                    ),
+                },
+                "typescript": {
+                    "conventions.md": (
+                        "# TypeScript\n\n## Category\nLanguages\n\n"
+                        "## Applies To\n\n- developer\n\n"
+                        "## Defaults\n\n- tsconfig strict mode\n"
+                    ),
+                },
+            },
+        )
+        # Manually set applies_to to mirror what build_library_index would
+        # parse from the same files (the helper writes files to /stacks/
+        # rather than /expertise/, so the real indexer can't find them).
+        for e in index.expertise:
+            if e.id in ("python", "typescript"):
+                e.applies_to = ["developer"]
+        return index, lib_root
+
+    def test_lean_claude_md_lists_every_emitted_expertise(self, tmp_path: Path):
+        """ADR-012 case 7: Tech Stack table is unfiltered."""
+        index, lib_root = self._build_python_ts_lib(tmp_path)
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="devops-release"),
+                PersonaSelection(id="ux-ui-designer"),
+            ]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+            ],
+        )
+        out = tmp_path / "project"
+        compile_project(spec, index, lib_root, out)
+        claude_md = (out / "CLAUDE.md").read_text()
+        # Both expertise must appear in the Tech Stack table even though
+        # ux-ui-designer and devops-release are not in either applies_to.
+        assert "ai/generated/expertise/python.md" in claude_md
+        assert "ai/generated/expertise/typescript.md" in claude_md
+
+    def test_standalone_expertise_files_always_written(self, tmp_path: Path):
+        """ADR-012 case 8: standalone expertise files are unfiltered."""
+        index, lib_root = self._build_python_ts_lib(tmp_path)
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="ux-ui-designer"),  # neither expertise lists this persona
+            ]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+            ],
+        )
+        out = tmp_path / "project"
+        compile_project(spec, index, lib_root, out)
+        # Both standalone expertise files must be present.
+        assert (out / "ai" / "generated" / "expertise" / "python.md").is_file()
+        assert (out / "ai" / "generated" / "expertise" / "typescript.md").is_file()
+
+
+class TestCompilePersonaSectionForwardCompat:
+    """The forward-compat guard in _compile_persona_section is wired but a
+    no-op today. Verify that passing spec= does not change persona file
+    contents (regression guard for the no-op).
+    """
+
+    def test_persona_section_unchanged_with_or_without_spec(self, tmp_path: Path):
+        from foundry_app.services.compiler import _compile_persona_section
+
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "developer": {
+                    "persona.md": "# Persona: Developer\n\n## Mission\nBuild.",
+                },
+            },
+            expertise={
+                "python": {
+                    "conventions.md": (
+                        "# Python\n\n## Applies To\n\n- developer\n\n"
+                        "## Defaults\n- ruff\n"
+                    ),
+                },
+                "typescript": {
+                    "conventions.md": (
+                        "# TS\n\n## Applies To\n\n- developer\n\n"
+                        "## Defaults\n- tsconfig\n"
+                    ),
+                },
+            },
+        )
+        # Mirror the on-disk applies_to into the index so the forward-compat
+        # loop has realistic data even though _make_library doesn't index.
+        for e in index.expertise:
+            e.applies_to = ["developer"]
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="developer")]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+            ],
+        )
+        ctx = _build_persona_context(spec, spec.team.personas[0], ["python", "typescript"])
+        warnings_a: list[str] = []
+        warnings_b: list[str] = []
+        without_spec = _compile_persona_section(
+            "developer", Path(lib_root), index, ctx, warnings_a,
+        )
+        with_spec = _compile_persona_section(
+            "developer", Path(lib_root), index, ctx, warnings_b, spec=spec,
+        )
+        assert without_spec == with_spec
+        # No additional warnings produced by passing spec.
+        assert warnings_a == warnings_b
