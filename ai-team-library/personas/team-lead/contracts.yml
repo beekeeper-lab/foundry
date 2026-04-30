@@ -1,0 +1,17 @@
+# Persona contract — produces / consumes artifact types declared by this persona.
+# Names must resolve to entries in ai-team-library/contracts/artifact-types.yml.
+# Validated at index time by foundry_app/services/library_indexer.py.
+
+produces:
+  - bean-spec
+  - task-spec
+  - acceptance-criteria   # default ownership when BA is not on the wave; see ADR-013.
+  - merge-summary
+consumes:
+  - handoff-packet
+  - vdd-report
+  - traceability-matrix
+  - code-change
+  - design-spec
+  - adr
+  - risk-register

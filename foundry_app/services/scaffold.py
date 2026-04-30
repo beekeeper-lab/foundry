@@ -9,7 +9,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 from foundry_app import __version__ as _FOUNDRY_VERSION
-from foundry_app.core.models import CompositionSpec, StageResult
+from foundry_app.core.models import CompositionSpec, LibraryIndex, StageResult
 from foundry_app.io.composition_io import save_composition
 
 logger = logging.getLogger(__name__)
@@ -51,6 +51,76 @@ orchestration:
     - integrator-merge-captain
     - ba
 """
+
+
+def _build_contracts_yaml_block(
+    spec: CompositionSpec,
+    library_index: LibraryIndex,
+) -> str:
+    """Render the ``contracts:`` block for the generated composition.yml.
+
+    Emits one entry per persona on the team (``spec.team.personas``),
+    sourcing produces/consumes from the LibraryIndex's PersonaInfo. Then
+    emits a flat artifact-types reference list — the union of every name
+    appearing in any persona's produces/consumes, sorted by name. Each
+    artifact-type entry carries ``name``, ``format``, ``template-path``
+    only (description and required-fields are intentionally omitted from
+    the emit; see ADR-013 Decision 4).
+
+    Returns an empty string when ``spec.team.personas`` is empty so the
+    caller can append unconditionally.
+    """
+    if not spec.team.personas:
+        return ""
+
+    personas_block_lines: list[str] = []
+    referenced_names: set[str] = set()
+
+    for selection in spec.team.personas:
+        info = library_index.persona_by_id(selection.id)
+        if info is None:
+            continue
+        personas_block_lines.append(f"    - id: {info.id}")
+        personas_block_lines.append("      produces:")
+        if info.produces:
+            for name in info.produces:
+                personas_block_lines.append(f"        - {name}")
+                referenced_names.add(name)
+        else:
+            personas_block_lines.append("        []")
+        personas_block_lines.append("      consumes:")
+        if info.consumes:
+            for name in info.consumes:
+                personas_block_lines.append(f"        - {name}")
+                referenced_names.add(name)
+        else:
+            personas_block_lines.append("        []")
+
+    if not personas_block_lines:
+        return ""
+
+    artifact_lines: list[str] = []
+    for name in sorted(referenced_names):
+        info = library_index.artifact_type_by_name(name)
+        if info is None:
+            # Persona referenced an unknown name; the indexer would have
+            # already dropped it from PersonaInfo, but be defensive here.
+            continue
+        artifact_lines.append(f"    - name: {info.name}")
+        artifact_lines.append(f"      format: {info.format}")
+        if info.template_path is None:
+            artifact_lines.append("      template-path: null")
+        else:
+            artifact_lines.append(f"      template-path: {info.template_path}")
+
+    block_lines: list[str] = ["", "contracts:", "  personas:"]
+    block_lines.extend(personas_block_lines)
+    block_lines.append("  artifact-types:")
+    if artifact_lines:
+        block_lines.extend(artifact_lines)
+    else:
+        block_lines.append("    []")
+    return "\n".join(block_lines) + "\n"
 
 
 _MEDIA_SECTION = (
@@ -248,6 +318,7 @@ def scaffold_project(
     spec: CompositionSpec,
     output_dir: str | Path,
     library_root: str | Path | None = None,
+    library_index: LibraryIndex | None = None,
 ) -> StageResult:
     """Create the directory skeleton for a generated Claude Code project.
 
@@ -264,6 +335,10 @@ def scaffold_project(
         library_root: Path to the ai-team-library root. Required when
             ``spec.generation.include_media_skills`` is True so the media
             plan templates can be located. May be omitted otherwise.
+        library_index: Optional indexed view of the library. When provided,
+            the generated ``composition.yml`` is augmented with a
+            ``contracts:`` block sourced from per-persona ``contracts.yml``
+            files and the artifact-type registry. See ADR-013.
 
     Returns:
         A StageResult listing all directories that were created.
@@ -321,9 +396,15 @@ def scaffold_project(
     # cold-start agents can read the team model from composition.yml
     # directly. This is policy, not input — it is identical across
     # projects and not driven by the spec. See BEAN-269.
+    contracts_block = (
+        _build_contracts_yaml_block(spec, library_index)
+        if library_index is not None
+        else ""
+    )
     composition_path.write_text(
         composition_path.read_text(encoding="utf-8")
-        + _ORCHESTRATION_YAML_BLOCK,
+        + _ORCHESTRATION_YAML_BLOCK
+        + contracts_block,
         encoding="utf-8",
     )
     if previous_composition != composition_path.read_text(encoding="utf-8"):

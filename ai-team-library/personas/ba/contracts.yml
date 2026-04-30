@@ -1,0 +1,13 @@
+# Persona contract — produces / consumes artifact types declared by this persona.
+# Names must resolve to entries in ai-team-library/contracts/artifact-types.yml.
+# Validated at index time by foundry_app/services/library_indexer.py.
+
+produces:
+  - user-story
+  - acceptance-criteria   # See ADR-013 — dual-producer with team-lead; active-producer pick is BEAN-274.
+  - scope-definition
+  - risk-register
+  - handoff-packet
+consumes:
+  - bean-spec
+  - scope-definition

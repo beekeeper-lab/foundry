@@ -553,6 +553,29 @@ class PersonaInfo(BaseModel):
     has_prompts_md: bool = False
     templates: list[str] = Field(default_factory=list, description="Template filenames")
     category: str = Field(default="", description="Persona category for grouped display")
+    produces: list[str] = Field(
+        default_factory=list,
+        description="Artifact-type names this persona produces. See ADR-013.",
+    )
+    consumes: list[str] = Field(
+        default_factory=list,
+        description="Artifact-type names this persona consumes. See ADR-013.",
+    )
+
+
+class ArtifactTypeInfo(BaseModel):
+    """Metadata about an artifact type defined in the contracts registry.
+
+    Loaded from ``ai-team-library/contracts/artifact-types.yml``. Each entry
+    declares the canonical ``name`` referenced by per-persona ``contracts.yml``
+    ``produces:`` / ``consumes:`` lists. See ADR-013.
+    """
+
+    name: str = Field(..., min_length=1)
+    description: str = ""
+    format: str = "markdown"  # markdown | yaml | json
+    required_fields: list[str] = Field(default_factory=list)
+    template_path: str | None = None
 
 
 class ExpertiseInfo(BaseModel):
@@ -600,6 +623,13 @@ class LibraryIndex(BaseModel):
     personas: list[PersonaInfo] = Field(default_factory=list)
     expertise: list[ExpertiseInfo] = Field(default_factory=list)
     hook_packs: list[HookPackInfo] = Field(default_factory=list)
+    artifact_types: list[ArtifactTypeInfo] = Field(
+        default_factory=list,
+        description=(
+            "Artifact types loaded from ai-team-library/contracts/"
+            "artifact-types.yml. See ADR-013."
+        ),
+    )
 
     def persona_by_id(self, persona_id: str) -> PersonaInfo | None:
         return next((p for p in self.personas if p.id == persona_id), None)
@@ -609,3 +639,6 @@ class LibraryIndex(BaseModel):
 
     def hook_pack_by_id(self, pack_id: str) -> HookPackInfo | None:
         return next((h for h in self.hook_packs if h.id == pack_id), None)
+
+    def artifact_type_by_name(self, name: str) -> ArtifactTypeInfo | None:
+        return next((a for a in self.artifact_types if a.name == name), None)
