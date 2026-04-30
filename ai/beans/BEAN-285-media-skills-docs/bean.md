@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-285 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-29 |
-| **Started** | — |
+| **Started** | 2026-04-29 21:44 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | BEAN-280, BEAN-281, BEAN-282, BEAN-283, BEAN-284 |
 
@@ -63,9 +63,10 @@ Every doc surface that a future agent or operator could consult to learn about m
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | Apply doc edits across all surfaces | Developer | — | Pending |
+| 02 | Verify acceptance criteria | Tech-QA | 01 | Pending |
 
-> Activated: Technical Writer (if available; otherwise Developer), Tech-QA (verifies acceptance criteria — pure doc verification).
+> Activated: Developer (technical-writer not in this team), Tech-QA.
 > Skipped: BA, Architect (no scope/design decisions; just documentation of the prior beans' decisions).
 
 ## Changes
@@ -94,3 +95,5 @@ Every doc surface that a future agent or operator could consult to learn about m
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
+| 01 | Apply doc edits across all surfaces | Developer | — | — | — | — |
+| 02 | Verify acceptance criteria | Tech-QA | — | — | — | — |

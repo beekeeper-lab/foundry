@@ -306,4 +306,4 @@
 | BEAN-282 | `generate-image` Plan-Driven Rewrite (Multi-Provider) | App | High | Done | team-lead |
 | BEAN-283 | `generate-audio` Skill (ElevenLabs Narration) | App | High | Done | team-lead |
 | BEAN-284 | Media Plan Templates + Foundry Scaffolder Integration | Infra | Medium | Done | team-lead |
-| BEAN-285 | Documentation + CLAUDE.md Updates for Media Skills | Process | Medium | Approved | (unassigned) |
+| BEAN-285 | Documentation + CLAUDE.md Updates for Media Skills | Process | Medium | In Progress | team-lead |
