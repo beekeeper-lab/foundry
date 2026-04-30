@@ -288,7 +288,7 @@ Specifically:
 |-------|-------|
 | **Date** | 2026-04-17 |
 | **Status** | Accepted |
-| **Bean** | BEAN-253 |
+| **Bean** | BEAN-251, BEAN-253 |
 | **Deciders** | Architect |
 
 ### Context

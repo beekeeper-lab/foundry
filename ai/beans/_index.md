@@ -272,7 +272,7 @@
 | BEAN-248 | Add clean-code Expertise Conventions Content | Infra | Medium | Done | team-lead |
 | BEAN-249 | Audit Library Command/Skill Duplication | Infra | Medium | Done | team-lead |
 | BEAN-250 | Rebalance Hook Posture Taxonomy | App | Medium | Done | team-lead |
-| BEAN-251 | Clarify Agent Permission Scope in Generated Projects | App | Medium | Approved | (unassigned) |
+| BEAN-251 | Clarify Agent Permission Scope in Generated Projects | App | Medium | In Progress | team-lead |
 | BEAN-252 | Project Purpose Statement / Charter | App | High | Done | team-lead |
 | BEAN-253 | Decide App-Code Scaffolding Policy | Process | High | Done | team-lead |
 | BEAN-254 | Bootstrap Bean for Seeded Tasks | App | High | Done | team-lead |
