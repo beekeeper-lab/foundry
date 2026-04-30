@@ -595,6 +595,35 @@ def _build_lean_claude_md(
     ]
     sections.append("\n".join(orchestration_lines))
 
+    # --- Workflow (BEAN-268) ---
+    workflow_lines = [
+        "## Workflow",
+        "",
+        "Work is tracked using the **bean workflow**: each unit of work "
+        "(feature, fix, chore) is a bean stored under "
+        "`ai/beans/BEAN-NNN-<slug>/`. The backlog index is "
+        "`ai/beans/_index.md`. See `ai/context/bean-workflow.md` for the "
+        "full lifecycle.",
+        "",
+        "Day-1 slash commands:",
+        "",
+        "- `/long-run` — autonomous backlog processing "
+        "(`.claude/commands/long-run.md`)",
+        "- `/show-backlog` — display the current bean backlog "
+        "(`.claude/commands/show-backlog.md`)",
+        "- `/pick-bean` — pick the next approved bean and start work on "
+        "it (`.claude/commands/pick-bean.md`)",
+        "- `/new-bean` — create a new bean from a problem description "
+        "(`.claude/commands/new-bean.md`)",
+        "- `/spawn-task` — dispatch a single task to its assigned "
+        "persona (`.claude/commands/spawn-task.md`)",
+        "- `/review-beans` — review beans pending approval "
+        "(`.claude/commands/review-beans.md`)",
+        "",
+        "Full command set: `.claude/commands/`.",
+    ]
+    sections.append("\n".join(workflow_lines))
+
     # --- Pointers ---
     pointer_lines = [
         "## Documentation",
