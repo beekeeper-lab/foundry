@@ -669,3 +669,187 @@ class TestSelectSourceFiles:
         src.mkdir()
         files = ga.select_source_files(src, explicit=tmp_path / "no-exist")
         assert files == []
+
+
+# ---------------------------------------------------------------------------
+# Cost reporting — char-count = credits.
+# ---------------------------------------------------------------------------
+
+
+class TestCostSummary:
+    def test_credits_equal_chars_for_v2(self):
+        out = ga.format_cost_summary(1234, blocks_generated=5)
+        assert "1234 chars sent" in out
+        assert "1234 credits" in out
+        assert "5 blocks generated" in out
+
+    def test_zero_chars_zero_credits(self):
+        out = ga.format_cost_summary(0)
+        assert "0 chars sent" in out
+        assert "0 credits" in out
+
+    def test_default_model_in_summary(self):
+        out = ga.format_cost_summary(100)
+        assert "elevenlabs" in out
+        assert ga.DEFAULT_MODEL in out
+
+    def test_credit_rate_constant_is_one(self):
+        # ADR-011 cost discipline: eleven_multilingual_v2 = 1 credit/char.
+        # If ElevenLabs ever changes this, the cost table in code is the
+        # source of truth — but we want a CI signal when it changes.
+        assert ga.CREDITS_PER_CHAR == 1.0
+
+
+# ---------------------------------------------------------------------------
+# Voice + model resolution — CLI wins over plan; plan fallback; default.
+# ---------------------------------------------------------------------------
+
+
+class TestResolveVoiceAndModel:
+    def test_cli_overrides_plan(self):
+        plan = "**Voice:** rachel\n**Model:** plan_model\n"
+        v, m = ga._resolve_voice_and_model("drew", "cli_model", plan)
+        assert v == "drew"
+        assert m == "cli_model"
+
+    def test_plan_fills_when_cli_missing(self):
+        plan = "**Voice:** sarah\n**Model:** plan_model\n"
+        v, m = ga._resolve_voice_and_model(None, None, plan)
+        assert v == "sarah"
+        assert m == "plan_model"
+
+    def test_defaults_when_neither_present(self):
+        v, m = ga._resolve_voice_and_model(None, None, None)
+        assert v == ga.DEFAULT_VOICE == "rachel"
+        assert m == ga.DEFAULT_MODEL == "eleven_multilingual_v2"
+
+    def test_partial_cli_partial_plan(self):
+        plan = "**Voice:** sarah\n"  # plan has voice; we override model on CLI.
+        v, m = ga._resolve_voice_and_model(None, "cli_model", plan)
+        assert v == "sarah"
+        assert m == "cli_model"
+
+
+# ---------------------------------------------------------------------------
+# main() CLI — dry-run path (no API), char-count summary in output.
+# ---------------------------------------------------------------------------
+
+
+class TestMainCLI:
+    def _setup_project(self, tmp_path: Path) -> tuple[Path, Path]:
+        src = tmp_path / "source"
+        src.mkdir()
+        (src / "module-00.md").write_text("> 🎙️ Hello world.\n")
+        (src / "module-01.md").write_text("> 🎙️ Another block.\n")
+        audio = tmp_path / "audio"
+        return src, audio
+
+    def test_dry_run_makes_no_api_calls(self, tmp_path: Path, capsys, monkeypatch):
+        src, audio = self._setup_project(tmp_path)
+        # Guard: even if an API key is present, dry-run must not build a client.
+        monkeypatch.setenv("ELEVENLABS_API_KEY", "fake")
+        monkeypatch.setattr(
+            ga, "get_elevenlabs_client",
+            lambda _key: pytest.fail("should not build client under --dry-run"),
+        )
+        rc = ga.main([
+            "--source-dir", str(src),
+            "--audio-dir", str(audio),
+            "--dry-run",
+        ])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "DRY RUN" in out
+        assert "would be generated" in out
+
+    def test_missing_api_key_fails_outside_dry_run(self, tmp_path: Path, monkeypatch, capsys):
+        src, audio = self._setup_project(tmp_path)
+        monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+        # Stub load_env to avoid pulling in a real .env from cwd.
+        monkeypatch.setattr(ga, "load_env", lambda *a, **k: {})
+        rc = ga.main([
+            "--source-dir", str(src),
+            "--audio-dir", str(audio),
+        ])
+        assert rc == 2
+        err = capsys.readouterr().err
+        assert "ELEVENLABS_API_KEY" in err
+
+    def test_full_run_prints_char_count_summary(
+        self, tmp_path: Path, monkeypatch, capsys,
+    ):
+        src, audio = self._setup_project(tmp_path)
+        monkeypatch.setenv("ELEVENLABS_API_KEY", "fake")
+        monkeypatch.setattr(ga, "load_env", lambda *a, **k: {})
+        client = _mock_client(b"x" * 100)
+        monkeypatch.setattr(ga, "get_elevenlabs_client", lambda _key: client)
+
+        rc = ga.main([
+            "--source-dir", str(src),
+            "--audio-dir", str(audio),
+        ])
+        assert rc == 0
+        out = capsys.readouterr().out
+        # 2 blocks, "Hello world." (12) + "Another block." (14) = 26 chars.
+        assert "26 chars sent" in out
+        assert "26 credits" in out
+        # Two API calls.
+        assert client.text_to_speech.convert.call_count == 2
+        # Manifests written.
+        assert (audio / "module-00" / "manifest.json").exists()
+        assert (audio / "module-01" / "manifest.json").exists()
+
+    def test_voice_flag_overrides_plan_voice(self, tmp_path: Path, monkeypatch):
+        src, audio = self._setup_project(tmp_path)
+        plan = tmp_path / "NARRATION-PLAN.md"
+        plan.write_text("**Voice:** rachel\n")
+        monkeypatch.setenv("ELEVENLABS_API_KEY", "fake")
+        monkeypatch.setattr(ga, "load_env", lambda *a, **k: {})
+        client = _mock_client()
+        monkeypatch.setattr(ga, "get_elevenlabs_client", lambda _key: client)
+
+        ga.main([
+            "--source-dir", str(src),
+            "--audio-dir", str(audio),
+            "--plan", str(plan),
+            "--voice", "drew",
+        ])
+        # All convert calls should have used drew's stock ID, not rachel's.
+        for call in client.text_to_speech.convert.call_args_list:
+            assert call.kwargs["voice_id"] == ga.STOCK_VOICE_MAP["drew"]
+            assert call.kwargs["voice_id"] != ga.STOCK_VOICE_MAP["rachel"]
+
+    def test_all_flag_includes_auxiliary(self, tmp_path: Path, monkeypatch, capsys):
+        src = tmp_path / "source"
+        src.mkdir()
+        (src / "module-00.md").write_text("> 🎙️ A.\n")
+        (src / "crash-course.md").write_text("> 🎙️ B.\n")
+        monkeypatch.setenv("ELEVENLABS_API_KEY", "fake")
+        monkeypatch.setattr(ga, "load_env", lambda *a, **k: {})
+        client = _mock_client()
+        monkeypatch.setattr(ga, "get_elevenlabs_client", lambda _key: client)
+
+        ga.main([
+            "--source-dir", str(src),
+            "--audio-dir", str(tmp_path / "audio"),
+            "--all",
+        ])
+        # Both files were processed; 2 API calls.
+        assert client.text_to_speech.convert.call_count == 2
+
+    def test_default_excludes_auxiliary(self, tmp_path: Path, monkeypatch):
+        src = tmp_path / "source"
+        src.mkdir()
+        (src / "module-00.md").write_text("> 🎙️ A.\n")
+        (src / "crash-course.md").write_text("> 🎙️ B.\n")
+        monkeypatch.setenv("ELEVENLABS_API_KEY", "fake")
+        monkeypatch.setattr(ga, "load_env", lambda *a, **k: {})
+        client = _mock_client()
+        monkeypatch.setattr(ga, "get_elevenlabs_client", lambda _key: client)
+
+        ga.main([
+            "--source-dir", str(src),
+            "--audio-dir", str(tmp_path / "audio"),
+        ])
+        # Only module-00 (1 call).
+        assert client.text_to_speech.convert.call_count == 1
