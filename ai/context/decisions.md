@@ -599,6 +599,7 @@ Specifically:
    ```python
    _KIT_DISTRIBUTED_SKILLS: tuple[str, ...] = (
        "_media_lib",
+       "generate-audio",
        "generate-image",
        "generate-screen",
    )
@@ -609,10 +610,10 @@ Specifically:
    `<claude_kit_root>/skills/<name>/`. The registry started with two
    entries (`generate-image`, `generate-screen`); BEAN-281 added
    `_media_lib` (the shared helper package for env discovery, narration
-   normalization + hashing, and cost summaries used by the media skills),
-   and BEAN-282 / BEAN-283 will append `generate-audio` and any further
-   media skills. Adding to the registry requires only editing this
-   tuple — no schema change, no validator change.
+   normalization + hashing, and cost summaries used by the media skills);
+   BEAN-283 added `generate-audio` (ElevenLabs narration generator).
+   Future media skills append here. Adding to the registry requires only
+   editing this tuple — no schema change, no validator change.
 
    Criteria for adding a skill to `_KIT_DISTRIBUTED_SKILLS`:
    - The skill's source files live (or will live) under

@@ -74,6 +74,7 @@ _GOVERNANCE_SKILLS: dict[str, set[str]] = {
 # locks it in.
 _KIT_DISTRIBUTED_SKILLS: tuple[str, ...] = (
     "_media_lib",
+    "generate-audio",
     "generate-image",
     "generate-screen",
 )

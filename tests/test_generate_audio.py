@@ -113,7 +113,8 @@ class TestNarrationBlockScanner:
     def test_delegates_stripping_to_media_lib(self):
         # Spy on the imported function — proves we route through
         # _media_lib instead of a private re-implementation.
-        with patch.object(ga, "normalize_narration_text", side_effect=ga.normalize_narration_text) as spy:
+        spy_kwargs = {"side_effect": ga.normalize_narration_text}
+        with patch.object(ga, "normalize_narration_text", **spy_kwargs) as spy:
             ga.find_narration_blocks("> 🎙️ A block.\n")
             assert spy.called
 

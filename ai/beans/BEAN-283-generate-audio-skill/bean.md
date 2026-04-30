@@ -91,8 +91,8 @@ A new `generate-audio` skill in ClaudeKit that scans source markdown for `> 🎙
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 01 | ADR — audio skill design | Architect | — | Pending |
-| 02 | generate-audio implementation | Developer | 01 | Pending |
+| 01 | ADR — audio skill design | Architect | — | Done |
+| 02 | generate-audio implementation | Developer | 01 | Done |
 | 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Pending |
 
 > Activated: Architect (new external dependency: ElevenLabs SDK; manifest format is a cross-system contract via content-hash), Developer, Tech-QA.
