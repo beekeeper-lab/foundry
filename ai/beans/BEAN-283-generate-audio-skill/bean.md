@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-283 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-29 |
 | **Started** | 2026-04-29 20:11 |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Completed** | 2026-04-29 20:58 |
+| **Duration** | 1559h 51m |
+| **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-280, BEAN-281 |
 
@@ -73,19 +73,19 @@ A new `generate-audio` skill in ClaudeKit that scans source markdown for `> 🎙
 
 ## Acceptance Criteria
 
-- [ ] Skill at `.claude/shared/skills/generate-audio/` with generator + SKILL.md.
-- [ ] Walks source markdown, finds `> 🎙️` blocks, generates MP3 per block.
-- [ ] Strips markdown markers before sending to ElevenLabs (delegated to `_media_lib`).
-- [ ] Writes per-source manifest with stripped text.
-- [ ] Default voice `rachel`; `--voice` overrides; voice map handles names + raw IDs.
-- [ ] Default model `eleven_multilingual_v2`; `--model` overrides.
-- [ ] Skip-on-disk: missing → generate; `--force`, `--regenerate-changed`, `--dry-run`, `--all` all behave per spec.
-- [ ] Orphan MP3s removed on manifest rewrite.
-- [ ] End-of-run summary prints char-count = credits.
-- [ ] `.env` discovery resolves `ELEVENLABS_API_KEY`.
-- [ ] No cloned voice IDs in committed code.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] Skill at `.claude/shared/skills/generate-audio/` with generator + SKILL.md.
+- [x] Walks source markdown, finds `> 🎙️` blocks, generates MP3 per block.
+- [x] Strips markdown markers before sending to ElevenLabs (delegated to `_media_lib`).
+- [x] Writes per-source manifest with stripped text.
+- [x] Default voice `rachel`; `--voice` overrides; voice map handles names + raw IDs.
+- [x] Default model `eleven_multilingual_v2`; `--model` overrides.
+- [x] Skip-on-disk: missing → generate; `--force`, `--regenerate-changed`, `--dry-run`, `--all` all behave per spec.
+- [x] Orphan MP3s removed on manifest rewrite.
+- [x] End-of-run summary prints char-count = credits.
+- [x] `.env` discovery resolves `ELEVENLABS_API_KEY`.
+- [x] No cloned voice IDs in committed code.
+- [x] All tests pass (`uv run pytest`) — 2150 passed (+69 from baseline).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
@@ -93,7 +93,7 @@ A new `generate-audio` skill in ClaudeKit that scans source markdown for `> 🎙
 |---|------|-------|------------|--------|
 | 01 | ADR — audio skill design | Architect | — | Done |
 | 02 | generate-audio implementation | Developer | 01 | Done |
-| 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Pending |
+| 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Done |
 
 > Activated: Architect (new external dependency: ElevenLabs SDK; manifest format is a cross-system contract via content-hash), Developer, Tech-QA.
 > Skipped: BA (requirements concrete from `AGENTIC-MEDIA-SKILLS.md`).
