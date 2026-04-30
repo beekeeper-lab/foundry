@@ -358,3 +358,314 @@ class TestGetElevenlabsClient:
         client = ga.get_elevenlabs_client("test-key")
         assert isinstance(client, FakeEL)
         assert captured["api_key"] == "test-key"
+
+
+# ---------------------------------------------------------------------------
+# Skip-on-disk decision matrix.
+# ---------------------------------------------------------------------------
+
+
+class TestDecideAction:
+    def test_missing_file_means_generate_new(self, tmp_path: Path):
+        needs, reason = ga.decide_action(
+            "hi", tmp_path / "missing.mp3", None,
+            force=False, regenerate_changed=False,
+        )
+        assert needs is True
+        assert reason == "new"
+
+    def test_existing_file_no_flags_means_skip(self, tmp_path: Path):
+        p = tmp_path / "x.mp3"
+        p.write_bytes(b"a")
+        needs, reason = ga.decide_action(
+            "hi", p, {"text": "hi"},
+            force=False, regenerate_changed=False,
+        )
+        assert needs is False
+        assert reason == "exists"
+
+    def test_force_means_generate_even_when_exists(self, tmp_path: Path):
+        p = tmp_path / "x.mp3"
+        p.write_bytes(b"a")
+        needs, reason = ga.decide_action(
+            "hi", p, {"text": "hi"},
+            force=True, regenerate_changed=False,
+        )
+        assert needs is True
+        assert reason == "forced"
+
+    def test_regenerate_changed_when_text_differs(self, tmp_path: Path):
+        p = tmp_path / "x.mp3"
+        p.write_bytes(b"a")
+        needs, reason = ga.decide_action(
+            "new text", p, {"text": "old text"},
+            force=False, regenerate_changed=True,
+        )
+        assert needs is True
+        assert reason == "text changed"
+
+    def test_regenerate_changed_when_text_same_means_skip(self, tmp_path: Path):
+        p = tmp_path / "x.mp3"
+        p.write_bytes(b"a")
+        needs, _reason = ga.decide_action(
+            "same", p, {"text": "same"},
+            force=False, regenerate_changed=True,
+        )
+        assert needs is False
+
+    def test_regenerate_changed_with_no_existing_entry_skips(self, tmp_path: Path):
+        # The "missing in manifest but file exists on disk" case — without
+        # existing-text to compare we can't decide change; default is skip.
+        p = tmp_path / "x.mp3"
+        p.write_bytes(b"a")
+        needs, _reason = ga.decide_action(
+            "anything", p, None,
+            force=False, regenerate_changed=True,
+        )
+        assert needs is False
+
+    def test_force_wins_over_regenerate_changed(self, tmp_path: Path):
+        p = tmp_path / "x.mp3"
+        p.write_bytes(b"a")
+        needs, reason = ga.decide_action(
+            "same", p, {"text": "same"},
+            force=True, regenerate_changed=True,
+        )
+        assert needs is True
+        assert reason == "forced"
+
+
+# ---------------------------------------------------------------------------
+# process_source — end-to-end with mocked client.
+# ---------------------------------------------------------------------------
+
+
+def _mock_client(audio_bytes: bytes = b"x" * 100) -> MagicMock:
+    client = MagicMock()
+    # Each call returns a fresh iterator of bytes.
+    client.text_to_speech.convert.side_effect = lambda **_: iter([audio_bytes])
+    return client
+
+
+class TestProcessSource:
+    def _write_source(self, tmp_path: Path, body: str) -> Path:
+        src = tmp_path / "source"
+        src.mkdir()
+        f = src / "module-00-intro.md"
+        f.write_text(body)
+        return f
+
+    def test_default_generates_missing(self, tmp_path: Path):
+        f = self._write_source(
+            tmp_path,
+            "# M\n> 🎙️ First.\n\n> 🎙️ Second.\n",
+        )
+        client = _mock_client(b"x" * 1024)
+        result = ga.process_source(
+            f, tmp_path / "audio",
+            client=client, voice_id="V",
+            print_fn=lambda *_a, **_k: None,
+        )
+        assert result["generated"] == 2
+        assert result["skipped"] == 0
+        assert result["chars_sent"] == len("First.") + len("Second.")
+        # Two API calls.
+        assert client.text_to_speech.convert.call_count == 2
+
+    def test_skips_existing_by_default(self, tmp_path: Path):
+        f = self._write_source(
+            tmp_path,
+            "> 🎙️ Same text.\n",
+        )
+        # Pre-create the MP3 + manifest with matching text.
+        audio_dir = tmp_path / "audio" / "module-00-intro"
+        audio_dir.mkdir(parents=True)
+        (audio_dir / "01_module-00-intro.mp3").write_bytes(b"old")
+        (audio_dir / "manifest.json").write_text(json.dumps([
+            {"index": 1, "module": "module-00-intro",
+             "audio_file": "01_module-00-intro.mp3",
+             "text": "Same text.", "size_bytes": 3}
+        ]))
+        client = _mock_client()
+        result = ga.process_source(
+            f, tmp_path / "audio",
+            client=client, voice_id="V",
+            print_fn=lambda *_a, **_k: None,
+        )
+        assert result["generated"] == 0
+        assert result["skipped"] == 1
+        assert client.text_to_speech.convert.call_count == 0
+
+    def test_force_regenerates_existing(self, tmp_path: Path):
+        f = self._write_source(tmp_path, "> 🎙️ Hi.\n")
+        audio_dir = tmp_path / "audio" / "module-00-intro"
+        audio_dir.mkdir(parents=True)
+        (audio_dir / "01_module-00-intro.mp3").write_bytes(b"old")
+        client = _mock_client(b"NEW")
+        result = ga.process_source(
+            f, tmp_path / "audio",
+            client=client, voice_id="V", force=True,
+            print_fn=lambda *_a, **_k: None,
+        )
+        assert result["generated"] == 1
+        assert (audio_dir / "01_module-00-intro.mp3").read_bytes() == b"NEW"
+
+    def test_regenerate_changed_when_text_drifted(self, tmp_path: Path):
+        f = self._write_source(tmp_path, "> 🎙️ NEW text.\n")
+        audio_dir = tmp_path / "audio" / "module-00-intro"
+        audio_dir.mkdir(parents=True)
+        (audio_dir / "01_module-00-intro.mp3").write_bytes(b"old")
+        (audio_dir / "manifest.json").write_text(json.dumps([
+            {"index": 1, "module": "module-00-intro",
+             "audio_file": "01_module-00-intro.mp3",
+             "text": "OLD text.", "size_bytes": 3}
+        ]))
+        client = _mock_client(b"NEW2")
+        result = ga.process_source(
+            f, tmp_path / "audio",
+            client=client, voice_id="V", regenerate_changed=True,
+            print_fn=lambda *_a, **_k: None,
+        )
+        assert result["generated"] == 1
+        # Manifest now reflects the new text.
+        manifest = json.loads((audio_dir / "manifest.json").read_text())
+        assert manifest[0]["text"] == "NEW text."
+
+    def test_dry_run_no_api_no_filesystem_writes(self, tmp_path: Path):
+        f = self._write_source(tmp_path, "> 🎙️ Block one.\n")
+        client = _mock_client()
+        result = ga.process_source(
+            f, tmp_path / "audio",
+            client=client, voice_id="V", dry_run=True,
+            print_fn=lambda *_a, **_k: None,
+        )
+        assert result["generated"] == 0
+        assert result["would_generate"] == 1
+        assert result["chars_sent"] == 0
+        assert client.text_to_speech.convert.call_count == 0
+        # No manifest written under dry-run.
+        assert not (tmp_path / "audio" / "module-00-intro" / "manifest.json").exists()
+
+    def test_dry_run_skips_orphan_cleanup(self, tmp_path: Path):
+        f = self._write_source(tmp_path, "> 🎙️ Block one.\n")
+        audio_dir = tmp_path / "audio" / "module-00-intro"
+        audio_dir.mkdir(parents=True)
+        (audio_dir / "99_orphan.mp3").write_bytes(b"orphan")
+        client = _mock_client()
+        ga.process_source(
+            f, tmp_path / "audio",
+            client=client, voice_id="V", dry_run=True,
+            print_fn=lambda *_a, **_k: None,
+        )
+        # Orphan MUST still exist after dry-run.
+        assert (audio_dir / "99_orphan.mp3").exists()
+
+    def test_orphan_cleanup_on_real_run(self, tmp_path: Path):
+        f = self._write_source(tmp_path, "> 🎙️ Only block.\n")
+        audio_dir = tmp_path / "audio" / "module-00-intro"
+        audio_dir.mkdir(parents=True)
+        (audio_dir / "99_orphan.mp3").write_bytes(b"orphan")
+        client = _mock_client()
+        result = ga.process_source(
+            f, tmp_path / "audio",
+            client=client, voice_id="V",
+            print_fn=lambda *_a, **_k: None,
+        )
+        assert result["orphans_removed"] == ["99_orphan.mp3"]
+        assert not (audio_dir / "99_orphan.mp3").exists()
+
+    def test_writes_manifest_with_stripped_text(self, tmp_path: Path):
+        f = self._write_source(
+            tmp_path,
+            "> 🎙️ Has **bold** and *italic*.\n",
+        )
+        client = _mock_client()
+        ga.process_source(
+            f, tmp_path / "audio",
+            client=client, voice_id="V",
+            print_fn=lambda *_a, **_k: None,
+        )
+        manifest = json.loads(
+            (tmp_path / "audio" / "module-00-intro" / "manifest.json").read_text()
+        )
+        assert manifest[0]["text"] == "Has bold and italic."
+        # Stripped text is also what was sent to ElevenLabs.
+        kwargs = client.text_to_speech.convert.call_args.kwargs
+        assert kwargs["text"] == "Has bold and italic."
+
+    def test_manifest_record_shape(self, tmp_path: Path):
+        f = self._write_source(tmp_path, "> 🎙️ Block.\n")
+        client = _mock_client(b"x" * 7)
+        ga.process_source(
+            f, tmp_path / "audio",
+            client=client, voice_id="V",
+            print_fn=lambda *_a, **_k: None,
+        )
+        manifest = json.loads(
+            (tmp_path / "audio" / "module-00-intro" / "manifest.json").read_text()
+        )
+        assert manifest[0] == {
+            "index": 1,
+            "module": "module-00-intro",
+            "audio_file": "01_module-00-intro.mp3",
+            "text": "Block.",
+            "size_bytes": 7,
+        }
+
+    def test_no_blocks_returns_empty_manifest(self, tmp_path: Path):
+        f = self._write_source(tmp_path, "# Just prose, no narration.\n")
+        client = _mock_client()
+        result = ga.process_source(
+            f, tmp_path / "audio",
+            client=client, voice_id="V",
+            print_fn=lambda *_a, **_k: None,
+        )
+        assert result["manifest"] == []
+        assert result["generated"] == 0
+        assert client.text_to_speech.convert.call_count == 0
+
+
+# ---------------------------------------------------------------------------
+# Source file selection.
+# ---------------------------------------------------------------------------
+
+
+class TestSelectSourceFiles:
+    def test_default_glob_matches_module_only(self, tmp_path: Path):
+        src = tmp_path / "source"
+        src.mkdir()
+        for name in ("module-00.md", "module-01.md", "crash-course.md", "README.md"):
+            (src / name).write_text("x")
+        files = ga.select_source_files(src)
+        assert sorted(f.name for f in files) == ["module-00.md", "module-01.md"]
+
+    def test_all_includes_auxiliary_files(self, tmp_path: Path):
+        src = tmp_path / "source"
+        src.mkdir()
+        for name in ("module-00.md", "crash-course.md", "appendix.md"):
+            (src / name).write_text("x")
+        files = ga.select_source_files(src, include_all=True)
+        assert sorted(f.name for f in files) == [
+            "appendix.md", "crash-course.md", "module-00.md",
+        ]
+
+    def test_explicit_file_returned_directly(self, tmp_path: Path):
+        src = tmp_path / "source"
+        src.mkdir()
+        f = src / "anywhere.md"
+        f.write_text("x")
+        assert ga.select_source_files(src, explicit=f) == [f]
+
+    def test_explicit_directory_globs(self, tmp_path: Path):
+        d = tmp_path / "elsewhere"
+        d.mkdir()
+        for name in ("a.md", "b.md", "c.txt"):
+            (d / name).write_text("x")
+        files = ga.select_source_files(tmp_path / "source-unused", explicit=d)
+        assert sorted(f.name for f in files) == ["a.md", "b.md"]
+
+    def test_explicit_missing_returns_empty(self, tmp_path: Path):
+        src = tmp_path / "source"
+        src.mkdir()
+        files = ga.select_source_files(src, explicit=tmp_path / "no-exist")
+        assert files == []
