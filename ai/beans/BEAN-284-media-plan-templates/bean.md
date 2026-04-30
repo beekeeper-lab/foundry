@@ -107,7 +107,6 @@ A new Foundry project optionally arrives with `IMAGE-PLAN.md` and `NARRATION-PLA
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 01 | Implement templates + spec field + scaffolder | Developer | — | — | — | — |
-| 02 | Verify acceptance criteria | Tech-QA | — | — | — | — |
-| 01 | Implement templates + spec field + scaffolder | Developer | — | — | — | — |
-| 02 | Verify acceptance criteria | Tech-QA | — | — | — | — |
+| 01 | Implement templates + spec field + scaffolder | Developer | 4m | — | — | — |
+| 02 | Verify acceptance criteria | Tech-QA | 1m | — | — | — |
+| **Total** | 2 tasks | — | **5m** | — | — | — |
