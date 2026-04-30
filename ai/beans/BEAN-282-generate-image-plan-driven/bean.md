@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-282 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-29 |
 | **Started** | 2026-04-29 19:49 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-04-29 20:10 |
+| **Duration** | 1559h 3m |
 | **Owner** | (unassigned) |
 | **Category** | App |
 | **Depends On** | BEAN-280, BEAN-281 |
@@ -100,7 +100,7 @@ A single `generate-image` skill in ClaudeKit that supports both **plan-driven ba
 |---|------|-------|------------|--------|
 | 01 | ADR — multi-provider routing | Architect | — | Done |
 | 02 | generate-image plan-driven rewrite | Developer | 01 | Done |
-| 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Pending |
+| 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Done |
 
 > Activated: Architect (new external dependency: OpenAI SDK; provider-routing format), Developer, Tech-QA.
 > Skipped: BA (requirements concrete from `AGENTIC-MEDIA-SKILLS.md`).
@@ -109,7 +109,16 @@ A single `generate-image` skill in ClaudeKit that supports both **plan-driven ba
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `.claude/shared` (submodule pointer bump) | 1 |
+| `ai/beans/BEAN-282-.../bean.md` | 11 |
+| `ai/beans/BEAN-282-.../tasks/01-architect-multiprovider-routing-adr.md` | 74 |
+| `ai/beans/BEAN-282-.../tasks/02-developer-generate-image-rewrite.md` | 99 |
+| `ai/beans/BEAN-282-.../tasks/03-tech-qa-verify-generate-image.md` | 122 |
+| `ai/context/decisions.md` (ADR-010) | 334 |
+| `tests/test_generate_image.py` | 935 |
+| **Total** | **1573 insertions, 4 deletions** |
+
+> Submodule changes (in `.claude/shared`): `generate-image/generate_image.py` rewrite (~830 lines) + `generate-image/SKILL.md` rewrite. See submodule history for line counts.
 
 ## Notes
 
