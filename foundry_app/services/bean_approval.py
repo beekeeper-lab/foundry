@@ -36,6 +36,18 @@ _PLACEHOLDER_BODY_LINES = {
     # It is part of the template, not user-supplied content — treat it as
     # placeholder so the approval gate still rejects an unfilled template.
     "> Authored by: BA (when activated) | Team-Lead (default)",
+    # BEAN-277 added the criterion-prefix convention guidance under the AC
+    # heading. These multi-line blockquotes are template scaffolding, not
+    # user content.
+    "> Authored by: BA (when activated) | Team-Lead (default).",
+    "> Prefix each item with an evidence-type tag so `/vdd` can verify it",
+    "> automatically. See `ai/context/vdd-policy.md` for the full convention.",
+    "> Recognized prefixes: `(test:<path>)`, `(lint:<path>)`, `(file:<glob>)`,",
+    "> `(file-contains:<glob>::<substring>)`. Unprefixed items become manual.",
+    # BEAN-277 added two example AC lines that ship with the template; they
+    # are illustrative scaffolding, not real bean content.
+    "- [ ] (test:tests/test_foo.py::test_bar) Example prefixed criterion — runs pytest",
+    "- [ ] Criterion without a prefix becomes a manual sign-off",
 }
 
 # Acceptance-criteria lines that are boilerplate (real, but every bean carries
@@ -43,6 +55,9 @@ _PLACEHOLDER_BODY_LINES = {
 _BOILERPLATE_CRITERIA = {
     "- [ ] All tests pass (`uv run pytest`)",
     "- [ ] Lint clean (`uv run ruff check foundry_app/`)",
+    # BEAN-277 added prefixed equivalents of the same boilerplate criteria.
+    "- [ ] (test:tests/) All tests pass (`uv run pytest`)",
+    "- [ ] (lint:foundry_app/) Lint clean (`uv run ruff check foundry_app/`)",
 }
 
 

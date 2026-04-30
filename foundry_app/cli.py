@@ -72,6 +72,28 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Git URL for claude-kit subtree repo (sets up .claude/ via subtree instead of copy)",
     )
 
+    vdd = sub.add_parser(
+        "vdd",
+        help="Run the programmatic VDD gate against a bean's acceptance criteria.",
+    )
+    vdd.add_argument("bean_id", type=str, help="Bean ID (e.g., 277 or BEAN-277)")
+    vdd.add_argument(
+        "--manual",
+        choices=["pending", "pass"],
+        default="pending",
+        help=(
+            "How to treat unprefixed (manual) criteria: 'pending' makes the "
+            "verdict PARTIAL (default); 'pass' upgrades to PASS when all "
+            "programmatic criteria pass."
+        ),
+    )
+    vdd.add_argument(
+        "--repo-root",
+        type=str,
+        default=None,
+        help="Repository root (default: current working directory).",
+    )
+
     return parser
 
 
@@ -185,6 +207,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "generate":
         return _run_generate(args)
+
+    if args.command == "vdd":
+        from foundry_app.services.vdd import main as vdd_main
+
+        argv = [args.bean_id, "--manual", args.manual]
+        if args.repo_root:
+            argv.extend(["--repo-root", args.repo_root])
+        return vdd_main(argv)
 
     parser.print_help()
     return EXIT_SUCCESS

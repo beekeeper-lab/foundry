@@ -32,12 +32,16 @@ What is the desired outcome when this bean is complete?
 
 ## Acceptance Criteria
 
-> Authored by: BA (when activated) | Team-Lead (default)
+> Authored by: BA (when activated) | Team-Lead (default).
+> Prefix each item with an evidence-type tag so `/vdd` can verify it
+> automatically. See `ai/context/vdd-policy.md` for the full convention.
+> Recognized prefixes: `(test:<path>)`, `(lint:<path>)`, `(file:<glob>)`,
+> `(file-contains:<glob>::<substring>)`. Unprefixed items become manual.
 
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+- [ ] (test:tests/test_foo.py::test_bar) Example prefixed criterion — runs pytest
+- [ ] Criterion without a prefix becomes a manual sign-off
+- [ ] (test:tests/) All tests pass (`uv run pytest`)
+- [ ] (lint:foundry_app/) Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
