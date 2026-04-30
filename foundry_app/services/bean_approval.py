@@ -32,6 +32,10 @@ _PLACEHOLDER_BODY_LINES = {
     "- Item 2",
     "- [ ] Criterion 1",
     "- [ ] Criterion 2",
+    # BEAN-275 added a static "Authored by" subnote under the AC heading.
+    # It is part of the template, not user-supplied content — treat it as
+    # placeholder so the approval gate still rejects an unfilled template.
+    "> Authored by: BA (when activated) | Team-Lead (default)",
 }
 
 # Acceptance-criteria lines that are boilerplate (real, but every bean carries
