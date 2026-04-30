@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-283 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-29 |
-| **Started** | — |
+| **Started** | 2026-04-29 20:11 |
 | **Completed** | — |
 | **Duration** | — |
 | **Owner** | (unassigned) |
@@ -91,7 +91,9 @@ A new `generate-audio` skill in ClaudeKit that scans source markdown for `> 🎙
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | ADR — audio skill design | Architect | — | Pending |
+| 02 | generate-audio implementation | Developer | 01 | Pending |
+| 03 | Verify acceptance criteria | Tech-QA | 01, 02 | Pending |
 
 > Activated: Architect (new external dependency: ElevenLabs SDK; manifest format is a cross-system contract via content-hash), Developer, Tech-QA.
 > Skipped: BA (requirements concrete from `AGENTIC-MEDIA-SKILLS.md`).
@@ -126,3 +128,6 @@ A new `generate-audio` skill in ClaudeKit that scans source markdown for `> 🎙
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
+| 01 | ADR — audio skill design | Architect | — | — | — | — |
+| 02 | generate-audio implementation | Developer | — | — | — | — |
+| 03 | Verify acceptance criteria | Tech-QA | — | — | — | — |
