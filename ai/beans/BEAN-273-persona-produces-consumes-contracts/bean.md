@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-273 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-30 10:40 |
+| **Completed** | 2026-04-30 11:04 |
+| **Duration** | 1573h 57m |
+| **Owner** | team-lead |
 | **Category** | Infra |
 | **Depends On** | — |
 
@@ -63,9 +63,12 @@ Every persona file declares a frontmatter (or sibling YAML) block listing the ar
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Define artifact-type registry content | BA | — | Done |
+| 2 | ADR — contract format, location, loader integration | Architect | 01 | Done |
+| 3 | Implement registry, persona contracts, loader, compiler emission | Developer | 02 | Done |
+| 4 | Verify contracts — tests, lint, AC sweep | Tech-QA | 03 | Done |
 
-> Tasks populated by Team-Lead. Likely wave: BA (define the artifact-type registry — this is requirements work), Architect (ADR for the contract format and where it lives), Developer (registry file + persona edits + indexer changes), Tech-QA (verification).
+> Wave: BA → Architect → Developer → Tech-QA. BA + Architect engaged per bean Notes ("BA + Architect required") and engagement rules (BA #4 spec/doc work; Architect #1 new module/dir, #5 schema/format, #7 foundation for BEAN-274/276). Tech-QA mandatory.
 
 ## Changes
 
@@ -93,12 +96,15 @@ Every persona file declares a frontmatter (or sibling YAML) block listing the ar
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Define artifact-type registry content | BA | 3m | 442,752 | 3,344 | $0.94 |
+| 2 | ADR — contract format, location, loader integration | Architect | 5m | 234,395 | 1,771 | $0.50 |
+| 3 | Implement registry, persona contracts, loader, compiler emission | Developer | 6m | 376,346 | 3,493 | $0.85 |
+| 4 | Verify contracts — tests, lint, AC sweep | Tech-QA | 4m | 398,687 | 3,038 | $0.85 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 4 |
+| **Total Duration** | 18m |
+| **Total Tokens In** | 1,452,180 |
+| **Total Tokens Out** | 11,646 |
+| **Total Cost** | $3.14 |

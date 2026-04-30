@@ -5,7 +5,10 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import yaml
+
 from foundry_app.core.models import (
+    ArtifactTypeInfo,
     ExpertiseInfo,
     HookPackInfo,
     LibraryIndex,
@@ -13,6 +16,9 @@ from foundry_app.core.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Artifact-type registry fields (kebab-case in YAML, snake_case on the model).
+_REGISTRY_REQUIRED_FIELDS = ("name", "description", "format", "required-fields")
 
 
 def _parse_persona_category(path: Path) -> str:
@@ -33,7 +39,187 @@ def _parse_persona_category(path: Path) -> str:
     return ""
 
 
-def _scan_personas(personas_dir: Path) -> list[PersonaInfo]:
+def _load_artifact_type_registry(contracts_dir: Path) -> list[ArtifactTypeInfo]:
+    """Load and parse ``contracts/artifact-types.yml``.
+
+    Returns an empty list (with a logger.warning) if the file is missing,
+    malformed, or has no ``types:`` key. Per ADR-013, every name referenced
+    by a persona's ``contracts.yml`` must resolve to an entry returned here.
+
+    Each entry must have ``name``, ``description``, ``format``, and
+    ``required-fields`` keys; ``template-path`` is optional and may be null.
+    A missing required key on an entry raises ``ValueError`` naming the
+    offending entry so the failure is actionable.
+    """
+    registry_file = contracts_dir / "artifact-types.yml"
+    if not registry_file.is_file():
+        logger.warning(
+            "Artifact-type registry not found: %s — contracts emission will be empty",
+            registry_file,
+        )
+        return []
+
+    try:
+        data = yaml.safe_load(registry_file.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        logger.warning("Artifact-type registry is malformed YAML: %s — %s", registry_file, exc)
+        return []
+    except OSError as exc:
+        logger.warning("Cannot read artifact-type registry: %s — %s", registry_file, exc)
+        return []
+
+    if not isinstance(data, dict) or "types" not in data:
+        logger.warning(
+            "Artifact-type registry has no 'types:' key: %s",
+            registry_file,
+        )
+        return []
+
+    raw_types = data.get("types") or []
+    if not isinstance(raw_types, list):
+        logger.warning(
+            "Artifact-type registry 'types:' is not a list: %s",
+            registry_file,
+        )
+        return []
+
+    artifact_types: list[ArtifactTypeInfo] = []
+    for idx, entry in enumerate(raw_types):
+        if not isinstance(entry, dict):
+            raise ValueError(
+                f"Artifact-type registry entry #{idx} in {registry_file} "
+                f"is not a mapping: {entry!r}"
+            )
+        for required in _REGISTRY_REQUIRED_FIELDS:
+            if required not in entry:
+                name_for_msg = entry.get("name", f"<entry #{idx}>")
+                raise ValueError(
+                    f"Artifact-type registry entry '{name_for_msg}' in "
+                    f"{registry_file} is missing required field "
+                    f"'{required}'"
+                )
+        required_fields = entry.get("required-fields") or []
+        if not isinstance(required_fields, list):
+            raise ValueError(
+                f"Artifact-type registry entry '{entry.get('name')}' in "
+                f"{registry_file} has non-list 'required-fields'"
+            )
+        artifact_types.append(
+            ArtifactTypeInfo(
+                name=str(entry["name"]),
+                description=str(entry.get("description") or ""),
+                format=str(entry.get("format") or "markdown"),
+                required_fields=[str(f) for f in required_fields],
+                template_path=(
+                    str(entry["template-path"])
+                    if entry.get("template-path") is not None
+                    else None
+                ),
+            )
+        )
+    return artifact_types
+
+
+def _load_persona_contracts(
+    persona_dir: Path,
+    known_artifact_names: set[str],
+) -> tuple[list[str], list[str]]:
+    """Read ``<persona_dir>/contracts.yml`` and return (produces, consumes).
+
+    Validates each name against ``known_artifact_names`` and drops unknown
+    names with a logger.warning ("Artifact type '<name>' not found in
+    registry (referenced by persona '<id>' contracts.yml)"). Duplicates
+    within a list are deduped silently while preserving first-seen order.
+
+    Returns ``([], [])`` if the file is missing or malformed.
+    """
+    contracts_file = persona_dir / "contracts.yml"
+    if not contracts_file.is_file():
+        return [], []
+
+    try:
+        data = yaml.safe_load(contracts_file.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        logger.warning(
+            "Persona contracts.yml is malformed YAML: %s — %s",
+            contracts_file,
+            exc,
+        )
+        return [], []
+    except OSError as exc:
+        logger.warning(
+            "Cannot read persona contracts.yml: %s — %s", contracts_file, exc,
+        )
+        return [], []
+
+    if not isinstance(data, dict):
+        logger.warning(
+            "Persona contracts.yml is not a mapping: %s", contracts_file,
+        )
+        return [], []
+
+    persona_id = persona_dir.name
+
+    def _clean(key: str) -> list[str]:
+        raw = data.get(key) or []
+        if not isinstance(raw, list):
+            logger.warning(
+                "Persona '%s' contracts.yml '%s:' is not a list",
+                persona_id,
+                key,
+            )
+            return []
+        seen: set[str] = set()
+        out: list[str] = []
+        for item in raw:
+            name = str(item).strip()
+            if not name or name in seen:
+                continue
+            if name not in known_artifact_names:
+                logger.warning(
+                    "Artifact type '%s' not found in registry "
+                    "(referenced by persona '%s' contracts.yml)",
+                    name,
+                    persona_id,
+                )
+                continue
+            seen.add(name)
+            out.append(name)
+        return out
+
+    return _clean("produces"), _clean("consumes")
+
+
+def _log_dangling_producers(personas: list[PersonaInfo]) -> None:
+    """Emit INFO log entries for produced artifact types with no consumer.
+
+    Per ADR-013: ``dev-decision`` and similar types are legal but warned —
+    we surface them as INFO (not WARNING) so reviewers can see them in CI
+    output without failing the build. ``handoff-packet`` is excluded from
+    this check because it is universally produced and consumed implicitly
+    by team-lead at handoff time.
+    """
+    consumed: set[str] = set()
+    for persona in personas:
+        consumed.update(persona.consumes)
+
+    for persona in personas:
+        for name in persona.produces:
+            if name == "handoff-packet":
+                continue
+            if name not in consumed:
+                logger.info(
+                    "Dangling producer: artifact type '%s' is produced by "
+                    "persona '%s' but no persona consumes it",
+                    name,
+                    persona.id,
+                )
+
+
+def _scan_personas(
+    personas_dir: Path,
+    known_artifact_names: set[str],
+) -> list[PersonaInfo]:
     """Scan the personas/ directory and return PersonaInfo for each subdirectory."""
     if not personas_dir.is_dir():
         logger.warning("Personas directory not found: %s", personas_dir)
@@ -52,6 +238,7 @@ def _scan_personas(personas_dir: Path) -> list[PersonaInfo]:
             )
 
         persona_md = entry / "persona.md"
+        produces, consumes = _load_persona_contracts(entry, known_artifact_names)
         personas.append(
             PersonaInfo(
                 id=entry.name,
@@ -61,6 +248,8 @@ def _scan_personas(personas_dir: Path) -> list[PersonaInfo]:
                 has_prompts_md=(entry / "prompts.md").is_file(),
                 templates=templates,
                 category=_parse_persona_category(persona_md),
+                produces=produces,
+                consumes=consumes,
             )
         )
 
@@ -346,18 +535,25 @@ def build_library_index(library_root: str | Path) -> LibraryIndex:
         logger.warning("Library root does not exist: %s", root)
         return LibraryIndex(library_root=str(root))
 
-    personas = _scan_personas(root / "personas")
+    artifact_types = _load_artifact_type_registry(root / "contracts")
+    known_artifact_names = {a.name for a in artifact_types}
+
+    personas = _scan_personas(root / "personas", known_artifact_names)
     expertise = _scan_expertise(root / "expertise")
     expertise = _validate_expertise_applies_to(
         expertise, {p.id for p in personas},
     )
     hook_packs = _scan_hook_packs(root / "claude" / "hooks")
 
+    # Dangling-producer pass — INFO log per ADR-013 ambiguity resolution.
+    _log_dangling_producers(personas)
+
     logger.info(
-        "Indexed library: %d personas, %d expertise, %d hook packs",
+        "Indexed library: %d personas, %d expertise, %d hook packs, %d artifact types",
         len(personas),
         len(expertise),
         len(hook_packs),
+        len(artifact_types),
     )
 
     return LibraryIndex(
@@ -365,4 +561,5 @@ def build_library_index(library_root: str | Path) -> LibraryIndex:
         personas=personas,
         expertise=expertise,
         hook_packs=hook_packs,
+        artifact_types=artifact_types,
     )
