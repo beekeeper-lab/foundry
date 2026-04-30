@@ -11,12 +11,6 @@ Run the Python linter against the project.
 - `path` -- Optional file or directory (default: project package root).
 - `--fix` -- Apply safe autofixes.
 
-## Process
-
-1. **Detect tool** — `ruff check` (`uv run ruff check` if `uv` is in use).
-2. **Run** — Lint the requested path.
-3. **Report** — Print violations grouped by rule code; exit non-zero on errors.
-
 ## Examples
 
 ```
@@ -27,4 +21,4 @@ Run the Python linter against the project.
 
 ## Notes
 
-This command **invokes** the user-configured linter (settings in `pyproject.toml` under `[tool.ruff]`). It does not install or configure ruff.
+This command **invokes** the user-configured linter — `ruff check` (`uv run ruff check` if `uv` is in use). Settings come from `[tool.ruff]` in `pyproject.toml`. Violations are grouped by rule code; non-zero exit on errors. No paired skill — there is no project-spanning execution logic to abstract.

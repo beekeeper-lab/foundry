@@ -152,7 +152,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
 
 5. **Select independent beans** — From the actionable set, select up to N beans that have no unmet inter-bean dependencies. Beans that depend on other pending or in-progress beans are queued, not parallelized.
 6. **Update bean statuses** — For each selected bean, update `_index.md` to set status to `In Progress` and owner to `team-lead`. Commit this index update on `main` before spawning workers. (Workers will update their own `bean.md` independently; they must NOT touch `_index.md`.)
-7. **Write initial status files** — For each selected bean, create a status file at `/tmp/agentic-worker-BEAN-NNN.status` with `status: starting`. This allows the dashboard to track the worker immediately. See the Status File Protocol in `/spawn-bean` for the full file format and status values (`starting`, `decomposing`, `running`, `blocked`, `error`, `done`).
+7. **Write initial status files** — For each selected bean, create a status file at `/tmp/agentic-worker-BEAN-NNN.status` with `status: starting`. This allows the dashboard to track the worker immediately. See the **Status File Protocol** section below for the full file format and status values.
 8. **Create worktrees and spawn workers** — For each selected bean, create an isolated git worktree, then create a launcher script and open a tmux child window:
    ```bash
    WORKTREE_DIR="/tmp/agentic-worktree-BEAN-NNN"
@@ -197,7 +197,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    - Update the status file updated timestamp after every task completion as a heartbeat signal.
 
    STATUS FILE PROTOCOL — You MUST update /tmp/agentic-worker-BEAN-NNN.status at every transition.
-   See /spawn-bean command for full status file format and update rules."
+   See the Status File Protocol section in this skill for full status file format and update rules."
    SCRIPT_EOF
    chmod +x "$LAUNCHER"
    tmux new-window -n "bean-NNN" "bash $LAUNCHER; rm -f $LAUNCHER"
@@ -246,6 +246,107 @@ The loop runs indefinitely until the backlog is exhausted. There is no maximum b
 - If fewer than N independent beans are available, spawn only as many workers as there are beans.
 - Never assign the same bean to multiple workers.
 - The main window orchestrates only — it does not process beans itself.
+
+---
+
+## Status File Protocol
+
+Workers communicate progress back to the main window via status files in `/tmp/`. This enables the orchestrator's dashboard to display live state without polling the workers directly. The protocol is shared with `/spawn-bean` (which is a thin invocation wrapper that uses the same workers and the same files).
+
+### File Location
+
+Each worker writes to: `/tmp/agentic-worker-BEAN-NNN.status`
+
+For a single auto-pick worker (e.g., `/spawn-bean` with no args), the initial filename is `/tmp/agentic-worker-auto-1.status`. Once the worker picks a bean it renames the file to the real bean ID. When using pre-assigned beans (`--fast N` or `/spawn-bean <ids>` or `--count N`), all status files use the real bean ID from the start.
+
+### File Format
+
+```
+bean: BEAN-018
+title: Library Indexer Service
+tasks_total: 4
+tasks_done: 2
+current_task: 03-developer-implement
+status: running
+message:
+worktree: /tmp/agentic-worktree-BEAN-018
+updated: 2026-02-07T14:32:01
+```
+
+### Status Values
+
+| Status | Meaning | Dashboard Color |
+|--------|---------|-----------------|
+| `starting` | Worker launched, claude initializing | ⚪ White/dim |
+| `decomposing` | Breaking bean into tasks | 🔵 Blue |
+| `running` | Executing tasks normally | 🟢 Green |
+| `blocked` | Needs human input — see `message` field | 🔴 Red |
+| `error` | Hit an unrecoverable error — see `message` | 🟠 Orange |
+| `done` | Bean completed successfully | ✅ Done |
+
+### When Workers Update the Status File
+
+Workers must update their status file at each of these transitions:
+
+1. **After picking a bean** — Set `status: decomposing`, fill in `bean`, `title`.
+2. **After decomposing into tasks** — Set `status: running`, fill in `tasks_total`, `tasks_done: 0`, `current_task`.
+3. **After completing each task** — Increment `tasks_done`, update `current_task` to the next task.
+4. **On blocker** — Set `status: blocked`, write explanation in `message`.
+5. **On error** — Set `status: error`, write error details in `message`.
+6. **On completion** — Set `status: done`, `tasks_done` equals `tasks_total`, clear `current_task`.
+
+Always update the `updated` timestamp when writing.
+
+### Dashboard Display Format
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  Bean Workers — 3 active                          14:32:01     ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                 ║
+║  BEAN-018  Library Indexer Service     ████████░░  50% (2/4)    ║
+║  🟢 Running — 03-developer-implement                           ║
+║                                                                 ║
+║  BEAN-019  Wizard Project Identity     ██████████░ 75% (3/4)    ║
+║  🟢 Running — 04-tech-qa-tests                                 ║
+║                                                                 ║
+║  BEAN-020  Wizard Persona Selection    ███░░░░░░░  25% (1/4)    ║
+║  🔴 FEEDBACK NEEDED — Need clarification on persona filter UX   ║
+║     → Switch to worker: Alt-3                                   ║
+║                                                                 ║
+╚══════════════════════════════════════════════════════════════════╝
+
+⚠  1 worker needs attention — see 🔴 above
+```
+
+Render with simple `print()` output and Unicode box-drawing characters. The progress bar uses `█` (filled) and `░` (empty) with 10 segments. Color indicators use emoji since they render in all terminals.
+
+### Alerting on Blocked Workers
+
+When a worker has `status: blocked`:
+- The dashboard highlights that row with 🔴 and shows the `message` text.
+- Below the table, print a prominent alert: `⚠  N worker(s) need attention`.
+- Include the window switch shortcut so the user can jump there immediately.
+
+### Tiled (`--wide`) Mode for `/spawn-bean`
+
+When invoked via `/spawn-bean --wide`, all workers share a single tmux window as tiled panes (instead of separate windows):
+
+```bash
+# First worker creates the window
+tmux new-window -n "workers" "bash $LAUNCHER_1; rm -f $LAUNCHER_1"
+
+# Additional workers split into panes within that window
+tmux split-window -t "workers" "bash $LAUNCHER_2; rm -f $LAUNCHER_2"
+tmux split-window -t "workers" "bash $LAUNCHER_3; rm -f $LAUNCHER_3"
+
+# Auto-arrange into an even grid
+tmux select-layout -t "workers" tiled
+```
+
+The `tiled` layout automatically arranges panes into a grid: 2 = side-by-side, 4 = 2x2, 6 = 2x3, etc. Each pane auto-closes when its claude exits. To force-kill a pane: switch to the "workers" window, select the pane, and use the kill-pane shortcut. Then also remove the worktree.
+
+The default (non-`--wide`) mode gives each worker its own tmux window — easier to navigate one bean at a time, while `--wide` is ideal for monitoring all workers on a wide monitor.
 
 ---
 

@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-249 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-30 08:53 |
+| **Completed** | 2026-04-30 09:09 |
+| **Duration** | 1572h 2m |
+| **Owner** | team-lead |
 | **Category** | Infra |
 
 ## Problem Statement
@@ -43,20 +43,21 @@ Every library-shipped command is a short trigger (≤30 lines) that names the sk
 
 ## Acceptance Criteria
 
-- [ ] An audit table in `ai/outputs/team-lead/bean-249-command-skill-audit.md` lists every library command/skill pair with before/after line counts.
-- [ ] Every `ai-team-library/claude/commands/*.md` is ≤30 lines of content (front matter + one-sentence description + usage + skill pointer).
-- [ ] No command file contains "Process" or "Error Conditions" sections; those live only in skills.
-- [ ] `uv run foundry-cli generate examples/small-python-team.yml --library ai-team-library` still emits every expected command file.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] An audit table in `ai/outputs/team-lead/bean-249-command-skill-audit.md` lists every library command/skill pair with before/after line counts.
+- [x] Every `ai-team-library/claude/commands/*.md` is ≤30 lines of content (front matter + one-sentence description + usage + skill pointer).
+- [x] No command file contains "Process" or "Error Conditions" sections; those live only in skills.
+- [x] `uv run foundry-cli generate examples/small-python-team.yml --library ai-team-library` still emits every expected command file.
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Audit and trim library commands | developer | — | Done |
+| 2 | Verify audit and trim | tech-qa | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
+> Skipped: BA (default), Architect (default) — mechanical audit/trim with clear acceptance criteria, no requirements ambiguity or design decisions.
 
 ## Changes
 
@@ -64,7 +65,55 @@ Every library-shipped command is a short trigger (≤30 lines) that names the sk
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai-team-library/claude/commands/backlog-consolidate.md | 83 |
+| ai-team-library/claude/commands/backlog-refinement.md | 87 |
+| ai-team-library/claude/commands/bean-status.md | 71 |
+| ai-team-library/claude/commands/build-traceability.md | 74 |
+| ai-team-library/claude/commands/compile-team.md | 86 |
+| ai-team-library/claude/commands/deploy.md | 54 |
+| ai-team-library/claude/commands/dev-loop/node/build.md | 8 |
+| ai-team-library/claude/commands/dev-loop/node/dev.md | 8 |
+| ai-team-library/claude/commands/dev-loop/node/format.md | 8 |
+| ai-team-library/claude/commands/dev-loop/node/lint.md | 8 |
+| ai-team-library/claude/commands/dev-loop/node/test.md | 8 |
+| ai-team-library/claude/commands/dev-loop/python/build.md | 8 |
+| ai-team-library/claude/commands/dev-loop/python/dev.md | 8 |
+| ai-team-library/claude/commands/dev-loop/python/format.md | 8 |
+| ai-team-library/claude/commands/dev-loop/python/lint.md | 8 |
+| ai-team-library/claude/commands/dev-loop/python/test.md | 8 |
+| ai-team-library/claude/commands/handoff.md | 81 |
+| ai-team-library/claude/commands/long-run.md | 252 |
+| ai-team-library/claude/commands/merge-bean.md | 82 |
+| ai-team-library/claude/commands/new-adr.md | 72 |
+| ai-team-library/claude/commands/new-bean.md | 67 |
+| ai-team-library/claude/commands/new-dev-decision.md | 89 |
+| ai-team-library/claude/commands/new-work.md | 90 |
+| ai-team-library/claude/commands/notes-to-stories.md | 74 |
+| ai-team-library/claude/commands/pick-bean.md | 53 |
+| ai-team-library/claude/commands/release-notes.md | 83 |
+| ai-team-library/claude/commands/review-beans.md | 45 |
+| ai-team-library/claude/commands/review-pr.md | 86 |
+| ai-team-library/claude/commands/risk-liability.md | 94 |
+| ai-team-library/claude/commands/run.md | 12 |
+| ai-team-library/claude/commands/scaffold-project.md | 72 |
+| ai-team-library/claude/commands/seed-tasks.md | 92 |
+| ai-team-library/claude/commands/show-backlog.md | 33 |
+| ai-team-library/claude/commands/spawn-bean.md | 339 |
+| ai-team-library/claude/commands/status-report.md | 96 |
+| ai-team-library/claude/commands/telemetry-report.md | 21 |
+| ai-team-library/claude/commands/threat-model.md | 74 |
+| ai-team-library/claude/commands/trello-load.md | 104 |
+| ai-team-library/claude/commands/update-docs.md | 78 |
+| ai-team-library/claude/commands/validate-config.md | 88 |
+| ai-team-library/claude/commands/validate-repo.md | 76 |
+| ai-team-library/claude/skills/long-run/SKILL.md | 105 |
+| ai/beans/BEAN-249-audit-library-command-skill-duplication/bean.md | 40 |
+| ai/beans/BEAN-249-audit-library-command-skill-duplication/tasks/01-developer-audit-and-trim.md | 60 |
+| ai/beans/BEAN-249-audit-library-command-skill-duplication/tasks/02-tech-qa-verify.md | 48 |
+| ai/beans/_index.md | 2 |
+| ai/outputs/team-lead/bean-249-command-skill-audit.md | 101 |
+| ai/outputs/tech-qa/bean-249-verification.md | 60 |
+| **Total** | **48 files: +623 / -2581** |
 
 ## Notes
 
@@ -84,12 +133,13 @@ Every library-shipped command is a short trigger (≤30 lines) that names the sk
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Audit and trim library commands | developer | 13m | 627,657 | 4,837 | $1.55 |
+| 2 | Verify audit and trim | tech-qa | 2m | 287,940 | 2,393 | $0.64 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 15m |
+| **Total Tokens In** | 915,597 |
+| **Total Tokens Out** | 7,230 |
+| **Total Cost** | $2.19 |

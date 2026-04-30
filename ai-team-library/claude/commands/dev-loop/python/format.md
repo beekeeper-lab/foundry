@@ -11,12 +11,6 @@ Format Python source files according to the project's style.
 - `path` -- Optional file or directory (default: project package root).
 - `--check` -- Report formatting drift without writing changes.
 
-## Process
-
-1. **Detect tool** — `ruff format` (`uv run ruff format` if `uv` is in use).
-2. **Run** — Reformat the requested path or check it.
-3. **Report** — Print the list of files changed (or that would change in `--check` mode).
-
 ## Examples
 
 ```
@@ -27,4 +21,4 @@ Format Python source files according to the project's style.
 
 ## Notes
 
-This command **invokes** the user-configured formatter. Black is also a valid alternative — swap the command if your project uses it.
+This command **invokes** the user-configured formatter — `ruff format` (`uv run ruff format` if `uv` is in use). Black is a valid alternative — swap if your project uses it. Reports the list of files changed (or that would change in `--check` mode). No paired skill.

@@ -12,23 +12,6 @@ Produces an aggregate summary of project telemetry: total time invested, average
 - `--status <status>` -- Filter by bean status. Default: `Done`. Use `all` for everything.
 - `--since YYYY-MM-DD` -- Only include beans created on or after this date.
 
-## Process
+## See Also
 
-See `.claude/skills/telemetry-report/SKILL.md` for the full skill specification.
-
-## Examples
-
-**Full report (all Done beans):**
-```
-/telemetry-report
-```
-
-**App beans only:**
-```
-/telemetry-report --category App
-```
-
-**Everything since Feb 9:**
-```
-/telemetry-report --since 2026-02-09
-```
+- Skill: `claude/skills/telemetry-report/SKILL.md` — canonical execution spec.
