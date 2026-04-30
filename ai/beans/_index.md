@@ -270,9 +270,9 @@
 | BEAN-246 | Wizard Card UX — Collapsed Categories and Click-to-Toggle | App | Medium | Done | team-lead |
 | BEAN-247 | Drop Broken Expertise References from Generated CLAUDE.md | App | High | Done | team-lead |
 | BEAN-248 | Add clean-code Expertise Conventions Content | Infra | Medium | Done | team-lead |
-| BEAN-249 | Audit Library Command/Skill Duplication | Infra | Medium | Deferred | (unassigned) |
+| BEAN-249 | Audit Library Command/Skill Duplication | Infra | Medium | Approved | (unassigned) |
 | BEAN-250 | Rebalance Hook Posture Taxonomy | App | Medium | Done | team-lead |
-| BEAN-251 | Clarify Agent Permission Scope in Generated Projects | App | Medium | Deferred | (unassigned) |
+| BEAN-251 | Clarify Agent Permission Scope in Generated Projects | App | Medium | Approved | (unassigned) |
 | BEAN-252 | Project Purpose Statement / Charter | App | High | Done | team-lead |
 | BEAN-253 | Decide App-Code Scaffolding Policy | Process | High | Done | team-lead |
 | BEAN-254 | Bootstrap Bean for Seeded Tasks | App | High | Done | team-lead |
@@ -280,7 +280,7 @@
 | BEAN-256 | Dev-Loop Commands + Stack-Aware Command Selection | App | High | Done | team-lead |
 | BEAN-257 | Activation Rules for Remaining Personas | Process | Medium | Done | team-lead |
 | BEAN-258 | Code-Quality-Reviewer vs Tech-QA Scope Split | Process | Low | Done | team-lead |
-| BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | Deferred | (unassigned) |
+| BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | Approved | (unassigned) |
 | BEAN-260 | Approval Gate — Command + Criteria | Process | Medium | Done | team-lead |
 | BEAN-261 | Propagate Missing-Expertise Drop to Agent Headers and Member Files | App | High | Done | team-lead |
 | BEAN-262 | Detect Mutually-Exclusive Hook Pack Pairs at Generation Time | App | Medium | Done | team-lead |
@@ -289,7 +289,7 @@
 | BEAN-265 | Sync Library long-run Skill With New Wave Model | Process | High | Done | team-lead |
 | BEAN-266 | Fix CLAUDE.md Title-Casing for Acronyms and Slashed Names | App | Low | Done | team-lead |
 | BEAN-267 | Investigate Reported Agent File Truncation in Multi-Expertise Compositions | App | Medium | Done | team-lead |
-| BEAN-268 | Add Workflow Pointers Section to Generated CLAUDE.md | App | Medium | Deferred | (unassigned) |
+| BEAN-268 | Add Workflow Pointers Section to Generated CLAUDE.md | App | Medium | Approved | (unassigned) |
 | BEAN-269 | Make Team Orchestration Model Explicit in Generated Artifacts | App | High | Done | team-lead |
 | BEAN-270 | `/spawn-task` Persona-Scoped Delegation Command | Process | High | Done | team-lead |
 | BEAN-271 | Tier Library Personas — `core/` vs `extended/` | Infra | High | Deferred | (unassigned) |
