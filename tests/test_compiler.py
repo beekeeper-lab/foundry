@@ -1502,6 +1502,63 @@ class TestLeanClaudeMd:
                 "list to keep them in sync."
             )
 
+    def test_claude_md_workflow_section_present(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        assert "## Workflow" in content
+        assert "ai/beans/_index.md" in content
+        assert "/long-run" in content
+        assert "/show-backlog" in content
+        assert "/pick-bean" in content
+        assert "/new-bean" in content
+        assert "/spawn-task" in content
+        assert "/review-beans" in content
+
+    def test_claude_md_workflow_after_orchestration_before_docs(
+        self, tmp_path: Path,
+    ):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        orch_idx = content.index("## Team Orchestration Model")
+        workflow_idx = content.index("## Workflow")
+        docs_idx = content.index("## Documentation")
+        assert orch_idx < workflow_idx < docs_idx
+
+    def test_claude_md_workflow_section_under_25_lines(
+        self, tmp_path: Path,
+    ):
+        # BEAN-268: signposts are cheap, full docs are expensive — the
+        # Workflow section must stay a pointer, not re-expand into a
+        # detailed walkthrough.
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        workflow_start = content.index("## Workflow")
+        next_heading = content.find("\n## ", workflow_start + 1)
+        section = content[workflow_start:next_heading]
+        line_count = section.count("\n") + 1
+        assert line_count <= 25, (
+            f"Workflow section is {line_count} lines (limit: 25). "
+            "Trim it; signposts only."
+        )
+
 
 # ---------------------------------------------------------------------------
 # compile_project — full integration

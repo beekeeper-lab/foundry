@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-268 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-30 09:39 |
+| **Completed** | 2026-04-30 09:42 |
+| **Duration** | 1572h 35m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -59,27 +59,37 @@ total, not a re-expansion to pre-BEAN-164 size.
 
 ## Acceptance Criteria
 
-- [ ] Generated CLAUDE.md contains a `## Workflow` section naming the
+- [x] Generated CLAUDE.md contains a `## Workflow` section naming the
       bean workflow and the core commands.
-- [ ] Section is ≤25 lines.
-- [ ] An agent reading only CLAUDE.md can discover the bean backlog and
+- [x] Section is ≤25 lines.
+- [x] An agent reading only CLAUDE.md can discover the bean backlog and
       the `/long-run` / `/show-backlog` commands without external
       context.
-- [ ] Tests cover the new section.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] Tests cover the new section.
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Add Workflow section to generated CLAUDE.md | developer | — | Done |
+| 2 | Verify Workflow section | tech-qa | 1 | Done |
+
+> Skipped: BA (default), Architect (default) — small focused enhancement to existing CLAUDE.md generator, no requirements ambiguity, no new design decisions.
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/beans/BEAN-268-claudemd-workflow-pointers/bean.md | 40 |
+| ai/beans/BEAN-268-claudemd-workflow-pointers/tasks/01-developer-workflow-section.md | 38 |
+| ai/beans/BEAN-268-claudemd-workflow-pointers/tasks/02-tech-qa-verify.md | 33 |
+| ai/beans/_index.md | 2 |
+| ai/outputs/tech-qa/bean-268-verification.md | 29 |
+| foundry_app/services/compiler.py | 29 |
+| tests/test_compiler.py | 57 |
+| **Total** | **7 files: +209 / -19** |
 
 ## Notes
 
@@ -107,12 +117,13 @@ are cheap, full docs are expensive. Keep signposts, don't re-expand.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Add Workflow section to generated CLAUDE.md | developer | < 1m | 1,668,905 | 3,916 | $2.90 |
+| 2 | Verify Workflow section | tech-qa | < 1m | 1,507,892 | 3,734 | $2.62 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 3,176,797 |
+| **Total Tokens Out** | 7,650 |
+| **Total Cost** | $5.52 |
