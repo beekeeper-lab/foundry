@@ -180,7 +180,7 @@ def _run_pipeline(
             stage_callback(key, "done", len(result.wrote))
 
     # Stage 1: Scaffold
-    _run_stage("scaffold", scaffold_project, spec, output_dir)
+    _run_stage("scaffold", scaffold_project, spec, output_dir, library_root)
 
     # Stage 2: Compile member prompts
     _run_stage("compile", compile_project, spec, library, library_root, output_dir)

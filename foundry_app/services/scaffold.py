@@ -6,11 +6,18 @@ import logging
 from datetime import date
 from pathlib import Path
 
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+
 from foundry_app import __version__ as _FOUNDRY_VERSION
 from foundry_app.core.models import CompositionSpec, StageResult
 from foundry_app.io.composition_io import save_composition
 
 logger = logging.getLogger(__name__)
+
+_MEDIA_PLAN_FILES = (
+    ("IMAGE-PLAN.md.j2", "IMAGE-PLAN.md"),
+    ("NARRATION-PLAN.md.j2", "NARRATION-PLAN.md"),
+)
 
 # Standard directory structure for a Claude Code project
 _CLAUDE_DIRS = [
@@ -164,9 +171,52 @@ def _render_project_charter(spec: CompositionSpec) -> str:
     )
 
 
+def _render_media_plans(
+    spec: CompositionSpec,
+    library_root: Path,
+    root: Path,
+    created: list[str],
+    warnings: list[str],
+) -> None:
+    """Stamp IMAGE-PLAN.md and NARRATION-PLAN.md at the project root.
+
+    Renders Jinja2 templates from
+    ``<library_root>/templates/media/`` when
+    ``spec.generation.include_media_skills`` is True. Overlay-safe: an
+    existing plan file at the destination is never overwritten.
+    """
+    templates_dir = library_root / "templates" / "media"
+    if not templates_dir.is_dir():
+        warnings.append(
+            f"include_media_skills=True but media templates not found at {templates_dir}"
+        )
+        return
+
+    env = Environment(
+        loader=FileSystemLoader(str(templates_dir)),
+        keep_trailing_newline=True,
+    )
+    context = {"project_name": spec.project.name}
+
+    for template_name, output_name in _MEDIA_PLAN_FILES:
+        dest = root / output_name
+        if dest.exists():
+            logger.info("Media plan already present, not overwriting: %s", dest)
+            continue
+        try:
+            template = env.get_template(template_name)
+        except TemplateNotFound:
+            warnings.append(f"Media plan template missing: {template_name}")
+            continue
+        dest.write_text(template.render(**context), encoding="utf-8")
+        created.append(output_name)
+        logger.info("Wrote media plan: %s", dest)
+
+
 def scaffold_project(
     spec: CompositionSpec,
     output_dir: str | Path,
+    library_root: str | Path | None = None,
 ) -> StageResult:
     """Create the directory skeleton for a generated Claude Code project.
 
@@ -180,6 +230,9 @@ def scaffold_project(
     Args:
         spec: The composition spec describing the project.
         output_dir: Root directory for the generated project.
+        library_root: Path to the ai-team-library root. Required when
+            ``spec.generation.include_media_skills`` is True so the media
+            plan templates can be located. May be omitted otherwise.
 
     Returns:
         A StageResult listing all directories that were created.
@@ -261,6 +314,18 @@ def scaffold_project(
         charter_path.write_text(_render_project_charter(spec), encoding="utf-8")
         created.append(str(charter_path.relative_to(root)))
         logger.info("Wrote starter project charter: %s", charter_path)
+
+    # Stamp media plan skeletons (BEAN-284) when the project opts in.
+    if spec.generation.include_media_skills:
+        if library_root is None:
+            warnings.append(
+                "include_media_skills=True but library_root not provided; "
+                "media plan skeletons skipped"
+            )
+        else:
+            _render_media_plans(
+                spec, Path(library_root), root, created, warnings,
+            )
 
     logger.info(
         "Scaffold complete: %d entries created, %d warnings",

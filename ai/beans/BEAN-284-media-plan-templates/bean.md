@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-284 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-29 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-29 21:36 |
+| **Completed** | 2026-04-29 21:42 |
+| **Duration** | 1560h 35m |
+| **Owner** | team-lead |
 | **Category** | Infra |
 | **Depends On** | BEAN-282, BEAN-283 |
 
@@ -52,20 +52,21 @@ A new Foundry project optionally arrives with `IMAGE-PLAN.md` and `NARRATION-PLA
 
 ## Acceptance Criteria
 
-- [ ] `ai-team-library/templates/media/IMAGE-PLAN.md.j2` exists with the documented frontmatter keys.
-- [ ] `ai-team-library/templates/media/NARRATION-PLAN.md.j2` exists with the documented frontmatter keys.
-- [ ] `CompositionSpec.include_media_skills` field added (Pydantic-validated, defaults to `False`).
-- [ ] Scaffolder writes both plan files to project root when the flag is `True`.
-- [ ] Files are not overwritten if they already exist.
-- [ ] Frontmatter is interpolated with project-spec values (title at minimum).
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] `ai-team-library/templates/media/IMAGE-PLAN.md.j2` exists with the documented frontmatter keys.
+- [x] `ai-team-library/templates/media/NARRATION-PLAN.md.j2` exists with the documented frontmatter keys.
+- [x] `include_media_skills` field added (on `GenerationOptions`, defaults to `False`, Pydantic-validated). Accessed as `spec.generation.include_media_skills`; placement consistent with sibling toggles `seed_tasks`, `write_manifest`, etc.
+- [x] Scaffolder writes both plan files to project root when the flag is `True`.
+- [x] Files are not overwritten if they already exist.
+- [x] Frontmatter is interpolated with project-spec values (title at minimum).
+- [x] All tests pass (`uv run pytest`) — 2166 passed (+16 from 2150 baseline).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | Implement templates + spec field + scaffolder | Developer | — | Done |
+| 02 | Verify acceptance criteria | Tech-QA | 01 | Done |
 
 > Activated: Developer, Tech-QA.
 > Skipped: BA (requirements concrete), Architect (additive flag + template emission, no boundary changes; follows existing scaffolder conventions).
@@ -74,7 +75,17 @@ A new Foundry project optionally arrives with `IMAGE-PLAN.md` and `NARRATION-PLA
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai-team-library/templates/media/IMAGE-PLAN.md.j2` | +29 −0 |
+| `ai-team-library/templates/media/NARRATION-PLAN.md.j2` | +33 −0 |
+| `ai/beans/BEAN-284-media-plan-templates/bean.md` | +12 −5 |
+| `ai/beans/BEAN-284-media-plan-templates/tasks/01-developer-media-plan-templates.md` | +53 −0 |
+| `ai/beans/BEAN-284-media-plan-templates/tasks/02-tech-qa-verify-media-plans.md` | +70 −0 |
+| `ai/beans/_index.md` | +1 −1 |
+| `foundry_app/core/models.py` (`GenerationOptions.include_media_skills`) | +8 −0 |
+| `foundry_app/services/generator.py` (pass library_root to scaffold) | +1 −1 |
+| `foundry_app/services/scaffold.py` (`_render_media_plans` + flag wiring) | +65 −0 |
+| `tests/test_scaffold_media.py` (16 tests) | +182 −0 |
+| **Total** | **+454 −7** |
 
 ## Notes
 
@@ -96,3 +107,6 @@ A new Foundry project optionally arrives with `IMAGE-PLAN.md` and `NARRATION-PLA
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
+| 01 | Implement templates + spec field + scaffolder | Developer | 4m | — | — | — |
+| 02 | Verify acceptance criteria | Tech-QA | 1m | — | — | — |
+| **Total** | 2 tasks | — | **5m** | — | — | — |

@@ -1,0 +1,33 @@
+# Narration Plan — {{ project_name }}
+
+The single source of truth for narration audio this project generates
+with the `generate-audio` skill. Narration text lives **inline** in
+your source markdown as `> 🎙️` blockquotes — this file just records
+the project-level voice/model defaults and acts as the review surface.
+
+**Voice:** rachel
+**Model:** eleven_multilingual_v2
+
+> The generator scans configured source files (`module-*.md` by default)
+> for contiguous blockquoted lines that begin with `> 🎙️ `. Each block
+> becomes one MP3 in `audio/<source-stem>/NN_<slug>.mp3` plus a
+> `manifest.json` recording the stripped text sent to ElevenLabs.
+>
+> Override the project voice or model with `--voice <name-or-id>` or
+> `--model <id>`. CLI flags always win over plan frontmatter. Plan
+> frontmatter wins over kit defaults.
+>
+> Cost: ElevenLabs `eleven_multilingual_v2` is **1 credit per character**.
+> The end-of-run summary prints chars-sent = credits-spent so you can
+> pace work against your monthly cap.
+
+## Source files
+
+<!--
+List the source files this project narrates from. The generator picks
+these up automatically when run from the project root; this section
+exists for human review.
+
+- `module-01-introduction.md`
+- `module-02-getting-started.md`
+-->

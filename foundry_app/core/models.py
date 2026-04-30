@@ -382,6 +382,14 @@ class GenerationOptions(BaseModel):
     )
     write_manifest: bool = Field(default=True, description="Write manifest.json")
     write_diff_report: bool = Field(default=False, description="Write diff-report.md")
+    include_media_skills: bool = Field(
+        default=False,
+        description=(
+            "Stamp IMAGE-PLAN.md and NARRATION-PLAN.md skeletons at the project "
+            "root for projects that will use the generate-image and generate-audio "
+            "skills. Plan-first discipline; see BEAN-282/283 and BEAN-284."
+        ),
+    )
     claude_kit_url: str | None = Field(
         default=None,
         description="Git URL for claude-kit subtree repo. When set, .claude/ is added via "
