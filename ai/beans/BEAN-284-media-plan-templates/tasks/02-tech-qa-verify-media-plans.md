@@ -4,10 +4,10 @@
 |-------|-------|
 | **Owner** | Tech-QA |
 | **Depends on** | 01 |
-| **Status** | Pending |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Status** | Done |
+| **Started** | 2026-04-29 21:41 |
+| **Completed** | 2026-04-29 21:42 |
+| **Duration** | 1m |
 
 ## Goal
 
@@ -68,3 +68,38 @@ CONTEXT DIET: stay within these inputs.
 - Verification report written.
 - Bean is ready for Team Lead to mark Done OR specific gaps documented.
 - Commit message: `BEAN-284 task 02: tech-qa verification`.
+
+## Verification Report
+
+**Verdict: 8/8 PASS — ship it.**
+
+### Evidence
+
+- **pytest:** `uv run pytest --quiet` → `2166 passed, 4 warnings in 10.61s`. Delta from prior baseline of 2150: **+16** (matches the new `tests/test_scaffold_media.py` count).
+- **lint:** `uv run ruff check foundry_app/ tests/test_scaffold_media.py` → `All checks passed!`
+- **targeted:** `uv run pytest tests/test_scaffold_media.py -v` → 16/16 passed in 0.11s.
+- **frontmatter cross-check (image):** `generate_image.py` parser at lines 193–200 reads `Style`, `Aspect ratio`, `Background`, `Text in image`, `Avoid`, `Generator` (all bold-prefixed `**Key:**`). `IMAGE-PLAN.md.j2` emits all six with the correct bold-prefixed shape. No drift.
+- **frontmatter cross-check (audio):** `generate_audio.py` `parse_plan_frontmatter` at line 179 reads `**Voice:**` and `**Model:**`. `NARRATION-PLAN.md.j2` emits both with the bold-prefixed shape. No drift.
+
+### BEAN-284 acceptance criteria — per-criterion verdict
+
+| # | Criterion | Verdict | Notes |
+|---|---|---|---|
+| 1 | `templates/media/IMAGE-PLAN.md.j2` with documented keys | **PASS** | All six keys present (`Style`, `Generator`, `Aspect ratio`, `Background`, `Text in image`, `Avoid`). Defaults match bean Notes (`16:9`, `white`, `minimal`, `gemini-3-pro-image-preview`). `Style` is **not** pre-filled (intentional — plan-first discipline). One commented-out example entry inside `<!-- -->`. |
+| 2 | `templates/media/NARRATION-PLAN.md.j2` with documented keys | **PASS** | `Voice: rachel`, `Model: eleven_multilingual_v2`. Includes the `> 🎙️` inline-block convention explanation. |
+| 3 | `CompositionSpec.include_media_skills: bool = False` | **PASS (with placement note)** | Field added at `models.py:385` on `GenerationOptions` (accessed as `spec.generation.include_media_skills`), not directly on `CompositionSpec`. This is consistent with sibling toggles (`seed_tasks`, `write_manifest`, `write_diff_report`, `claude_kit_url`) and matches Foundry conventions. Default is `False` and Pydantic-validated. |
+| 4 | Scaffolder writes both plan files when flag is `True` | **PASS** | `scaffold.py` adds `_render_media_plans()` (line 174) called from `scaffold_project` (line 319) when `spec.generation.include_media_skills` is True. `generator.py:183` passes `library_root` so the templates can be located. |
+| 5 | Files not overwritten when present | **PASS** | `_render_media_plans` skips `dest` if `dest.exists()` (line 199 area). Confirmed by `TestOverlaySafety::test_existing_image_plan_preserved` and `test_existing_narration_plan_preserved`. |
+| 6 | Frontmatter interpolated with project-spec values (title at minimum) | **PASS** | Templates use `{{ project_name }}`. Context passed in `_render_media_plans` is `{"project_name": spec.project.name}`. Confirmed by `TestProjectNameInterpolation` (both files). |
+| 7 | All tests pass (`uv run pytest`) | **PASS** | 2166 passed, 0 failed. |
+| 8 | Lint clean (`uv run ruff check foundry_app/`) | **PASS** | All checks passed! |
+
+### Spot-check findings
+
+- **Library root signature change:** `scaffold_project` gained an optional `library_root: str | Path | None = None` parameter. All ~30 existing callers in `tests/test_scaffold.py` continue to work (they pass only `spec` + `output_dir`), confirmed by the green full suite. When the flag is True but `library_root` is `None`, the scaffolder warns and skips — covered by `TestLibraryRootMissing`.
+- **Generator wiring:** `generator.py:183` was updated to pass `library_root` to the scaffold stage. No other callers of `scaffold_project` in production code.
+- **Overlay safety identical to README/charter pattern:** `_render_media_plans` follows the exact `if dest.exists(): skip` pattern used by `_render_readme` (scaffold.py:251-255) and `_render_project_charter` (scaffold.py:259-263).
+
+### Sign-off
+
+All 8 BEAN-284 acceptance criteria PASS. The placement of `include_media_skills` on `GenerationOptions` rather than directly on `CompositionSpec` is the only deviation from the bean wording — flagged for Team Lead but recommended as the cleaner choice (consistent with existing toggles). Bean ready for Team Lead to mark Done.
