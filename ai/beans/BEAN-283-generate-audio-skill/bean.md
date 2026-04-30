@@ -102,7 +102,15 @@ A new `generate-audio` skill in ClaudeKit that scans source markdown for `> 🎙
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `.claude/shared` (submodule pointer — generate-audio skill + ADR) | +1 −1 |
+| `ai/beans/BEAN-283-generate-audio-skill/bean.md` | +35 −16 |
+| `ai/beans/BEAN-283-generate-audio-skill/tasks/01-architect-audio-skill-adr.md` | +74 −0 |
+| `ai/beans/BEAN-283-generate-audio-skill/tasks/02-developer-generate-audio-implementation.md` | +106 −0 |
+| `ai/beans/BEAN-283-generate-audio-skill/tasks/03-tech-qa-verify-generate-audio.md` | +157 −0 |
+| `ai/context/decisions.md` (ADR-011) | +387 −9 |
+| `foundry_app/services/asset_copier.py` (`generate-audio` registered) | +1 −0 |
+| `tests/test_generate_audio.py` | +856 −0 |
+| **Total** | **+1,617 −26** |
 
 ## Notes
 
@@ -128,6 +136,7 @@ A new `generate-audio` skill in ClaudeKit that scans source markdown for `> 🎙
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 01 | ADR — audio skill design | Architect | — | — | — | — |
-| 02 | generate-audio implementation | Developer | — | — | — | — |
-| 03 | Verify acceptance criteria | Tech-QA | — | — | — | — |
+| 01 | ADR — audio skill design | Architect | 3m | — | — | — |
+| 02 | generate-audio implementation | Developer | 27m | — | — | — |
+| 03 | Verify acceptance criteria | Tech-QA | 2m | — | — | — |
+| **Total** | 3 tasks | — | **32m** | — | — | — |
