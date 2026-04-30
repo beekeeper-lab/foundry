@@ -65,7 +65,7 @@ A new Foundry project optionally arrives with `IMAGE-PLAN.md` and `NARRATION-PLA
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 01 | Implement templates + spec field + scaffolder | Developer | — | Pending |
+| 01 | Implement templates + spec field + scaffolder | Developer | — | Done |
 | 02 | Verify acceptance criteria | Tech-QA | 01 | Pending |
 
 > Activated: Developer, Tech-QA.
