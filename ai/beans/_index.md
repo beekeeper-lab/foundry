@@ -280,7 +280,7 @@
 | BEAN-256 | Dev-Loop Commands + Stack-Aware Command Selection | App | High | Done | team-lead |
 | BEAN-257 | Activation Rules for Remaining Personas | Process | Medium | Done | team-lead |
 | BEAN-258 | Code-Quality-Reviewer vs Tech-QA Scope Split | Process | Low | Done | team-lead |
-| BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | In Progress | team-lead |
+| BEAN-259 | Persona-Scoped Expertise Inclusion | App | Medium | Done | team-lead |
 | BEAN-260 | Approval Gate — Command + Criteria | Process | Medium | Done | team-lead |
 | BEAN-261 | Propagate Missing-Expertise Drop to Agent Headers and Member Files | App | High | Done | team-lead |
 | BEAN-262 | Detect Mutually-Exclusive Hook Pack Pairs at Generation Time | App | Medium | Done | team-lead |
