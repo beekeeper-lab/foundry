@@ -74,7 +74,28 @@ Every persona file declares a frontmatter (or sibling YAML) block listing the ar
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai-team-library/contracts/artifact-types.yml | +229 |
+| ai-team-library/personas/architect/contracts.yml | +14 |
+| ai-team-library/personas/ba/contracts.yml | +13 |
+| ai-team-library/personas/developer/contracts.yml | +14 |
+| ai-team-library/personas/team-lead/contracts.yml | +17 |
+| ai-team-library/personas/tech-qa/contracts.yml | +14 |
+| ai/beans/BEAN-273-…/bean.md | +28 −4 |
+| ai/beans/BEAN-273-…/tasks/01-ba-…md | +79 |
+| ai/beans/BEAN-273-…/tasks/02-architect-…md | +77 |
+| ai/beans/BEAN-273-…/tasks/03-developer-…md | +99 |
+| ai/beans/BEAN-273-…/tasks/04-tech-qa-…md | +80 |
+| ai/beans/_index.md | +1 −1 |
+| ai/context/decisions.md | +84 |
+| ai/outputs/architect/BEAN-273-design.md | +441 |
+| ai/outputs/ba/BEAN-273-artifact-types.md | +460 |
+| ai/outputs/tech-qa/BEAN-273-vdd.md | +89 |
+| foundry_app/core/models.py | +33 |
+| foundry_app/services/generator.py | +6 −3 |
+| foundry_app/services/library_indexer.py | +205 −2 |
+| foundry_app/services/scaffold.py | +75 −10 |
+| tests/test_persona_contracts.py | +453 |
+| **Total** | **+2,507 −20** |
 
 ## Notes
 
