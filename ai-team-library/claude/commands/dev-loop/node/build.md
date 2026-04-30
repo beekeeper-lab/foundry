@@ -10,12 +10,6 @@ Build the project's production bundle.
 
 - `--analyze` -- Emit bundle analysis output if the build tool supports it.
 
-## Process
-
-1. **Detect script** — Read the `scripts.build` field in `package.json` (commonly `vite build`, `tsc -b`, `next build`, or `webpack`).
-2. **Run** — `npm run build` (or `pnpm run build` / `yarn build` based on lockfile).
-3. **Report** — Print artifact sizes and any warnings/errors.
-
 ## Examples
 
 ```
@@ -25,4 +19,4 @@ Build the project's production bundle.
 
 ## Notes
 
-This command **invokes** the user-configured build script declared in `package.json`. It does not install or configure it.
+This command **invokes** the user-configured build script — read from `scripts.build` in `package.json` (commonly `vite build`, `tsc -b`, `next build`, or `webpack`). Uses `npm run build` (or `pnpm run build` / `yarn build` based on lockfile). Prints artifact sizes and warnings. No paired skill.

@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-249 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-30 08:53 |
+| **Completed** | 2026-04-30 09:09 |
+| **Duration** | 1572h 2m |
+| **Owner** | team-lead |
 | **Category** | Infra |
 
 ## Problem Statement
@@ -43,20 +43,21 @@ Every library-shipped command is a short trigger (≤30 lines) that names the sk
 
 ## Acceptance Criteria
 
-- [ ] An audit table in `ai/outputs/team-lead/bean-249-command-skill-audit.md` lists every library command/skill pair with before/after line counts.
-- [ ] Every `ai-team-library/claude/commands/*.md` is ≤30 lines of content (front matter + one-sentence description + usage + skill pointer).
-- [ ] No command file contains "Process" or "Error Conditions" sections; those live only in skills.
-- [ ] `uv run foundry-cli generate examples/small-python-team.yml --library ai-team-library` still emits every expected command file.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] An audit table in `ai/outputs/team-lead/bean-249-command-skill-audit.md` lists every library command/skill pair with before/after line counts.
+- [x] Every `ai-team-library/claude/commands/*.md` is ≤30 lines of content (front matter + one-sentence description + usage + skill pointer).
+- [x] No command file contains "Process" or "Error Conditions" sections; those live only in skills.
+- [x] `uv run foundry-cli generate examples/small-python-team.yml --library ai-team-library` still emits every expected command file.
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Audit and trim library commands | developer | — | Done |
+| 2 | Verify audit and trim | tech-qa | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
+> Skipped: BA (default), Architect (default) — mechanical audit/trim with clear acceptance criteria, no requirements ambiguity or design decisions.
 
 ## Changes
 
@@ -84,12 +85,13 @@ Every library-shipped command is a short trigger (≤30 lines) that names the sk
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Audit and trim library commands | developer | 13m | 627,657 | 4,837 | $1.55 |
+| 2 | Verify audit and trim | tech-qa | 2m | 287,940 | 2,393 | $0.64 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 15m |
+| **Total Tokens In** | 915,597 |
+| **Total Tokens Out** | 7,230 |
+| **Total Cost** | $2.19 |
