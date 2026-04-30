@@ -61,6 +61,18 @@ foundry_app/
       spinner_widget.py      # Branded spinner graphic
   cli.py               # CLI entry point (foundry-cli)
   main.py              # GUI entry point (foundry)
+
+ai-team-library/
+  templates/
+    media/
+      IMAGE-PLAN.md.j2     # BEAN-284: scaffolder stamps this when include_media_skills=True
+      NARRATION-PLAN.md.j2 # BEAN-284: ditto
+
+.claude/shared/skills/   # Kit-distributed skills (ADR-009, ADR-010, ADR-011)
+  _media_lib/            # BEAN-281: env discovery, text normalization, content-hash, cost helpers
+  generate-image/        # BEAN-282: plan-driven + single-shot image generation (Gemini/OpenAI)
+  generate-audio/        # BEAN-283: plan-driven ElevenLabs narration with inline > 🎙️ blocks
+  generate-screen/       # screen mockup wrapper around generate-image
 ```
 
 ## Key Patterns

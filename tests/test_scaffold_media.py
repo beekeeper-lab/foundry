@@ -180,3 +180,21 @@ class TestLibraryRootMissing:
         assert any("library_root" in w for w in result.warnings)
         assert not (tmp_path / "IMAGE-PLAN.md").exists()
         assert not (tmp_path / "NARRATION-PLAN.md").exists()
+
+
+class TestReadmeMediaSection:
+    """The generated README's 'Generating images and audio' section is conditional on the flag."""
+
+    def test_readme_omits_media_section_when_flag_off(self, tmp_path: Path):
+        scaffold_project(_make_spec(include_media_skills=False), tmp_path, _LIBRARY_ROOT)
+        readme = (tmp_path / "README.md").read_text(encoding="utf-8")
+        assert "Generating images and audio" not in readme
+
+    def test_readme_includes_media_section_when_flag_on(self, tmp_path: Path):
+        scaffold_project(_make_spec(include_media_skills=True), tmp_path, _LIBRARY_ROOT)
+        readme = (tmp_path / "README.md").read_text(encoding="utf-8")
+        assert "Generating images and audio" in readme
+        assert "IMAGE-PLAN.md" in readme
+        assert "NARRATION-PLAN.md" in readme
+        assert "GEMINI_API_KEY" in readme
+        assert "ELEVENLABS_API_KEY" in readme

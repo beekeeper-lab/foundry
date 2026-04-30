@@ -63,7 +63,7 @@ Every doc surface that a future agent or operator could consult to learn about m
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 01 | Apply doc edits across all surfaces | Developer | — | Pending |
+| 01 | Apply doc edits across all surfaces | Developer | — | Done |
 | 02 | Verify acceptance criteria | Tech-QA | 01 | Pending |
 
 > Activated: Developer (technical-writer not in this team), Tech-QA.
