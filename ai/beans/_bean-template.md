@@ -32,6 +32,8 @@ What is the desired outcome when this bean is complete?
 
 ## Acceptance Criteria
 
+> Authored by: BA (when activated) | Team-Lead (default)
+
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] All tests pass (`uv run pytest`)

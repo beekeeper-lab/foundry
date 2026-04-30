@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-275 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-28 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-30 11:07 |
+| **Completed** | 2026-04-30 15:10 |
+| **Duration** | 1578h 3m |
+| **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | — |
 
@@ -75,15 +75,35 @@ Each ambiguous artifact has exactly one owner. Other roles' interactions with th
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Author Scope Boundaries policy text | BA | — | Done |
+| 2 | Apply edits to personas (lib + kit) + bean template | Developer | 01 | Done |
+| 3 | Verify partition cleanliness + AC sweep | Tech-QA | 02 | Done |
 
-> Tasks populated by Team-Lead. Likely wave: BA (wording — these are policy statements, BA's bread and butter), Developer (the doc edits), Tech-QA (partition cleanliness verification, mirrors BEAN-258).
+> Skipped: Architect (default — BEAN-273's ADR-013 already covers the contract format; this bean is pure prose/policy, no design alternatives). Wave: BA → Developer → Tech-QA. Tech-QA mandatory.
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| .claude/shared (submodule pointer → kit-main 06b6aff) | +1 −1 |
+| ai-team-library/personas/architect/persona.md | +29 |
+| ai-team-library/personas/ba/persona.md | +30 |
+| ai-team-library/personas/developer/persona.md | +31 |
+| ai-team-library/personas/team-lead/persona.md | +52 |
+| ai-team-library/personas/tech-qa/persona.md | +30 |
+| ai/beans/BEAN-275-…/bean.md | +24 −15 |
+| ai/beans/BEAN-275-…/tasks/01-ba-policy-text.md | +new |
+| ai/beans/BEAN-275-…/tasks/02-developer-apply-edits.md | +new |
+| ai/beans/BEAN-275-…/tasks/03-tech-qa-verify.md | +new |
+| ai/beans/_bean-template.md | +2 |
+| ai/beans/_index.md | +1 −1 |
+| ai/outputs/ba/BEAN-275-policy.md | +new |
+| ai/outputs/tech-qa/BEAN-275-vdd.md | +new |
+| foundry_app/services/bean_approval.py | +4 |
+| tests/test_scope_boundaries_partition.py | +new (~330 lines) |
+| **Total** | **5 modified core docs + 6 new artifacts + kit pointer + regression-fix + 36 tests** |
+
+Kit-side propagation landed via `beekeeper-lab/claude-kit#4` (also drained the BEAN-270/272/281/282/283/285 backlog).
 
 ## Notes
 
@@ -103,12 +123,14 @@ Each ambiguous artifact has exactly one owner. Other roles' interactions with th
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Author Scope Boundaries policy text | BA | 3m | 510,619 | 2,135 | $0.95 |
+| 2 | Apply edits to personas (lib + kit) + bean template | Developer | — | — | — | — |
+| 3 | Verify partition cleanliness + AC sweep | Tech-QA | 6m | 599,825 | 2,178 | $1.09 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 9m |
+| **Total Tokens In** | 1,110,444 |
+| **Total Tokens Out** | 4,313 |
+| **Total Cost** | $2.04 |
