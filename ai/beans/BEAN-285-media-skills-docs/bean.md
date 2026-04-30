@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-285 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-29 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-29 21:44 |
+| **Completed** | 2026-04-30 08:32 |
+| **Duration** | 1571h 24m |
+| **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | BEAN-280, BEAN-281, BEAN-282, BEAN-283, BEAN-284 |
 
@@ -47,32 +47,46 @@ Every doc surface that a future agent or operator could consult to learn about m
 
 ## Acceptance Criteria
 
-- [ ] Foundry CLAUDE.md "Media Skills" section exists.
-- [ ] `.claude/shared/CLAUDE.md` lists generate-image and generate-audio with kit-distributed marker.
-- [ ] Both SKILL.md files reflect actual implementation behavior (plan + single-shot modes for images; inline-block + manifest for audio).
-- [ ] Foundry README mentions media-skills opt-in.
-- [ ] Generated-project README template includes media-workflow guidance when the flag is on.
-- [ ] `decisions.md` ADR exists from BEAN-280; cross-referenced.
-- [ ] `project.md` module map updated.
-- [ ] MEMORY.md doc checklist includes the new files.
-- [ ] `.env.example` lists all three keys with comments.
-- [ ] Build-pipeline content-hash example exists.
-- [ ] No tests required for docs (per project convention), but lint clean (`uv run ruff check foundry_app/`) since some doc generation may touch code.
+- [x] Foundry CLAUDE.md "Media Skills" section exists.
+- [x] `.claude/shared/CLAUDE.md` lists generate-image and generate-audio with kit-distributed marker.
+- [x] Both SKILL.md files reflect actual implementation behavior (already comprehensive from BEAN-282/283; cross-checked).
+- [x] Foundry README mentions media-skills opt-in.
+- [x] Generated-project README template includes media-workflow guidance when the flag is on.
+- [x] `decisions.md` ADRs (009/010/011) cross-referenced.
+- [x] `project.md` module map updated.
+- [x] MEMORY.md doc checklist includes the new files.
+- [x] `.env.example` lists all three keys with comments.
+- [x] Build-pipeline content-hash example exists (`generate-audio/BUILD_EXAMPLE.md`).
+- [x] Tests pass (2168) + lint clean (defended scaffold conditional with 2 new tests).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | Apply doc edits across all surfaces | Developer | — | Done |
+| 02 | Verify acceptance criteria | Tech-QA | 01 | Done |
 
-> Activated: Technical Writer (if available; otherwise Developer), Tech-QA (verifies acceptance criteria — pure doc verification).
+> Activated: Developer (technical-writer not in this team), Tech-QA.
 > Skipped: BA, Architect (no scope/design decisions; just documentation of the prior beans' decisions).
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `.claude/shared` (submodule pointer — kit doc edits) | +1 −1 |
+| `.env.example` (new) | +25 −0 |
+| `CLAUDE.md` (Media Skills section) | +23 −0 |
+| `README.md` (include_media_skills opt-in note) | +3 −0 |
+| `ai/beans/BEAN-285-media-skills-docs/bean.md` | +13 −7 |
+| `ai/beans/BEAN-285-media-skills-docs/tasks/01-developer-media-docs.md` (new) | +64 −0 |
+| `ai/beans/BEAN-285-media-skills-docs/tasks/02-tech-qa-verify-media-docs.md` (new) | +73 −0 |
+| `ai/beans/_index.md` | +1 −1 |
+| `ai/context/project.md` (module map) | +12 −0 |
+| `foundry_app/services/scaffold.py` (`_MEDIA_SECTION` + conditional render) | +31 −0 |
+| `tests/test_scaffold_media.py` (+2 README tests) | +18 −0 |
+| **Submodule:** `.claude/shared/CLAUDE.md` (Available Skills + Kit-Distributed Skills) | (in submodule) |
+| **Submodule:** `.claude/shared/skills/generate-audio/BUILD_EXAMPLE.md` (new) | (in submodule) |
+| **Total (foundry repo)** | **+264 −9** |
 
 ## Notes
 
@@ -94,3 +108,6 @@ Every doc surface that a future agent or operator could consult to learn about m
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
+| 01 | Apply doc edits across all surfaces | Developer | 10h 45m (laptop-shutdown gap) | — | — | — |
+| 02 | Verify acceptance criteria | Tech-QA | 1m | — | — | — |
+| **Total** | 2 tasks | — | **10h 46m (incl. shutdown gap)** | — | — | — |

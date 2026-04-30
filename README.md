@@ -198,7 +198,10 @@ generation:
   seed_tasks: true
   write_manifest: true
   write_diff_report: true
+  include_media_skills: false   # set true to scaffold IMAGE-PLAN.md + NARRATION-PLAN.md and ship the kit's generate-image / generate-audio skills
 ```
+
+> **Media skills opt-in:** Setting `include_media_skills: true` in the composition spec stamps `IMAGE-PLAN.md` and `NARRATION-PLAN.md` skeletons at the generated project's root and ensures the kit-distributed `generate-image`, `generate-audio`, `generate-screen`, and `_media_lib` skills are available. See `.claude/shared/skills/*/SKILL.md` and CLAUDE.md's "Media Skills" section for env vars and cost notes.
 
 ### GenerationManifest — The Output Contract
 
