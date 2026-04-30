@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-251 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-17 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-30 09:11 |
+| **Completed** | 2026-04-30 09:16 |
+| **Duration** | 1572h 8m |
+| **Owner** | team-lead |
 | **Category** | App |
 
 ## Problem Statement
@@ -42,20 +42,21 @@ A generated project states clearly that the AI team manages planning and design 
 
 ## Acceptance Criteria
 
-- [ ] Stance 1 recorded in `ai/context/decisions.md` as an ADR with the rationale.
-- [ ] Generated CLAUDE.md template has a visible Scope section in the first third of the document stating the planning-only intent.
-- [ ] The Scope section names `ai/` as the agent-editable tree and explicitly notes that application source code is the human's responsibility.
-- [ ] `settings.local.json` remains `Edit(ai/**)`; a test asserts the directories named in the Scope section match the `Edit` allow list.
-- [ ] All tests pass (`uv run pytest`).
-- [ ] Lint clean (`uv run ruff check foundry_app/`).
+- [x] Stance 1 recorded in `ai/context/decisions.md` as an ADR with the rationale.
+- [x] Generated CLAUDE.md template has a visible Scope section in the first third of the document stating the planning-only intent.
+- [x] The Scope section names `ai/` as the agent-editable tree and explicitly notes that application source code is the human's responsibility.
+- [x] `settings.local.json` remains `Edit(ai/**)`; a test asserts the directories named in the Scope section match the `Edit` allow list.
+- [x] All tests pass (`uv run pytest`).
+- [x] Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | ADR cross-reference + Scope/permission consistency test | developer | — | Done |
+| 2 | Verify scope/permission consistency | tech-qa | 1 | Done |
 
-> Tasks are populated by the Team Lead during decomposition. This is a policy decision — BA and Architect likely both belong on the wave.
+> Skipped: BA (Stance 1 already decided in 2026-04-17 review and recorded in ADR-007 — no requirements ambiguity left). Architect (the decision is made and ADR-007 already exists — only a cross-reference update remains, no new design work).
 
 ## Changes
 
@@ -63,7 +64,14 @@ A generated project states clearly that the AI team manages planning and design 
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai/beans/BEAN-251-clarify-agent-permission-scope/bean.md | 40 |
+| ai/beans/BEAN-251-clarify-agent-permission-scope/tasks/01-developer-consistency-test.md | 50 |
+| ai/beans/BEAN-251-clarify-agent-permission-scope/tasks/02-tech-qa-verify.md | 40 |
+| ai/beans/_index.md | 2 |
+| ai/context/decisions.md | 2 |
+| ai/outputs/tech-qa/bean-251-verification.md | 31 |
+| tests/test_compiler.py | 52 |
+| **Total** | **7 files: +196 / -21** |
 
 ## Notes
 
@@ -85,12 +93,13 @@ A generated project states clearly that the AI team manages planning and design 
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | ADR cross-reference + Scope/permission consistency test | developer | 1m | 2,742,389 | 9,086 | $5.02 |
+| 2 | Verify scope/permission consistency | tech-qa | < 1m | 1,027,380 | 3,357 | $1.85 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 1m |
+| **Total Tokens In** | 3,769,769 |
+| **Total Tokens Out** | 12,443 |
+| **Total Cost** | $6.87 |

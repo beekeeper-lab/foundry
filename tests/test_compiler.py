@@ -1,5 +1,7 @@
 """Tests for foundry_app.services.compiler — CLAUDE.md compilation from library."""
 
+import json
+import re
 from pathlib import Path
 
 from foundry_app.core.models import (
@@ -1448,6 +1450,56 @@ class TestLeanClaudeMd:
         content = (output / "CLAUDE.md").read_text()
         assert "## Scope" in content
         assert "docs/starter-stacks.md" in content
+
+    def test_claude_md_scope_matches_settings_edit_permissions(
+        self, tmp_path: Path,
+    ):
+        # Drift guard: every directory root the library's
+        # settings.local.json grants Edit access to must be named in the
+        # generated CLAUDE.md Scope section. If someone widens the Edit
+        # allow list (e.g. adds Edit(src/**)) without updating the Scope
+        # text, this test fails — preventing the policy/permission
+        # mismatch BEAN-251 was created to resolve.
+        repo_root = Path(__file__).resolve().parent.parent
+        settings_path = (
+            repo_root
+            / "ai-team-library"
+            / "claude"
+            / "settings"
+            / "settings.local.json"
+        )
+        settings = json.loads(settings_path.read_text())
+        edit_pattern = re.compile(r"^Edit\(([^/)]+)/")
+        edit_roots = {
+            m.group(1)
+            for entry in settings["permissions"]["allow"]
+            if (m := edit_pattern.match(entry))
+        }
+        assert edit_roots, (
+            f"Expected at least one Edit(<dir>/**) in {settings_path}; "
+            "test cannot meaningfully assert consistency without one."
+        )
+
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        scope_start = content.index("## Scope")
+        next_heading = content.find("\n## ", scope_start + 1)
+        scope_text = content[scope_start:next_heading]
+
+        for root in edit_roots:
+            assert f"{root}/" in scope_text, (
+                f"Scope section omits Edit-permitted root '{root}/'. "
+                f"{settings_path.name} grants Edit({root}/**) but the "
+                "Scope section does not name it. Update the Scope text "
+                "in compiler._build_lean_claude_md or the Edit allow "
+                "list to keep them in sync."
+            )
 
 
 # ---------------------------------------------------------------------------
