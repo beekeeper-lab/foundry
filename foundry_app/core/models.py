@@ -562,6 +562,14 @@ class ExpertiseInfo(BaseModel):
     path: str = Field(..., description="Path to expertise directory")
     files: list[str] = Field(default_factory=list, description="Convention doc filenames")
     category: str = Field(default="", description="Expertise category for grouped display")
+    applies_to: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Persona IDs this expertise should be inlined into at compile time. "
+            "Empty list = applies to every persona (preserves pre-BEAN-259 behavior). "
+            "See ADR-012."
+        ),
+    )
 
 
 class HookPackInfo(BaseModel):

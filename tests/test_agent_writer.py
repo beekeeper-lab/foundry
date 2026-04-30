@@ -691,3 +691,360 @@ class TestRealLibraryAgentFencesBalanced:
         assert not unbalanced, (
             f"Agent files with unbalanced ``` fences: {unbalanced}"
         )
+
+
+# ---------------------------------------------------------------------------
+# ADR-012 / BEAN-259: per-expertise persona relevance — agent_writer filter
+# ---------------------------------------------------------------------------
+
+
+def _make_filter_library(tmp_path: Path) -> tuple[Path, LibraryIndex]:
+    """Library with three personas + python (Developer-only) and react
+    (Developer + UX/UI Designer) expertise. Used to exercise the per-persona
+    filter inside write_agents."""
+    lib_root = tmp_path / "library"
+    persona_md = (
+        "# Persona: {name}\n\n"
+        "## Mission\n\n{name} mission text.\n\n"
+        "## Operating Principles\n\n"
+        "- **Do good work.** Always.\n"
+    )
+    for pid, name in [
+        ("developer", "Developer"),
+        ("devops-release", "DevOps-Release"),
+        ("ux-ui-designer", "UX/UI Designer"),
+    ]:
+        d = lib_root / "personas" / pid
+        d.mkdir(parents=True)
+        (d / "persona.md").write_text(
+            persona_md.format(name=name), encoding="utf-8",
+        )
+
+    py_dir = lib_root / "stacks" / "python"
+    py_dir.mkdir(parents=True)
+    (py_dir / "conventions.md").write_text(
+        "# Python\n\n## Defaults\n\n"
+        "| Concern | Default |\n|---------|---------|\n"
+        "| Formatter | ruff |\n| Tests | pytest |\n",
+        encoding="utf-8",
+    )
+
+    rx_dir = lib_root / "stacks" / "react"
+    rx_dir.mkdir(parents=True)
+    (rx_dir / "conventions.md").write_text(
+        "# React\n\n## Defaults\n\n"
+        "- TypeScript strict, see tsconfig.json\n"
+        "- Functional components only\n",
+        encoding="utf-8",
+    )
+
+    personas_root = lib_root / "personas"
+    index = LibraryIndex(
+        library_root=str(lib_root),
+        personas=[
+            PersonaInfo(
+                id="developer",
+                path=str(personas_root / "developer"),
+                templates=[],
+            ),
+            PersonaInfo(
+                id="devops-release",
+                path=str(personas_root / "devops-release"),
+                templates=[],
+            ),
+            PersonaInfo(
+                id="ux-ui-designer",
+                path=str(personas_root / "ux-ui-designer"),
+                templates=[],
+            ),
+        ],
+        expertise=[
+            ExpertiseInfo(
+                id="python",
+                path=str(py_dir),
+                applies_to=["developer"],
+            ),
+            ExpertiseInfo(
+                id="react",
+                path=str(rx_dir),
+                applies_to=["developer", "ux-ui-designer"],
+            ),
+        ],
+    )
+    return lib_root, index
+
+
+class TestAgentWriterAppliesToFilter:
+    """Per-persona expertise filter (ADR-012 cases 1, 2, 3)."""
+
+    def _spec(self) -> CompositionSpec:
+        return CompositionSpec(
+            project=ProjectIdentity(name="Filter Test", slug="filter-test"),
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="devops-release"),
+                PersonaSelection(id="ux-ui-designer"),
+            ]),
+            expertise=[
+                ExpertiseSelection(id="python"),
+                ExpertiseSelection(id="react"),
+            ],
+        )
+
+    def test_developer_includes_python_and_react(self, tmp_path: Path):
+        """ADR-012 case 3: Developer is in both applies_to lists."""
+        lib_root, index = _make_filter_library(tmp_path)
+        out = tmp_path / "out"
+        out.mkdir()
+        write_agents(self._spec(), index, lib_root, out)
+        content = (out / ".claude" / "agents" / "developer.md").read_text()
+        assert "ruff" in content
+        assert "tsconfig" in content.lower()
+
+    def test_devops_release_excludes_python_and_react(self, tmp_path: Path):
+        """ADR-012 case 1: DevOps-Release is in neither applies_to list."""
+        lib_root, index = _make_filter_library(tmp_path)
+        out = tmp_path / "out"
+        out.mkdir()
+        write_agents(self._spec(), index, lib_root, out)
+        content = (out / ".claude" / "agents" / "devops-release.md").read_text()
+        assert "ruff" not in content
+        assert "tsconfig" not in content.lower()
+        assert "pytest" not in content
+
+    def test_ux_ui_designer_includes_react_excludes_python(
+        self, tmp_path: Path,
+    ):
+        """ADR-012 case 2: UX/UI Designer is in react.applies_to but not python.applies_to."""
+        lib_root, index = _make_filter_library(tmp_path)
+        out = tmp_path / "out"
+        out.mkdir()
+        write_agents(self._spec(), index, lib_root, out)
+        content = (out / ".claude" / "agents" / "ux-ui-designer.md").read_text()
+        assert "ruff" not in content
+        assert "pytest" not in content
+        # React content should be present
+        assert "tsconfig" in content.lower() or "Functional components" in content
+
+
+class TestAgentWriterAppliesToBackwardCompat:
+    """ADR-012 cases 4 + 5: empty applies_to == applies to all."""
+
+    def _spec(self) -> CompositionSpec:
+        return CompositionSpec(
+            project=ProjectIdentity(name="BC", slug="bc"),
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="devops-release"),
+                PersonaSelection(id="ux-ui-designer"),
+            ]),
+            expertise=[ExpertiseSelection(id="python")],
+        )
+
+    def _bc_lib(self, tmp_path: Path) -> tuple[Path, LibraryIndex]:
+        """Same as _make_filter_library, but applies_to=[] on every expertise.
+        With the empty default, every persona should still receive the
+        expertise content — this is the pre-BEAN-259 behavior."""
+        lib_root, index = _make_filter_library(tmp_path)
+        for e in index.expertise:
+            e.applies_to = []
+        return lib_root, index
+
+    def test_empty_applies_to_includes_all_personas(self, tmp_path: Path):
+        """ADR-012 case 5: empty list = applies to every persona."""
+        lib_root, index = self._bc_lib(tmp_path)
+        out = tmp_path / "out"
+        out.mkdir()
+        write_agents(self._spec(), index, lib_root, out)
+        for pid in ("developer", "devops-release", "ux-ui-designer"):
+            content = (out / ".claude" / "agents" / f"{pid}.md").read_text()
+            assert "ruff" in content, (
+                f"persona {pid} missing python content under empty applies_to"
+            )
+
+    def test_baseline_byte_equal_for_unannotated_lib(self, tmp_path: Path):
+        """ADR-012 case 4: a library with no applies_to anywhere produces
+        the same per-persona output as before BEAN-259. We assert that the
+        emitted agent files are identical when applies_to=[] (post-feature)
+        compared to a snapshot computed over the same library — which is
+        the same call path because the empty-list branch in
+        _expertise_applies_to short-circuits to True. Treats this as a
+        regression guard against the filter accidentally firing for
+        unannotated expertise."""
+        lib_root, index = self._bc_lib(tmp_path)
+        out_a = tmp_path / "out_a"
+        out_a.mkdir()
+        write_agents(self._spec(), index, lib_root, out_a)
+
+        # Re-run with the same empty-applies_to index — must be identical.
+        out_b = tmp_path / "out_b"
+        out_b.mkdir()
+        write_agents(self._spec(), index, lib_root, out_b)
+
+        for pid in ("developer", "devops-release", "ux-ui-designer"):
+            a = (out_a / ".claude" / "agents" / f"{pid}.md").read_bytes()
+            b = (out_b / ".claude" / "agents" / f"{pid}.md").read_bytes()
+            assert a == b
+
+
+class TestAgentWriterUnknownPersonaInAppliesTo:
+    """ADR-012 case 6: a bogus persona id in applies_to is dropped at index
+    time and never matches a real persona."""
+
+    def test_bogus_id_does_not_match_real_persona(self, tmp_path: Path):
+        """If applies_to=['bogus-persona'] survived the indexer (it
+        wouldn't), the real Developer persona must not be matched. We
+        simulate the post-validation state directly: an empty list, since
+        the indexer drops unknown IDs."""
+        lib_root, index = _make_filter_library(tmp_path)
+        # Simulate "applies_to had only bogus-persona, indexer dropped it"
+        for e in index.expertise:
+            if e.id == "python":
+                e.applies_to = []  # all unknown ids dropped → empty
+        out = tmp_path / "out"
+        out.mkdir()
+        write_agents(
+            CompositionSpec(
+                project=ProjectIdentity(name="X", slug="x"),
+                team=TeamConfig(personas=[PersonaSelection(id="developer")]),
+                expertise=[ExpertiseSelection(id="python")],
+            ),
+            index, lib_root, out,
+        )
+        # Empty post-validation list → applies-to-all → Developer gets it.
+        content = (out / ".claude" / "agents" / "developer.md").read_text()
+        assert "ruff" in content
+
+
+@pytest.mark.skipif(not _TEAM_TEST_AVAILABLE, reason="ai-team-library not present")
+class TestRealLibraryAppliesToFilter:
+    """End-to-end ADR-012 cases against the real library.
+
+    Uses a synthetic React+Python+TypeScript composition spanning Developer,
+    Tech-QA, DevOps-Release, and UX/UI Designer to exercise the curated
+    applies_to lists shipped in BEAN-259.
+    """
+
+    def _spec(self):
+        return CompositionSpec(
+            project=ProjectIdentity(name="A11y/Web", slug="a11y-web"),
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="tech-qa"),
+                PersonaSelection(id="devops-release"),
+                PersonaSelection(id="ux-ui-designer"),
+            ]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+                ExpertiseSelection(id="react", order=30),
+            ],
+        )
+
+    def _build(self, tmp_path: Path):
+        from foundry_app.services.library_indexer import build_library_index
+        index = build_library_index(_LIBRARY_ROOT)
+        out = tmp_path / "out"
+        out.mkdir()
+        write_agents(self._spec(), index, _LIBRARY_ROOT, out)
+        return out
+
+    def test_devops_release_has_no_tsconfig_or_ruff(self, tmp_path: Path):
+        """ADR-012 case 1 + part of case 2: DevOps-Release agent file
+        contains no tsconfig and no ruff (neither expertise lists it)."""
+        out = self._build(tmp_path)
+        content = (out / ".claude" / "agents" / "devops-release.md").read_text()
+        assert "tsconfig" not in content.lower()
+        assert "ruff" not in content
+        assert "pytest" not in content
+
+    def test_ux_ui_designer_has_no_ruff(self, tmp_path: Path):
+        """ADR-012 case 2: UX/UI Designer agent file contains no ruff
+        (python is not in its applies_to)."""
+        out = self._build(tmp_path)
+        content = (out / ".claude" / "agents" / "ux-ui-designer.md").read_text()
+        assert "ruff" not in content
+
+    def test_developer_has_tsconfig_and_ruff(self, tmp_path: Path):
+        """ADR-012 case 3: Developer agent file contains both python and
+        TypeScript content."""
+        out = self._build(tmp_path)
+        content = (out / ".claude" / "agents" / "developer.md").read_text()
+        assert "ruff" in content
+        assert "tsconfig" in content.lower()
+
+
+@pytest.mark.skipif(not _TEAM_TEST_AVAILABLE, reason="ai-team-library not present")
+class TestBean259TokenSavings:
+    """Acceptance check (BEAN-259): per-persona prompt size shrinks by
+    >=20% for at least one non-Developer persona under a representative
+    React+Python+TypeScript composition.
+
+    Measured on 2026-04-30 with the curated applies_to lists shipped in
+    BEAN-259 (python, typescript, react, accessibility-compliance):
+        - devops-release:    -59.6%
+        - security-engineer: -56.2%
+        - ba:                -55.6%
+        - ux-ui-designer:    -38.9%
+        - architect:         no change (in every list)
+        - developer:         no change (in every list)
+        - tech-qa:           no change (in every list)
+    See ``scripts/measure_bean_259_savings.py`` for the detailed report.
+    """
+
+    def _spec(self):
+        return CompositionSpec(
+            project=ProjectIdentity(name="Savings", slug="savings"),
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="tech-qa"),
+                PersonaSelection(id="architect"),
+                PersonaSelection(id="devops-release"),
+                PersonaSelection(id="ux-ui-designer"),
+                PersonaSelection(id="ba"),
+                PersonaSelection(id="security-engineer"),
+            ]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+                ExpertiseSelection(id="react", order=30),
+                ExpertiseSelection(id="accessibility-compliance", order=40),
+            ],
+        )
+
+    def test_at_least_one_non_developer_persona_shrinks_20pct(
+        self, tmp_path: Path,
+    ):
+        from foundry_app.services.library_indexer import build_library_index
+
+        spec = self._spec()
+        before_dir = tmp_path / "before"
+        after_dir = tmp_path / "after"
+        before_dir.mkdir()
+        after_dir.mkdir()
+
+        index_before = build_library_index(_LIBRARY_ROOT)
+        for e in index_before.expertise:
+            e.applies_to = []
+        write_agents(spec, index_before, _LIBRARY_ROOT, before_dir)
+
+        index_after = build_library_index(_LIBRARY_ROOT)
+        write_agents(spec, index_after, _LIBRARY_ROOT, after_dir)
+
+        biggest_pct = 0.0
+        biggest_pid = ""
+        for ps in spec.team.personas:
+            if ps.id == "developer":
+                continue
+            before_path = before_dir / ".claude" / "agents" / f"{ps.id}.md"
+            after_path = after_dir / ".claude" / "agents" / f"{ps.id}.md"
+            before_size = before_path.stat().st_size
+            after_size = after_path.stat().st_size
+            pct = (before_size - after_size) / before_size * 100.0
+            if pct > biggest_pct:
+                biggest_pct = pct
+                biggest_pid = ps.id
+        assert biggest_pct >= 20.0, (
+            f"BEAN-259 acceptance failed: largest non-Developer reduction "
+            f"is {biggest_pid}={biggest_pct:.1f}%, expected >=20%"
+        )

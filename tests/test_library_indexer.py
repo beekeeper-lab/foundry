@@ -691,3 +691,177 @@ class TestExpertiseCategories:
         e = idx.expertise_by_id("spaced")
         assert e is not None
         assert e.category == "Data & ML"
+
+
+class TestExpertiseAppliesTo:
+    """ADR-012 / BEAN-259: ``## Applies To`` parser tests."""
+
+    def test_applies_to_parsed_from_conventions_md(self, tmp_path: Path):
+        """A populated ``## Applies To`` section is parsed into a list."""
+        expertise_dir = tmp_path / "expertise" / "frontend"
+        expertise_dir.mkdir(parents=True)
+        (expertise_dir / "conventions.md").write_text(
+            "# Frontend\n\n## Category\nLanguages\n\n"
+            "## Applies To\n\n- developer\n- tech-qa\n- ux-ui-designer\n",
+        )
+        # Add the personas that the section references so the
+        # unknown-persona warning doesn't drop them.
+        for pid in ("developer", "tech-qa", "ux-ui-designer"):
+            (tmp_path / "personas" / pid).mkdir(parents=True)
+            (tmp_path / "personas" / pid / "persona.md").write_text(
+                f"# Persona: {pid}\n"
+            )
+        idx = build_library_index(tmp_path)
+        e = idx.expertise_by_id("frontend")
+        assert e is not None
+        assert e.applies_to == ["developer", "tech-qa", "ux-ui-designer"]
+
+    def test_no_applies_to_section_defaults_empty(self, tmp_path: Path):
+        """Expertise without an ``## Applies To`` section has applies_to=[]."""
+        expertise_dir = tmp_path / "expertise" / "bare"
+        expertise_dir.mkdir(parents=True)
+        (expertise_dir / "conventions.md").write_text(
+            "# Bare\n\n## Category\nLanguages\n\n## Defaults\n- foo\n",
+        )
+        idx = build_library_index(tmp_path)
+        e = idx.expertise_by_id("bare")
+        assert e is not None
+        assert e.applies_to == []
+
+    def test_empty_applies_to_section_returns_empty_list(self, tmp_path: Path):
+        """Heading present, no bullets — treated as 'applies to all'."""
+        expertise_dir = tmp_path / "expertise" / "empty"
+        expertise_dir.mkdir(parents=True)
+        (expertise_dir / "conventions.md").write_text(
+            "# Empty\n\n## Applies To\n\n## Defaults\n- foo\n",
+        )
+        idx = build_library_index(tmp_path)
+        e = idx.expertise_by_id("empty")
+        assert e is not None
+        assert e.applies_to == []
+
+    def test_applies_to_falls_back_to_first_md(self, tmp_path: Path):
+        """Multi-file packs without conventions.md use the first .md alphabetically."""
+        expertise_dir = tmp_path / "expertise" / "multi"
+        expertise_dir.mkdir(parents=True)
+        (expertise_dir / "alpha.md").write_text(
+            "# Alpha\n\n## Applies To\n\n- developer\n- architect\n",
+        )
+        (expertise_dir / "beta.md").write_text(
+            "# Beta\n\n## Applies To\n\n- tech-qa\n",
+        )
+        for pid in ("developer", "architect", "tech-qa"):
+            (tmp_path / "personas" / pid).mkdir(parents=True)
+            (tmp_path / "personas" / pid / "persona.md").write_text(
+                f"# Persona: {pid}\n"
+            )
+        idx = build_library_index(tmp_path)
+        e = idx.expertise_by_id("multi")
+        assert e is not None
+        # Should pick alpha.md, not beta.md
+        assert e.applies_to == ["developer", "architect"]
+
+    def test_unknown_persona_id_dropped_with_warning(
+        self, tmp_path: Path, caplog,
+    ):
+        """An ``applies_to`` entry that is not a real persona is dropped and warned."""
+        import logging
+
+        expertise_dir = tmp_path / "expertise" / "scoped"
+        expertise_dir.mkdir(parents=True)
+        (expertise_dir / "conventions.md").write_text(
+            "# Scoped\n\n## Applies To\n\n- developer\n- bogus-persona\n",
+        )
+        # Only register `developer` as a real persona.
+        (tmp_path / "personas" / "developer").mkdir(parents=True)
+        (tmp_path / "personas" / "developer" / "persona.md").write_text(
+            "# Persona: Developer\n"
+        )
+        with caplog.at_level(logging.WARNING):
+            idx = build_library_index(tmp_path)
+        e = idx.expertise_by_id("scoped")
+        assert e is not None
+        assert e.applies_to == ["developer"]
+        # Warning matches the existing "Persona '<id>' not found" shape.
+        assert any(
+            "bogus-persona" in record.message
+            and "not found" in record.message
+            for record in caplog.records
+        )
+
+    def test_horizontal_rule_after_bullets_is_ignored(self, tmp_path: Path):
+        """A markdown HR (``---``) following the bullets must not be parsed as
+        a persona id. Real-world expertise files put a horizontal rule between
+        the ``## Applies To`` section and the next heading."""
+        expertise_dir = tmp_path / "expertise" / "withhr"
+        expertise_dir.mkdir(parents=True)
+        (expertise_dir / "conventions.md").write_text(
+            "# WithHR\n\n## Applies To\n\n- developer\n- tech-qa\n\n"
+            "Some prose paragraph between the section and the rule.\n\n"
+            "---\n\n## Defaults\n- foo\n",
+        )
+        for pid in ("developer", "tech-qa"):
+            (tmp_path / "personas" / pid).mkdir(parents=True)
+            (tmp_path / "personas" / pid / "persona.md").write_text(
+                f"# Persona: {pid}\n"
+            )
+        idx = build_library_index(tmp_path)
+        e = idx.expertise_by_id("withhr")
+        assert e is not None
+        assert e.applies_to == ["developer", "tech-qa"]
+
+    def test_applies_to_stops_at_next_heading(self, tmp_path: Path):
+        """Bullets after the next ``## ...`` heading are not collected."""
+        expertise_dir = tmp_path / "expertise" / "bounded"
+        expertise_dir.mkdir(parents=True)
+        (expertise_dir / "conventions.md").write_text(
+            "# Bounded\n\n## Applies To\n\n- developer\n\n"
+            "## Defaults\n\n- tech-qa\n",
+        )
+        (tmp_path / "personas" / "developer").mkdir(parents=True)
+        (tmp_path / "personas" / "developer" / "persona.md").write_text(
+            "# Persona: Developer\n"
+        )
+        idx = build_library_index(tmp_path)
+        e = idx.expertise_by_id("bounded")
+        assert e is not None
+        assert e.applies_to == ["developer"]
+
+    def test_real_library_curated_applies_to(self):
+        """The curated expertise files in the real library have the
+        ``## Applies To`` lists set during BEAN-259 implementation."""
+        idx = build_library_index(LIBRARY_ROOT)
+
+        python = idx.expertise_by_id("python")
+        assert python is not None
+        assert "developer" in python.applies_to
+        assert "tech-qa" in python.applies_to
+        assert "ux-ui-designer" not in python.applies_to
+        assert "devops-release" not in python.applies_to
+
+        typescript = idx.expertise_by_id("typescript")
+        assert typescript is not None
+        assert "developer" in typescript.applies_to
+        assert "tech-qa" in typescript.applies_to
+        assert "devops-release" not in typescript.applies_to
+        assert "ux-ui-designer" not in typescript.applies_to
+
+        react = idx.expertise_by_id("react")
+        assert react is not None
+        assert "developer" in react.applies_to
+        assert "ux-ui-designer" in react.applies_to
+
+        a11y = idx.expertise_by_id("accessibility-compliance")
+        assert a11y is not None
+        assert "ux-ui-designer" in a11y.applies_to
+
+    def test_unannotated_expertise_default_empty(self):
+        """Expertise files in the library without ``## Applies To`` keep
+        applies_to=[] — the empty-default rule preserves pre-BEAN-259
+        behavior for any non-curated file."""
+        idx = build_library_index(LIBRARY_ROOT)
+        # `devops` has no ## Applies To section in this commit; it should
+        # default to empty, meaning "applies to every persona".
+        devops = idx.expertise_by_id("devops")
+        assert devops is not None
+        assert devops.applies_to == []

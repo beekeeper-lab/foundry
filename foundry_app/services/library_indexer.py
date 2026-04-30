@@ -92,6 +92,64 @@ def _parse_expertise_category(expertise_dir: Path) -> str:
     return ""
 
 
+def _parse_expertise_applies_to(expertise_dir: Path) -> list[str]:
+    """Extract persona IDs from an expertise's ``## Applies To`` section.
+
+    Mirrors ``_parse_hook_conflicts``: scans the primary markdown file
+    (``conventions.md`` or the alphabetically-first ``*.md`` for multi-file
+    packs) for an ``## Applies To`` heading followed by a bulleted list. Each
+    bullet line's first token (stripped of surrounding backticks) is taken as
+    a persona id.
+
+    Returns an empty list if the section is missing, present-but-empty, or the
+    file is unreadable. Per ADR-012, an empty list signals "applies to every
+    persona" — that interpretation lives in
+    ``compiler._expertise_applies_to``, not here.
+    """
+    target = expertise_dir / "conventions.md"
+    if not target.is_file():
+        md_files = sorted(f for f in expertise_dir.iterdir() if f.suffix == ".md")
+        if not md_files:
+            return []
+        target = md_files[0]
+    try:
+        lines = target.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+
+    ids: list[str] = []
+    in_section = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.lower().startswith("## "):
+            if in_section:
+                # Hit the next heading — stop collecting.
+                break
+            in_section = stripped.lower() == "## applies to"
+            continue
+        if not in_section:
+            continue
+        # Markdown horizontal rules (``---``, ``----``, etc.) start with ``-``
+        # but aren't list items. Skip lines that are all dashes/asterisks.
+        if stripped and set(stripped) <= {"-", "*", " "}:
+            continue
+        if stripped.startswith(("-", "*")):
+            body = stripped[1:].strip()
+            # Strip optional surrounding backticks: `- developer` or `- `developer``
+            if body.startswith("`"):
+                end = body.find("`", 1)
+                if end > 1:
+                    body = body[1:end]
+            else:
+                # Take first whitespace-delimited token so trailing prose
+                # (`- developer — implementation`) doesn't bleed into the id.
+                body = body.split()[0] if body.split() else ""
+            persona_id = body.strip()
+            if persona_id and persona_id not in ids:
+                ids.append(persona_id)
+    return ids
+
+
 def _scan_expertise(expertise_dir: Path) -> list[ExpertiseInfo]:
     """Scan the expertise/ directory and return ExpertiseInfo for each subdirectory."""
     if not expertise_dir.is_dir():
@@ -110,10 +168,41 @@ def _scan_expertise(expertise_dir: Path) -> list[ExpertiseInfo]:
                 path=str(entry),
                 files=files,
                 category=_parse_expertise_category(entry),
+                applies_to=_parse_expertise_applies_to(entry),
             )
         )
 
     return items
+
+
+def _validate_expertise_applies_to(
+    expertise: list[ExpertiseInfo],
+    known_persona_ids: set[str],
+) -> list[ExpertiseInfo]:
+    """Drop unknown persona IDs from each expertise's ``applies_to`` list.
+
+    Per ADR-012: unknown persona IDs are dropped with a warning at index time
+    (mirrors the ``Persona '<id>' not found`` warning shape used by the
+    compiler). Returns a new list of ExpertiseInfo with cleaned applies_to.
+    """
+    cleaned: list[ExpertiseInfo] = []
+    for info in expertise:
+        if not info.applies_to:
+            cleaned.append(info)
+            continue
+        valid: list[str] = []
+        for pid in info.applies_to:
+            if pid in known_persona_ids:
+                valid.append(pid)
+            else:
+                logger.warning(
+                    "Persona '%s' not found in library index "
+                    "(referenced by expertise '%s' applies_to)",
+                    pid,
+                    info.id,
+                )
+        cleaned.append(info.model_copy(update={"applies_to": valid}))
+    return cleaned
 
 
 def _parse_hook_category(path: Path) -> str:
@@ -259,6 +348,9 @@ def build_library_index(library_root: str | Path) -> LibraryIndex:
 
     personas = _scan_personas(root / "personas")
     expertise = _scan_expertise(root / "expertise")
+    expertise = _validate_expertise_applies_to(
+        expertise, {p.id for p in personas},
+    )
     hook_packs = _scan_hook_packs(root / "claude" / "hooks")
 
     logger.info(

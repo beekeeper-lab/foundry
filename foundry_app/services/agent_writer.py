@@ -13,6 +13,7 @@ from foundry_app.services.compiler import (
     _PLACEHOLDER_RE,
     _build_context,
     _build_persona_context,
+    _expertise_applies_to,
     _get_emitted_expertise_ids,
     _substitute,
 )
@@ -184,12 +185,21 @@ def write_agents(
     # built inside the per-persona loop so {{ strictness }} resolves correctly.
     shared_context = _build_context(spec, emitted_expertise_ids)
 
-    # Gather expertise sections (shared across all personas)
-    expertise_sections: list[dict[str, str]] = []
+    # Pre-compute the unfiltered expertise highlights so we don't re-read
+    # every expertise file once per persona. Each entry retains its source
+    # ExpertiseInfo so the per-persona loop can apply the ADR-012 filter.
+    # Each item: {"name", "highlights", "info"}. Missing-source expertise
+    # is dropped here once (with a warning) rather than per-persona.
+    all_expertise_sections: list[dict[str, object]] = []
+    seen_missing: set[str] = set()
     for expertise_sel in spec.expertise:
         expertise_info = library_index.expertise_by_id(expertise_sel.id)
         if expertise_info is None:
-            warnings.append(f"Expertise '{expertise_sel.id}' not found in library index")
+            if expertise_sel.id not in seen_missing:
+                warnings.append(
+                    f"Expertise '{expertise_sel.id}' not found in library index"
+                )
+                seen_missing.add(expertise_sel.id)
             continue
 
         conventions_path = Path(expertise_info.path) / "conventions.md"
@@ -199,9 +209,10 @@ def write_agents(
             )
             highlights = _extract_expertise_highlights(conventions_text)
             if highlights:
-                expertise_sections.append({
+                all_expertise_sections.append({
                     "name": expertise_sel.id.replace("-", " ").title(),
                     "highlights": highlights,
+                    "info": expertise_info,
                 })
 
     # Generate agent file for each persona
@@ -246,6 +257,17 @@ def write_agents(
             if primary_expertise
             else persona_title
         )
+
+        # ADR-012 LOAD-BEARING change: filter expertise per persona. Each
+        # expertise's ## Applies To list governs whether its highlights get
+        # inlined into THIS persona's agent file. Empty applies_to means
+        # "all personas" (preserves pre-BEAN-259 behavior for unannotated
+        # expertise files).
+        expertise_sections: list[dict[str, str]] = [
+            {"name": entry["name"], "highlights": entry["highlights"]}
+            for entry in all_expertise_sections
+            if _expertise_applies_to(persona_sel.id, entry["info"])
+        ]
 
         context = {
             "role_name": role_name,
