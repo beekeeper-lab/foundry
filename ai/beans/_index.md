@@ -296,7 +296,7 @@
 | BEAN-272 | Validate Task `Inputs:` at Dispatch (Pre-Execution Hook) | Process | High | Done | team-lead |
 | BEAN-273 | Persona `produces:` / `consumes:` Contracts | Infra | High | Done | team-lead |
 | BEAN-274 | Compose-Time Contract Graph Validator | App | High | Deferred | (unassigned) |
-| BEAN-275 | Resolve Acceptance Criteria & ADR Boundary Ownership | Process | Medium | In Progress | team-lead |
+| BEAN-275 | Resolve Acceptance Criteria & ADR Boundary Ownership | Process | Medium | Done | team-lead |
 | BEAN-276 | Role-Aware Handoff Schemas | Process | Medium | Deferred | (unassigned) |
 | BEAN-277 | Programmatic VDD Gate Skill | Process | Medium | Approved | (unassigned) |
 | BEAN-278 | Architecture-Aware Telemetry & `/orchestration-report` | Process | Medium | Deferred | (unassigned) |
