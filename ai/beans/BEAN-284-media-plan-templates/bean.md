@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-284 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-29 |
-| **Started** | — |
+| **Started** | 2026-04-29 21:36 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Infra |
 | **Depends On** | BEAN-282, BEAN-283 |
 
@@ -65,7 +65,8 @@ A new Foundry project optionally arrives with `IMAGE-PLAN.md` and `NARRATION-PLA
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 01 | Implement templates + spec field + scaffolder | Developer | — | Pending |
+| 02 | Verify acceptance criteria | Tech-QA | 01 | Pending |
 
 > Activated: Developer, Tech-QA.
 > Skipped: BA (requirements concrete), Architect (additive flag + template emission, no boundary changes; follows existing scaffolder conventions).
@@ -96,3 +97,7 @@ A new Foundry project optionally arrives with `IMAGE-PLAN.md` and `NARRATION-PLA
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
+| 01 | Implement templates + spec field + scaffolder | Developer | — | — | — | — |
+| 02 | Verify acceptance criteria | Tech-QA | — | — | — | — |
+| 01 | Implement templates + spec field + scaffolder | Developer | — | — | — | — |
+| 02 | Verify acceptance criteria | Tech-QA | — | — | — | — |
