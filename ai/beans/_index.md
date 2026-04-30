@@ -289,7 +289,7 @@
 | BEAN-265 | Sync Library long-run Skill With New Wave Model | Process | High | Done | team-lead |
 | BEAN-266 | Fix CLAUDE.md Title-Casing for Acronyms and Slashed Names | App | Low | Done | team-lead |
 | BEAN-267 | Investigate Reported Agent File Truncation in Multi-Expertise Compositions | App | Medium | Done | team-lead |
-| BEAN-268 | Add Workflow Pointers Section to Generated CLAUDE.md | App | Medium | In Progress | team-lead |
+| BEAN-268 | Add Workflow Pointers Section to Generated CLAUDE.md | App | Medium | Done | team-lead |
 | BEAN-269 | Make Team Orchestration Model Explicit in Generated Artifacts | App | High | Done | team-lead |
 | BEAN-270 | `/spawn-task` Persona-Scoped Delegation Command | Process | High | Done | team-lead |
 | BEAN-271 | Tier Library Personas — `core/` vs `extended/` | Infra | High | Deferred | (unassigned) |
