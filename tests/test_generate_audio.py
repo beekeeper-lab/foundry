@@ -248,3 +248,113 @@ def test_source_contains_no_cloned_voice_ids():
         assert vid not in src, (
             f"Cloned voice ID {vid!r} found in committed source {_SCRIPT_PATH}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Manifest writer + orphan cleanup.
+# ---------------------------------------------------------------------------
+
+
+class TestWriteManifest:
+    def test_writes_array_of_records(self, tmp_path: Path):
+        entries = [
+            {"index": 1, "module": "m", "audio_file": "01_m.mp3", "text": "a", "size_bytes": 10},
+        ]
+        ga.write_manifest(tmp_path, entries)
+        loaded = json.loads((tmp_path / "manifest.json").read_text())
+        assert loaded == entries
+
+    def test_creates_directory_if_missing(self, tmp_path: Path):
+        target = tmp_path / "deep" / "nested"
+        ga.write_manifest(target, [])
+        assert (target / "manifest.json").exists()
+
+
+class TestCleanupOrphans:
+    def test_removes_orphans(self, tmp_path: Path):
+        (tmp_path / "01_m.mp3").write_bytes(b"a")
+        (tmp_path / "02_m.mp3").write_bytes(b"b")
+        (tmp_path / "99_old.mp3").write_bytes(b"old")
+        removed = ga.cleanup_orphans(tmp_path, {"01_m.mp3", "02_m.mp3"})
+        assert removed == ["99_old.mp3"]
+        assert not (tmp_path / "99_old.mp3").exists()
+        assert (tmp_path / "01_m.mp3").exists()
+
+    def test_no_orphans_returns_empty(self, tmp_path: Path):
+        (tmp_path / "01_m.mp3").write_bytes(b"a")
+        assert ga.cleanup_orphans(tmp_path, {"01_m.mp3"}) == []
+
+    def test_missing_dir_no_op(self, tmp_path: Path):
+        assert ga.cleanup_orphans(tmp_path / "does-not-exist", {"x.mp3"}) == []
+
+    def test_ignores_non_mp3_files(self, tmp_path: Path):
+        (tmp_path / "01_m.mp3").write_bytes(b"a")
+        (tmp_path / "manifest.json").write_text("[]")
+        (tmp_path / "README.md").write_text("# notes")
+        removed = ga.cleanup_orphans(tmp_path, {"01_m.mp3"})
+        assert removed == []
+        assert (tmp_path / "manifest.json").exists()
+        assert (tmp_path / "README.md").exists()
+
+
+# ---------------------------------------------------------------------------
+# ElevenLabs client integration — fully mocked.
+# ---------------------------------------------------------------------------
+
+
+class TestGenerateAudioForBlock:
+    def _mock_client(self, audio_bytes: bytes = b"\x00\x01\x02\x03") -> MagicMock:
+        client = MagicMock()
+        # text_to_speech.convert returns an iterable of byte chunks.
+        client.text_to_speech.convert.return_value = iter([audio_bytes])
+        return client
+
+    def test_writes_mp3_and_returns_size(self, tmp_path: Path):
+        client = self._mock_client(b"x" * 1024)
+        out = tmp_path / "audio" / "m" / "01_m.mp3"
+        size = ga.generate_audio_for_block(
+            client, "hello", out, voice_id="VID", model_id="MOD",
+        )
+        assert size == 1024
+        assert out.exists()
+        assert out.read_bytes() == b"x" * 1024
+
+    def test_passes_voice_and_model_to_convert(self, tmp_path: Path):
+        client = self._mock_client()
+        out = tmp_path / "01_m.mp3"
+        ga.generate_audio_for_block(
+            client, "hello", out, voice_id="V123", model_id="MOD42",
+        )
+        client.text_to_speech.convert.assert_called_once()
+        kwargs = client.text_to_speech.convert.call_args.kwargs
+        assert kwargs["text"] == "hello"
+        assert kwargs["voice_id"] == "V123"
+        assert kwargs["model_id"] == "MOD42"
+        assert kwargs["output_format"] == "mp3_44100_128"
+
+    def test_default_model_is_eleven_multilingual_v2(self, tmp_path: Path):
+        client = self._mock_client()
+        out = tmp_path / "01_m.mp3"
+        ga.generate_audio_for_block(client, "x", out, voice_id="V")
+        kwargs = client.text_to_speech.convert.call_args.kwargs
+        assert kwargs["model_id"] == ga.DEFAULT_MODEL == "eleven_multilingual_v2"
+
+    def test_creates_parent_dirs(self, tmp_path: Path):
+        client = self._mock_client()
+        out = tmp_path / "deep" / "tree" / "x.mp3"
+        ga.generate_audio_for_block(client, "x", out, voice_id="V")
+        assert out.exists()
+
+
+class TestGetElevenlabsClient:
+    def test_constructs_client_with_api_key(self, monkeypatch):
+        captured = {}
+
+        class FakeEL:
+            def __init__(self, api_key: str) -> None:
+                captured["api_key"] = api_key
+
+        monkeypatch.setattr(ga, "_import_elevenlabs", lambda: FakeEL)
+        client = ga.get_elevenlabs_client("test-key")
+        assert isinstance(client, FakeEL)
+        assert captured["api_key"] == "test-key"
