@@ -25,6 +25,18 @@ Safely merges a bean's feature branch into the `main` branch. Handles pulling la
 1. **Resolve bean directory** — Find the bean directory matching the ID in `ai/beans/`.
 2. **Read bean status** — Parse `bean.md`. Confirm status is `Done`.
    - If not `Done`: report `BeanNotDone` error and exit.
+2a. **VDD gate** — Confirm a passing VDD report exists at the canonical
+    path `ai/outputs/tech-qa/vdd-<NNN>.md` (zero-padded NNN to match the
+    bean ID).
+    - If the file is missing: report `VDDMissing` error naming the bean
+      and exit. Suggest re-running `/vdd <bean-id>`.
+    - Read the file. If the **Aggregate verdict** line is `FAIL` or
+      `EMPTY`: report `VDDFail` error with the verdict and the report
+      path, and exit.
+    - `PARTIAL` is allowed only when the bean has a manual sign-off
+      note in its Notes section (Team-Lead override). Otherwise refuse
+      with `VDDPartial`.
+    - `PASS` proceeds to Step 3.
 3. **Aggregate telemetry** — Before merging, compute and fill the bean's Telemetry summary table:
    - Read all per-task rows from the bean's Telemetry table in `bean.md`.
    - **Total Tasks:** count of task rows with data.
@@ -93,6 +105,10 @@ If step 9 detects merge conflicts:
 | Error | Cause | Resolution |
 |-------|-------|------------|
 | `BeanNotDone` | Bean status is not `Done` | Finish the bean first, then merge |
+| `VDDMissing` | `ai/outputs/tech-qa/vdd-<NNN>.md` does not exist | Run `/vdd <bean-id>` and re-attempt the merge |
+| `VDDFail` | VDD report's aggregate verdict is `FAIL` | Fix the failing criteria, re-run `/vdd`, retry merge |
+| `VDDPartial` | VDD report's aggregate verdict is `PARTIAL` (manual items) | Tech-QA confirms manually; re-run `/vdd --manual=pass` or add a Notes override |
+| `VDDEmpty` | Bean has no Acceptance Criteria | Add criteria to the bean and re-run VDD |
 | `BranchNotFound` | Feature branch doesn't exist in git | Was the bean processed with `--no-branch`? Create branch manually or skip merge |
 | `MergeConflict` | Auto-merge fails due to conflicting changes | Report files, abort merge, return to feature branch |
 | `PushFailure` | Push rejected or network error | Pull and retry once; if still failing, report for manual resolution |
@@ -101,6 +117,8 @@ If step 9 detects merge conflicts:
 ## Dependencies
 
 - Bean must have status `Done` in its `bean.md`
+- VDD report at `ai/outputs/tech-qa/vdd-<NNN>.md` with aggregate verdict
+  `PASS` (see `claude/skills/vdd/SKILL.md`)
 - Feature branch `bean/BEAN-NNN-<slug>` must exist
 - Git repository in a clean state (no uncommitted changes)
 - Push permissions for the target branch (see `.claude/hooks/hook-policy.md`)

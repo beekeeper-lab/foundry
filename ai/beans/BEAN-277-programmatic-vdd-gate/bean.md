@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-277 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-28 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-04-30 15:12 |
+| **Completed** | 2026-04-30 15:26 |
+| **Duration** | 1578h 19m |
+| **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | — |
 
@@ -67,15 +67,30 @@ A `/vdd` command parses a bean's Acceptance Criteria, runs each "concrete eviden
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Build VDD skill, command, runner, merge-bean integration | Developer | — | Done |
+| 2 | Verify VDD gate — tests, dogfood, AC sweep | Tech-QA | 01 | Done |
 
-> Tasks populated by Team-Lead. Likely wave: Developer (skill + parser + merge-bean integration), Tech-QA (verification — meta-relevant since this *is* the verification skill). Architect optional.
+> Skipped: BA (default — bean spec is precise), Architect (default — implementation follows existing skill+command pattern, no architectural alternatives). Wave: Developer → Tech-QA.
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| ai-team-library/claude/skills/vdd/SKILL.md | +new (163) |
+| ai-team-library/claude/commands/vdd.md | +new (28) |
+| ai-team-library/claude/skills/merge-bean/SKILL.md | +18 |
+| ai/beans/_bean-template.md | +16 −4 |
+| ai/beans/_index.md | +1 −1 |
+| ai/beans/BEAN-277-…/bean.md | +24 −10 |
+| ai/beans/BEAN-277-…/tasks/01-developer-vdd-skill.md | +new |
+| ai/beans/BEAN-277-…/tasks/02-tech-qa-verify-vdd.md | +new |
+| ai/context/vdd-policy.md | +36 |
+| ai/outputs/tech-qa/BEAN-277-vdd.md | +new |
+| foundry_app/cli.py | +30 |
+| foundry_app/services/vdd.py | +new (438) |
+| foundry_app/services/bean_approval.py | +15 (placeholder phrases for new template) |
+| tests/test_vdd.py | +new (~17 tests) |
+| **Total** | **+~750 added across 14 files** |
 
 ## Notes
 
@@ -95,12 +110,13 @@ A `/vdd` command parses a bean's Acceptance Criteria, runs each "concrete eviden
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Build VDD skill, command, runner, merge-bean integration | Developer | 5m | 678,856 | 1,997 | $1.18 |
+| 2 | Verify VDD gate — tests, dogfood, AC sweep | Tech-QA | 7m | 698,504 | 2,496 | $1.26 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 12m |
+| **Total Tokens In** | 1,377,360 |
+| **Total Tokens Out** | 4,493 |
+| **Total Cost** | $2.44 |

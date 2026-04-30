@@ -298,7 +298,7 @@
 | BEAN-274 | Compose-Time Contract Graph Validator | App | High | Deferred | (unassigned) |
 | BEAN-275 | Resolve Acceptance Criteria & ADR Boundary Ownership | Process | Medium | Done | team-lead |
 | BEAN-276 | Role-Aware Handoff Schemas | Process | Medium | Deferred | (unassigned) |
-| BEAN-277 | Programmatic VDD Gate Skill | Process | Medium | Approved | (unassigned) |
+| BEAN-277 | Programmatic VDD Gate Skill | Process | Medium | In Progress | team-lead |
 | BEAN-278 | Architecture-Aware Telemetry & `/orchestration-report` | Process | Medium | Deferred | (unassigned) |
 | BEAN-279 | Orchestration Architecture Doc + Comprehensive Documentation Update | Process | High | Deferred | (unassigned) |
 | BEAN-280 | ClaudeKit as Canonical Source for Cross-Project Skills | Infra | High | Done | team-lead |

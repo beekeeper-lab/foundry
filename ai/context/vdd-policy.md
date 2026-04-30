@@ -76,6 +76,42 @@ The VDD gate is a mandatory checkpoint before any bean can transition from In Pr
 
 **A bean that fails the VDD gate stays In Progress.** The Team Lead identifies which criteria lack evidence and routes rework to the appropriate persona.
 
+### Programmatic Gate: `/vdd`
+
+The `/vdd <bean-id>` command (skill: `claude/skills/vdd/SKILL.md`,
+runtime: `foundry_app/services/vdd.py`) automates the per-criterion
+check. It parses the bean's `## Acceptance Criteria` section, runs each
+prefixed criterion, and writes a structured report at
+`ai/outputs/tech-qa/vdd-<NNN>.md` (zero-padded). `/merge-bean` refuses
+to merge when this report is missing or its aggregate verdict is not
+`PASS`.
+
+**Criterion-prefix convention.** Each AC checklist item may carry an
+evidence-type prefix in parentheses immediately after the checkbox:
+
+| Prefix | Meaning |
+|--------|---------|
+| `(test:<pytest-pattern-or-path>)` | runs `uv run pytest -q <target>`; pass = exit 0 |
+| `(lint:<path>)` | runs `uv run ruff check <path>`; pass = exit 0 |
+| `(file:<glob>)` | pass when at least one path matches the glob |
+| `(file-contains:<glob>::<substring>)` | pass when at least one matched file contains the substring |
+| (no prefix) | manual item — verdict is `PARTIAL` until Tech-QA confirms |
+
+Example:
+
+```
+- [ ] (test:tests/test_foo.py::test_bar) Foo behaves correctly
+- [ ] (lint:foundry_app/) Lint clean for foundry_app
+- [ ] (file:ai/outputs/tech-qa/vdd-277.md) VDD report exists
+- [ ] Manual: spot-check the wizard's persona-list scroll behavior
+```
+
+Backward-compatible: legacy criteria without prefixes still parse — they
+are flagged as `MANUAL`, leaving the verdict `PARTIAL` until a human
+sign-off (`/vdd --manual=pass` or a Notes override). A bean with **no
+acceptance criteria at all** produces verdict `EMPTY` and the merge gate
+refuses unconditionally.
+
 ## Evidence Standards
 
 Evidence must be:
