@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-279 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
 | **Started** | 2026-05-01 01:23 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-05-01 01:41 |
+| **Duration** | 1588h 34m |
 | **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | BEAN-273, BEAN-274, BEAN-275, BEAN-276, BEAN-277, BEAN-278 |
@@ -94,7 +94,18 @@ Two new artifacts plus a checklist sweep:
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/context/orchestration-architecture.md` | +507 (new — canonical long-form doc, ~430 lines + ASCII diagrams) |
+| `ai/context/decisions.md` | +51 (ADR-015) |
+| `ai/context/bean-workflow.md` | +29/-? (Inputs validation + /spawn-task + typed handoff + /vdd) |
+| `ai/context/project.md` | +10 (module map note for vdd.py + validate_contract_graph) |
+| `CHANGELOG.md` | +28 (v1.1.0 cluster entry) |
+| `CLAUDE.md` | +9/-? (Beans Workflow rewrite for /spawn-task, /vdd, /orchestration-report) |
+| `README.md` | +13/-? (lifecycle paragraph + Quick Reference table additions) |
+| `ai-team-library/README.md` | +16 (Persona Contracts section, contracts/ in structure, orchestration commands table) |
+| `.claude/shared` (kit submodule) | bumped — kit branch `kit/BEAN-279-orchestration-docs` (long-run + agent-file edits) |
+| `ai/beans/BEAN-279-.../bean.md` + 2 task files | +253 |
+| `MEMORY.md` (gitignored, absolute path) | +1 line in documentation checklist |
+| **Total in this repo** | 13 files changed, +891 / -29 |
 
 ## Notes
 
@@ -105,6 +116,12 @@ Two new artifacts plus a checklist sweep:
 **Checklist enforcement.** Use `MEMORY.md`'s documentation checklist as the work list. Any doc the cluster impacted but isn't on the checklist gets *added* to the checklist.
 
 **Coordinate with BEAN-251 and BEAN-268.** Both are still Approved (not Done). If they land before this bean, fold their CLAUDE.md additions into the orchestration narrative. If they land after, this bean's CLAUDE.md edits should leave room for theirs.
+
+**Tech-QA findings (2026-05-01).** Surfaced during Task 02 cold-start verification. None block bean closure; all tightening opportunities for follow-up.
+
+1. **Doc attributes typed-handoff workflow to wrong directory in generated projects.** orchestration-architecture.md mentions `.claude/agents/*.md` for the typed-handoff workflow in generated projects, but it actually lives in the compiled member prompts at `ai/generated/members/*.md` (the agent files there are 40-60 line stubs). Wording correct on intent, off by one directory on attribution.
+2. **Source-beans table title mismatch.** New doc lists BEAN-279 as "...Documentation Sweep" while `_index.md` has "...Comprehensive Documentation Update". Functionally equivalent — pick one.
+3. **validate-task-inputs.py doesn't auto-propagate to generated projects.** The hook is foundry-repo-specific and only ships into generated projects if the user enables a hook pack that includes it. The doc's wording describes foundry-repo behavior accurately, but a cold reader could assume universal propagation. Add a one-line caveat.
 
 ## Trello
 
@@ -121,8 +138,8 @@ Two new artifacts plus a checklist sweep:
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 13m |
+| **Total Tokens In** | 2,659,979 |
+| **Total Tokens Out** | 6,861 |
+| **Total Cost** | $4.59 |
