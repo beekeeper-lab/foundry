@@ -79,7 +79,32 @@ Clean break: existing compositions that name an extended persona without a `tier
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai-team-library/personas/` (24 dirs renamed via `git mv`) | core/: 5 dirs; extended/: 19 dirs |
+| `ai-team-library/README.md` | +52/-? (persona table + tier instructions) |
+| `ai-team-library/workflows/foundry-pipeline.md` | tier instructions |
+| `ai/context/decisions.md` | +102 (ADR-014) |
+| `examples/foundry-dogfood.yml` | +6/-? |
+| `examples/full-stack-web.yml` | +8/-? |
+| `examples/security-focused.yml` | +6/-? |
+| `examples/small-python-team.yml` | +2/-? |
+| `foundry_app/core/models.py` | +70/-? (PersonaInfo.tier, _persona_dirname, _validate_persona_id) |
+| `foundry_app/services/library_indexer.py` | +120/-? (two-pass scan + format_unknown_persona_error) |
+| `foundry_app/services/generator.py` | +36 (_apply_default_team) |
+| `foundry_app/services/compiler.py` | +20/-? |
+| `foundry_app/services/validator.py` | +10/-? |
+| `foundry_app/services/seeder.py` | +22/-? |
+| `foundry_app/services/asset_copier.py` | +30/-? |
+| `foundry_app/services/scaffold.py` | +14/-? |
+| `foundry_app/services/agent_writer.py` | +15/-? |
+| `foundry_app/ui/screens/builder/wizard_pages/persona_page.py` | +100/-? (tier groups) |
+| `foundry_app/ui/screens/library_manager.py` | +64/-? (extended/ default for new) |
+| `tests/test_persona_tiering.py` | +456 (new file, 20 tests) |
+| `tests/test_library_indexer.py` | +173/-? (fixture migration) |
+| `tests/test_persona_page.py` | +183/-? (tier-group rewrite) |
+| `tests/test_library_manager.py` | +119/-? |
+| `tests/test_generator.py`, `test_compiler.py`, `test_validator.py`, `test_agent_writer.py`, `test_asset_copier.py`, `test_persona_contracts.py`, `test_scope_boundaries_partition.py` | fixture migration |
+| `ai/beans/BEAN-271-library-persona-tiering/bean.md` + 3 task files | +287 |
+| **Total** | 233 files changed, +1697 / -353 |
 
 ## Notes
 
