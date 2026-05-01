@@ -57,6 +57,8 @@ from foundry_app.ui.theme import (
     SPACE_MD,
     SPACE_SM,
     SPACE_XL,
+    STATUS_ERROR,
+    STATUS_SUCCESS,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
@@ -418,6 +420,8 @@ class HookSafetyPage(QWidget):
         self._cards: dict[str, HookPackCard] = {}
         self._category_labels: list[QLabel] = []
         self._safety_sections: dict[str, SafetyPolicySection] = {}
+        self._library_index: LibraryIndex | None = None
+        self._conflict_label: QLabel | None = None
         self._build_ui()
         if library_index is not None:
             self.load_hook_packs(library_index)
@@ -499,6 +503,15 @@ class HookSafetyPage(QWidget):
         self._hook_empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._hook_empty_label.setWordWrap(True)
         self._content_layout.addWidget(self._hook_empty_label)
+
+        # Real-time conflict indicator (BEAN-286). Surfaces mutually-exclusive
+        # pack pairs as soon as both are enabled, instead of deferring the
+        # discovery to generation-time validation.
+        self._conflict_label = QLabel("")
+        self._conflict_label.setObjectName("hook-conflict-indicator")
+        self._conflict_label.setWordWrap(True)
+        self._conflict_label.setVisible(False)
+        self._content_layout.addWidget(self._conflict_label)
 
         # Hook card container
         self._hook_card_container = QWidget()
@@ -590,6 +603,8 @@ class HookSafetyPage(QWidget):
 
     def load_hook_packs(self, library_index: LibraryIndex) -> None:
         """Populate the hook pack section with packs from a LibraryIndex, grouped by category."""
+        self._library_index = library_index
+
         # Clear existing cards and category labels
         for card in self._cards.values():
             self._hook_card_layout.removeWidget(card)
@@ -631,8 +646,121 @@ class HookSafetyPage(QWidget):
                 self._hook_card_layout.addWidget(card)
                 self._cards[pack.id] = card
 
+        # BEAN-286: each pack ships enabled-by-default. When two declare a
+        # mutual conflict, accepting defaults means shipping a configuration
+        # the validator already rejects. Walk packs in render order and turn
+        # off the partner of any conflict whose first member is still on —
+        # "first wins". Library order is stable, so this is deterministic.
+        self._resolve_default_conflicts()
         self._hook_empty_label.setVisible(len(self._cards) == 0)
+        self._update_conflict_indicator()
         logger.info("Loaded %d hook pack cards in %d categories", len(self._cards), len(groups))
+
+    def _resolve_default_conflicts(self) -> None:
+        """Uncheck packs that conflict with an already-enabled earlier pack.
+
+        Iterates ``self._cards`` in insertion order (which mirrors the library
+        + render order). For each enabled card, walks its ``conflicts_with``
+        entries and unchecks any earlier-still-enabled partner's later sibling
+        — practically: keep the first, drop any partner declared by either
+        side of the pair. Mirrors :func:`validator._check_hook_conflicts`
+        symmetric semantics.
+        """
+        if self._library_index is None:
+            return
+        keep_enabled: list[str] = []
+        for pack_id, card in self._cards.items():
+            if not card.is_enabled:
+                continue
+            pack = self._library_index.hook_pack_by_id(pack_id)
+            pack_conflicts = set(pack.conflicts_with) if pack else set()
+            conflict = False
+            for kept_id in keep_enabled:
+                if pack_id == kept_id:
+                    continue
+                if kept_id in pack_conflicts:
+                    conflict = True
+                    break
+                kept_pack = self._library_index.hook_pack_by_id(kept_id)
+                kept_conflicts = (
+                    set(kept_pack.conflicts_with) if kept_pack else set()
+                )
+                if pack_id in kept_conflicts:
+                    conflict = True
+                    break
+            if conflict:
+                card.is_enabled = False
+            else:
+                keep_enabled.append(pack_id)
+
+    def _find_conflict_pairs(self) -> list[tuple[str, str]]:
+        """Return enabled pack-id pairs that declare a mutual conflict.
+
+        Mirrors :func:`validator._check_hook_conflicts`: symmetric (either
+        side declaring the other counts), deduped, only enabled packs.
+        """
+        if self._library_index is None:
+            return []
+        active = [pid for pid, card in self._cards.items() if card.is_enabled]
+        pairs: list[tuple[str, str]] = []
+        seen: set[tuple[str, str]] = set()
+        for i, left_id in enumerate(active):
+            left_pack = self._library_index.hook_pack_by_id(left_id)
+            left_conflicts = (
+                set(left_pack.conflicts_with) if left_pack else set()
+            )
+            for right_id in active[i + 1:]:
+                right_pack = self._library_index.hook_pack_by_id(right_id)
+                right_conflicts = (
+                    set(right_pack.conflicts_with) if right_pack else set()
+                )
+                if right_id in left_conflicts or left_id in right_conflicts:
+                    pair = tuple(sorted((left_id, right_id)))
+                    if pair in seen:
+                        continue
+                    seen.add(pair)
+                    pairs.append(pair)
+        return pairs
+
+    def _update_conflict_indicator(self) -> None:
+        """Refresh the hook-pack conflict indicator from the current selection.
+
+        🔴 names every conflicting pair when one or more is enabled together.
+        🟢 confirms no conflicts. Hidden when no library is loaded, so the
+        existing empty-state label keeps the page clean before configuration.
+        """
+        label = self._conflict_label
+        if label is None:
+            return
+        if self._library_index is None or not self._cards:
+            label.setVisible(False)
+            return
+
+        pairs = self._find_conflict_pairs()
+        if pairs:
+            count = len(pairs)
+            header = (
+                f"\U0001f534  Hook conflicts: {count} mutually-exclusive "
+                f"pair{'s' if count != 1 else ''} enabled "
+                f"— disable one of each pair before generating."
+            )
+            bullets = [
+                f"• '{left}' and '{right}' are mutually exclusive."
+                for left, right in pairs
+            ]
+            text = header + "\n" + "\n".join(bullets)
+            color = STATUS_ERROR
+        else:
+            text = "\U0001f7e2  Hook conflicts: none."
+            color = STATUS_SUCCESS
+
+        label.setText(text)
+        label.setStyleSheet(
+            f"color: {color}; font-size: {FONT_SIZE_SM}px; "
+            f"font-weight: {FONT_WEIGHT_BOLD};"
+        )
+        label.setWordWrap(True)
+        label.setVisible(True)
 
     def get_hooks_config(self) -> HooksConfig:
         """Return the current hook configuration."""
@@ -743,6 +871,7 @@ class HookSafetyPage(QWidget):
 
     def _on_card_toggled(self, pack_id: str, checked: bool) -> None:
         logger.debug("Hook pack %s toggled: %s", pack_id, checked)
+        self._update_conflict_indicator()
         self.selection_changed.emit()
 
     def _on_posture_changed(self, _text: str) -> None:

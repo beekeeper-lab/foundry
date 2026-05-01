@@ -728,3 +728,161 @@ class TestHookEmptyState:
         lib = _make_library("pre-commit-lint", "security-scan")
         page.load_hook_packs(lib)
         assert page._hook_empty_label.isHidden() is True
+
+
+# ---------------------------------------------------------------------------
+# BEAN-286 — Real-time hook-pack conflict indicator + default-load conflict-free
+#
+# When a user enables two packs that declare a mutual conflict, the page
+# should surface that fact at the page itself — not defer it to generation
+# time. Defaults must also load conflict-free out of the box.
+# ---------------------------------------------------------------------------
+
+
+def _make_pack_with_conflicts(pid: str, conflicts_with: list[str]) -> HookPackInfo:
+    return HookPackInfo(
+        id=pid,
+        path=f"/fake/hooks/{pid}",
+        files=[],
+        conflicts_with=conflicts_with,
+    )
+
+
+def _make_conflict_library() -> LibraryIndex:
+    """Library with one declared conflict pair: pack-a ↔ pack-b."""
+    return LibraryIndex(
+        library_root="/fake/library",
+        hook_packs=[
+            _make_pack_with_conflicts("pack-a", ["pack-b"]),
+            _make_pack_with_conflicts("pack-b", ["pack-a"]),
+            _make_pack("pack-c"),
+        ],
+    )
+
+
+class TestConflictIndicator:
+    """Hook Safety page surfaces enabled mutually-exclusive pairs in real time."""
+
+    def test_indicator_hidden_when_no_library(self, page):
+        assert page._conflict_label is not None
+        assert page._conflict_label.isHidden() is True
+
+    def test_indicator_green_when_no_conflicts(self):
+        # pack-a's conflict partner (pack-b) is unchecked by the default-
+        # conflict resolver, so on load the indicator is green.
+        p = HookSafetyPage(library_index=_make_conflict_library())
+        try:
+            label = p._conflict_label
+            assert label.isHidden() is False
+            text = label.text()
+            assert "\U0001f7e2" in text
+            assert "none" in text.lower()
+        finally:
+            p.close()
+
+    def test_indicator_red_names_pair_when_both_enabled(self):
+        p = HookSafetyPage(library_index=_make_conflict_library())
+        try:
+            # Manually re-enable the partner that the default-resolver
+            # auto-disabled — simulates a user clicking it on.
+            p.hook_cards["pack-b"].is_enabled = True
+            label = p._conflict_label
+            assert label.isHidden() is False
+            text = label.text()
+            assert "\U0001f534" in text
+            assert "pack-a" in text
+            assert "pack-b" in text
+            assert "mutually exclusive" in text.lower()
+        finally:
+            p.close()
+
+    def test_indicator_transitions_red_to_green_on_disable(self):
+        p = HookSafetyPage(library_index=_make_conflict_library())
+        try:
+            p.hook_cards["pack-b"].is_enabled = True
+            assert "\U0001f534" in p._conflict_label.text()
+            # Toggling one pack of the pair off clears the conflict.
+            p.hook_cards["pack-b"].is_enabled = False
+            text = p._conflict_label.text()
+            assert "\U0001f7e2" in text
+            assert "\U0001f534" not in text
+        finally:
+            p.close()
+
+    def test_indicator_handles_one_sided_declaration(self):
+        # Only pack-a declares the conflict; pack-b has no list. The
+        # detector mirrors validator._check_hook_conflicts, which treats
+        # one-sided declarations as binding.
+        lib = LibraryIndex(
+            library_root="/fake",
+            hook_packs=[
+                _make_pack_with_conflicts("pack-a", ["pack-b"]),
+                _make_pack("pack-b"),
+            ],
+        )
+        p = HookSafetyPage(library_index=lib)
+        try:
+            p.hook_cards["pack-b"].is_enabled = True
+            text = p._conflict_label.text()
+            assert "\U0001f534" in text
+            assert "pack-a" in text and "pack-b" in text
+        finally:
+            p.close()
+
+
+class TestDefaultLoadConflictFree:
+    """Defaults must load conflict-free — fixture libraries and the real one."""
+
+    def test_default_load_drops_partner_of_declared_conflict_pair(self):
+        p = HookSafetyPage(library_index=_make_conflict_library())
+        try:
+            # First-wins: pack-a stays on, pack-b is dropped, pack-c stays.
+            assert p.hook_cards["pack-a"].is_enabled is True
+            assert p.hook_cards["pack-b"].is_enabled is False
+            assert p.hook_cards["pack-c"].is_enabled is True
+        finally:
+            p.close()
+
+    def test_default_load_real_library_is_conflict_free(self):
+        """Regression: BEAN-286.
+
+        Out of the box, with the real ``ai-team-library/`` indexed, no two
+        enabled hook packs may declare a mutual conflict. This test fails
+        before BEAN-286 lands because the page set every pack to enabled
+        regardless of conflict declarations.
+        """
+        from pathlib import Path
+
+        from foundry_app.services.library_indexer import build_library_index
+        from foundry_app.services.validator import _check_hook_conflicts
+
+        repo_root = Path(__file__).resolve().parent.parent
+        library_root = repo_root / "ai-team-library"
+        if not library_root.exists():
+            pytest.skip("ai-team-library/ not available in this checkout")
+
+        lib = build_library_index(library_root)
+
+        page = HookSafetyPage(library_index=lib)
+        try:
+            cfg = page.get_hooks_config()
+            from foundry_app.core.models import (
+                CompositionSpec,
+                ProjectIdentity,
+                TeamConfig,
+            )
+
+            composition = CompositionSpec(
+                project=ProjectIdentity(
+                    name="test", slug="test", description="", purpose="t",
+                ),
+                team=TeamConfig(personas=[]),
+                hooks=cfg,
+            )
+            messages: list = []
+            _check_hook_conflicts(composition, lib, messages)
+            assert messages == [], (
+                f"Default load is not conflict-free: {[m.message for m in messages]}"
+            )
+        finally:
+            page.close()
