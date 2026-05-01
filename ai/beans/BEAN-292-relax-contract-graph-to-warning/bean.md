@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-292 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-05-01 |
 | **Started** | 2026-05-01 17:54 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-05-01 18:11 |
+| **Duration** | 1605h 4m |
 | **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-290 |
@@ -216,19 +216,19 @@ before implementing the indicator update.
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 12m |
+| **Total Tokens In** | 1,779,184 |
+| **Total Tokens Out** | 17,272 |
+| **Total Cost** | $4.24 |
 
 ## Orchestration Telemetry
 
 | Field | Value |
 |-------|-------|
-| **Personas activated** | — (comma-separated, actual not planned) |
-| **Bounces** | — (Tech-QA → Developer kicks) |
-| **Scope changes** | — (in-flight scope edits) |
-| **Contract violations** | — (BEAN-274 catches at compose time) |
-| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
-| **Dispatch mode** | — (in-process / tmux-worker / mixed) |
+| **Personas activated** | developer, tech-qa |
+| **Bounces** | 0 (Tech-QA → Developer kicks) |
+| **Scope changes** | 0 (in-flight scope edits) |
+| **Contract violations** | 0 (BEAN-274 catches at compose time) |
+| **Inputs escape-hatch invocations** | 0 (BEAN-272's NONE-justified) |
+| **Dispatch mode** | in-process |
