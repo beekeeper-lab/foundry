@@ -85,8 +85,8 @@ Two new artifacts plus a checklist sweep:
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Write orchestration-architecture.md + ADR-015 + active-behavior doc sweep | developer | — | In Progress |
-| 2 | Cold-start verification: cross-references, checklist coverage, generated-project spot-check | tech-qa | 1 | Pending |
+| 1 | Write orchestration-architecture.md + ADR-015 + active-behavior doc sweep | developer | — | Done |
+| 2 | Cold-start verification: cross-references, checklist coverage, generated-project spot-check | tech-qa | 1 | Done |
 
 > Skipped: BA (default — doc structure provided in Developer task spec; no requirements ambiguity); Architect (default — cross-references folded into Tech-QA's verification per the supervisor's wave call; bean's notes mark this as a sweep, not a new architecture decision).
 
@@ -117,7 +117,7 @@ Two new artifacts plus a checklist sweep:
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Write orchestration-architecture.md + ADR-015 + active-behavior doc sweep | developer | 9m | 1,442,005 | 3,808 | $2.50 |
-| 2 | Cold-start verification: cross-references, checklist coverage, generated-project spot-check | tech-qa | — | — | — | — |
+| 2 | Cold-start verification: cross-references, checklist coverage, generated-project spot-check | tech-qa | 4m | 1,217,974 | 3,053 | $2.09 |
 
 | Metric | Value |
 |--------|-------|
