@@ -68,6 +68,7 @@ EXPECTED_EXPERTISE = [
     "product-strategy",
     "python",
     "python-qt-pyside6",
+    "r",
     "react",
     "react-native",
     "rust",
@@ -673,6 +674,7 @@ class TestExpertiseCategories:
             "product-strategy": "Business Practices",
             "python": "Languages",
             "python-qt-pyside6": "Languages",
+            "r": "Languages",
             "react": "Languages",
             "react-native": "Languages",
             "rust": "Languages",
@@ -887,6 +889,22 @@ class TestExpertiseAppliesTo:
         assert a11y is not None
         assert "ux-ui-designer" not in a11y.applies_to
         assert "extended/ux-ui-designer" not in a11y.applies_to
+
+        # BEAN-294 — r expertise declares applies_to for the data-and-analytics
+        # personas plus core developer. The conventions.md source file lists
+        # all four (data-scientist, data-analyst, data-engineer, developer);
+        # per the BEAN-271 migration limitation noted above, the bare extended
+        # names get pruned by the indexer, so only `developer` survives in
+        # the parsed list. The intended four-persona set is documented in the
+        # markdown source for human readers and the wizard.
+        r_pack = idx.expertise_by_id("r")
+        assert r_pack is not None
+        assert "developer" in r_pack.applies_to
+        # Bare extended names are dropped — locked until the migration lands.
+        assert "data-scientist" not in r_pack.applies_to
+        assert "data-analyst" not in r_pack.applies_to
+        assert "data-engineer" not in r_pack.applies_to
+        assert "extended/data-scientist" not in r_pack.applies_to
 
     def test_unannotated_expertise_default_empty(self):
         """Expertise files in the library without ``## Applies To`` keep

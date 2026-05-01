@@ -82,6 +82,7 @@ Each expertise directory contains a `conventions.md` file defining domain standa
 | kotlin             | Kotlin language conventions, JVM interop          |
 | rust               | Rust language conventions, safety, cargo          |
 | swift              | Swift language conventions, Apple frameworks      |
+| r                  | R language conventions, tidyverse, renv, testing  |
 | react-native       | React Native mobile development patterns          |
 | sql-dba            | SQL conventions, schema design, query patterns    |
 | devops             | CI/CD, containerization, infrastructure-as-code   |
