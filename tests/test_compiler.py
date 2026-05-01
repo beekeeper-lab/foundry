@@ -4,6 +4,8 @@ import json
 import re
 from pathlib import Path
 
+import pytest
+
 from foundry_app.core.models import (
     CompositionSpec,
     ExpertiseInfo,
@@ -30,6 +32,7 @@ from foundry_app.services.compiler import (
     _substitute,
     compile_project,
 )
+from foundry_app.services.library_indexer import build_library_index
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -2428,3 +2431,71 @@ class TestCompilePersonaSectionForwardCompat:
         assert without_spec == with_spec
         # No additional warnings produced by passing spec.
         assert warnings_a == warnings_b
+
+
+# ---------------------------------------------------------------------------
+# BEAN-294 — R expertise plumbed through the real library
+# ---------------------------------------------------------------------------
+
+
+_REAL_LIBRARY_ROOT = Path(__file__).resolve().parent.parent / "ai-team-library"
+
+
+@pytest.mark.skipif(
+    not _REAL_LIBRARY_ROOT.is_dir(),
+    reason="ai-team-library not present",
+)
+class TestBean294RExpertiseIntegration:
+    """BEAN-294 headless substitution for the manual generation-pipeline AC.
+
+    Verify the R expertise pack is reachable end-to-end:
+    1. The real library indexer surfaces ``r`` with category ``Languages``.
+    2. ``compile_project`` emits an R reference in the generated CLAUDE.md
+       Tech Stack table when ``r`` is in ``spec.expertise``.
+    3. The standalone ``ai/generated/expertise/r.md`` file is written and
+       contains R-specific content (the verbatim "tidyverse" string from
+       conventions.md).
+    """
+
+    def test_indexer_surfaces_r_under_languages(self):
+        idx = build_library_index(_REAL_LIBRARY_ROOT)
+        r_pack = idx.expertise_by_id("r")
+        assert r_pack is not None, "Real library must expose `r` expertise"
+        assert r_pack.category == "Languages"
+        # conventions.md is the primary file the compiler reads.
+        assert "conventions.md" in r_pack.files
+
+    def test_compile_project_emits_r_in_claude_md(self, tmp_path: Path):
+        """A composition that includes `r` in expertise must produce a
+        CLAUDE.md that references the R conventions file (Tech Stack row)
+        and a standalone `ai/generated/expertise/r.md` whose content is
+        sourced from the real conventions.md (i.e. mentions tidyverse).
+        """
+        idx = build_library_index(_REAL_LIBRARY_ROOT)
+        out = tmp_path / "project"
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="tech-qa"),
+            ]),
+            expertise=[ExpertiseSelection(id="r", order=10)],
+        )
+        compile_project(spec, idx, _REAL_LIBRARY_ROOT, out)
+
+        claude_md = (out / "CLAUDE.md").read_text(encoding="utf-8")
+        # Tech Stack row references the R standalone file.
+        assert "ai/generated/expertise/r.md" in claude_md, (
+            "Generated CLAUDE.md must reference R conventions in Tech Stack"
+        )
+
+        r_standalone = out / "ai" / "generated" / "expertise" / "r.md"
+        assert r_standalone.is_file(), (
+            "Standalone r.md must be written under ai/generated/expertise/"
+        )
+        r_text = r_standalone.read_text(encoding="utf-8")
+        # The verbatim "tidyverse" default from the real conventions.md
+        # must be reachable from the generated artifact.
+        assert "tidyverse" in r_text, (
+            "Generated r.md must surface the tidyverse default from the "
+            "real ai-team-library/expertise/r/conventions.md"
+        )
