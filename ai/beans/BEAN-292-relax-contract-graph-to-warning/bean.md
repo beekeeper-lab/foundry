@@ -149,7 +149,7 @@ warnings back to errors.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Demote missing-producer to WARNING and update persona-page indicator | developer | — | Pending |
+| 1 | Demote missing-producer to WARNING and update persona-page indicator | developer | — | Done |
 | 2 | Regression sweep + end-to-end developer+tech-qa generation | tech-qa | 01 | Pending |
 
 > Skipped: BA (default), Architect (default)
@@ -211,7 +211,7 @@ before implementing the indicator update.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 | Demote missing-producer to WARNING and update persona-page indicator | developer | — | — | — | — |
+| 1 | Demote missing-producer to WARNING and update persona-page indicator | developer | 7m | 1,264,254 | 10,446 | $2.92 |
 | 2 | Regression sweep + end-to-end developer+tech-qa generation | tech-qa | — | — | — | — |
 
 | Metric | Value |

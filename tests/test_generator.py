@@ -1554,9 +1554,12 @@ class TestContractGraphPipelineIntegration:
     and recorded on the manifest so re-generation never breaks an
     existing project."""
 
-    def test_standard_mode_aborts_on_missing_producer(self, tmp_path: Path):
-        """The pre-generation validation result carries a missing-producer
-        ERROR, ``is_valid`` is False, and the pipeline does not run."""
+    def test_standard_mode_proceeds_on_missing_producer(self, tmp_path: Path):
+        """BEAN-292: missing-producer is a WARNING (not ERROR) in standard
+        mode, so the pre-generation ``is_valid`` gate passes and the
+        pipeline runs to completion. The warning is still surfaced via
+        ``validation.warnings`` so the wizard / CLI can display it.
+        """
         lib_root = _make_library_dir_with_broken_contract(tmp_path)
         output_dir = tmp_path / "output" / "broken-team"
         spec = _make_spec()  # team = [developer] only
@@ -1565,7 +1568,31 @@ class TestContractGraphPipelineIntegration:
             spec, lib_root, output_root=output_dir,
         )
 
-        # Validation must mark a missing producer error.
+        # Validation surfaces the missing-producer finding as a WARNING,
+        # not an error — is_valid stays True and generation proceeds.
+        assert validation.is_valid
+        warning_codes = [m.code for m in validation.warnings]
+        assert "missing-producer" in warning_codes
+        # The pipeline ran (BEAN-292: generalist teams generate cleanly).
+        assert "scaffold" in manifest.stages
+        assert overlay_plan is None
+
+    def test_strict_mode_aborts_on_missing_producer(self, tmp_path: Path):
+        """The pre-generation validation result carries a missing-producer
+        ERROR under STRICT, ``is_valid`` is False, and the pipeline does
+        not run. BEAN-292 routes contract-graph messages through
+        ``_apply_strictness`` so the strict-mode hard gate is preserved.
+        """
+        lib_root = _make_library_dir_with_broken_contract(tmp_path)
+        output_dir = tmp_path / "output" / "broken-team-strict"
+        spec = _make_spec()  # team = [developer] only
+
+        manifest, validation, overlay_plan = generate_project(
+            spec, lib_root, output_root=output_dir,
+            strictness=Strictness.STRICT,
+        )
+
+        # Strict mode promotes the warning back to an error.
         assert not validation.is_valid
         codes = [m.code for m in validation.errors]
         assert "missing-producer" in codes
@@ -1651,17 +1678,24 @@ class TestContractGraphPipelineIntegration:
         # what UIs and downstream tools read.
         assert any("task specification" in w for w in manifest.all_warnings)
 
-    def test_standard_mode_force_bypasses_contract_graph(self, tmp_path: Path):
+    def test_strict_mode_force_bypasses_contract_graph(self, tmp_path: Path):
         """``force=True`` is the documented escape hatch — generation must
         proceed even when contract-graph validation flagged errors. This
         test guards the existing ``not force`` gate from a future refactor
-        that accidentally hard-fails."""
+        that accidentally hard-fails.
+
+        BEAN-292: the test is exercised under STRICT strictness so a
+        contract-graph ERROR is actually present (in standard mode the
+        finding is now a WARNING and ``not validation.is_valid`` would
+        not hold).
+        """
         lib_root = _make_library_dir_with_broken_contract(tmp_path)
         output_dir = tmp_path / "output" / "broken-forced"
         spec = _make_spec()  # team = [developer] only
 
         manifest, validation, _ = generate_project(
             spec, lib_root, output_root=output_dir, force=True,
+            strictness=Strictness.STRICT,
         )
 
         # Validation still reports the error...
