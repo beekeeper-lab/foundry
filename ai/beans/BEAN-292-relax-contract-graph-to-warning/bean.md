@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-292 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-05-01 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-05-01 17:54 |
+| **Completed** | 2026-05-01 18:11 |
+| **Duration** | 1605h 4m |
+| **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-290 |
 
@@ -149,22 +149,28 @@ warnings back to errors.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Demote missing-producer to WARNING and update persona-page indicator | developer | — | Done |
+| 2 | Regression sweep + end-to-end developer+tech-qa generation | tech-qa | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Likely wave: **Developer** (severity demotion + persona-page
-> indicator update + docstring rationale), **Tech-QA** (regression
-> tests + manual verification). Architect not required — this is a
+> Skipped: BA (default), Architect (default)
+> Wave: **Developer → Tech-QA**. Architect not required — this is a
 > data-flow severity change, not a model change. BA not required — the
 > wording is already settled by BEAN-290.
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/services/validator.py` | +47 / -8 |
+| `foundry_app/services/generator.py` | +29 / -3 |
+| `foundry_app/ui/screens/builder/wizard_pages/persona_page.py` | +57 / -16 |
+| `tests/test_validator.py` | +178 / -34 |
+| `tests/test_persona_page.py` | +171 / -33 |
+| `tests/test_generator.py` | +152 / -16 |
+| `ai/outputs/tech-qa/BEAN-292-manual-verification.md` | +89 / -0 |
+| `ai/beans/BEAN-292-…/tasks/01-developer-relax-severity-and-indicator.md` | +157 / -0 |
+| `ai/beans/BEAN-292-…/tasks/02-tech-qa-regression-and-e2e.md` | +132 / -0 |
+| `ai/beans/BEAN-292-…/bean.md` | +30 / -14 |
 
 ## Notes
 
@@ -212,23 +218,24 @@ before implementing the indicator update.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Demote missing-producer to WARNING and update persona-page indicator | developer | 7m | 1,264,254 | 10,446 | $2.92 |
+| 2 | Regression sweep + end-to-end developer+tech-qa generation | tech-qa | 5m | 514,930 | 6,826 | $1.32 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 12m |
+| **Total Tokens In** | 1,779,184 |
+| **Total Tokens Out** | 17,272 |
+| **Total Cost** | $4.24 |
 
 ## Orchestration Telemetry
 
 | Field | Value |
 |-------|-------|
-| **Personas activated** | — (comma-separated, actual not planned) |
-| **Bounces** | — (Tech-QA → Developer kicks) |
-| **Scope changes** | — (in-flight scope edits) |
-| **Contract violations** | — (BEAN-274 catches at compose time) |
-| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
-| **Dispatch mode** | — (in-process / tmux-worker / mixed) |
+| **Personas activated** | developer, tech-qa |
+| **Bounces** | 0 (Tech-QA → Developer kicks) |
+| **Scope changes** | 0 (in-flight scope edits) |
+| **Contract violations** | 0 (BEAN-274 catches at compose time) |
+| **Inputs escape-hatch invocations** | 0 (BEAN-272's NONE-justified) |
+| **Dispatch mode** | in-process |

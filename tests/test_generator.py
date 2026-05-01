@@ -1554,9 +1554,12 @@ class TestContractGraphPipelineIntegration:
     and recorded on the manifest so re-generation never breaks an
     existing project."""
 
-    def test_standard_mode_aborts_on_missing_producer(self, tmp_path: Path):
-        """The pre-generation validation result carries a missing-producer
-        ERROR, ``is_valid`` is False, and the pipeline does not run."""
+    def test_standard_mode_proceeds_on_missing_producer(self, tmp_path: Path):
+        """BEAN-292: missing-producer is a WARNING (not ERROR) in standard
+        mode, so the pre-generation ``is_valid`` gate passes and the
+        pipeline runs to completion. The warning is still surfaced via
+        ``validation.warnings`` so the wizard / CLI can display it.
+        """
         lib_root = _make_library_dir_with_broken_contract(tmp_path)
         output_dir = tmp_path / "output" / "broken-team"
         spec = _make_spec()  # team = [developer] only
@@ -1565,7 +1568,31 @@ class TestContractGraphPipelineIntegration:
             spec, lib_root, output_root=output_dir,
         )
 
-        # Validation must mark a missing producer error.
+        # Validation surfaces the missing-producer finding as a WARNING,
+        # not an error — is_valid stays True and generation proceeds.
+        assert validation.is_valid
+        warning_codes = [m.code for m in validation.warnings]
+        assert "missing-producer" in warning_codes
+        # The pipeline ran (BEAN-292: generalist teams generate cleanly).
+        assert "scaffold" in manifest.stages
+        assert overlay_plan is None
+
+    def test_strict_mode_aborts_on_missing_producer(self, tmp_path: Path):
+        """The pre-generation validation result carries a missing-producer
+        ERROR under STRICT, ``is_valid`` is False, and the pipeline does
+        not run. BEAN-292 routes contract-graph messages through
+        ``_apply_strictness`` so the strict-mode hard gate is preserved.
+        """
+        lib_root = _make_library_dir_with_broken_contract(tmp_path)
+        output_dir = tmp_path / "output" / "broken-team-strict"
+        spec = _make_spec()  # team = [developer] only
+
+        manifest, validation, overlay_plan = generate_project(
+            spec, lib_root, output_root=output_dir,
+            strictness=Strictness.STRICT,
+        )
+
+        # Strict mode promotes the warning back to an error.
         assert not validation.is_valid
         codes = [m.code for m in validation.errors]
         assert "missing-producer" in codes
@@ -1651,20 +1678,133 @@ class TestContractGraphPipelineIntegration:
         # what UIs and downstream tools read.
         assert any("task specification" in w for w in manifest.all_warnings)
 
-    def test_standard_mode_force_bypasses_contract_graph(self, tmp_path: Path):
+    def test_strict_mode_force_bypasses_contract_graph(self, tmp_path: Path):
         """``force=True`` is the documented escape hatch — generation must
         proceed even when contract-graph validation flagged errors. This
         test guards the existing ``not force`` gate from a future refactor
-        that accidentally hard-fails."""
+        that accidentally hard-fails.
+
+        BEAN-292: the test is exercised under STRICT strictness so a
+        contract-graph ERROR is actually present (in standard mode the
+        finding is now a WARNING and ``not validation.is_valid`` would
+        not hold).
+        """
         lib_root = _make_library_dir_with_broken_contract(tmp_path)
         output_dir = tmp_path / "output" / "broken-forced"
         spec = _make_spec()  # team = [developer] only
 
         manifest, validation, _ = generate_project(
             spec, lib_root, output_root=output_dir, force=True,
+            strictness=Strictness.STRICT,
         )
 
         # Validation still reports the error...
         assert not validation.is_valid
         # ...but the pipeline ran anyway.
         assert "scaffold" in manifest.stages
+
+
+# ---------------------------------------------------------------------------
+# BEAN-292 headline scenario — REAL ai-team-library personas
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(
+    not _LIBRARY_ROOT.is_dir(),
+    reason="ai-team-library not present",
+)
+class TestBean292GeneralistTeamRealLibrary:
+    """BEAN-292 headline scenario: a ``developer + tech-qa`` only team
+    drawn from the **real** ai-team-library validates and generates in
+    standard mode. This guards against drift between synthetic personas
+    used in unit tests and what the actual ``developer.contracts.yml`` /
+    ``tech-qa.contracts.yml`` declare for ``consumes:`` — the bean's
+    user-facing acceptance scenario.
+    """
+
+    def _generalist_spec(
+        self,
+        slug: str,
+        strictness: Strictness = Strictness.STANDARD,
+    ) -> CompositionSpec:
+        return CompositionSpec(
+            project=ProjectIdentity(
+                name="BEAN-292 generalist team",
+                slug=slug,
+            ),
+            expertise=[ExpertiseSelection(id="python")],
+            team=TeamConfig(
+                personas=[
+                    PersonaSelection(id="developer"),
+                    PersonaSelection(id="tech-qa"),
+                ],
+            ),
+            strictness=strictness,
+        )
+
+    def test_developer_and_tech_qa_only_team_succeeds_in_standard_mode(
+        self, tmp_path: Path,
+    ):
+        """The bean's headline: ``developer + tech-qa`` only, real library,
+        STANDARD strictness must pass ``is_valid`` and produce a non-None
+        manifest. The missing-producer findings (developer consumes
+        user-story / adr / acceptance-criteria / design-spec / task-spec
+        with no producer on the team; tech-qa consumes acceptance-criteria
+        / design-spec / bean-spec) must surface as warnings, not errors.
+        """
+        spec = self._generalist_spec("bean292-standard")
+        output_dir = tmp_path / "output" / spec.project.slug
+
+        manifest, validation, overlay_plan = generate_project(
+            spec, _LIBRARY_ROOT, output_root=output_dir,
+        )
+
+        assert validation.is_valid, (
+            f"Standard-mode generalist team must validate, got errors: "
+            f"{[m.code + ': ' + m.message for m in validation.errors]}"
+        )
+        assert manifest is not None
+        assert overlay_plan is None
+        # The pipeline ran end-to-end — scaffold + compile stages present.
+        assert "scaffold" in manifest.stages
+        assert "compile" in manifest.stages
+        # Missing-producer findings are still reported as warnings so the
+        # wizard can render the advisory bullets.
+        warning_codes = [m.code for m in validation.warnings]
+        assert "missing-producer" in warning_codes, (
+            f"Expected missing-producer warning, got warnings: "
+            f"{warning_codes}"
+        )
+        # The output directory was actually written.
+        assert (output_dir / ".claude" / "agents").is_dir()
+
+    def test_developer_and_tech_qa_only_team_blocks_in_strict_mode(
+        self, tmp_path: Path,
+    ):
+        """Symmetric STRICT-mode test on the real library: the strictness
+        lever genuinely re-arms — missing-producer is promoted back to
+        ERROR and ``is_valid`` is False so the pipeline aborts.
+        """
+        spec = self._generalist_spec(
+            "bean292-strict", strictness=Strictness.STRICT,
+        )
+        output_dir = tmp_path / "output" / spec.project.slug
+
+        manifest, validation, overlay_plan = generate_project(
+            spec, _LIBRARY_ROOT, output_root=output_dir,
+            strictness=Strictness.STRICT,
+        )
+
+        assert not validation.is_valid, (
+            "Strict-mode generalist team must trip the is_valid gate"
+        )
+        error_codes = [m.code for m in validation.errors]
+        assert "missing-producer" in error_codes, (
+            f"Expected missing-producer error under STRICT, got: {error_codes}"
+        )
+        assert overlay_plan is None
+        # Pipeline did not run — manifest stages should be empty (the gate
+        # blocked before scaffold).
+        assert manifest.stages == {}
+        # And the output directory must be untouched.
+        assert not (output_dir / ".claude" / "agents").exists()

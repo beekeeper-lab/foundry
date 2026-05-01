@@ -674,17 +674,26 @@ class TestContractGraphValidatorValidTeam:
 
 
 class TestContractGraphValidatorMissingProducer:
-    """The headline ERROR path — consume with no team-member producer."""
+    """The headline WARNING path — consume with no team-member producer.
 
-    def test_missing_producer_is_error(self):
+    BEAN-292 demoted ``missing-producer`` from ERROR to WARNING so a
+    generalist team (e.g. ``developer + tech-qa`` only) validates
+    successfully. STRICT-mode strictness restores the hard gate; see
+    ``TestContractGraphMissingProducerStrictness`` below.
+    """
+
+    def test_missing_producer_is_warning(self):
         ba = _persona("ba", produces=["user-story"])
         dev = _persona("developer", consumes=["user-story"])
         team = [dev]  # ba is in the library, NOT on the team
         result = validate_contract_graph(team, _registry(ba, dev))
-        assert not result.is_valid
-        assert len(result.errors) == 1
-        msg = result.errors[0]
+        # BEAN-292: missing-producer is now a WARNING, not an ERROR. The
+        # team is still valid in standard mode and generation proceeds.
+        assert result.is_valid
+        assert len(result.warnings) == 1
+        msg = result.warnings[0]
         assert msg.code == "missing-producer"
+        assert msg.severity == Severity.WARNING
         # BEAN-290: artifact-id "user-story" → human label "user stories";
         # personas are title-cased in the message text.
         assert "user stories" in msg.message
@@ -701,11 +710,11 @@ class TestContractGraphValidatorMissingProducer:
         dev = _persona("developer", consumes=["user-story"])
         qa = _persona("tech-qa", consumes=["user-story"])
         result = validate_contract_graph([dev, qa], _registry(ba, dev, qa))
-        errs = [m for m in result.errors if m.code == "missing-producer"]
-        assert len(errs) == 1
+        warns = [m for m in result.warnings if m.code == "missing-producer"]
+        assert len(warns) == 1
         # BEAN-290: persona ids are title-cased (`tech-qa` → `Tech-QA`).
-        assert "Developer" in errs[0].message
-        assert "Tech-QA" in errs[0].message
+        assert "Developer" in warns[0].message
+        assert "Tech-QA" in warns[0].message
 
     def test_missing_producer_lists_library_producers_as_suggestion(self):
         """The remediation hint names every library persona that produces
@@ -716,7 +725,9 @@ class TestContractGraphValidatorMissingProducer:
         result = validate_contract_graph(
             [dev], _registry(producer_a, producer_b, dev),
         )
-        msg = result.errors[0].message
+        warns = [m for m in result.warnings if m.code == "missing-producer"]
+        assert warns
+        msg = warns[0].message
         # BEAN-290: title-cased persona names.
         assert "BA" in msg
         assert "Team Lead" in msg
@@ -728,36 +739,120 @@ class TestContractGraphValidatorMissingProducer:
         the gap is a library issue, not the user's composition."""
         dev = _persona("developer", consumes=["mystery-type"])
         result = validate_contract_graph([dev], _registry(dev))
-        assert len(result.errors) == 1
+        warns = [m for m in result.warnings if m.code == "missing-producer"]
+        assert len(warns) == 1
         # No artifact label override for "mystery-type" → falls back to
         # "mystery type" (hyphen → space).
-        assert "mystery type" in result.errors[0].message
-        assert "library gap" in result.errors[0].message.lower()
+        assert "mystery type" in warns[0].message
+        assert "library gap" in warns[0].message.lower()
 
     def test_multiple_missing_producers_sorted_by_type(self):
-        """Multiple missing types are emitted as separate ERRORs, sorted
+        """Multiple missing types are emitted as separate WARNINGs, sorted
         by artifact name for deterministic output."""
         dev = _persona("developer", consumes=["zeta", "alpha", "mu"])
         result = validate_contract_graph([dev], _registry(dev))
-        errs = [m for m in result.errors if m.code == "missing-producer"]
-        assert len(errs) == 3
+        warns = [m for m in result.warnings if m.code == "missing-producer"]
+        assert len(warns) == 3
         # BEAN-290: artifact ids appear bare in the message (no quoted
         # `type 'X'` syntax). Single consumer ⇒ message uses verb "needs".
         types_in_order = []
-        for m in errs:
+        for m in warns:
             for t in ("alpha", "mu", "zeta"):
                 if f"needs {t}" in m.message:
                     types_in_order.append(t)
                     break
         assert types_in_order == ["alpha", "mu", "zeta"]
 
-    def test_missing_producer_severity_is_error(self):
-        """Severity must be ERROR, not WARNING — this is the standard-mode
-        hard-fail signal that the generator pipeline gates on."""
+    def test_missing_producer_severity_is_warning(self):
+        """Severity must be WARNING, not ERROR — BEAN-292 demoted this
+        from a hard-fail signal to an advisory. The generator pipeline's
+        ``is_valid`` gate now passes, and generalist teams (``developer +
+        tech-qa`` only) proceed. STRICT-mode strictness still promotes
+        the warning to ERROR for users who opt in.
+        """
         dev = _persona("developer", consumes=["task-spec"])
         result = validate_contract_graph([dev], _registry(dev))
-        assert all(m.severity == Severity.ERROR for m in result.errors)
-        assert not result.is_valid
+        warns = [m for m in result.warnings if m.code == "missing-producer"]
+        assert warns
+        assert all(m.severity == Severity.WARNING for m in warns)
+        assert result.is_valid
+
+    def test_missing_producer_only_team_is_valid(self):
+        """A team whose only contract-graph findings are missing-producer
+        warnings is valid — generation proceeds without intervention.
+
+        BEAN-292 motivating case: the user wants a ``developer + tech-qa``
+        generalist team; both consume artifacts produced by other roles
+        (user-stories, ADRs, design-specs) but the team should still
+        validate so the wizard can generate the project.
+        """
+        # Simulate the real-library shape: developer consumes user-story
+        # + adr; tech-qa consumes acceptance-criteria. Nobody on the team
+        # produces any of those — the only producer is the library-only BA.
+        ba = _persona(
+            "ba",
+            produces=["user-story", "acceptance-criteria"],
+        )
+        architect = _persona("architect", produces=["adr"])
+        dev = _persona(
+            "developer",
+            produces=["code-change"],
+            consumes=["user-story", "adr"],
+        )
+        qa = _persona(
+            "tech-qa",
+            produces=["test-suite"],
+            consumes=["acceptance-criteria"],
+        )
+        result = validate_contract_graph(
+            [dev, qa], _registry(ba, architect, dev, qa),
+        )
+        # Three missing producers (user-story, adr, acceptance-criteria),
+        # zero errors, is_valid=True.
+        assert result.is_valid
+        assert result.errors == []
+        codes = sorted(m.code for m in result.warnings)
+        assert codes == ["missing-producer"] * 3
+
+
+class TestContractGraphMissingProducerStrictness:
+    """BEAN-292 — STRICT mode still treats missing-producer as a hard gate."""
+
+    def test_apply_strictness_promotes_missing_producer_to_error(self):
+        """Strictness.STRICT must lift missing-producer WARNING → ERROR
+        through the standard ``_apply_strictness`` policy pass, so users
+        who opt into strict mode keep the pre-BEAN-292 hard-block
+        behaviour.
+        """
+        from foundry_app.services.validator import _apply_strictness
+
+        dev = _persona("developer", consumes=["task-spec"])
+        result = validate_contract_graph([dev], _registry(dev))
+        # Sanity: under default standard mode the message is a WARNING.
+        warns = [m for m in result.warnings if m.code == "missing-producer"]
+        assert warns
+        # Strict promotion turns it into an ERROR while preserving the
+        # code and message text.
+        promoted = _apply_strictness(
+            list(result.messages), Strictness.STRICT,
+        )
+        promoted_codes = {m.code: m.severity for m in promoted}
+        assert promoted_codes.get("missing-producer") == Severity.ERROR
+
+    def test_apply_strictness_light_demotes_missing_producer_to_info(self):
+        """LIGHT strictness demotes the warning to INFO so it doesn't even
+        appear in ``result.warnings`` — symmetric with how the rest of the
+        validator messages flow through ``_apply_strictness``.
+        """
+        from foundry_app.services.validator import _apply_strictness
+
+        dev = _persona("developer", consumes=["task-spec"])
+        result = validate_contract_graph([dev], _registry(dev))
+        demoted = _apply_strictness(
+            list(result.messages), Strictness.LIGHT,
+        )
+        demoted_severities = {m.code: m.severity for m in demoted}
+        assert demoted_severities.get("missing-producer") == Severity.INFO
 
 
 class TestContractGraphValidatorOrphanProduces:
@@ -895,6 +990,9 @@ class TestContractGraphValidatorMixedResults:
     def test_mixed_missing_and_orphan(self):
         # BEAN-289: ``unused-output`` must have a library consumer so
         # the orphan warning is actionable and still fires.
+        # BEAN-292: ``missing-producer`` is now a WARNING (not ERROR), so
+        # both findings live in ``result.warnings`` and ``is_valid``
+        # stays True.
         dev = _persona(
             "developer",
             produces=["unused-output"],
@@ -904,15 +1002,21 @@ class TestContractGraphValidatorMixedResults:
         result = validate_contract_graph(
             [dev], _registry(dev, absent_consumer),
         )
-        errs = [m for m in result.errors if m.code == "missing-producer"]
-        warns = [m for m in result.warnings if m.code == "orphan-produces"]
-        assert len(errs) == 1
-        assert len(warns) == 1
-        assert not result.is_valid  # an ERROR was present
+        missing = [m for m in result.warnings if m.code == "missing-producer"]
+        orphans = [m for m in result.warnings if m.code == "orphan-produces"]
+        assert len(missing) == 1
+        assert len(orphans) == 1
+        # BEAN-292: warnings alone don't break is_valid.
+        assert result.is_valid
 
-    def test_message_ordering_errors_before_warnings(self):
-        """The implementation appends errors first then warnings —
-        downstream UI relies on this order to render severity sections."""
+    def test_message_ordering_missing_before_orphan(self):
+        """The implementation appends missing-producer findings first,
+        then orphan-produces — downstream UI relies on this order to
+        render the more-actionable findings first.
+
+        BEAN-292: both are now WARNING severity, so the ordering is by
+        emission order rather than by severity level.
+        """
         dev = _persona(
             "developer",
             produces=["orphan-1"],
@@ -924,9 +1028,10 @@ class TestContractGraphValidatorMixedResults:
         result = validate_contract_graph(
             [dev], _registry(dev, absent_consumer),
         )
-        # First message is the ERROR (missing producer), second is the
-        # WARNING (orphan produce).
-        assert result.messages[0].severity == Severity.ERROR
+        # First message is missing-producer; second is orphan-produces.
+        assert result.messages[0].code == "missing-producer"
+        assert result.messages[0].severity == Severity.WARNING
+        assert result.messages[1].code == "orphan-produces"
         assert result.messages[1].severity == Severity.WARNING
 
 
@@ -1132,10 +1237,12 @@ class TestValidatorVocabulary:
     # ---- contract-graph codes ------------------------------------------
 
     def test_missing_producer_message_is_actionable(self):
+        # BEAN-292: missing-producer is a WARNING, so the message lives
+        # in ``result.warnings`` rather than ``result.errors``.
         ba = _persona("ba", produces=["user-story"])
         dev = _persona("developer", consumes=["user-story"])
         result = validate_contract_graph([dev], _registry(ba, dev))
-        msgs = [m for m in result.errors if m.code == "missing-producer"]
+        msgs = [m for m in result.warnings if m.code == "missing-producer"]
         assert msgs
         msg = msgs[0]
         _assert_no_blocked_vocabulary(msg)
@@ -1146,9 +1253,10 @@ class TestValidatorVocabulary:
         assert "Add the BA" in msg.message
 
     def test_missing_producer_with_no_library_supplier_says_library_gap(self):
+        # BEAN-292: missing-producer is a WARNING.
         dev = _persona("developer", consumes=["unknown-thing"])
         result = validate_contract_graph([dev], _registry(dev))
-        msgs = [m for m in result.errors if m.code == "missing-producer"]
+        msgs = [m for m in result.warnings if m.code == "missing-producer"]
         assert msgs
         _assert_no_blocked_vocabulary(msgs[0])
         # Tells the user this is a library gap, not their composition.

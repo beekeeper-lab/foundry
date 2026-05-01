@@ -613,12 +613,25 @@ class PersonaSelectionPage(QWidget):
         Runs :func:`validate_contract_graph` against whatever personas are
         currently checked and renders one of three states:
 
-        - 🟢 — all consumes satisfied, no orphan produces
-        - 🟡 — at least one orphan-produces warning, no missing producers
-        - 🔴 — at least one missing-producer error
+        - 🟢 — all consumes satisfied, no orphan produces, no missing
+          producers
+        - 🟡 — at least one advisory warning (missing-producer or
+          orphan-produces). Per BEAN-292, ``missing-producer`` is a
+          WARNING (not ERROR): a generalist team that absorbs the
+          producer's role is a valid composition.
+        - 🔴 — at least one ERROR-severity finding from
+          ``validate_contract_graph``. The function itself emits no
+          ERRORs by default after BEAN-292, so this state is reserved for
+          future contract-graph errors and remains reachable via the
+          severity check below.
 
         Hidden when no library is loaded or no personas are selected (the
         existing "select at least one persona" warning covers that state).
+
+        Headline copy uses a unified "Team check" line with sub-counts so
+        a single message format covers both ``missing-producer`` and
+        ``orphan-produces`` warnings (BEAN-292 task 01 dispatch choice:
+        unified-headline-with-sub-counts).
         """
         label = self._coherence_label
         if label is None:
@@ -651,17 +664,43 @@ class PersonaSelectionPage(QWidget):
 
         if error_count > 0:
             header = (
-                f"\U0001f534  Team check: {error_count} missing "
-                f"role{'s' if error_count != 1 else ''} — your team is short "
-                f"of someone."
+                f"\U0001f534  Team check: {error_count} blocking "
+                f"issue{'s' if error_count != 1 else ''} — your team can't "
+                f"generate as composed."
             )
             findings = [m.message for m in errors]
             color = STATUS_ERROR
         elif warning_count > 0:
+            missing_count = sum(
+                1 for m in warnings if m.code == "missing-producer"
+            )
+            orphan_count = sum(
+                1 for m in warnings if m.code == "orphan-produces"
+            )
+            other_count = warning_count - missing_count - orphan_count
+            sub_counts: list[str] = []
+            if missing_count:
+                sub_counts.append(
+                    f"{missing_count} missing "
+                    f"role{'s' if missing_count != 1 else ''}"
+                )
+            if orphan_count:
+                sub_counts.append(
+                    f"{orphan_count} unused "
+                    f"output{'s' if orphan_count != 1 else ''}"
+                )
+            if other_count:
+                sub_counts.append(
+                    f"{other_count} other "
+                    f"note{'s' if other_count != 1 else ''}"
+                )
+            detail = ", ".join(sub_counts) if sub_counts else (
+                f"{warning_count} team "
+                f"note{'s' if warning_count != 1 else ''}"
+            )
             header = (
-                f"\U0001f7e1  Team check: {warning_count} unused "
-                f"output{'s' if warning_count != 1 else ''} — someone on your "
-                f"team produces something no teammate uses."
+                f"\U0001f7e1  Team check: {detail} — your team will still "
+                f"generate, but consider the suggestions below."
             )
             findings = [m.message for m in warnings]
             color = STATUS_WARNING

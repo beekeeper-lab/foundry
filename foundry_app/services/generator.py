@@ -36,6 +36,7 @@ from foundry_app.services.scaffold import scaffold_project
 from foundry_app.services.seeder import seed_tasks
 from foundry_app.services.subtree_setup import setup_subtree
 from foundry_app.services.validator import (
+    _apply_strictness,
     run_pre_generation_validation,
     validate_contract_graph,
 )
@@ -126,20 +127,28 @@ def _run_contract_graph_check(
     composition: CompositionSpec,
     library: LibraryIndex,
     overlay: bool,
+    strictness: Strictness = Strictness.STANDARD,
 ) -> tuple[list[ValidationMessage], StageResult | None]:
     """Run :func:`validate_contract_graph` and adapt for the run mode.
 
-    In **standard** mode, the contract-graph messages are returned as-is so
-    the caller can merge them into the pre-generation ``ValidationResult``;
-    a missing producer therefore aborts generation through the existing
-    ``validation.is_valid`` gate.
+    In **standard** mode, the contract-graph messages are routed through
+    :func:`_apply_strictness` (BEAN-292) so the strictness lever applies
+    uniformly to the merged pre-generation result — STRICT promotes the
+    WARNING-level ``missing-producer`` findings back to ERROR (preserving
+    the hard gate the wizard offers as opt-in), STANDARD keeps them as
+    WARNINGs (so ``developer + tech-qa``-only teams pass ``is_valid``),
+    and LIGHT demotes them to INFO. The caller merges the returned
+    messages into the pre-generation ``ValidationResult`` so the
+    ``is_valid`` gate sees a consistent severity scale.
 
     In **overlay** mode, ERRORs are demoted to WARNINGs (the pipeline must
     proceed because the user is re-generating against an existing tree)
     and the caller receives a :class:`StageResult` whose ``warnings`` list
     captures the contract-graph findings — appending it to
     ``manifest.stages`` is enough to make them surface via
-    ``GenerationManifest.all_warnings``.
+    ``GenerationManifest.all_warnings``. Strictness is *not* re-applied
+    after the demotion: an overlay re-generation never blocks on a
+    contract-graph finding regardless of the user's strictness setting.
 
     Returns a tuple ``(messages, stage_result)``: in standard mode
     ``stage_result`` is ``None``; in overlay mode it carries the warnings
@@ -152,7 +161,13 @@ def _run_contract_graph_check(
         return [], None
 
     if not overlay:
-        return list(contract_result.messages), None
+        # Apply strictness so missing-producer (now WARNING by default per
+        # BEAN-292) gets promoted to ERROR under STRICT and demoted to
+        # INFO under LIGHT — same policy as the rest of the pre-generation
+        # messages.
+        return _apply_strictness(
+            list(contract_result.messages), strictness,
+        ), None
 
     # Overlay mode: demote errors to warnings, record on the manifest, proceed.
     demoted: list[ValidationMessage] = []
@@ -418,7 +433,7 @@ def generate_project(
     # gate. In overlay mode the same check yields warnings (errors demoted)
     # plus a stage result we attach to the manifest below.
     contract_messages, contract_stage = _run_contract_graph_check(
-        composition, library, overlay,
+        composition, library, overlay, strictness,
     )
 
     # Step 2: Validate

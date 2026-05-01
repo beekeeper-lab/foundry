@@ -342,16 +342,29 @@ def validate_contract_graph(
     Per ADR-013, every persona declares ``produces`` and ``consumes`` lists
     of artifact-type names. This check verifies, for the given team:
 
-    1. **Missing producer** (ERROR): every artifact type consumed by some
-       team member is also produced by some team member. The error names
-       the missing type, the team consumers, and any producer personas in
-       the library so the user knows whom to add.
+    1. **Missing producer** (WARNING): every artifact type consumed by some
+       team member is also produced by some team member. When a producer
+       is absent from the team, the validator emits a friendly *advisory*
+       naming the missing artifact, the team consumers, and any producer
+       personas in the library so the user knows whom they could add.
 
     2. **Orphan produces** (WARNING): an artifact type is produced by a
-       team member but consumed by no team member. Emitted as a warning
-       in both standard and overlay modes — it indicates a wasted output
-       channel, not a broken pipeline. ``handoff-packet`` is excluded
-       (universally produced; implicitly consumed by Team Lead).
+       team member but consumed by no team member. Indicates a wasted
+       output channel, not a broken pipeline. ``handoff-packet`` is
+       excluded (universally produced; implicitly consumed by Team Lead).
+
+    **Why warning, not error (BEAN-292).** ``consumes`` describes how a
+    persona *collaborates* when teammates that produce the artifact are
+    present — not a hard prerequisite for the persona to function. A
+    generalist team (e.g. ``developer + tech-qa`` only) is a valid
+    composition: those personas absorb the BA / Architect responsibilities
+    informally rather than failing because no one supplies user-stories or
+    ADRs. Treating ``missing-producer`` as ERROR forced every team to
+    include the full core tier any time ``developer`` or ``tech-qa`` was
+    selected, which broke the small-startup / generalist-team pattern.
+    Users who *do* want the hard gate can opt in via the strictness lever
+    (``Strictness.STRICT``), which promotes WARNING back to ERROR through
+    :func:`_apply_strictness` and restores the blocking behaviour.
 
     Args:
         personas: The selected team (members composing the project). May
@@ -362,8 +375,10 @@ def validate_contract_graph(
 
     Returns:
         A ``ValidationResult`` with ordered messages: missing-producer
-        errors first (sorted by artifact type), then orphan-produces
-        warnings (sorted by artifact type, then producer id).
+        warnings first (sorted by artifact type), then orphan-produces
+        warnings (sorted by artifact type, then producer id). Both are
+        WARNING severity by default; STRICT-mode strictness promotes them
+        to ERROR.
     """
     messages: list[ValidationMessage] = []
 
@@ -427,7 +442,7 @@ def validate_contract_graph(
                 f"team-composition issue."
             )
         messages.append(ValidationMessage(
-            severity=Severity.ERROR,
+            severity=Severity.WARNING,
             code="missing-producer",
             message=text,
         ))
@@ -472,10 +487,16 @@ def validate_contract_graph(
 
     result = ValidationResult(messages=messages)
 
+    missing_producer_count = sum(
+        1 for m in result.messages if m.code == "missing-producer"
+    )
+    orphan_produces_count = sum(
+        1 for m in result.messages if m.code == "orphan-produces"
+    )
     logger.info(
         "Contract-graph validation: %d missing producers, %d orphan produces",
-        len(result.errors),
-        len(result.warnings),
+        missing_producer_count,
+        orphan_produces_count,
     )
 
     return result

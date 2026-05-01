@@ -830,10 +830,17 @@ class TestCoherenceIndicatorInitialState:
         assert coherence_page._coherence_label.isHidden() is True
 
 
-class TestCoherenceIndicatorRed:
-    """🔴 — at least one missing-producer error on the current selection."""
+class TestCoherenceIndicatorYellowFromMissingProducer:
+    """🟡 — at least one missing-producer warning on the current selection.
 
-    def test_indicator_red_when_consumer_lacks_producer(
+    Per BEAN-292, ``missing-producer`` is a WARNING (not an ERROR), so a
+    consumer-without-producer renders as yellow (advisory) rather than
+    red (blocking). The state previously asserted by
+    ``TestCoherenceIndicatorRed``: those tests were renamed and moved
+    here to preserve coverage of the consumer-without-producer flow.
+    """
+
+    def test_indicator_yellow_when_consumer_lacks_producer(
         self, coherence_page,
     ):
         coherence_page.persona_cards["consumer"].is_selected = True
@@ -841,14 +848,22 @@ class TestCoherenceIndicatorRed:
         label = coherence_page._coherence_label
         assert label.isHidden() is False
         text = label.text()
-        # Red emoji (\U0001f534) marks the missing-producer state.
-        assert "\U0001f534" in text, f"Expected red emoji, got: {text!r}"
-        # The label messages the user about the missing producer.
+        # BEAN-292: missing-producer renders as YELLOW (advisory) rather
+        # than RED (blocking). Yellow emoji (\U0001f7e1).
+        assert "\U0001f7e1" in text, f"Expected yellow emoji, got: {text!r}"
+        # The label still surfaces the missing-role count to the user.
         assert "missing" in text.lower()
+        # And the per-message bullet still names what's missing.
+        assert "Add the Producer" in text
 
-    def test_indicator_red_count_reflects_findings(self, coherence_page):
+    def test_indicator_yellow_count_reflects_findings(self, coherence_page):
         """A consumer with multiple unsatisfied consumes must show the
-        right pluralization and count."""
+        right pluralization and sub-count.
+
+        BEAN-292: rendered as YELLOW (warning) rather than RED, with the
+        unified "Team check" headline carrying the ``N missing role(s)``
+        sub-count.
+        """
         # Add a consumer with two unsatisfied types.
         lib = LibraryIndex(
             library_root="/fake",
@@ -863,9 +878,9 @@ class TestCoherenceIndicatorRed:
         coherence_page.persona_cards["lonely"].is_selected = True
 
         text = coherence_page._coherence_label.text()
-        assert "\U0001f534" in text
-        # BEAN-290: headline talks about "missing roles" (user vocabulary),
-        # not "missing producers" (graph vocabulary).
+        assert "\U0001f7e1" in text
+        # BEAN-290 carried over: headline names "missing roles" (user
+        # vocabulary), not "missing producers" (graph vocabulary).
         assert "2 missing role" in text
         assert "roles" in text  # plural
 
@@ -937,12 +952,19 @@ class TestCoherenceIndicatorGreen:
 
 class TestCoherenceIndicatorTransitions:
     """The indicator updates *as personas are checked/unchecked* — that's
-    the user-facing payoff of BEAN-274."""
+    the user-facing payoff of BEAN-274.
 
-    def test_indicator_transitions_red_to_green(self, coherence_page):
-        # Start: consumer alone => RED.
+    BEAN-292 redrew the state model: ``missing-producer`` is now a
+    WARNING (yellow) rather than an ERROR (red), so the transitions
+    below reflect the new yellow-dominant flows for consumer-without-
+    producer compositions.
+    """
+
+    def test_indicator_transitions_yellow_to_green(self, coherence_page):
+        # Start: consumer alone => YELLOW (missing producer is now a
+        # warning per BEAN-292, not an error).
         coherence_page.persona_cards["consumer"].is_selected = True
-        assert "\U0001f534" in coherence_page._coherence_label.text()
+        assert "\U0001f7e1" in coherence_page._coherence_label.text()
 
         # Add the producer => GREEN.
         coherence_page.persona_cards["producer"].is_selected = True
@@ -959,14 +981,20 @@ class TestCoherenceIndicatorTransitions:
         coherence_page.persona_cards["orphan-producer"].is_selected = True
         assert "\U0001f7e1" in coherence_page._coherence_label.text()
 
-    def test_indicator_transitions_yellow_to_red(self, coherence_page):
-        # Start: orphan-producer alone => YELLOW.
+    def test_indicator_yellow_persists_when_orphan_plus_consumer_selected(
+        self, coherence_page,
+    ):
+        # Start: orphan-producer alone => YELLOW (orphan-produces).
         coherence_page.persona_cards["orphan-producer"].is_selected = True
         assert "\U0001f7e1" in coherence_page._coherence_label.text()
 
-        # Add the consumer (whose 'thing' is unsatisfied) => RED dominates.
+        # Add the consumer (whose 'thing' is unsatisfied) => still YELLOW
+        # (BEAN-292: missing-producer is also a WARNING, so adding it
+        # doesn't escalate to RED — both findings co-exist as warnings).
         coherence_page.persona_cards["consumer"].is_selected = True
-        assert "\U0001f534" in coherence_page._coherence_label.text()
+        text = coherence_page._coherence_label.text()
+        assert "\U0001f7e1" in text
+        assert "\U0001f534" not in text
 
     def test_indicator_hides_when_all_personas_unchecked(
         self, coherence_page,
@@ -978,26 +1006,84 @@ class TestCoherenceIndicatorTransitions:
 
     def test_indicator_refreshes_on_set_team_config(self, coherence_page):
         """``set_team_config`` (used when navigating back into the wizard)
-        must also refresh the indicator — not just card toggles."""
-        # Restore a broken team via the public API.
+        must also refresh the indicator — not just card toggles.
+
+        BEAN-292: the consumer-without-producer team renders as YELLOW
+        (missing-producer is a warning, not an error).
+        """
+        # Restore a missing-producer team via the public API.
         coherence_page.set_team_config(
             TeamConfig(personas=[PersonaSelection(id="consumer")]),
         )
         assert coherence_page._coherence_label.isHidden() is False
-        assert "\U0001f534" in coherence_page._coherence_label.text()
+        assert "\U0001f7e1" in coherence_page._coherence_label.text()
 
-    def test_red_dominates_yellow(self, coherence_page):
-        """When BOTH a missing producer AND an orphan produce are present,
-        the red (error) state must win — the spec says red on missing,
-        yellow on orphan, with red being the more severe state."""
-        # Select consumer (missing producer = RED) AND orphan-producer
+    def test_combined_missing_and_orphan_warnings_render_yellow(
+        self, coherence_page,
+    ):
+        """When BOTH a missing producer AND an orphan produce are present
+        the indicator stays YELLOW — both findings are advisory warnings
+        per BEAN-292. The headline carries sub-counts so the user sees
+        "1 missing role, 1 unused output".
+        """
+        # Select consumer (missing producer = YELLOW) AND orphan-producer
         # (orphan produces = YELLOW).
         coherence_page.persona_cards["consumer"].is_selected = True
         coherence_page.persona_cards["orphan-producer"].is_selected = True
         text = coherence_page._coherence_label.text()
-        assert "\U0001f534" in text
-        # Yellow emoji must NOT be present — red dominates.
+        assert "\U0001f7e1" in text
+        # Red emoji must NOT be present — both findings are warnings.
+        assert "\U0001f534" not in text
+        # Headline mentions both sub-counts with user-vocabulary labels.
+        assert "missing role" in text
+        assert "unused output" in text
+
+
+class TestCoherenceIndicatorRedReachable:
+    """BEAN-292 AC: the 🔴 state remains *reachable* for ERROR-severity
+    contract-graph findings, even though ``validate_contract_graph`` no
+    longer emits any ERRORs by default. The persona page's coherence
+    indicator branches on raw severity, so any future contract-graph
+    error code (or a ``Strictness.STRICT`` promotion routed through this
+    surface) will still trigger the red state. We simulate a future
+    ERROR via monkeypatch so the dead branch stays guarded against
+    accidental removal.
+    """
+
+    def test_red_state_reachable_when_validator_emits_error(
+        self, coherence_page, monkeypatch,
+    ):
+        from foundry_app.core.models import Severity, ValidationMessage, ValidationResult
+        from foundry_app.ui.screens.builder.wizard_pages import persona_page
+
+        # Inject a synthetic ERROR-severity contract-graph finding by
+        # patching the validator the indicator calls. The indicator's
+        # severity branch must route to the red state.
+        def fake_validate(team, library):
+            return ValidationResult(messages=[
+                ValidationMessage(
+                    severity=Severity.ERROR,
+                    code="hook-pack-conflict",
+                    message="Two enabled hook packs disagree on policy.",
+                ),
+            ])
+
+        monkeypatch.setattr(
+            persona_page, "validate_contract_graph", fake_validate,
+        )
+
+        # Toggle a card so _update_coherence_indicator runs against the
+        # patched validator.
+        coherence_page.persona_cards["consumer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        # Red emoji marks the ERROR-severity branch.
+        assert "\U0001f534" in text, (
+            f"Expected red emoji in indicator, got: {text!r}"
+        )
+        # Yellow emoji must NOT be present — error dominates warning.
         assert "\U0001f7e1" not in text
+        # Verbatim error message surfaces.
+        assert "hook packs disagree" in text
 
 
 # ---------------------------------------------------------------------------
@@ -1010,13 +1096,21 @@ class TestCoherenceIndicatorTransitions:
 
 
 class TestCoherenceIndicatorVerbatimMessages:
-    """🔴/🟡 states surface the validator's actionable per-message text."""
+    """🟡 states surface the validator's actionable per-message text.
 
-    def test_red_includes_verbatim_missing_producer_message(
+    BEAN-292: the missing-producer verbatim test moved from the red
+    state into the yellow state — the per-message text is unchanged
+    (BEAN-286 contract still holds), only the surrounding emoji /
+    headline copy moved.
+    """
+
+    def test_yellow_includes_verbatim_missing_producer_message(
         self, coherence_page,
     ):
         coherence_page.persona_cards["consumer"].is_selected = True
         text = coherence_page._coherence_label.text()
+        # BEAN-292: missing-producer renders inside the YELLOW state.
+        assert "\U0001f7e1" in text
         # BEAN-290: missing-producer message names the affected team
         # member and the suggested persona to add, both in user vocabulary.
         assert "Your Consumer needs" in text
@@ -1041,10 +1135,15 @@ class TestCoherenceIndicatorVerbatimMessages:
 class TestCoherenceIndicatorTruncationCap:
     """Six or more findings collapse the surplus to '+N more'."""
 
-    def test_red_findings_capped_at_five_with_overflow_line(self):
+    def test_yellow_findings_capped_at_five_with_overflow_line(self):
         # Build a single consumer with 6 unsatisfied artifact types so the
-        # validator emits 6 missing-producer errors. The indicator shows
-        # the first 5 verbatim and a single '+1 more' line for the rest.
+        # validator emits 6 missing-producer warnings. The indicator
+        # shows the first 5 verbatim and a single '+1 more' line for the
+        # rest.
+        # BEAN-292: missing-producer is now a WARNING, so the truncation
+        # cap exercises the yellow state rather than the red one. The
+        # cap behaviour itself (5 visible bullets + overflow) is
+        # unchanged.
         lib = LibraryIndex(
             library_root="/fake",
             personas=[
@@ -1058,6 +1157,8 @@ class TestCoherenceIndicatorTruncationCap:
         try:
             page.persona_cards["lonely"].is_selected = True
             text = page._coherence_label.text()
+            # The state is YELLOW since all findings are warnings.
+            assert "\U0001f7e1" in text
             # All six types are *findings*; only the first five appear
             # verbatim. The validator sorts alphabetically, so 'fff' is the
             # one that gets pushed past the cap. BEAN-290: artifact ids
@@ -1079,4 +1180,6 @@ class TestCoherenceIndicatorTruncationCap:
         coherence_page.persona_cards["consumer"].is_selected = True
         text = coherence_page._coherence_label.text()
         # One missing producer ⇒ one bullet, no '+N more' suffix.
+        # BEAN-292: surrounding state is YELLOW, but the truncation
+        # behaviour itself is severity-agnostic.
         assert "more" not in text.lower()
