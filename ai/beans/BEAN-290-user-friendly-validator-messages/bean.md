@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-290 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-05-01 |
 | **Started** | 2026-05-01 16:31 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-05-01 16:48 |
+| **Duration** | 1603h 40m |
 | **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-286, BEAN-289 |
@@ -171,7 +171,7 @@ key on it). Only the **message text** changes.
 
 ## Acceptance Criteria
 
-- [ ] (test:tests/test_validator.py) Every UI-surfaced validator
+- [x] (test:tests/test_validator.py) Every UI-surfaced validator
       message asserts:
         - the internal terms `producer`, `consumer`, `orphan`,
           `node`, `graph` do NOT appear in `.message`;
@@ -180,40 +180,43 @@ key on it). Only the **message text** changes.
         - the artifact's recognizable label DOES appear when an
           artifact is named (e.g., "Architecture Decision" for
           `adr`).
-- [ ] (test:tests/test_validator.py) `missing-producer` includes
+- [x] (test:tests/test_validator.py) `missing-producer` includes
       a concrete action ("Add the Software Architect to your team"
       or equivalent) AND names the affected team members in plain
       English ("your developer and team-lead need …").
-- [ ] (test:tests/test_validator.py) `orphan-produces` reads as
+- [x] (test:tests/test_validator.py) `orphan-produces` reads as
       a friendly suggestion, not a graph diagnostic. The fix
       direction (add a consumer persona) is named with a display
       name, not a persona id.
-- [ ] (test:tests/test_persona_page.py) The coherence summary
+- [x] (test:tests/test_persona_page.py) The coherence summary
       headline drops "producers"/"consumers" in favor of
       user-vocabulary nouns ("missing roles", "outputs no one is
       using", or similar — exact wording chosen during BA
       activation).
-- [ ] (test:tests/) The generation-failure banner no longer
+- [x] (test:tests/) The generation-failure banner no longer
       double-prefixes validator messages with `"Validation
       failed:"`. A test against the banner-text construction site
       asserts the banner copy starts with the cleaned validator
       message (or a single, user-vocabulary lead-in like
       `"Can't generate yet — "`), not with `"Validation failed:
       …"`.
-- [ ] (test:tests/test_validator.py) The
+- [x] (test:tests/test_validator.py) The
       `hook-pack-posture-incompatible` message text does NOT
       contain the substring `"Posture Compatibility table"` or
       `"Included: No"`. Equivalent assertions on any other
       data-structure section names that currently leak through.
-- [ ] (test:tests/test_validator.py) Existing message-code-based
+- [x] (test:tests/test_validator.py) Existing message-code-based
       assertions still pass — codes are unchanged.
-- [ ] (test:tests/) All tests pass (`uv run pytest`).
-- [ ] (lint:foundry_app/) Lint clean (`uv run ruff check
+- [x] (test:tests/) All tests pass (`uv run pytest`).
+- [x] (lint:foundry_app/) Lint clean (`uv run ruff check
       foundry_app/`).
-- [ ] (manual) Visually verify in the wizard with a deliberately-
+- [x] (manual) Visually verify in the wizard with a deliberately-
       broken team (e.g., `developer + tech-qa` only) that every
       surfaced message reads like English a non-engineer would
-      write.
+      write. *(Headless environment — text-based proof recorded at
+      `ai/outputs/tech-qa/BEAN-290-manual-verification.md` with
+      verbatim message samples; project owner asked to confirm via
+      live launch.)*
 
 ## Tasks
 
@@ -221,7 +224,7 @@ key on it). Only the **message text** changes.
 |---|------|-------|------------|--------|
 | 1 | Canonical phrasing for validator messages | ba | — | Done |
 | 2 | Wire canonical messages into validator + UI | developer | 1 | Done |
-| 3 | Vocabulary tests + regression sweep | tech-qa | 2 | Pending |
+| 3 | Vocabulary tests + regression sweep | tech-qa | 2 | Done |
 
 > Skipped: Architect (default — no new abstractions; `ValidationMessage`
 > shape is preserved).
@@ -290,23 +293,23 @@ leave the same problem latent in the rarely-triggered ones.
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Canonical phrasing for validator messages | ba | 2m | 1,717,125 | 16,323 | $4.29 |
 | 2 | Wire canonical messages into validator + UI | developer | 8m | 12,515,731 | 36,592 | $22.75 |
-| 3 | Vocabulary tests + regression sweep | tech-qa | — | — | — | — |
+| 3 | Vocabulary tests + regression sweep | tech-qa | 3m | 6,077,996 | 16,648 | $10.88 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 13m |
+| **Total Tokens In** | 20,310,852 |
+| **Total Tokens Out** | 69,563 |
+| **Total Cost** | $37.92 |
 
 ## Orchestration Telemetry
 
 | Field | Value |
 |-------|-------|
-| **Personas activated** | — (comma-separated, actual not planned) |
-| **Bounces** | — (Tech-QA → Developer kicks) |
-| **Scope changes** | — (in-flight scope edits) |
-| **Contract violations** | — (BEAN-274 catches at compose time) |
-| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
-| **Dispatch mode** | — (in-process / tmux-worker / mixed) |
+| **Personas activated** | ba, developer, tech-qa |
+| **Bounces** | 0 (Tech-QA → Developer kicks) |
+| **Scope changes** | 0 (in-flight scope edits) |
+| **Contract violations** | 0 (BEAN-274 catches at compose time) |
+| **Inputs escape-hatch invocations** | 0 (BEAN-272's NONE-justified) |
+| **Dispatch mode** | in-process |

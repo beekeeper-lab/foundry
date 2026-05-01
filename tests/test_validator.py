@@ -928,3 +928,246 @@ class TestContractGraphValidatorMixedResults:
         # WARNING (orphan produce).
         assert result.messages[0].severity == Severity.ERROR
         assert result.messages[1].severity == Severity.WARNING
+
+
+# ---------------------------------------------------------------------------
+# BEAN-290 — Vocabulary contract.
+#
+# Every UI-surfaced validator message must read in the user's vocabulary,
+# not the validator's internal one. The blocklist below names the exact
+# substrings a user should never see in a `.message`. New messages added
+# to the validator that target the UI must extend `_collect_ui_messages`
+# below so this contract continues to apply.
+# ---------------------------------------------------------------------------
+
+
+_BLOCKED_VOCABULARY: tuple[str, ...] = (
+    "producer",
+    "consumer",
+    "orphan",
+    "node",
+    "graph",
+    "type '",
+)
+
+
+def _assert_no_blocked_vocabulary(msg) -> None:
+    body = msg.message.lower()
+    for term in _BLOCKED_VOCABULARY:
+        assert term not in body, (
+            f"Internal vocabulary {term!r} leaked into {msg.code}: "
+            f"{msg.message!r}"
+        )
+
+
+class TestValidatorVocabulary:
+    """Negative + positive vocabulary assertions for every in-scope code."""
+
+    # ---- pre-generation codes ------------------------------------------
+
+    def test_no_personas_warning_is_user_friendly(self):
+        spec = _make_spec(team=TeamConfig(personas=[]))
+        result = run_pre_generation_validation(spec, _make_library())
+        msgs = [m for m in result.messages if m.code == "no-personas"]
+        assert msgs, "expected no-personas warning"
+        _assert_no_blocked_vocabulary(msgs[0])
+        # Positive: names the page the user must act on.
+        assert "Persona Selection" in msgs[0].message
+
+    def test_no_expertise_info_is_user_friendly(self):
+        spec = _make_spec(expertise=[])
+        result = run_pre_generation_validation(spec, _make_library())
+        msgs = [m for m in result.messages if m.code == "no-expertise"]
+        assert msgs, "expected no-expertise info"
+        _assert_no_blocked_vocabulary(msgs[0])
+        assert "intentional" in msgs[0].message.lower()
+
+    def test_missing_persona_message_has_no_blocked_vocabulary(self):
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="nonexistent")]),
+        )
+        result = run_pre_generation_validation(spec, _make_library())
+        msgs = [m for m in result.errors if m.code == "missing-persona"]
+        assert msgs
+        _assert_no_blocked_vocabulary(msgs[0])
+
+    def test_missing_expertise_is_user_friendly(self):
+        spec = _make_spec(expertise=[ExpertiseSelection(id="cobol")])
+        result = run_pre_generation_validation(spec, _make_library())
+        msgs = [m for m in result.errors if m.code == "missing-expertise"]
+        assert msgs
+        _assert_no_blocked_vocabulary(msgs[0])
+        assert "cobol" in msgs[0].message
+        # Positive: tells the user what to do.
+        assert "remove it" in msgs[0].message.lower()
+
+    def test_missing_hook_pack_is_user_friendly(self):
+        spec = _make_spec(
+            hooks=HooksConfig(packs=[HookPackSelection(id="ghost-pack")]),
+        )
+        result = run_pre_generation_validation(spec, _make_library())
+        msgs = [m for m in result.errors if m.code == "missing-hook-pack"]
+        assert msgs
+        _assert_no_blocked_vocabulary(msgs[0])
+        assert "ghost-pack" in msgs[0].message
+        assert "remove it" in msgs[0].message.lower()
+
+    def test_persona_no_persona_md_is_user_friendly(self):
+        lib = LibraryIndex(
+            library_root="/fake",
+            personas=[
+                PersonaInfo(
+                    id="developer",
+                    path="/fake/personas/developer",
+                    has_persona_md=False,  # the trigger
+                ),
+            ],
+            expertise=[
+                ExpertiseInfo(
+                    id="python",
+                    path="/fake/expertise/python",
+                    files=["conv.md"],
+                ),
+            ],
+        )
+        result = run_pre_generation_validation(_make_spec(), lib)
+        msgs = [m for m in result.warnings if m.code == "persona-no-persona-md"]
+        assert msgs
+        _assert_no_blocked_vocabulary(msgs[0])
+        # Positive: tells the user this is library-data, not their fault.
+        assert "library-data issue" in msgs[0].message
+        # Title-cased persona id appears.
+        assert "Developer" in msgs[0].message
+
+    def test_expertise_no_files_is_user_friendly(self):
+        lib = LibraryIndex(
+            library_root="/fake",
+            personas=[
+                PersonaInfo(
+                    id="developer",
+                    path="/fake/personas/developer",
+                    has_persona_md=True,
+                ),
+            ],
+            expertise=[
+                ExpertiseInfo(
+                    id="python",
+                    path="/fake/expertise/python",
+                    files=[],  # the trigger
+                ),
+            ],
+        )
+        result = run_pre_generation_validation(_make_spec(), lib)
+        msgs = [m for m in result.warnings if m.code == "expertise-no-files"]
+        assert msgs
+        _assert_no_blocked_vocabulary(msgs[0])
+        assert "library-data issue" in msgs[0].message
+
+    def test_duplicate_persona_is_user_friendly(self):
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="developer"),
+            ]),
+        )
+        result = run_pre_generation_validation(spec, _make_library())
+        msgs = [m for m in result.warnings if m.code == "duplicate-persona"]
+        assert msgs
+        _assert_no_blocked_vocabulary(msgs[0])
+        # Title-cased name is used.
+        assert "Developer" in msgs[0].message
+        assert "remove" in msgs[0].message.lower()
+
+    def test_duplicate_expertise_is_user_friendly(self):
+        spec = _make_spec(expertise=[
+            ExpertiseSelection(id="python"),
+            ExpertiseSelection(id="python"),
+        ])
+        result = run_pre_generation_validation(spec, _make_library())
+        msgs = [m for m in result.warnings if m.code == "duplicate-expertise"]
+        assert msgs
+        _assert_no_blocked_vocabulary(msgs[0])
+        assert "python" in msgs[0].message
+        assert "remove" in msgs[0].message.lower()
+
+    def test_hook_pack_conflict_is_user_friendly(self):
+        spec = _make_spec(hooks=HooksConfig(packs=[
+            HookPackSelection(id="az-read-only"),
+            HookPackSelection(id="az-limited-ops"),
+        ]))
+        result = run_pre_generation_validation(spec, _library_with_az_pair())
+        msgs = [m for m in result.errors if m.code == "hook-pack-conflict"]
+        assert msgs
+        _assert_no_blocked_vocabulary(msgs[0])
+        assert "can't be used together" in msgs[0].message
+
+    def test_hook_pack_posture_incompatible_strips_internal_section_names(
+        self,
+    ):
+        """Bean's headline regression: the message must not leak the
+        internal "Posture Compatibility table" section name or the
+        "Included: No" cell value."""
+        spec = _make_spec(hooks=HooksConfig(
+            posture=Posture.BASELINE,
+            packs=[HookPackSelection(id="compliance-gate")],
+        ))
+        result = run_pre_generation_validation(
+            spec, _library_with_compliance_gate(),
+        )
+        msgs = [
+            m for m in result.errors
+            if m.code == "hook-pack-posture-incompatible"
+        ]
+        assert msgs
+        _assert_no_blocked_vocabulary(msgs[0])
+        # Hard-coded internal-section-name guards.
+        assert "Posture Compatibility table" not in msgs[0].message
+        assert "Included: No" not in msgs[0].message
+        # Positive: pack id and posture name still reach the user, plus
+        # the friendly fix-clause.
+        assert "compliance-gate" in msgs[0].message
+        assert "baseline" in msgs[0].message
+        assert "raise" in msgs[0].message
+
+    # ---- contract-graph codes ------------------------------------------
+
+    def test_missing_producer_message_is_actionable(self):
+        ba = _persona("ba", produces=["user-story"])
+        dev = _persona("developer", consumes=["user-story"])
+        result = validate_contract_graph([dev], _registry(ba, dev))
+        msgs = [m for m in result.errors if m.code == "missing-producer"]
+        assert msgs
+        msg = msgs[0]
+        _assert_no_blocked_vocabulary(msg)
+        # Positive: human label, title-cased consumer, and a concrete
+        # action that names the producer to add.
+        assert "user stories" in msg.message
+        assert "Developer" in msg.message
+        assert "Add the BA" in msg.message
+
+    def test_missing_producer_with_no_library_supplier_says_library_gap(self):
+        dev = _persona("developer", consumes=["unknown-thing"])
+        result = validate_contract_graph([dev], _registry(dev))
+        msgs = [m for m in result.errors if m.code == "missing-producer"]
+        assert msgs
+        _assert_no_blocked_vocabulary(msgs[0])
+        # Tells the user this is a library gap, not their composition.
+        assert "library gap" in msgs[0].message.lower()
+
+    def test_orphan_produces_message_is_a_friendly_suggestion(self):
+        dev = _persona("developer", produces=["dev-decision"])
+        # BEAN-289: a library consumer is needed for the warning to fire.
+        consumer = _persona("reviewer", consumes=["dev-decision"])
+        result = validate_contract_graph([dev], _registry(dev, consumer))
+        msgs = [m for m in result.warnings if m.code == "orphan-produces"]
+        assert msgs
+        msg = msgs[0]
+        _assert_no_blocked_vocabulary(msg)
+        # Positive: title-cased producing persona, human artifact label,
+        # and the suggested consumer (also title-cased) appears.
+        assert "Developer" in msg.message
+        assert "development-decision note" in msg.message
+        assert "Reviewer" in msg.message
+        # Reads as a suggestion, not a diagnostic.
+        assert "Either add" in msg.message or "remove the" in msg.message
+
