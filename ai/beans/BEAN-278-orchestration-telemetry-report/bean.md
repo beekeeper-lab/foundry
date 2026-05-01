@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-278 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-28 |
-| **Started** | — |
+| **Started** | 2026-05-01 01:03 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | BEAN-274 |
 
@@ -79,9 +79,10 @@ Each bean carries a small Orchestration Telemetry block alongside the existing T
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Implement orchestration telemetry: template + hook + skill + command + spawn-task/handoff hooks | developer | — | In Progress |
+| 2 | Verify orchestration telemetry: hook tests + skill walkthrough + aggregator smoke | tech-qa | 1 | Pending |
 
-> Tasks populated by Team-Lead. Likely wave: Developer (template + hook + skill + command), Tech-QA (verification + fixture beans for the aggregator). BA optional for the verdict-paragraph wording template.
+> Skipped: BA (default — verdict-paragraph wording is not user-facing requirements; Developer drafts inline); Architect (default — no new subsystem boundary; extends existing telemetry).
 
 ## Changes
 
@@ -107,7 +108,8 @@ Each bean carries a small Orchestration Telemetry block alongside the existing T
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Implement orchestration telemetry: template + hook + skill + command + spawn-task/handoff hooks | developer | 7m | 1,236,562 | 3,564 | $2.17 |
+| 2 | Verify orchestration telemetry: hook tests + skill walkthrough + aggregator smoke | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|

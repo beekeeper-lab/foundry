@@ -106,7 +106,22 @@ parallel schema.
    - Add a row to `ai/handoffs/_index.md` with
      `| Date | From | To | Bean | Packet |` populated from the packet.
 
-6. **Notify the receiver**
+6. **Bounce-counter increment** (BEAN-278)
+   - When `from_persona == tech-qa` AND `to_persona == developer` AND the
+     bean already has at least one `Done`-status `developer`-owned task,
+     this handoff is a **bounce** (Tech-QA is sending the work back for
+     another pass mid-bean). Locate the bean's Orchestration Telemetry
+     block (`## Orchestration Telemetry`), parse the
+     `| **Bounces** | N (...) |` row, increment `N` by one (preserving
+     the parenthesised hint suffix), and write it back. The counter
+     never decrements; over-counts are corrected by manual Team-Lead
+     edit, not by automation. If the bean has no Orchestration
+     Telemetry block (legacy beans pre-BEAN-278), this step is a silent
+     no-op. Note the bounce inline in the packet's `## Notes` section as
+     `> Bounce-of: <prior-developer-task-file>` so the audit trail is
+     visible from the handoff itself.
+
+7. **Notify the receiver**
    - The packet path is the only thing the sender needs to share. The
      receiver opens it and starts work. No clarifying questions should be
      needed for the contracted-shape items; `notes:` covers the rest.

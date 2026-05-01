@@ -94,3 +94,14 @@ What is the desired outcome when this bean is complete?
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
+
+## Orchestration Telemetry
+
+| Field | Value |
+|-------|-------|
+| **Personas activated** | — (comma-separated, actual not planned) |
+| **Bounces** | — (Tech-QA → Developer kicks) |
+| **Scope changes** | — (in-flight scope edits) |
+| **Contract violations** | — (BEAN-274 catches at compose time) |
+| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
+| **Dispatch mode** | — (in-process / tmux-worker / mixed) |
