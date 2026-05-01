@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-274 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
 | **Started** | 2026-05-01 00:27 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-05-01 00:47 |
+| **Duration** | 1587h 40m |
 | **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-273 |
@@ -68,7 +68,18 @@ Today no such check exists. `foundry_app/services/validator.py` validates schema
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/services/validator.py` | +125 (validate_contract_graph + helpers) |
+| `foundry_app/services/generator.py` | +100/-? (pipeline integration + manifest fix) |
+| `foundry_app/ui/screens/builder/wizard_pages/persona_page.py` | +92 (coherence indicator) |
+| `tests/test_validator.py` | +250 (contract-graph unit tests) |
+| `tests/test_generator.py` | +193 (pipeline integration + bug-fix coverage) |
+| `tests/test_persona_page.py` | +207 (wizard indicator state transitions) |
+| `tests/test_persona_tiering.py` | +7 (fixture coherence) |
+| `examples/small-python-team.yml` | +11 (added ba, architect for contract coherence) |
+| `examples/foundry-dogfood.yml` | +6 (added ba) |
+| `examples/security-focused.yml` | +6 (added ba) |
+| `ai/beans/BEAN-274-contract-graph-validator/bean.md` + 2 task files | +199 |
+| **Total** | 14 files changed, +1186 / -12 |
 
 ## Notes
 
@@ -95,8 +106,8 @@ Today no such check exists. `foundry_app/services/validator.py` validates schema
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 15m |
+| **Total Tokens In** | 1,530,056 |
+| **Total Tokens Out** | 6,277 |
+| **Total Cost** | $2.85 |
