@@ -1039,6 +1039,53 @@ class TestCoherenceIndicatorTransitions:
         assert "unused output" in text
 
 
+class TestCoherenceIndicatorRedReachable:
+    """BEAN-292 AC: the 🔴 state remains *reachable* for ERROR-severity
+    contract-graph findings, even though ``validate_contract_graph`` no
+    longer emits any ERRORs by default. The persona page's coherence
+    indicator branches on raw severity, so any future contract-graph
+    error code (or a ``Strictness.STRICT`` promotion routed through this
+    surface) will still trigger the red state. We simulate a future
+    ERROR via monkeypatch so the dead branch stays guarded against
+    accidental removal.
+    """
+
+    def test_red_state_reachable_when_validator_emits_error(
+        self, coherence_page, monkeypatch,
+    ):
+        from foundry_app.core.models import Severity, ValidationMessage, ValidationResult
+        from foundry_app.ui.screens.builder.wizard_pages import persona_page
+
+        # Inject a synthetic ERROR-severity contract-graph finding by
+        # patching the validator the indicator calls. The indicator's
+        # severity branch must route to the red state.
+        def fake_validate(team, library):
+            return ValidationResult(messages=[
+                ValidationMessage(
+                    severity=Severity.ERROR,
+                    code="hook-pack-conflict",
+                    message="Two enabled hook packs disagree on policy.",
+                ),
+            ])
+
+        monkeypatch.setattr(
+            persona_page, "validate_contract_graph", fake_validate,
+        )
+
+        # Toggle a card so _update_coherence_indicator runs against the
+        # patched validator.
+        coherence_page.persona_cards["consumer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        # Red emoji marks the ERROR-severity branch.
+        assert "\U0001f534" in text, (
+            f"Expected red emoji in indicator, got: {text!r}"
+        )
+        # Yellow emoji must NOT be present — error dominates warning.
+        assert "\U0001f7e1" not in text
+        # Verbatim error message surfaces.
+        assert "hook packs disagree" in text
+
+
 # ---------------------------------------------------------------------------
 # BEAN-286 — Inline validation findings (verbatim messages + truncation cap)
 #
