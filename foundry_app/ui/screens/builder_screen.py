@@ -49,11 +49,17 @@ class BuilderScreen(QWidget):
     """Multi-step wizard that assembles a CompositionSpec and triggers generation."""
 
     generate_requested = Signal(CompositionSpec)
+    # BEAN-288: emitted whenever ``has_in_progress_state()`` would change —
+    # ``MainWindow`` listens so the sidebar's builder button can flip between
+    # "New Project" and "Resume Project".
+    state_changed = Signal(bool)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._library_index: LibraryIndex | None = None
+        self._last_in_progress = False
         self._build_ui()
+        self._wire_state_change_signals()
         self._update_nav_state()
 
     # -- UI construction ---------------------------------------------------
@@ -145,11 +151,21 @@ class BuilderScreen(QWidget):
         self._back_btn.setStyleSheet(self._nav_button_style())
         self._back_btn.clicked.connect(self._go_back)
 
+        # BEAN-288: explicit reset affordance — visible only when the wizard
+        # has accumulated state worth clearing. The current "click somewhere
+        # else and come back" path was not discoverable.
+        self._start_over_btn = QPushButton("Start Over")
+        self._start_over_btn.setToolTip("Reset wizard — clear all selections.")
+        self._start_over_btn.setStyleSheet(self._nav_button_style())
+        self._start_over_btn.setVisible(False)
+        self._start_over_btn.clicked.connect(self.start_over)
+
         self._next_btn = QPushButton("Next")
         self._next_btn.setStyleSheet(self._primary_button_style())
         self._next_btn.clicked.connect(self._go_next)
 
         nav_layout.addWidget(self._back_btn)
+        nav_layout.addWidget(self._start_over_btn)
         nav_layout.addStretch()
         nav_layout.addWidget(self._next_btn)
 
@@ -198,9 +214,72 @@ class BuilderScreen(QWidget):
         logger.info("Library loaded into builder wizard")
 
     def reset_wizard(self) -> None:
-        """Reset all pages to initial state and go to step 0."""
+        """Reset to step 0. Selections are preserved (BEAN-288)."""
         self._page_stack.setCurrentIndex(0)
         self._update_nav_state()
+        self._emit_state_changed()
+
+    def has_in_progress_state(self) -> bool:
+        """Return True when the wizard holds non-default user input.
+
+        BEAN-288: drives the sidebar "New Project" → "Resume Project" flip
+        and the visibility of the in-wizard Start Over button. The heuristic
+        is intentionally simple — any sign of work-in-progress qualifies:
+        a non-empty project name, any selected persona or expertise, or the
+        user advanced past step 0.
+        """
+        if self._page_stack.currentIndex() > 0:
+            return True
+        if self._project_page.name_edit.text().strip():
+            return True
+        if any(
+            card.is_selected for card in self._persona_page.persona_cards.values()
+        ):
+            return True
+        if self._expertise_page.get_expertise_selections():
+            return True
+        return False
+
+    def start_over(self) -> None:
+        """Clear every page's state and return to step 0 (BEAN-288).
+
+        Distinct from :meth:`reset_wizard` (which is page-index-only). After
+        this call ``has_in_progress_state()`` is False.
+        """
+        self._project_page.name_edit.setText("")
+        self._project_page.tagline_edit.setText("")
+        self._project_page.slug_edit.setText("")
+        for card in self._persona_page.persona_cards.values():
+            card.is_selected = False
+        for card in self._expertise_page.expertise_cards.values():
+            card.is_selected = False
+        # Re-load the hooks page from the library if available so its
+        # default-conflict resolution (BEAN-286) re-runs from a clean slate.
+        if self._library_index is not None:
+            self._hooks_page.load_hook_packs(self._library_index)
+        self._page_stack.setCurrentIndex(0)
+        self._update_nav_state()
+        self._emit_state_changed()
+
+    def _wire_state_change_signals(self) -> None:
+        """Re-emit ``state_changed`` whenever a page-level signal flips the
+        in-progress answer. Keeping this in one place avoids a fan-out of
+        ad-hoc wiring across the builder."""
+        self._project_page.completeness_changed.connect(
+            lambda _checked: self._emit_state_changed()
+        )
+        self._persona_page.selection_changed.connect(self._emit_state_changed)
+        self._expertise_page.selection_changed.connect(self._emit_state_changed)
+        self._page_stack.currentChanged.connect(
+            lambda _idx: self._emit_state_changed()
+        )
+
+    def _emit_state_changed(self) -> None:
+        in_progress = self.has_in_progress_state()
+        self._start_over_btn.setVisible(in_progress)
+        if in_progress != self._last_in_progress:
+            self._last_in_progress = in_progress
+            self.state_changed.emit(in_progress)
 
     # -- Navigation --------------------------------------------------------
 
