@@ -63,8 +63,8 @@ Two failure modes:
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Implement typed /handoff: skill spec + pair-fields registry + index + example | developer | — | In Progress |
-| 2 | Verify typed /handoff: cold-start walkthrough + registry/index tests | tech-qa | 1 | Pending |
+| 1 | Implement typed /handoff: skill spec + pair-fields registry + index + example | developer | — | Done |
+| 2 | Verify typed /handoff: cold-start walkthrough + registry/index tests | tech-qa | 1 | Done |
 
 > Skipped: BA (default — no requirements ambiguity); Architect (default — pair-fields schema is a small data-model addition documented inline by Developer with rationale, no ADR needed; bean's notes call this a "small contract decision").
 
@@ -93,7 +93,7 @@ Two failure modes:
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Implement typed /handoff: skill spec + pair-fields registry + index + example | developer | 6m | 845,302 | 3,014 | $1.53 |
-| 2 | Verify typed /handoff: cold-start walkthrough + registry/index tests | tech-qa | — | — | — | — |
+| 2 | Verify typed /handoff: cold-start walkthrough + registry/index tests | tech-qa | 2m | 886,020 | 2,929 | $1.59 |
 
 | Metric | Value |
 |--------|-------|
