@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-293 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-05-01 |
 | **Started** | 2026-05-01 18:12 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-05-01 18:25 |
+| **Duration** | 1605h 18m |
 | **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | — |
@@ -138,22 +138,24 @@ inverse: posture default changes), so the initial state is valid.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Drop posture-incompatible packs from default selection + audit | developer | — | Done |
+| 2 | Regression sweep + manual wizard verification at all three postures | tech-qa | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Likely wave: **Developer** (root-cause investigation + chosen fix +
-> tests), **Tech-QA** (regression sweep + manual verification at all
-> three postures). Architect not required — this is a defaults
-> alignment, not a model change. BA not required — the wording is
-> already correct; only the trigger condition changes.
+> Skipped: BA (default), Architect (default)
+> Wave: **Developer → Tech-QA**. Architect not required — this is a
+> defaults alignment, not a model change. BA not required — the wording
+> is already correct; only the trigger condition changes.
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/ui/screens/builder/wizard_pages/hook_safety_page.py` | +49 / -0 |
+| `tests/test_hook_safety_page.py` | +369 / -0 |
+| `ai/outputs/tech-qa/BEAN-293-manual-verification.md` | +149 / -0 |
+| `ai/beans/BEAN-293-…/tasks/01-developer-fix-defaults-and-audit.md` | +172 / -0 |
+| `ai/beans/BEAN-293-…/tasks/02-tech-qa-regression-and-manual.md` | +127 / -0 |
+| `ai/beans/BEAN-293-…/bean.md` | +9 / -9 |
 
 ## Notes
 
@@ -190,23 +192,24 @@ problem, clear options) — the underlying defaults bug was independent.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Drop posture-incompatible packs from default selection + audit | developer | 4m | 687,276 | 5,484 | $1.48 |
+| 2 | Regression sweep + manual wizard verification at all three postures | tech-qa | 4m | 546,816 | 3,321 | $1.42 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 8m |
+| **Total Tokens In** | 1,234,092 |
+| **Total Tokens Out** | 8,805 |
+| **Total Cost** | $2.90 |
 
 ## Orchestration Telemetry
 
 | Field | Value |
 |-------|-------|
-| **Personas activated** | — (comma-separated, actual not planned) |
-| **Bounces** | — (Tech-QA → Developer kicks) |
-| **Scope changes** | — (in-flight scope edits) |
-| **Contract violations** | — (BEAN-274 catches at compose time) |
-| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
-| **Dispatch mode** | — (in-process / tmux-worker / mixed) |
+| **Personas activated** | developer, tech-qa |
+| **Bounces** | 0 (Tech-QA → Developer kicks) |
+| **Scope changes** | 0 (in-flight scope edits) |
+| **Contract violations** | 0 (BEAN-274 catches at compose time) |
+| **Inputs escape-hatch invocations** | 0 (BEAN-272's NONE-justified) |
+| **Dispatch mode** | in-process |

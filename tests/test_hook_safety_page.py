@@ -886,3 +886,372 @@ class TestDefaultLoadConflictFree:
             )
         finally:
             page.close()
+
+
+# ---------------------------------------------------------------------------
+# BEAN-293 — Posture-incompatible packs must not ship enabled-by-default
+#
+# A fresh wizard session at the default ``baseline`` posture must not include
+# any pack whose ``Posture Compatibility`` table marks baseline as
+# ``Included: No`` (e.g. ``compliance-gate``). Switching posture at runtime
+# must re-apply the same filter so the user can't be left with a stale
+# enabled pack that fails generation.
+# ---------------------------------------------------------------------------
+
+
+def _make_pack_with_posture(
+    pid: str,
+    posture_compatibility: dict[str, dict[str, str]],
+) -> HookPackInfo:
+    return HookPackInfo(
+        id=pid,
+        path=f"/fake/hooks/{pid}",
+        files=[],
+        posture_compatibility=posture_compatibility,
+    )
+
+
+def _library_with_compliance_gate_posture() -> LibraryIndex:
+    """Library where compliance-gate excludes baseline + hardened."""
+    return LibraryIndex(
+        library_root="/fake/library",
+        hook_packs=[
+            _make_pack_with_posture(
+                "pre-commit-lint",
+                {
+                    "baseline": {"included": "Yes", "default_mode": "enforcing"},
+                    "hardened": {"included": "Yes", "default_mode": "enforcing"},
+                    "regulated": {"included": "Yes", "default_mode": "enforcing"},
+                },
+            ),
+            _make_pack_with_posture(
+                "compliance-gate",
+                {
+                    "baseline": {"included": "No", "default_mode": "—"},
+                    "hardened": {"included": "No", "default_mode": "—"},
+                    "regulated": {"included": "Yes", "default_mode": "enforcing"},
+                },
+            ),
+        ],
+    )
+
+
+class TestPostureIncompatibleDefaultsFilter:
+    """BEAN-293: Posture-incompatible packs are unchecked at default load."""
+
+    def test_compliance_gate_unchecked_at_default_baseline(self):
+        """At default baseline, compliance-gate (baseline: No) must be off."""
+        lib = _library_with_compliance_gate_posture()
+        p = HookSafetyPage(library_index=lib)
+        try:
+            assert p.posture == Posture.BASELINE
+            assert p.hook_cards["compliance-gate"].is_enabled is False
+            # Compatible pack remains enabled.
+            assert p.hook_cards["pre-commit-lint"].is_enabled is True
+        finally:
+            p.close()
+
+    def test_pack_without_posture_metadata_not_filtered(self):
+        """Older packs (no posture_compatibility) must not crash or change."""
+        # Mirrors validator's skip behavior for backward compatibility.
+        lib = _make_library("pre-commit-lint", "post-task-qa")
+        p = HookSafetyPage(library_index=lib)
+        try:
+            # Both packs ship enabled-by-default and the filter must not
+            # touch them when posture_compatibility is empty.
+            assert p.hook_cards["pre-commit-lint"].is_enabled is True
+            assert p.hook_cards["post-task-qa"].is_enabled is True
+        finally:
+            p.close()
+
+    def test_posture_change_with_empty_metadata_does_not_crash(self):
+        """BEAN-293 (Tech-QA regression): older-library packs survive
+        the posture-change path.
+
+        Developer's ``test_pack_without_posture_metadata_not_filtered``
+        covers the ``load_hook_packs`` entry to ``_apply_posture_filter``.
+        The ``_on_posture_changed`` entry is the second call site, and
+        the AC item asks the page filter to "not crash" on either path
+        when ``posture_compatibility`` is empty (mirroring the validator's
+        documented backward-compatibility skip). This test pins the
+        posture-change path so a future refactor that, say, replaces
+        ``not pack.posture_compatibility`` with
+        ``pack.posture_compatibility[key]`` is caught here, not in
+        production.
+        """
+        # Library where every pack has empty posture_compatibility (older
+        # library shape). _make_library leaves posture_compatibility={}.
+        lib = _make_library("pre-commit-lint", "post-task-qa")
+        p = HookSafetyPage(library_index=lib)
+        try:
+            # Posture change (the _on_posture_changed → _apply_posture_filter
+            # path) must not crash and must leave card states unchanged.
+            p.posture = Posture.HARDENED
+            assert p.hook_cards["pre-commit-lint"].is_enabled is True
+            assert p.hook_cards["post-task-qa"].is_enabled is True
+
+            p.posture = Posture.REGULATED
+            assert p.hook_cards["pre-commit-lint"].is_enabled is True
+            assert p.hook_cards["post-task-qa"].is_enabled is True
+
+            p.posture = Posture.BASELINE
+            assert p.hook_cards["pre-commit-lint"].is_enabled is True
+            assert p.hook_cards["post-task-qa"].is_enabled is True
+        finally:
+            p.close()
+
+    def test_regulated_to_baseline_unchecks_now_incompatible_pack(self):
+        """User switches regulated → baseline; compliance-gate gets unchecked."""
+        lib = _library_with_compliance_gate_posture()
+        p = HookSafetyPage(library_index=lib)
+        try:
+            # Bootstrap into a state where compliance-gate is enabled at
+            # regulated. We have to construct this manually because the
+            # filter purges it at any load that lands at baseline.
+            p.posture = Posture.REGULATED
+            p.hook_cards["compliance-gate"].is_enabled = True
+            assert p.hook_cards["compliance-gate"].is_enabled is True
+
+            # Now switch to baseline — the filter must purge it.
+            p.posture = Posture.BASELINE
+            assert p.hook_cards["compliance-gate"].is_enabled is False
+        finally:
+            p.close()
+
+    def test_baseline_to_regulated_does_not_restore_filtered_pack(self):
+        """Documented behavior: posture switching purges, never restores.
+
+        Switching `baseline → regulated` after the default-load filter
+        unchecked compliance-gate must NOT re-enable it. The user can
+        consciously opt in by checking the card. This is the simpler
+        behavior — implementing "remember default-on" would require
+        per-card state tracking that the bean doesn't warrant.
+        """
+        lib = _library_with_compliance_gate_posture()
+        p = HookSafetyPage(library_index=lib)
+        try:
+            # At default baseline, compliance-gate was unchecked by the filter.
+            assert p.hook_cards["compliance-gate"].is_enabled is False
+            # Switch to regulated — pack is now compatible, but stays off.
+            p.posture = Posture.REGULATED
+            assert p.hook_cards["compliance-gate"].is_enabled is False
+        finally:
+            p.close()
+
+    def test_set_hooks_config_does_not_apply_posture_filter(self):
+        """Saved-state restore is the source of truth; the filter must not run.
+
+        If a user persisted compliance-gate enabled at regulated, then loaded
+        the saved composition while the page constructor is at baseline,
+        ``set_hooks_config`` must restore the saved selection verbatim — the
+        validator will surface the mismatch through its normal error path
+        (the user explicitly chose this combination at save time, so the
+        restore is faithful, not silently mutated).
+        """
+        lib = _library_with_compliance_gate_posture()
+        p = HookSafetyPage(library_index=lib)
+        try:
+            # Default load at baseline filtered compliance-gate off.
+            assert p.hook_cards["compliance-gate"].is_enabled is False
+
+            # User loads a saved composition that enabled compliance-gate at
+            # regulated. set_hooks_config must NOT re-apply the filter.
+            saved = HooksConfig(
+                posture=Posture.REGULATED,
+                packs=[
+                    HookPackSelection(
+                        id="pre-commit-lint",
+                        enabled=True,
+                        mode=HookMode.ENFORCING,
+                    ),
+                    HookPackSelection(
+                        id="compliance-gate",
+                        enabled=True,
+                        mode=HookMode.ENFORCING,
+                    ),
+                ],
+            )
+            p.set_hooks_config(saved)
+            assert p.posture == Posture.REGULATED
+            assert p.hook_cards["compliance-gate"].is_enabled is True
+        finally:
+            p.close()
+
+    def test_default_load_passes_validator_at_baseline(self):
+        """Wizard-default regression: no posture-incompatibility errors."""
+        from foundry_app.core.models import (
+            CompositionSpec,
+            ProjectIdentity,
+            TeamConfig,
+        )
+        from foundry_app.services.validator import (
+            _check_hook_posture_compatibility,
+        )
+
+        lib = _library_with_compliance_gate_posture()
+        p = HookSafetyPage(library_index=lib)
+        try:
+            cfg = p.get_hooks_config()
+            spec = CompositionSpec(
+                project=ProjectIdentity(
+                    name="test", slug="test", description="", purpose="t",
+                ),
+                team=TeamConfig(personas=[]),
+                hooks=cfg,
+            )
+            messages: list = []
+            _check_hook_posture_compatibility(spec, lib, messages)
+            assert messages == [], (
+                f"Default load tripped posture validator: "
+                f"{[m.message for m in messages]}"
+            )
+        finally:
+            p.close()
+
+
+class TestPostureIncompatibleRealLibrary:
+    """BEAN-293: each posture's default load must validator-clean against the real library."""
+
+    @pytest.mark.parametrize(
+        "posture",
+        [Posture.BASELINE, Posture.HARDENED, Posture.REGULATED],
+    )
+    def test_default_load_real_library_no_posture_errors(self, posture):
+        """For each posture, defaults at that posture pass validator."""
+        from pathlib import Path
+
+        from foundry_app.core.models import (
+            CompositionSpec,
+            ProjectIdentity,
+            TeamConfig,
+        )
+        from foundry_app.services.library_indexer import build_library_index
+        from foundry_app.services.validator import (
+            _check_hook_posture_compatibility,
+        )
+
+        repo_root = Path(__file__).resolve().parent.parent
+        library_root = repo_root / "ai-team-library"
+        if not library_root.exists():
+            pytest.skip("ai-team-library/ not available in this checkout")
+
+        lib = build_library_index(library_root)
+
+        page = HookSafetyPage(library_index=lib)
+        try:
+            page.posture = posture
+            cfg = page.get_hooks_config()
+            spec = CompositionSpec(
+                project=ProjectIdentity(
+                    name="test", slug="test", description="", purpose="t",
+                ),
+                team=TeamConfig(personas=[]),
+                hooks=cfg,
+            )
+            messages: list = []
+            _check_hook_posture_compatibility(spec, lib, messages)
+            assert messages == [], (
+                f"Default load at posture={posture.value} tripped "
+                f"posture validator: {[m.message for m in messages]}"
+            )
+        finally:
+            page.close()
+
+    def test_default_load_real_library_baseline_unchecks_compliance_gate(self):
+        """At baseline against real library, compliance-gate must be off."""
+        from pathlib import Path
+
+        from foundry_app.services.library_indexer import build_library_index
+
+        repo_root = Path(__file__).resolve().parent.parent
+        library_root = repo_root / "ai-team-library"
+        if not library_root.exists():
+            pytest.skip("ai-team-library/ not available in this checkout")
+
+        lib = build_library_index(library_root)
+        page = HookSafetyPage(library_index=lib)
+        try:
+            assert page.posture == Posture.BASELINE
+            card = page.hook_cards.get("compliance-gate")
+            assert card is not None, (
+                "Test library should ship a compliance-gate pack"
+            )
+            assert card.is_enabled is False, (
+                "compliance-gate should default-off at baseline"
+            )
+        finally:
+            page.close()
+
+    def test_user_explicit_check_at_baseline_trips_validator(self):
+        """BEAN-293 (Tech-QA regression): user opts in to compliance-gate
+        at baseline → validator surface still fires.
+
+        Headless substitution for the bean's last (manual) AC item:
+        "manually enable ``compliance-gate`` at the default ``baseline``
+        posture, click Generate → still fails with the friendly BEAN-290
+        message". Loads the **real** library through the **real** page
+        (no mocked HookPackInfo — see task Notes), confirms the default
+        filter unchecks compliance-gate, then re-enables it
+        programmatically and asserts ``run_pre_generation_validation``
+        produces a ``hook-pack-posture-incompatible`` ERROR. Proves the
+        defaults filter and the validator surface are independent: the
+        former runs at the page layer, the latter at composition time.
+        """
+        from pathlib import Path
+
+        from foundry_app.core.models import (
+            CompositionSpec,
+            PersonaSelection,
+            ProjectIdentity,
+            TeamConfig,
+        )
+        from foundry_app.services.library_indexer import build_library_index
+        from foundry_app.services.validator import (
+            run_pre_generation_validation,
+        )
+
+        repo_root = Path(__file__).resolve().parent.parent
+        library_root = repo_root / "ai-team-library"
+        if not library_root.exists():
+            pytest.skip("ai-team-library/ not available in this checkout")
+
+        lib = build_library_index(library_root)
+        page = HookSafetyPage(library_index=lib)
+        try:
+            # Sanity: defaults filter unchecked compliance-gate at baseline.
+            assert page.posture == Posture.BASELINE
+            assert page.hook_cards["compliance-gate"].is_enabled is False
+
+            # User explicitly opts in by checking the card.
+            page.hook_cards["compliance-gate"].is_enabled = True
+            assert page.hook_cards["compliance-gate"].is_enabled is True
+
+            # Build the composition the wizard would assemble.
+            cfg = page.get_hooks_config()
+            spec = CompositionSpec(
+                project=ProjectIdentity(
+                    name="test", slug="test", description="", purpose="t",
+                ),
+                team=TeamConfig(
+                    personas=[PersonaSelection(id="developer")],
+                ),
+                hooks=cfg,
+            )
+
+            # Validator surface must surface the mismatch as an ERROR.
+            result = run_pre_generation_validation(spec, lib)
+            posture_errors = [
+                m for m in result.errors
+                if m.code == "hook-pack-posture-incompatible"
+            ]
+            assert len(posture_errors) >= 1, (
+                "User-explicit compliance-gate at baseline should ERROR "
+                f"via hook-pack-posture-incompatible. Got errors: "
+                f"{[(m.code, m.message) for m in result.errors]}"
+            )
+            # Friendly BEAN-290 message names the pack and posture.
+            msg = posture_errors[0].message
+            assert "compliance-gate" in msg
+            assert "baseline" in msg
+        finally:
+            page.close()

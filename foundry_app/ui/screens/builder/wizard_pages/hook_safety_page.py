@@ -646,6 +646,12 @@ class HookSafetyPage(QWidget):
                 self._hook_card_layout.addWidget(card)
                 self._cards[pack.id] = card
 
+        # BEAN-293: each pack ships enabled-by-default, but some packs declare
+        # themselves incompatible with the current posture (e.g. compliance-
+        # gate at baseline). Drop those *first* so conflict resolution below
+        # only considers posture-compatible candidates — otherwise an
+        # incompatible "first" card could displace a compatible peer.
+        self._apply_posture_filter()
         # BEAN-286: each pack ships enabled-by-default. When two declare a
         # mutual conflict, accepting defaults means shipping a configuration
         # the validator already rejects. Walk packs in render order and turn
@@ -655,6 +661,42 @@ class HookSafetyPage(QWidget):
         self._hook_empty_label.setVisible(len(self._cards) == 0)
         self._update_conflict_indicator()
         logger.info("Loaded %d hook pack cards in %d categories", len(self._cards), len(groups))
+
+    def _apply_posture_filter(self) -> None:
+        """Uncheck cards whose pack is incompatible with the current posture.
+
+        Consults each pack's ``posture_compatibility`` table (parsed from the
+        pack file's ``## Posture Compatibility`` section). When the row for
+        the currently-selected posture has ``included == "No"`` (case-
+        insensitive), the card is unchecked. Mirrors the validator's skip
+        behavior: packs with empty ``posture_compatibility`` (older library
+        entries) are left as-is so this filter is backward-compatible.
+
+        BEAN-293: this filter runs at fresh ``load_hook_packs`` time and on
+        user-driven posture changes — never on the saved-state restore path
+        (``set_hooks_config``), where the user's persisted choices win.
+
+        Switching posture later (e.g. ``baseline → regulated``) does not
+        re-check packs that this filter previously hid; a pack that is now
+        compatible stays unchecked unless the user opts in. Re-binding state
+        across posture switches would require tracking "default-on" vs
+        "user-explicit", which is heavier than the bug warrants.
+        """
+        if self._library_index is None or not self._cards:
+            return
+        posture_key = self._posture_combo.currentText().strip().lower()
+        for pack_id, card in self._cards.items():
+            pack = self._library_index.hook_pack_by_id(pack_id)
+            if pack is None or not pack.posture_compatibility:
+                # Older library entries without parsed metadata: skip,
+                # mirroring validator._check_hook_posture_compatibility.
+                continue
+            row = pack.posture_compatibility.get(posture_key)
+            if row is None:
+                continue
+            if row.get("included", "").strip().lower() == "no":
+                if card.is_enabled:
+                    card.is_enabled = False
 
     def _resolve_default_conflicts(self) -> None:
         """Uncheck packs that conflict with an already-enabled earlier pack.
@@ -875,6 +917,13 @@ class HookSafetyPage(QWidget):
         self.selection_changed.emit()
 
     def _on_posture_changed(self, _text: str) -> None:
+        # BEAN-293: re-apply the posture-incompatibility filter so packs that
+        # are now incompatible (e.g. compliance-gate after regulated → baseline)
+        # are unchecked immediately rather than failing at Generate time. The
+        # filter is one-way: switching back to a permissive posture does NOT
+        # restore packs it previously hid (see _apply_posture_filter docstring).
+        self._apply_posture_filter()
+        self._update_conflict_indicator()
         self.selection_changed.emit()
 
     def _on_safety_changed(self) -> None:
