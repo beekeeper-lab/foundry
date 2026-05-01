@@ -114,3 +114,69 @@ class TestGeometry:
         geo = settings.window_geometry
         # After close, geometry should have been written (non-empty)
         assert not geo.isEmpty()
+
+
+# ---------------------------------------------------------------------------
+# BEAN-288 — Sidebar reflects in-progress wizard state
+# ---------------------------------------------------------------------------
+
+
+class TestBuilderInProgressIndicator:
+    """The builder nav button flips to 'Resume Project' when the wizard
+    has accumulated state, and back to 'New Project' when state clears."""
+
+    def test_builder_button_tooltip_default(self, window):
+        # No selections yet — tooltip says "New Project".
+        assert window.nav_buttons[0].toolTip() == "New Project"
+        assert window._builder_in_progress is False
+
+    def test_builder_button_tooltip_in_progress_after_persona_selected(
+        self, window,
+    ):
+        builder = window.builder_screen
+        # Need a library to populate persona cards.
+        from foundry_app.core.models import LibraryIndex, PersonaInfo
+        lib = LibraryIndex(
+            library_root="/fake",
+            personas=[
+                PersonaInfo(
+                    id="developer", path="/fake/developer", tier="core",
+                    has_persona_md=True, has_outputs_md=True,
+                    has_prompts_md=True, templates=[], category="",
+                ),
+            ],
+        )
+        builder.set_library_index(lib)
+        builder.persona_page.persona_cards["developer"].is_selected = True
+
+        assert window._builder_in_progress is True
+        assert window.nav_buttons[0].toolTip() == "Resume Project"
+
+    def test_builder_button_tooltip_in_progress_after_name_entered(
+        self, window,
+    ):
+        builder = window.builder_screen
+        builder.project_page.name_edit.setText("my-project")
+        # completeness_changed is wired to state_changed.
+        assert window._builder_in_progress is True
+        assert window.nav_buttons[0].toolTip() == "Resume Project"
+
+    def test_builder_button_resets_after_start_over(self, window):
+        builder = window.builder_screen
+        builder.project_page.name_edit.setText("my-project")
+        assert window._builder_in_progress is True
+
+        builder.start_over()
+        assert window._builder_in_progress is False
+        assert window.nav_buttons[0].toolTip() == "New Project"
+
+    def test_state_changed_signal_drives_button_refresh(self, window):
+        """The MainWindow listens to BuilderScreen.state_changed — when
+        we emit it directly the icon-render path should fire and the
+        in-progress flag should track."""
+        window._on_builder_state_changed(True)
+        assert window._builder_in_progress is True
+        assert window.nav_buttons[0].toolTip() == "Resume Project"
+        window._on_builder_state_changed(False)
+        assert window._builder_in_progress is False
+        assert window.nav_buttons[0].toolTip() == "New Project"
