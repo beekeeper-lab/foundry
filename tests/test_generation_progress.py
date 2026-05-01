@@ -257,3 +257,77 @@ class TestOutputPath:
         assert screen.back_button.isHidden()
 
 
+# ---------------------------------------------------------------------------
+# BEAN-287 — Sticky outcome banner (success + failure recovery affordance)
+#
+# When generation finishes (success or failure), the summary + recovery
+# buttons must appear in a sticky banner above the scroll area so the
+# Back to Builder button stays on-screen even on small windows where it
+# previously sat below the fold.
+# ---------------------------------------------------------------------------
+
+
+class TestOutcomeBanner:
+    """The outcome banner is the recovery affordance — must stay above fold."""
+
+    def test_banner_hidden_after_construction(self):
+        screen = GenerationProgressScreen()
+        assert screen._outcome_banner.isHidden() is True
+
+    def test_banner_hidden_after_start_clears_prior_outcome(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish(total_files=5)
+        assert screen._outcome_banner.isHidden() is False
+        # A fresh run must not display the prior outcome.
+        screen.start()
+        assert screen._outcome_banner.isHidden() is True
+
+    def test_banner_visible_after_finish_with_buttons(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish(total_files=5)
+        assert screen._outcome_banner.isHidden() is False
+        # Both recovery affordances are present on success.
+        assert screen.back_button.isHidden() is False
+        assert screen.open_button.isHidden() is False
+        # Summary label has the success text.
+        assert "complete" in screen.summary_label.text().lower()
+
+    def test_banner_visible_after_error_back_only(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish_with_error("Hook packs conflict")
+        assert screen._outcome_banner.isHidden() is False
+        # Back button must be on-screen; Open button hidden on failure.
+        assert screen.back_button.isHidden() is False
+        assert screen.open_button.isHidden() is True
+        # Summary names the failure verbatim.
+        assert "failed" in screen.summary_label.text().lower()
+        assert "Hook packs conflict" in screen.summary_label.text()
+
+    def test_banner_is_sibling_of_scroll_not_nested(self):
+        """Banner must be a sibling of the scroll area in the outer layout,
+        not a child of the scrolled container — that's what makes it sticky
+        on small windows where the recovery affordance previously sat below
+        the fold (BEAN-287)."""
+        screen = GenerationProgressScreen()
+        # Both must share the same direct parent (the screen) — so neither
+        # is the descendant of the other.
+        assert screen._outcome_banner.parent() is screen
+        assert screen._scroll.parent() is screen
+        # Banner is not a descendant of the scroll viewport.
+        assert not screen._scroll.isAncestorOf(screen._outcome_banner)
+
+    def test_finish_with_error_resets_scroll_to_top(self):
+        """Auto-scroll safety net: failure pops the scroll position back
+        to the top so the banner is on-screen even if a custom theme
+        somehow inflates the banner past the viewport."""
+        screen = GenerationProgressScreen()
+        screen.start()
+        # Simulate a scroll position somewhere in the middle of the body.
+        screen._scroll.verticalScrollBar().setValue(200)
+        screen.finish_with_error("Boom")
+        assert screen._scroll.verticalScrollBar().value() == 0
+
+

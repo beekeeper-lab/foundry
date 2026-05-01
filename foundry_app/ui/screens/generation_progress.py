@@ -8,6 +8,7 @@ import time
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QFrame,
     QHBoxLayout,
     QLabel,
     QProgressBar,
@@ -178,17 +179,24 @@ class GenerationProgressScreen(QWidget):
         self._output_path: str = ""
         self._stage_widgets: dict[str, StageStatusWidget] = {}
 
-        # Scroll area so content is accessible in small windows
+        # Outer layout hosts: outcome banner (sticky top) + scrollable content.
+        # The banner is a sibling of the scroll area, not a child, so it stays
+        # visible at the top of the screen on small windows where the back/open
+        # buttons would otherwise sit below the fold (BEAN-287).
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-        scroll.setStyleSheet(f"background-color: {BG_BASE};")
-        outer.addWidget(scroll)
+        outer.setSpacing(0)
+
+        self._build_outcome_banner(outer)
+
+        self._scroll = QScrollArea()
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self._scroll.setStyleSheet(f"background-color: {BG_BASE};")
+        outer.addWidget(self._scroll, stretch=1)
 
         container = QWidget()
-        scroll.setWidget(container)
+        self._scroll.setWidget(container)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(SPACE_XXL, SPACE_XL, SPACE_XXL, SPACE_XL)
         layout.setSpacing(SPACE_LG)
@@ -263,42 +271,10 @@ class GenerationProgressScreen(QWidget):
         """)
         layout.addWidget(self._log)
 
-        # Summary (hidden until complete)
-        self._summary_label = QLabel("")
-        self._summary_label.setStyleSheet(
-            f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
-        )
-        self._summary_label.setVisible(False)
-        layout.addWidget(self._summary_label)
-
-        # Open project button (hidden until complete)
-        self._open_btn = QPushButton("Open Project Folder")
-        self._open_btn.setToolTip("Open the generated project directory")
-        self._open_btn.setMinimumHeight(44)
-        self._open_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {ACCENT_PRIMARY};
-                color: {TEXT_ON_ACCENT};
-                border: none;
-                border-radius: {RADIUS_MD}px;
-                padding: {SPACE_MD}px {SPACE_XL}px;
-                font-size: {FONT_SIZE_MD}px;
-                font-weight: {FONT_WEIGHT_BOLD};
-                min-height: 36px;
-            }}
-            QPushButton:hover {{
-                background-color: {ACCENT_PRIMARY_HOVER};
-            }}
-            QPushButton:disabled {{
-                background-color: {ACCENT_PRIMARY_MUTED};
-                color: {TEXT_SECONDARY};
-            }}
-        """)
-        self._open_btn.setVisible(False)
-        self._open_btn.clicked.connect(self._open_output_folder)
-        layout.addWidget(self._open_btn)
-
-        # Output path display (hidden until complete)
+        # Output path display (hidden until complete). Stays in the scroll
+        # body — the recovery affordance (Back / Open buttons) lives in the
+        # sticky banner above; the path is metadata users only need once
+        # they've reached for it.
         self._path_label = QLabel("")
         self._path_label.setStyleSheet(
             f"color: {TEXT_SECONDARY}; font-size: {FONT_SIZE_SM}px;"
@@ -310,18 +286,50 @@ class GenerationProgressScreen(QWidget):
         self._path_label.setVisible(False)
         layout.addWidget(self._path_label)
 
-        # Back to Builder button (hidden until complete)
+        layout.addStretch()
+
+    def _build_outcome_banner(self, outer: QVBoxLayout) -> None:
+        """Build the sticky top banner containing the outcome summary and
+        recovery actions (BEAN-287). Hidden until ``finish`` or
+        ``finish_with_error`` fires.
+        """
+        self._outcome_banner = QFrame()
+        self._outcome_banner.setObjectName("outcome-banner")
+        self._outcome_banner.setStyleSheet(f"""
+            QFrame#outcome-banner {{
+                background-color: {BG_SURFACE};
+                border-bottom: 1px solid {BORDER_DEFAULT};
+            }}
+        """)
+        self._outcome_banner.setVisible(False)
+
+        banner_layout = QVBoxLayout(self._outcome_banner)
+        banner_layout.setContentsMargins(
+            SPACE_XXL, SPACE_MD, SPACE_XXL, SPACE_MD,
+        )
+        banner_layout.setSpacing(SPACE_SM)
+
+        self._summary_label = QLabel("")
+        self._summary_label.setStyleSheet(
+            f"color: {TEXT_PRIMARY}; font-size: {FONT_SIZE_MD}px;"
+        )
+        self._summary_label.setWordWrap(True)
+        banner_layout.addWidget(self._summary_label)
+
+        action_row = QHBoxLayout()
+        action_row.setSpacing(SPACE_SM)
+        action_row.setContentsMargins(0, SPACE_XS, 0, 0)
+
         self._back_btn = QPushButton("Back to Builder")
-        self._back_btn.setMinimumHeight(44)
+        self._back_btn.setMinimumHeight(36)
         self._back_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {BG_SURFACE};
                 color: {TEXT_PRIMARY};
                 border: 1px solid {BORDER_DEFAULT};
                 border-radius: {RADIUS_MD}px;
-                padding: {SPACE_MD}px {SPACE_XL}px;
+                padding: {SPACE_SM}px {SPACE_LG}px;
                 font-size: {FONT_SIZE_MD}px;
-                min-height: 36px;
             }}
             QPushButton:hover {{
                 background-color: {BG_INSET};
@@ -329,9 +337,37 @@ class GenerationProgressScreen(QWidget):
         """)
         self._back_btn.setVisible(False)
         self._back_btn.clicked.connect(self.back_requested.emit)
-        layout.addWidget(self._back_btn)
+        action_row.addWidget(self._back_btn)
 
-        layout.addStretch()
+        self._open_btn = QPushButton("Open Project Folder")
+        self._open_btn.setToolTip("Open the generated project directory")
+        self._open_btn.setMinimumHeight(36)
+        self._open_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ACCENT_PRIMARY};
+                color: {TEXT_ON_ACCENT};
+                border: none;
+                border-radius: {RADIUS_MD}px;
+                padding: {SPACE_SM}px {SPACE_LG}px;
+                font-size: {FONT_SIZE_MD}px;
+                font-weight: {FONT_WEIGHT_BOLD};
+            }}
+            QPushButton:hover {{
+                background-color: {ACCENT_PRIMARY_HOVER};
+            }}
+            QPushButton:disabled {{
+                background-color: {ACCENT_PRIMARY_MUTED};
+                color: {TEXT_SECONDARY};
+            }}
+        """)
+        self._open_btn.setVisible(False)
+        self._open_btn.clicked.connect(self._open_output_folder)
+        action_row.addWidget(self._open_btn)
+
+        action_row.addStretch(1)
+        banner_layout.addLayout(action_row)
+
+        outer.addWidget(self._outcome_banner)
 
     # -- Public API --------------------------------------------------------
 
@@ -377,10 +413,11 @@ class GenerationProgressScreen(QWidget):
         self._start_time = time.monotonic()
         self._progress_bar.setValue(0)
         self._log.clear()
-        self._summary_label.setVisible(False)
+        self._outcome_banner.setVisible(False)
+        self._summary_label.setText("")
         self._open_btn.setVisible(False)
-        self._path_label.setVisible(False)
         self._back_btn.setVisible(False)
+        self._path_label.setVisible(False)
         self._output_path = ""
         self._spinner.start()
         for w in self._stage_widgets.values():
@@ -443,13 +480,15 @@ class GenerationProgressScreen(QWidget):
             summary_parts.append(f"{warnings} warnings")
         self._summary_label.setText(" \u2014 ".join(summary_parts))
         self._summary_label.setStyleSheet(
-            f"color: {STATUS_SUCCESS}; font-size: {FONT_SIZE_MD}px;"
+            f"color: {STATUS_SUCCESS}; font-size: {FONT_SIZE_MD}px; "
+            f"font-weight: {FONT_WEIGHT_BOLD};"
         )
-        self._summary_label.setVisible(True)
         self._open_btn.setVisible(True)
         self._back_btn.setVisible(True)
+        self._outcome_banner.setVisible(True)
         self._progress_bar.setValue(self._progress_bar.maximum())
         self._spinner.stop()
+        self._scroll.verticalScrollBar().setValue(0)
         for warning in warnings_list or ():
             self.append_log(f"\u26a0 {warning}")
         self.append_log(
@@ -462,11 +501,17 @@ class GenerationProgressScreen(QWidget):
         elapsed = self._elapsed()
         self._summary_label.setText(f"Generation failed: {message}")
         self._summary_label.setStyleSheet(
-            f"color: {STATUS_ERROR}; font-size: {FONT_SIZE_MD}px;"
+            f"color: {STATUS_ERROR}; font-size: {FONT_SIZE_MD}px; "
+            f"font-weight: {FONT_WEIGHT_BOLD};"
         )
-        self._summary_label.setVisible(True)
+        self._open_btn.setVisible(False)
         self._back_btn.setVisible(True)
+        self._outcome_banner.setVisible(True)
         self._spinner.stop()
+        # Safety net: pop the scroll back to the top so the banner — and
+        # therefore the Back to Builder button — is on-screen even if a
+        # custom theme inflates the banner past the viewport (BEAN-287).
+        self._scroll.verticalScrollBar().setValue(0)
         self.append_log(f"FAILED after {elapsed:.1f}s: {message}")
         self.generation_failed.emit(message)
 
