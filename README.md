@@ -198,7 +198,10 @@ generation:
   seed_tasks: true
   write_manifest: true
   write_diff_report: true
+  include_media_skills: false   # set true to scaffold IMAGE-PLAN.md + NARRATION-PLAN.md and ship the kit's generate-image / generate-audio skills
 ```
+
+> **Media skills opt-in:** Setting `include_media_skills: true` in the composition spec stamps `IMAGE-PLAN.md` and `NARRATION-PLAN.md` skeletons at the generated project's root and ensures the kit-distributed `generate-image`, `generate-audio`, `generate-screen`, and `_media_lib` skills are available. See `.claude/shared/skills/*/SKILL.md` and CLAUDE.md's "Media Skills" section for env vars and cost notes.
 
 ### GenerationManifest — The Output Contract
 
@@ -436,14 +439,16 @@ Unapproved ──→ Approved ──→ In Progress ──→ Done
     ▼              ▼              ▼              ▼
   Human          Human        Team Lead      All criteria
   creates        reviews      claims bean,    met, tests
-  via /new-bean  & approves   decomposes      green, merged
-                              into tasks      to test
+  via /new-bean  & approves   decomposes,     green, VDD
+                              dispatches      report passes,
+                              tasks via       merged to test
+                              /spawn-task
 ```
 
 1. **Unapproved** — A bean is created via `/new-bean` or `/backlog-refinement` and added to `ai/beans/_index.md`. It awaits human review and approval.
 2. **Approved** — The user reviews the bean (e.g., in Obsidian via `/review-beans`) and changes its status to `Approved`, signaling it is ready for execution.
-3. **In Progress** — The Team Lead claims the bean via `/pick-bean`, assigns ownership, creates a feature branch, and decomposes it into tasks. Default wave: Developer → Tech-QA. BA and Architect are included only when their criteria are met (see `ai/context/bean-workflow.md`). Tech-QA is mandatory for every bean.
-4. **Done** — All acceptance criteria pass, tests are green, lint is clean, and the bean is merged to the `test` branch.
+3. **In Progress** — The Team Lead claims the bean via `/pick-bean`, assigns ownership, creates a feature branch, and decomposes it into tasks. Default wave: Developer → Tech-QA. BA and Architect are included only when their criteria are met (see `ai/context/bean-workflow.md`). Tech-QA is mandatory for every bean. Each task is dispatched with `/spawn-task` to a process-isolated worker (tmux + worktree) or fresh `Agent`-tool subagent — supervisor pattern, see ADR-008 and `ai/context/orchestration-architecture.md`. Task `Inputs:` are enforced at dispatch by `validate-task-inputs.py`. Personas hand off typed artifacts (`/handoff` reads each side's `contracts.yml`).
+4. **Done** — All acceptance criteria pass via the programmatic `/vdd` gate, tests are green, lint is clean, and the bean is merged to the `test` branch via `/merge-bean` (which refuses to merge without a passing VDD report).
 
 ### Bean Directory Structure
 
@@ -771,8 +776,11 @@ Foundry provides a comprehensive set of Claude Code skills and commands that aut
 | `/show-backlog` | Planning | Display the bean backlog in a concise table format |
 | `/review-beans` | Planning | Generate MOC and open Obsidian for bean review and approval |
 | `/spawn-bean` | Execution | Spawn parallel tmux workers for concurrent bean processing |
+| `/spawn-task` | Execution | Per-task supervisor-pattern dispatch (auto-detects tmux + worktree or `Agent`-tool subagent) — ADR-008 |
 | `/status-report` | Reporting | Generate a progress summary with blockers, velocity, and next steps |
 | `/telemetry-report` | Reporting | Generate telemetry summary across beans and tasks |
+| `/orchestration-report` | Reporting | Architecture-aware roll-up: bounces, dispatch mode, contract violations, escape-hatch trend |
+| `/vdd` | Quality | Programmatic VDD gate — parses bean AC, runs evidence checks, blocks `/merge-bean` on fail |
 | `/trello-load` | Integration | Import Trello sprint backlog cards as approved beans |
 | `/validate-config` | Quality | Check secrets hygiene, env vars, and config schemas |
 | `/validate-repo` | Quality | Structural health check: folders, files, links, stack-specific tooling |

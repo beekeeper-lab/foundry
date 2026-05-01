@@ -140,8 +140,10 @@ class CollapsibleSection(QWidget):
 
     def __init__(self, title: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._expanded = True
+        self._expanded = False
         self._build_ui(title)
+        self._chevron.setText("\u25b6")
+        self._content.setVisible(False)
 
     def _build_ui(self, title: str) -> None:
         layout = QVBoxLayout(self)
@@ -209,10 +211,6 @@ class ArchitectureCard(QFrame):
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self._build_ui()
 
-    def mousePressEvent(self, event):  # noqa: N802
-        """Toggle the checkbox when clicking anywhere on the card."""
-        self._checkbox.setChecked(not self._checkbox.isChecked())
-
     def _build_ui(self) -> None:
         layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
@@ -225,12 +223,22 @@ class ArchitectureCard(QFrame):
 
         name_label = QLabel(self._display_name)
         name_label.setStyleSheet(LABEL_STYLE)
+        name_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(name_label)
 
         desc_label = QLabel(f"— {self._description}" if self._description else "")
         desc_label.setStyleSheet(DESC_STYLE)
         desc_label.setWordWrap(True)
+        desc_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(desc_label, stretch=1)
+
+    def mousePressEvent(self, event) -> None:  # type: ignore[override]
+        """Toggle the checkbox when the card area is left-clicked."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._checkbox.toggle()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
     @property
     def item_id(self) -> str:

@@ -1,6 +1,10 @@
 """Tests for foundry_app.services.compiler — CLAUDE.md compilation from library."""
 
+import json
+import re
 from pathlib import Path
+
+import pytest
 
 from foundry_app.core.models import (
     CompositionSpec,
@@ -10,18 +14,25 @@ from foundry_app.core.models import (
     PersonaInfo,
     PersonaSelection,
     ProjectIdentity,
+    Strictness,
     TeamConfig,
 )
 from foundry_app.services.compiler import (
     _build_context,
+    _build_persona_context,
     _build_persona_name_map,
+    _canonicalize_persona_header,
+    _display_name_from_id,
+    _expertise_applies_to,
     _filter_collaboration_table,
     _filter_defer_references,
     _filter_persona_references,
+    _persona_display_name,
     _resolve_persona_name,
     _substitute,
     compile_project,
 )
+from foundry_app.services.library_indexer import build_library_index
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -185,6 +196,82 @@ class TestBuildContext:
         spec = _make_spec(expertise=[ExpertiseSelection(id="python", order=10)])
         ctx = _build_context(spec)
         assert ctx["expertise"] == "python"
+
+
+class TestBuildPersonaContext:
+    """Per-persona context must carry the persona's strictness into substitution."""
+
+    def test_includes_strictness_default(self):
+        spec = _make_spec()
+        persona_sel = spec.team.personas[0]
+        ctx = _build_persona_context(spec, persona_sel)
+        assert ctx["strictness"] == Strictness.STANDARD.value
+
+    def test_strictness_per_persona(self):
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer", strictness=Strictness.STRICT),
+            ]),
+        )
+        ctx = _build_persona_context(spec, spec.team.personas[0])
+        assert ctx["strictness"] == "strict"
+
+    def test_includes_shared_keys(self):
+        spec = _make_spec()
+        ctx = _build_persona_context(spec, spec.team.personas[0])
+        assert ctx["project_name"] == "Test Project"
+        assert "python" in ctx["expertise"]
+
+
+class TestCompilePersonaRendering:
+    """Persona source files must be fully rendered — no unresolved placeholders
+    in the compiled ai/generated/members/<persona>.md output.
+    """
+
+    def test_strictness_resolves_in_member_file(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {
+                "persona.md": (
+                    "# Developer\n\n"
+                    "Reviews for **{{ project_name }}** are calibrated at "
+                    "**{{ strictness }}** strictness."
+                ),
+            },
+        })
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer", strictness=Strictness.STRICT),
+            ]),
+        )
+        result = compile_project(spec, index, lib_root, output)
+        assert not any("Unresolved" in w for w in result.warnings), (
+            f"Unexpected unresolved-placeholder warning: {result.warnings}"
+        )
+
+        member = (output / "ai" / "generated" / "members" / "developer.md").read_text()
+        assert "{{" not in member and "}}" not in member
+        assert "strict" in member
+        assert "Test Project" in member
+
+    def test_strictness_varies_per_persona(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "Level=[{{ strictness }}]"},
+            "tech-qa": {"persona.md": "Level=[{{ strictness }}]"},
+        })
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer", strictness=Strictness.STANDARD),
+                PersonaSelection(id="tech-qa", strictness=Strictness.STRICT),
+            ]),
+        )
+        compile_project(spec, index, lib_root, output)
+
+        dev = (output / "ai" / "generated" / "members" / "developer.md").read_text()
+        qa = (output / "ai" / "generated" / "members" / "tech-qa.md").read_text()
+        assert "Level=[standard]" in dev
+        assert "Level=[strict]" in qa
 
 
 # ---------------------------------------------------------------------------
@@ -576,11 +663,18 @@ class TestTemplateSubstitutionInContent:
 
     def test_expertise_join_substituted_in_generated_persona(self, tmp_path: Path):
         output = tmp_path / "project"
-        index, lib_root = _make_library(tmp_path, personas={
-            "developer": {
-                "persona.md": 'Stack: {{ expertise | join(", ") }}',
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "developer": {
+                    "persona.md": 'Stack: {{ expertise | join(", ") }}',
+                },
             },
-        })
+            expertise={
+                "python": {"conventions.md": "# Python"},
+                "typescript": {"conventions.md": "# TS"},
+            },
+        )
         spec = _make_spec(expertise=[
             ExpertiseSelection(id="python", order=10),
             ExpertiseSelection(id="typescript", order=20),
@@ -642,7 +736,12 @@ class TestCompileWarnings:
             PersonaSelection(id="nonexistent"),
         ]))
         result = compile_project(spec, index, lib_root, output)
-        assert any("nonexistent" in w and "not found" in w for w in result.warnings)
+        # ADR-014: unknown persona ids surface as
+        # "Unknown persona '<id>' in composition.yml. Core personas (...)..."
+        assert any(
+            "nonexistent" in w and "Unknown persona" in w
+            for w in result.warnings
+        )
 
     def test_warns_on_missing_persona_md(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -673,6 +772,115 @@ class TestCompileWarnings:
         spec = _make_spec()
         result = compile_project(spec, index, lib_root, output)
         assert any("missing conventions.md" in w for w in result.warnings)
+
+    def test_missing_expertise_excluded_from_claude_md(self, tmp_path: Path):
+        """When an expertise has no conventions.md, CLAUDE.md must not
+        reference the expertise's ai/generated/expertise/<id>.md path
+        (the file is never written). The warning is still emitted.
+        """
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={"developer": {"persona.md": "# Dev"}},
+            expertise={
+                "python": {"conventions.md": "# Python"},
+                "clean-code": {"readme.md": "Not conventions"},
+            },
+        )
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="clean-code", order=20),
+            ],
+        )
+        result = compile_project(spec, index, lib_root, output)
+
+        # Warning is still surfaced.
+        assert any("clean-code" in w and "missing" in w for w in result.warnings)
+
+        # Missing-source file must not exist on disk.
+        assert not (output / "ai/generated/expertise/clean-code.md").exists()
+
+        # Generated CLAUDE.md must not reference the missing file.
+        claude_md = (output / "CLAUDE.md").read_text(encoding="utf-8")
+        assert "ai/generated/expertise/clean-code.md" not in claude_md
+
+        # The present expertise is still referenced.
+        assert "ai/generated/expertise/python.md" in claude_md
+
+    def test_all_expertise_references_in_claude_md_exist_on_disk(
+        self, tmp_path: Path,
+    ):
+        """Every `ai/generated/expertise/<id>.md` reference in the generated
+        CLAUDE.md must correspond to a file that was actually written.
+        """
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={"developer": {"persona.md": "# Dev"}},
+            expertise={
+                "python": {"conventions.md": "# Python"},
+                "clean-code": {"readme.md": "Not conventions"},
+                "rust": {"conventions.md": "# Rust"},
+            },
+        )
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="clean-code", order=20),
+                ExpertiseSelection(id="rust", order=30),
+            ],
+        )
+        compile_project(spec, index, lib_root, output)
+
+        claude_md = (output / "CLAUDE.md").read_text(encoding="utf-8")
+        import re as _re
+        referenced = _re.findall(
+            r"ai/generated/expertise/([A-Za-z0-9_-]+)\.md",
+            claude_md,
+        )
+        assert referenced, "expected at least one expertise reference in CLAUDE.md"
+        for eid in referenced:
+            assert (output / "ai/generated/expertise" / f"{eid}.md").is_file(), (
+                f"CLAUDE.md references ai/generated/expertise/{eid}.md but "
+                f"the file was not written"
+            )
+
+    def test_missing_expertise_excluded_from_member_file(self, tmp_path: Path):
+        """When an expertise has no conventions.md, the generated member
+        file's ``{{ expertise | join(", ") }}`` substitution must not list
+        the missing-source expertise ID.
+        """
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "developer": {
+                    "persona.md": (
+                        "# Dev\n\nStack: **{{ expertise | join(\", \") }}**"
+                    ),
+                },
+            },
+            expertise={
+                "python": {"conventions.md": "# Python"},
+                "clean-code": {"readme.md": "Not conventions"},
+            },
+        )
+        spec = _make_spec(
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="clean-code", order=20),
+            ],
+        )
+        compile_project(spec, index, lib_root, output)
+
+        member = (output / "ai/generated/members/developer.md").read_text(
+            encoding="utf-8",
+        )
+        # Missing-source expertise must not appear in the substituted list.
+        assert "clean-code" not in member
+        # Present expertise is still rendered.
+        assert "Stack: **python**" in member
 
     def test_warns_on_unresolved_placeholders(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -746,7 +954,11 @@ class TestEmptySelections:
         spec = _make_spec(team=TeamConfig(personas=[]))
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
-        assert "## Team" not in content
+        # The Team roster section is suppressed when no personas are
+        # selected. The Team Orchestration Model section (BEAN-269) is
+        # policy and always emitted, so match the roster heading
+        # specifically.
+        assert "## Team\n" not in content
 
     def test_no_expertise_still_creates_claude_md(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -1134,6 +1346,230 @@ class TestLeanClaudeMd:
         # But should be in the generated file
         gen = (output / "ai/generated/members/developer.md").read_text()
         assert "Rule 10: Do something important." in gen
+
+    def test_claude_md_has_team_orchestration_model(self, tmp_path: Path):
+        """BEAN-269: generated CLAUDE.md must state the four-bullet
+        orchestration policy explicitly so cold-start agents can read
+        the team model without external context.
+        """
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "team-lead": {"persona.md": "# TL"},
+            "developer": {"persona.md": "# Dev"},
+            "tech-qa": {"persona.md": "# QA"},
+            "architect": {"persona.md": "# Arch"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "## Team Orchestration Model" in content
+        assert "Team Lead is the orchestrator" in content
+        assert "available bench of specialists" in content
+        # Mandatory roles for software development
+        assert "**Developer**" in content
+        assert "**Tech-QA**" in content
+        # At least one opt-in specialist named
+        assert "**Architect**" in content
+
+    def test_claude_md_orchestration_model_emitted_without_personas(
+        self, tmp_path: Path,
+    ):
+        """The orchestration model is policy, not roster — it is emitted
+        even when no personas are selected."""
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path, expertise={"python": {"conventions.md": "# Py"}},
+        )
+        spec = _make_spec(team=TeamConfig(personas=[]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "## Team Orchestration Model" in content
+
+    def test_claude_md_no_contradicting_phrases(self, tmp_path: Path):
+        """BEAN-269 acceptance: the generated CLAUDE.md must not contain
+        wording that contradicts the available-bench model."""
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+            "tech-qa": {"persona.md": "# QA"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text().lower()
+        for phrase in ("all members", "entire team", "full team wave"):
+            assert phrase not in content, (
+                f"CLAUDE.md contains contradicting phrase {phrase!r}"
+            )
+
+    def test_team_lead_library_source_has_orchestration_rules(self):
+        """BEAN-269: the team-lead library persona source must state the
+        orchestration rules operationally. Downstream regenerations
+        propagate this to .claude/agents/team-lead.md."""
+        import foundry_app
+        repo_root = Path(foundry_app.__file__).resolve().parent.parent
+        # Per ADR-014, core personas live under personas/core/<id>.
+        persona = (
+            repo_root / "ai-team-library"
+            / "personas" / "core" / "team-lead" / "persona.md"
+        )
+        text = persona.read_text(encoding="utf-8")
+        assert "## Orchestration Rules" in text
+        assert "bench of specialists" in text
+        assert "Always assign Developer and Tech-QA" in text
+
+    def test_claude_md_has_scope_section(self, tmp_path: Path):
+        """BEAN-251 + BEAN-253: the generated CLAUDE.md must state the
+        planning-only scope — agents work under ai/, humans own the
+        application code. The section must name ai/ explicitly and
+        point users at docs/starter-stacks.md for initialization."""
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "## Scope" in content
+        assert "ai/" in content
+        assert "Edit(ai/**)" in content
+        assert "docs/starter-stacks.md" in content
+
+    def test_claude_md_scope_precedes_orchestration(self, tmp_path: Path):
+        """The Scope section answers 'what does this framework produce?'
+        and must appear before 'how do the agents coordinate?' — i.e.
+        before the Team Orchestration Model heading."""
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        scope_idx = content.index("## Scope")
+        orch_idx = content.index("## Team Orchestration Model")
+        assert scope_idx < orch_idx
+
+    def test_claude_md_scope_emitted_without_personas(
+        self, tmp_path: Path,
+    ):
+        """The Scope section is policy, not roster — it is emitted even
+        when no personas are selected."""
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path, expertise={"python": {"conventions.md": "# Py"}},
+        )
+        spec = _make_spec(team=TeamConfig(personas=[]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "## Scope" in content
+        assert "docs/starter-stacks.md" in content
+
+    def test_claude_md_scope_matches_settings_edit_permissions(
+        self, tmp_path: Path,
+    ):
+        # Drift guard: every directory root the library's
+        # settings.local.json grants Edit access to must be named in the
+        # generated CLAUDE.md Scope section. If someone widens the Edit
+        # allow list (e.g. adds Edit(src/**)) without updating the Scope
+        # text, this test fails — preventing the policy/permission
+        # mismatch BEAN-251 was created to resolve.
+        repo_root = Path(__file__).resolve().parent.parent
+        settings_path = (
+            repo_root
+            / "ai-team-library"
+            / "claude"
+            / "settings"
+            / "settings.local.json"
+        )
+        settings = json.loads(settings_path.read_text())
+        edit_pattern = re.compile(r"^Edit\(([^/)]+)/")
+        edit_roots = {
+            m.group(1)
+            for entry in settings["permissions"]["allow"]
+            if (m := edit_pattern.match(entry))
+        }
+        assert edit_roots, (
+            f"Expected at least one Edit(<dir>/**) in {settings_path}; "
+            "test cannot meaningfully assert consistency without one."
+        )
+
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        scope_start = content.index("## Scope")
+        next_heading = content.find("\n## ", scope_start + 1)
+        scope_text = content[scope_start:next_heading]
+
+        for root in edit_roots:
+            assert f"{root}/" in scope_text, (
+                f"Scope section omits Edit-permitted root '{root}/'. "
+                f"{settings_path.name} grants Edit({root}/**) but the "
+                "Scope section does not name it. Update the Scope text "
+                "in compiler._build_lean_claude_md or the Edit allow "
+                "list to keep them in sync."
+            )
+
+    def test_claude_md_workflow_section_present(self, tmp_path: Path):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        assert "## Workflow" in content
+        assert "ai/beans/_index.md" in content
+        assert "/long-run" in content
+        assert "/show-backlog" in content
+        assert "/pick-bean" in content
+        assert "/new-bean" in content
+        assert "/spawn-task" in content
+        assert "/review-beans" in content
+
+    def test_claude_md_workflow_after_orchestration_before_docs(
+        self, tmp_path: Path,
+    ):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        orch_idx = content.index("## Team Orchestration Model")
+        workflow_idx = content.index("## Workflow")
+        docs_idx = content.index("## Documentation")
+        assert orch_idx < workflow_idx < docs_idx
+
+    def test_claude_md_workflow_section_under_25_lines(
+        self, tmp_path: Path,
+    ):
+        # BEAN-268: signposts are cheap, full docs are expensive — the
+        # Workflow section must stay a pointer, not re-expand into a
+        # detailed walkthrough.
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+        })
+        spec = _make_spec()
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        workflow_start = content.index("## Workflow")
+        next_heading = content.find("\n## ", workflow_start + 1)
+        section = content[workflow_start:next_heading]
+        line_count = section.count("\n") + 1
+        assert line_count <= 25, (
+            f"Workflow section is {line_count} lines (limit: 25). "
+            "Trim it; signposts only."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1682,3 +2118,384 @@ class TestCompilePersonaFiltering:
         assert "Stakeholders" in gen
         # Developer should be removed (known, not selected)
         assert "| Developer" not in gen
+
+
+# ---------------------------------------------------------------------------
+# Display-name casing (BEAN-266)
+# ---------------------------------------------------------------------------
+
+
+class TestDisplayNameFromId:
+
+    def test_tech_qa_uppercases_qa(self):
+        assert _display_name_from_id("tech-qa") == "Tech QA"
+
+    def test_ux_ui_designer_collapses_adjacent_acronyms_with_slash(self):
+        assert _display_name_from_id("ux-ui-designer") == "UX/UI Designer"
+
+    def test_sql_dba_two_acronyms(self):
+        assert _display_name_from_id("sql-dba") == "SQL/DBA"
+
+    def test_team_lead_non_acronyms(self):
+        assert _display_name_from_id("team-lead") == "Team Lead"
+
+    def test_single_acronym_id(self):
+        assert _display_name_from_id("ba") == "BA"
+
+    def test_no_hyphens(self):
+        assert _display_name_from_id("developer") == "Developer"
+
+    def test_technical_writer_title_cases(self):
+        assert _display_name_from_id("technical-writer") == "Technical Writer"
+
+    def test_api_design_acronym_then_word(self):
+        assert _display_name_from_id("api-design") == "API Design"
+
+    def test_empty_string(self):
+        assert _display_name_from_id("") == ""
+
+
+class TestCanonicalizePersonaHeader:
+
+    def test_takes_first_segment_for_role_tail(self):
+        assert (
+            _canonicalize_persona_header("Tech-QA / Test Engineer") == "Tech-QA"
+        )
+
+    def test_merges_short_acronyms_around_slash(self):
+        assert (
+            _canonicalize_persona_header("UX / UI Designer") == "UX/UI Designer"
+        )
+
+    def test_strips_parenthetical_annotation(self):
+        assert (
+            _canonicalize_persona_header("Business Analyst (BA)")
+            == "Business Analyst"
+        )
+
+    def test_single_segment_passes_through(self):
+        assert _canonicalize_persona_header("Team Lead") == "Team Lead"
+
+    def test_title_case_slash_non_acronym_tail_trimmed(self):
+        assert (
+            _canonicalize_persona_header("Integrator / Merge Captain")
+            == "Integrator"
+        )
+
+    def test_mixed_case_tail_trimmed(self):
+        assert (
+            _canonicalize_persona_header("DevOps / Release Engineer")
+            == "DevOps"
+        )
+
+
+class TestPersonaDisplayName:
+
+    def test_reads_from_persona_header(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "tech-qa": {"persona.md": "# Persona: Tech-QA / Test Engineer\n"},
+        })
+        assert _persona_display_name("tech-qa", index) == "Tech-QA"
+
+    def test_reads_ux_ui_header(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "ux-ui-designer": {"persona.md": "# Persona: UX / UI Designer\n"},
+        })
+        assert (
+            _persona_display_name("ux-ui-designer", index) == "UX/UI Designer"
+        )
+
+    def test_falls_back_to_id_when_header_missing(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={
+            "tech-qa": {"persona.md": "# Tech QA notes (no Persona header)\n"},
+        })
+        assert _persona_display_name("tech-qa", index) == "Tech QA"
+
+    def test_falls_back_to_id_when_persona_missing(self, tmp_path: Path):
+        index, _ = _make_library(tmp_path, personas={})
+        assert _persona_display_name("ux-ui-designer", index) == "UX/UI Designer"
+
+
+class TestClaudeMdTableCasing:
+
+    def test_team_and_tech_stack_tables_use_correct_casing(
+        self, tmp_path: Path,
+    ):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "tech-qa": {
+                    "persona.md": "# Persona: Tech-QA / Test Engineer\n\nTest things.",
+                },
+                "ux-ui-designer": {
+                    "persona.md": "# Persona: UX / UI Designer\n\nDesign screens.",
+                },
+                "ba": {
+                    "persona.md": "# Persona: Business Analyst (BA)\n\nGather requirements.",
+                },
+            },
+            expertise={
+                "sql-dba": {"conventions.md": "# SQL DBA conventions"},
+                "api-design": {"conventions.md": "# API design conventions"},
+            },
+        )
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="tech-qa"),
+                PersonaSelection(id="ux-ui-designer"),
+                PersonaSelection(id="ba"),
+            ]),
+            expertise=[
+                ExpertiseSelection(id="sql-dba", order=10),
+                ExpertiseSelection(id="api-design", order=20),
+            ],
+        )
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+
+        # Team table — no lower-case acronym artefacts
+        assert "Tech Qa" not in content
+        assert "Ux Ui" not in content
+        assert "| Tech-QA |" in content
+        assert "| UX/UI Designer |" in content
+        assert "| Business Analyst |" in content
+
+        # Tech Stack table — acronyms uppercased
+        assert "Sql Dba" not in content
+        assert "Api Design" not in content
+        assert "| SQL/DBA |" in content
+        assert "| API Design |" in content
+
+
+# ---------------------------------------------------------------------------
+# ADR-012 / BEAN-259: per-expertise persona relevance
+# ---------------------------------------------------------------------------
+
+
+class TestExpertiseAppliesToHelper:
+    """Pure unit tests for the ``_expertise_applies_to`` predicate."""
+
+    def test_empty_applies_to_matches_every_persona(self):
+        info = ExpertiseInfo(id="x", path="/tmp/x", applies_to=[])
+        assert _expertise_applies_to("developer", info) is True
+        assert _expertise_applies_to("ux-ui-designer", info) is True
+        assert _expertise_applies_to("anything", info) is True
+
+    def test_listed_persona_matches(self):
+        info = ExpertiseInfo(id="x", path="/tmp/x", applies_to=["developer", "tech-qa"])
+        assert _expertise_applies_to("developer", info) is True
+        assert _expertise_applies_to("tech-qa", info) is True
+
+    def test_unlisted_persona_does_not_match(self):
+        info = ExpertiseInfo(id="x", path="/tmp/x", applies_to=["developer"])
+        assert _expertise_applies_to("ux-ui-designer", info) is False
+        assert _expertise_applies_to("devops-release", info) is False
+
+
+class TestCompilerExpertiseFilterIntegration:
+    """End-to-end checks that the per-persona filter does not leak into
+    standalone expertise files or the lean CLAUDE.md (Tech Stack)."""
+
+    def _build_python_ts_lib(self, tmp_path: Path):
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "developer": {
+                    "persona.md": "# Persona: Developer\n\n## Mission\nBuild.",
+                },
+                "devops-release": {
+                    "persona.md": "# Persona: DevOps-Release\n\n## Mission\nShip.",
+                },
+                "ux-ui-designer": {
+                    "persona.md": "# Persona: UX/UI Designer\n\n## Mission\nDesign.",
+                },
+            },
+            expertise={
+                "python": {
+                    "conventions.md": (
+                        "# Python\n\n## Category\nLanguages\n\n"
+                        "## Applies To\n\n- developer\n\n"
+                        "## Defaults\n\n- ruff is the formatter\n"
+                    ),
+                },
+                "typescript": {
+                    "conventions.md": (
+                        "# TypeScript\n\n## Category\nLanguages\n\n"
+                        "## Applies To\n\n- developer\n\n"
+                        "## Defaults\n\n- tsconfig strict mode\n"
+                    ),
+                },
+            },
+        )
+        # Manually set applies_to to mirror what build_library_index would
+        # parse from the same files (the helper writes files to /stacks/
+        # rather than /expertise/, so the real indexer can't find them).
+        for e in index.expertise:
+            if e.id in ("python", "typescript"):
+                e.applies_to = ["developer"]
+        return index, lib_root
+
+    def test_lean_claude_md_lists_every_emitted_expertise(self, tmp_path: Path):
+        """ADR-012 case 7: Tech Stack table is unfiltered."""
+        index, lib_root = self._build_python_ts_lib(tmp_path)
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="devops-release"),
+                PersonaSelection(id="ux-ui-designer"),
+            ]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+            ],
+        )
+        out = tmp_path / "project"
+        compile_project(spec, index, lib_root, out)
+        claude_md = (out / "CLAUDE.md").read_text()
+        # Both expertise must appear in the Tech Stack table even though
+        # ux-ui-designer and devops-release are not in either applies_to.
+        assert "ai/generated/expertise/python.md" in claude_md
+        assert "ai/generated/expertise/typescript.md" in claude_md
+
+    def test_standalone_expertise_files_always_written(self, tmp_path: Path):
+        """ADR-012 case 8: standalone expertise files are unfiltered."""
+        index, lib_root = self._build_python_ts_lib(tmp_path)
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="ux-ui-designer"),  # neither expertise lists this persona
+            ]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+            ],
+        )
+        out = tmp_path / "project"
+        compile_project(spec, index, lib_root, out)
+        # Both standalone expertise files must be present.
+        assert (out / "ai" / "generated" / "expertise" / "python.md").is_file()
+        assert (out / "ai" / "generated" / "expertise" / "typescript.md").is_file()
+
+
+class TestCompilePersonaSectionForwardCompat:
+    """The forward-compat guard in _compile_persona_section is wired but a
+    no-op today. Verify that passing spec= does not change persona file
+    contents (regression guard for the no-op).
+    """
+
+    def test_persona_section_unchanged_with_or_without_spec(self, tmp_path: Path):
+        from foundry_app.services.compiler import _compile_persona_section
+
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "developer": {
+                    "persona.md": "# Persona: Developer\n\n## Mission\nBuild.",
+                },
+            },
+            expertise={
+                "python": {
+                    "conventions.md": (
+                        "# Python\n\n## Applies To\n\n- developer\n\n"
+                        "## Defaults\n- ruff\n"
+                    ),
+                },
+                "typescript": {
+                    "conventions.md": (
+                        "# TS\n\n## Applies To\n\n- developer\n\n"
+                        "## Defaults\n- tsconfig\n"
+                    ),
+                },
+            },
+        )
+        # Mirror the on-disk applies_to into the index so the forward-compat
+        # loop has realistic data even though _make_library doesn't index.
+        for e in index.expertise:
+            e.applies_to = ["developer"]
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="developer")]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+            ],
+        )
+        ctx = _build_persona_context(spec, spec.team.personas[0], ["python", "typescript"])
+        warnings_a: list[str] = []
+        warnings_b: list[str] = []
+        without_spec = _compile_persona_section(
+            "developer", Path(lib_root), index, ctx, warnings_a,
+        )
+        with_spec = _compile_persona_section(
+            "developer", Path(lib_root), index, ctx, warnings_b, spec=spec,
+        )
+        assert without_spec == with_spec
+        # No additional warnings produced by passing spec.
+        assert warnings_a == warnings_b
+
+
+# ---------------------------------------------------------------------------
+# BEAN-294 — R expertise plumbed through the real library
+# ---------------------------------------------------------------------------
+
+
+_REAL_LIBRARY_ROOT = Path(__file__).resolve().parent.parent / "ai-team-library"
+
+
+@pytest.mark.skipif(
+    not _REAL_LIBRARY_ROOT.is_dir(),
+    reason="ai-team-library not present",
+)
+class TestBean294RExpertiseIntegration:
+    """BEAN-294 headless substitution for the manual generation-pipeline AC.
+
+    Verify the R expertise pack is reachable end-to-end:
+    1. The real library indexer surfaces ``r`` with category ``Languages``.
+    2. ``compile_project`` emits an R reference in the generated CLAUDE.md
+       Tech Stack table when ``r`` is in ``spec.expertise``.
+    3. The standalone ``ai/generated/expertise/r.md`` file is written and
+       contains R-specific content (the verbatim "tidyverse" string from
+       conventions.md).
+    """
+
+    def test_indexer_surfaces_r_under_languages(self):
+        idx = build_library_index(_REAL_LIBRARY_ROOT)
+        r_pack = idx.expertise_by_id("r")
+        assert r_pack is not None, "Real library must expose `r` expertise"
+        assert r_pack.category == "Languages"
+        # conventions.md is the primary file the compiler reads.
+        assert "conventions.md" in r_pack.files
+
+    def test_compile_project_emits_r_in_claude_md(self, tmp_path: Path):
+        """A composition that includes `r` in expertise must produce a
+        CLAUDE.md that references the R conventions file (Tech Stack row)
+        and a standalone `ai/generated/expertise/r.md` whose content is
+        sourced from the real conventions.md (i.e. mentions tidyverse).
+        """
+        idx = build_library_index(_REAL_LIBRARY_ROOT)
+        out = tmp_path / "project"
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="tech-qa"),
+            ]),
+            expertise=[ExpertiseSelection(id="r", order=10)],
+        )
+        compile_project(spec, idx, _REAL_LIBRARY_ROOT, out)
+
+        claude_md = (out / "CLAUDE.md").read_text(encoding="utf-8")
+        # Tech Stack row references the R standalone file.
+        assert "ai/generated/expertise/r.md" in claude_md, (
+            "Generated CLAUDE.md must reference R conventions in Tech Stack"
+        )
+
+        r_standalone = out / "ai" / "generated" / "expertise" / "r.md"
+        assert r_standalone.is_file(), (
+            "Standalone r.md must be written under ai/generated/expertise/"
+        )
+        r_text = r_standalone.read_text(encoding="utf-8")
+        # The verbatim "tidyverse" default from the real conventions.md
+        # must be reachable from the generated artifact.
+        assert "tidyverse" in r_text, (
+            "Generated r.md must surface the tidyverse default from the "
+            "real ai-team-library/expertise/r/conventions.md"
+        )

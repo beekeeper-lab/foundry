@@ -1,0 +1,29 @@
+# Image Plan — {{ project_name }}
+
+The single source of truth for images this project generates with the
+`generate-image` skill. Add an entry per image; the generator writes
+each one as `images/<slug>.<ext>` and skips entries that already exist
+on disk (use `--force` to regenerate, `--regenerate-changed` to refresh
+entries whose prompt has changed).
+
+**Style:**
+**Generator:** gemini-3-pro-image-preview
+**Aspect ratio:** 16:9
+**Background:** white
+**Text in image:** minimal
+**Avoid:**
+
+> Fill in `**Style:**` with a one-line description that all images in
+> this project should share (e.g. "flat illustration, muted palette,
+> isometric perspective"). The plan-level `**Style:**` is the *default*;
+> individual entries below can override it.
+
+<!--
+### Image 1: example-slug
+
+**Prompt:** A short prompt describing the image.
+
+**Aspect ratio:** 16:9
+**Background:** transparent
+**Text in image:** none
+-->

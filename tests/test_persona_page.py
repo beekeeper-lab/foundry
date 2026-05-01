@@ -27,11 +27,17 @@ def _make_persona(
     pid: str,
     templates: list[str] | None = None,
     category: str = "",
+    tier: str = "core",
 ) -> PersonaInfo:
-    """Create a minimal PersonaInfo for testing."""
+    """Create a minimal PersonaInfo for testing.
+
+    Per ADR-014, ``tier`` is part of the wire-level identity. Defaults to
+    ``"core"`` so existing tests that pass a bare id keep working.
+    """
     return PersonaInfo(
         id=pid,
         path=f"/fake/personas/{pid}",
+        tier=tier,
         has_persona_md=True,
         has_outputs_md=True,
         has_prompts_md=True,
@@ -48,7 +54,13 @@ def _make_library(*persona_ids: str) -> LibraryIndex:
     )
 
 
-# Category mapping matching the real library
+# Tier mapping matching ADR-014 (5 core + 19 extended). Categories retained
+# so legacy assertions that exercise the per-persona category metadata still
+# resolve, but the page now groups by tier — see TestTierGrouping below.
+_CORE_PERSONAS: tuple[str, ...] = (
+    "architect", "ba", "developer", "team-lead", "tech-qa",
+)
+
 _PERSONA_CATEGORIES: dict[str, str] = {
     "architect": "Software Development",
     "ba": "Software Development",
@@ -78,14 +90,21 @@ _PERSONA_CATEGORIES: dict[str, str] = {
 
 
 def _make_full_library() -> LibraryIndex:
-    """Create a LibraryIndex matching the real 24-persona library with categories."""
-    return LibraryIndex(
-        library_root="/fake/library",
-        personas=[
-            _make_persona(pid, category=cat)
-            for pid, cat in _PERSONA_CATEGORIES.items()
-        ],
-    )
+    """Create a LibraryIndex matching the real 24-persona library.
+
+    Per ADR-014 the persona id format depends on tier: core personas use the
+    bare name, extended use ``extended/<name>``. Tier is set explicitly so
+    grouping tests see the canonical wire form.
+    """
+    personas = []
+    for pid, cat in _PERSONA_CATEGORIES.items():
+        if pid in _CORE_PERSONAS:
+            personas.append(_make_persona(pid, category=cat, tier="core"))
+        else:
+            personas.append(
+                _make_persona(f"extended/{pid}", category=cat, tier="extended")
+            )
+    return LibraryIndex(library_root="/fake/library", personas=personas)
 
 
 # ---------------------------------------------------------------------------
@@ -142,6 +161,25 @@ class TestPersonaCardSelection:
         card.is_selected = False
         assert len(received) == 1
         assert received[0] == ("developer", False)
+
+    def test_click_on_card_toggles_checkbox(self, card):
+        """Clicking the card (outside the checkbox/combo) toggles selection."""
+        from PySide6.QtCore import QPointF, Qt
+        from PySide6.QtGui import QMouseEvent
+
+        assert card.is_selected is False
+        event = QMouseEvent(
+            QMouseEvent.Type.MouseButtonPress,
+            QPointF(200, 10),  # well outside the checkbox
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        card.mousePressEvent(event)
+        assert card.is_selected is True
+
+        card.mousePressEvent(event)
+        assert card.is_selected is False
 
 
 # ---------------------------------------------------------------------------
@@ -281,9 +319,13 @@ class TestLoadPersonas:
         assert len(loaded_page.persona_cards) == 24
 
     def test_all_known_persona_ids_present(self, loaded_page):
+        # Per ADR-014, the cards dict is keyed by canonical id — bare for
+        # core, ``extended/<name>`` for extended. PERSONA_DESCRIPTIONS still
+        # lists bare leaf names, so look up in the tier-aware form.
         cards = loaded_page.persona_cards
         for pid in PERSONA_DESCRIPTIONS:
-            assert pid in cards, f"Missing persona card: {pid}"
+            key = pid if pid in _CORE_PERSONAS else f"extended/{pid}"
+            assert key in cards, f"Missing persona card: {key}"
 
     def test_loads_via_constructor(self):
         lib = _make_library("developer", "architect")
@@ -334,72 +376,122 @@ class TestPersonaDescriptions:
 # ---------------------------------------------------------------------------
 
 class TestCategoryGrouping:
+    """Tier-based grouping introduced by ADR-014.
+
+    Persona cards are now grouped under ``core`` and ``extended`` tier
+    sections rather than per-category boxes. The page exposes both
+    ``tier_groups`` (the canonical accessor) and ``category_groups`` (a
+    backward-compat alias kept for older test/UI consumers).
+    """
+
     def test_creates_category_groups(self, loaded_page):
+        # Returns the same dict as ``tier_groups`` (BC alias).
         groups = loaded_page.category_groups
         assert len(groups) > 0
+        assert groups == loaded_page.tier_groups
 
     def test_expected_categories_present(self, loaded_page):
+        # ADR-014: only two tier groups exist — ``core`` and ``extended``.
         groups = loaded_page.category_groups
-        expected = {"Software Development", "Business Operations",
-                    "Compliance & Legal", "Data & Analytics"}
-        assert set(groups.keys()) == expected
+        assert set(groups.keys()) == {"core", "extended"}
 
     def test_category_header_shows_count(self, loaded_page):
         groups = loaded_page.category_groups
-        sw_group = groups["Software Development"]
-        assert isinstance(sw_group, CollapsibleGroupBox)
-        # Should contain the count in parentheses
-        title = sw_group.title()
-        assert "Software Development" in title
-        assert "(13)" in title
+        core_group = groups["core"]
+        assert isinstance(core_group, CollapsibleGroupBox)
+        title = core_group.title()
+        # 5 core personas (team-lead, ba, architect, developer, tech-qa).
+        assert "Core team" in title
+        assert "(5)" in title
 
     def test_business_operations_count(self, loaded_page):
+        # The extended tier holds the 19 specialist personas. Replaces the
+        # historic per-category counts (Business Operations, etc.) — those
+        # categories are persona metadata, not page-grouping keys.
         groups = loaded_page.category_groups
-        title = groups["Business Operations"].title()
-        assert "(6)" in title
+        title = groups["extended"].title()
+        assert "Extended specialists" in title
+        assert "(19)" in title
 
     def test_compliance_legal_count(self, loaded_page):
+        # Holdover from the per-category grouping era. The two extended
+        # security/compliance personas now live inside the single Extended
+        # specialists tier section.
         groups = loaded_page.category_groups
-        title = groups["Compliance & Legal"].title()
-        assert "(2)" in title
+        extended_ids = [
+            pid for pid, cat in _PERSONA_CATEGORIES.items()
+            if cat == "Compliance & Legal"
+        ]
+        assert len(extended_ids) == 2
+        # Both personas appear in the page's card map under their canonical
+        # extended ids.
+        cards = loaded_page.persona_cards
+        for pid in extended_ids:
+            assert f"extended/{pid}" in cards
+        assert "extended" in groups
 
     def test_data_analytics_count(self, loaded_page):
+        # Holdover: confirm the 3 Data & Analytics personas now live under
+        # the Extended specialists tier section.
         groups = loaded_page.category_groups
-        title = groups["Data & Analytics"].title()
-        assert "(3)" in title
+        analytics_ids = [
+            pid for pid, cat in _PERSONA_CATEGORIES.items()
+            if cat == "Data & Analytics"
+        ]
+        assert len(analytics_ids) == 3
+        cards = loaded_page.persona_cards
+        for pid in analytics_ids:
+            assert f"extended/{pid}" in cards
+        assert "extended" in groups
 
-    def test_all_groups_expanded_by_default(self, loaded_page):
+    def test_all_groups_collapsed_by_default(self, loaded_page):
         for name, group in loaded_page.category_groups.items():
-            assert not group.isHidden(), f"{name} group is hidden"
+            assert not group.isHidden(), f"{name} group header is hidden"
+            assert not group.is_expanded, (
+                f"{name} group expanded by default; expected collapsed"
+            )
 
     def test_personas_with_no_category_go_to_other(self):
+        # Tier grouping ignores the legacy ``category`` field. A persona
+        # without a category still groups by tier — both personas below are
+        # core, so they share the ``core`` group.
         lib = LibraryIndex(
             library_root="/fake",
             personas=[
-                _make_persona("developer", category="Software Development"),
-                _make_persona("custom-role", category=""),
+                _make_persona(
+                    "developer", category="Software Development", tier="core",
+                ),
+                _make_persona("custom-role", category="", tier="core"),
             ],
         )
         page = PersonaSelectionPage(library_index=lib)
         groups = page.category_groups
-        assert "Other" in groups
-        assert "Other (1)" == groups["Other"].title()
+        # No "Other" bucket exists — tier is the only grouping axis now.
+        assert "Other" not in groups
+        assert "core" in groups
+        assert "(2)" in groups["core"].title()
         page.close()
 
     def test_other_group_not_created_when_all_have_categories(self, loaded_page):
+        # Tier grouping has no "Other" bucket regardless of category data.
         groups = loaded_page.category_groups
         assert "Other" not in groups
 
     def test_reload_clears_old_groups(self, loaded_page):
-        # Reload with a small library
+        # Reload with a small extended-only library; the ``core`` group
+        # should disappear.
         new_lib = LibraryIndex(
             library_root="/fake",
-            personas=[_make_persona("developer", category="Dev")],
+            personas=[
+                _make_persona(
+                    "extended/lone", category="Dev", tier="extended",
+                ),
+            ],
         )
         loaded_page.load_personas(new_lib)
         groups = loaded_page.category_groups
         assert len(groups) == 1
-        assert "Dev" in groups
+        assert "extended" in groups
 
 
 # ---------------------------------------------------------------------------
@@ -439,11 +531,12 @@ class TestPageSelection:
         assert loaded_page._warning_label.isHidden() is True
 
     def test_select_across_groups(self, loaded_page):
-        # Select from different categories
-        loaded_page.persona_cards["developer"].is_selected = True  # Software Dev
-        loaded_page.persona_cards["data-analyst"].is_selected = True  # Data
-        loaded_page.persona_cards["compliance-risk"].is_selected = True  # Compliance
-        loaded_page.persona_cards["change-management"].is_selected = True  # Business
+        # Select from both tier groups (ADR-014). Cards are keyed by their
+        # canonical id — bare for core, ``extended/<name>`` for extended.
+        loaded_page.persona_cards["developer"].is_selected = True  # core
+        loaded_page.persona_cards["extended/data-analyst"].is_selected = True
+        loaded_page.persona_cards["extended/compliance-risk"].is_selected = True
+        loaded_page.persona_cards["extended/change-management"].is_selected = True
         assert loaded_page.selected_count() == 4
 
 
@@ -482,12 +575,16 @@ class TestGetTeamConfig:
         assert "architect" not in ids
 
     def test_get_config_across_groups(self, loaded_page):
+        # Cards are keyed by canonical id (ADR-014); selections round-trip
+        # the same id form into TeamConfig.
         loaded_page.persona_cards["developer"].is_selected = True
-        loaded_page.persona_cards["data-analyst"].is_selected = True
-        loaded_page.persona_cards["legal-counsel"].is_selected = True
+        loaded_page.persona_cards["extended/data-analyst"].is_selected = True
+        loaded_page.persona_cards["extended/legal-counsel"].is_selected = True
         config = loaded_page.get_team_config()
         ids = {p.id for p in config.personas}
-        assert ids == {"developer", "data-analyst", "legal-counsel"}
+        assert ids == {
+            "developer", "extended/data-analyst", "extended/legal-counsel",
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -569,21 +666,29 @@ class TestSetTeamConfig:
     def test_set_config_across_groups(self, loaded_page):
         config = TeamConfig(personas=[
             PersonaSelection(id="developer"),
-            PersonaSelection(id="data-analyst"),
-            PersonaSelection(id="compliance-risk"),
-            PersonaSelection(id="change-management"),
+            PersonaSelection(id="extended/data-analyst"),
+            PersonaSelection(id="extended/compliance-risk"),
+            PersonaSelection(id="extended/change-management"),
         ])
         loaded_page.set_team_config(config)
         assert loaded_page.persona_cards["developer"].is_selected is True
-        assert loaded_page.persona_cards["data-analyst"].is_selected is True
-        assert loaded_page.persona_cards["compliance-risk"].is_selected is True
-        assert loaded_page.persona_cards["change-management"].is_selected is True
+        assert (
+            loaded_page.persona_cards["extended/data-analyst"].is_selected is True
+        )
+        assert (
+            loaded_page.persona_cards["extended/compliance-risk"].is_selected
+            is True
+        )
+        assert (
+            loaded_page.persona_cards["extended/change-management"].is_selected
+            is True
+        )
         assert loaded_page.persona_cards["architect"].is_selected is False
 
     def test_roundtrip_across_groups(self, loaded_page):
         loaded_page.persona_cards["developer"].is_selected = True
-        loaded_page.persona_cards["data-analyst"].is_selected = True
-        loaded_page.persona_cards["compliance-risk"].is_selected = True
+        loaded_page.persona_cards["extended/data-analyst"].is_selected = True
+        loaded_page.persona_cards["extended/compliance-risk"].is_selected = True
         original = loaded_page.get_team_config()
 
         for card in loaded_page.persona_cards.values():
@@ -592,7 +697,7 @@ class TestSetTeamConfig:
         loaded_page.set_team_config(original)
         restored = loaded_page.get_team_config()
         assert {p.id for p in restored.personas} == {
-            "developer", "data-analyst", "compliance-risk"
+            "developer", "extended/data-analyst", "extended/compliance-risk",
         }
 
 
@@ -645,3 +750,436 @@ class TestEmptyState:
         lib = _make_library("developer", "architect")
         page.load_personas(lib)
         assert page._empty_label.isHidden() is True
+
+
+# ---------------------------------------------------------------------------
+# BEAN-274 — Team-coherence indicator (red/yellow/green)
+#
+# The wizard's _coherence_label reflects validate_contract_graph's findings
+# in real time as personas are toggled. Tests bind the user-facing contract:
+# 🔴 missing producer, 🟡 orphan produces, 🟢 all consumes satisfied.
+# ---------------------------------------------------------------------------
+
+
+def _make_contract_persona(
+    pid: str,
+    *,
+    produces: list[str] | None = None,
+    consumes: list[str] | None = None,
+    tier: str = "core",
+    category: str = "Software Development",
+) -> PersonaInfo:
+    """PersonaInfo with explicit produces/consumes — for coherence tests."""
+    return PersonaInfo(
+        id=pid,
+        path=f"/fake/personas/{pid}",
+        tier=tier,
+        has_persona_md=True,
+        has_outputs_md=True,
+        has_prompts_md=True,
+        templates=[],
+        category=category,
+        produces=produces or [],
+        consumes=consumes or [],
+    )
+
+
+@pytest.fixture()
+def coherence_page():
+    """A page loaded with four contract-bearing personas:
+    - producer: produces 'thing' (no consumes)
+    - consumer: consumes 'thing' (no produces)
+    - orphan-producer: produces 'orphan-thing' (no on-team consumer)
+    - orphan-consumer-absent: consumes 'orphan-thing' (library-only;
+      keeps the orphan-produces warning actionable per BEAN-289 so the
+      yellow indicator fires when only orphan-producer is selected)
+
+    Red = consumer alone (missing producer for 'thing')
+    Yellow = orphan-producer alone (orphan, no error)
+    Green = producer + consumer (closed graph)
+    """
+    lib = LibraryIndex(
+        library_root="/fake/library",
+        personas=[
+            _make_contract_persona("producer", produces=["thing"]),
+            _make_contract_persona("consumer", consumes=["thing"]),
+            _make_contract_persona(
+                "orphan-producer", produces=["orphan-thing"],
+            ),
+            _make_contract_persona(
+                "orphan-consumer-absent", consumes=["orphan-thing"],
+            ),
+        ],
+    )
+    p = PersonaSelectionPage(library_index=lib)
+    yield p
+    p.close()
+
+
+class TestCoherenceIndicatorInitialState:
+    """Before any selection, the indicator is hidden (empty selection
+    is already covered by the existing 'select at least one' warning)."""
+
+    def test_indicator_hidden_when_no_library(self, page):
+        assert page._coherence_label is not None
+        assert page._coherence_label.isHidden() is True
+
+    def test_indicator_hidden_when_library_loaded_but_nothing_selected(
+        self, coherence_page,
+    ):
+        assert coherence_page._coherence_label.isHidden() is True
+
+
+class TestCoherenceIndicatorYellowFromMissingProducer:
+    """🟡 — at least one missing-producer warning on the current selection.
+
+    Per BEAN-292, ``missing-producer`` is a WARNING (not an ERROR), so a
+    consumer-without-producer renders as yellow (advisory) rather than
+    red (blocking). The state previously asserted by
+    ``TestCoherenceIndicatorRed``: those tests were renamed and moved
+    here to preserve coverage of the consumer-without-producer flow.
+    """
+
+    def test_indicator_yellow_when_consumer_lacks_producer(
+        self, coherence_page,
+    ):
+        coherence_page.persona_cards["consumer"].is_selected = True
+
+        label = coherence_page._coherence_label
+        assert label.isHidden() is False
+        text = label.text()
+        # BEAN-292: missing-producer renders as YELLOW (advisory) rather
+        # than RED (blocking). Yellow emoji (\U0001f7e1).
+        assert "\U0001f7e1" in text, f"Expected yellow emoji, got: {text!r}"
+        # The label still surfaces the missing-role count to the user.
+        assert "missing" in text.lower()
+        # And the per-message bullet still names what's missing.
+        assert "Add the Producer" in text
+
+    def test_indicator_yellow_count_reflects_findings(self, coherence_page):
+        """A consumer with multiple unsatisfied consumes must show the
+        right pluralization and sub-count.
+
+        BEAN-292: rendered as YELLOW (warning) rather than RED, with the
+        unified "Team check" headline carrying the ``N missing role(s)``
+        sub-count.
+        """
+        # Add a consumer with two unsatisfied types.
+        lib = LibraryIndex(
+            library_root="/fake",
+            personas=[
+                _make_contract_persona(
+                    "lonely",
+                    consumes=["aaa", "bbb"],
+                ),
+            ],
+        )
+        coherence_page.load_personas(lib)
+        coherence_page.persona_cards["lonely"].is_selected = True
+
+        text = coherence_page._coherence_label.text()
+        assert "\U0001f7e1" in text
+        # BEAN-290 carried over: headline names "missing roles" (user
+        # vocabulary), not "missing producers" (graph vocabulary).
+        assert "2 missing role" in text
+        assert "roles" in text  # plural
+
+
+class TestCoherenceIndicatorYellow:
+    """🟡 — orphan produces but no missing producer."""
+
+    def test_indicator_yellow_when_only_orphan_produces(
+        self, coherence_page,
+    ):
+        coherence_page.persona_cards["orphan-producer"].is_selected = True
+
+        label = coherence_page._coherence_label
+        assert label.isHidden() is False
+        text = label.text()
+        # Yellow emoji (\U0001f7e1) marks the orphan-only state.
+        assert "\U0001f7e1" in text, f"Expected yellow emoji, got: {text!r}"
+        # BEAN-290: yellow headline describes "unused output(s)" rather
+        # than "orphan produces".
+        assert "unused output" in text.lower()
+
+
+class TestCoherenceIndicatorGreen:
+    """🟢 — all consumes satisfied AND no orphan produces."""
+
+    def test_indicator_green_when_team_is_balanced(self, coherence_page):
+        coherence_page.persona_cards["producer"].is_selected = True
+        coherence_page.persona_cards["consumer"].is_selected = True
+
+        label = coherence_page._coherence_label
+        assert label.isHidden() is False
+        text = label.text()
+        # Green emoji (\U0001f7e2) marks the all-satisfied state.
+        assert "\U0001f7e2" in text, f"Expected green emoji, got: {text!r}"
+        # BEAN-290: green headline reads "looks good".
+        assert "looks good" in text.lower()
+
+    def test_indicator_green_for_five_core_personas_against_real_library(
+        self,
+    ):
+        """BEAN-289 user-visible payoff: with the real ai-team-library/
+        loaded and the 5 core personas selected, the team-coherence
+        indicator is GREEN (not yellow). The library-level orphans
+        (dev-decision, merge-summary, test-suite) no longer surface as
+        unactionable yellow warnings."""
+        from pathlib import Path
+
+        from foundry_app.services.library_indexer import build_library_index
+
+        library_root = (
+            Path(__file__).resolve().parent.parent / "ai-team-library"
+        )
+        registry = build_library_index(library_root)
+        page = PersonaSelectionPage(library_index=registry)
+        try:
+            for pid in ("architect", "ba", "developer", "team-lead", "tech-qa"):
+                page.persona_cards[pid].is_selected = True
+            label = page._coherence_label
+            assert label.isHidden() is False
+            text = label.text()
+            assert "\U0001f7e2" in text, (
+                f"Expected GREEN indicator for 5 core personas, got: {text!r}"
+            )
+            # BEAN-290: green headline reads "looks good".
+            assert "looks good" in text.lower()
+        finally:
+            page.close()
+
+
+class TestCoherenceIndicatorTransitions:
+    """The indicator updates *as personas are checked/unchecked* — that's
+    the user-facing payoff of BEAN-274.
+
+    BEAN-292 redrew the state model: ``missing-producer`` is now a
+    WARNING (yellow) rather than an ERROR (red), so the transitions
+    below reflect the new yellow-dominant flows for consumer-without-
+    producer compositions.
+    """
+
+    def test_indicator_transitions_yellow_to_green(self, coherence_page):
+        # Start: consumer alone => YELLOW (missing producer is now a
+        # warning per BEAN-292, not an error).
+        coherence_page.persona_cards["consumer"].is_selected = True
+        assert "\U0001f7e1" in coherence_page._coherence_label.text()
+
+        # Add the producer => GREEN.
+        coherence_page.persona_cards["producer"].is_selected = True
+        assert "\U0001f7e2" in coherence_page._coherence_label.text()
+
+    def test_indicator_transitions_green_to_yellow(self, coherence_page):
+        # Start: balanced team => GREEN.
+        coherence_page.persona_cards["producer"].is_selected = True
+        coherence_page.persona_cards["consumer"].is_selected = True
+        assert "\U0001f7e2" in coherence_page._coherence_label.text()
+
+        # Add an orphan producer => YELLOW (graph still has no missing
+        # producer, but now has an orphan output).
+        coherence_page.persona_cards["orphan-producer"].is_selected = True
+        assert "\U0001f7e1" in coherence_page._coherence_label.text()
+
+    def test_indicator_yellow_persists_when_orphan_plus_consumer_selected(
+        self, coherence_page,
+    ):
+        # Start: orphan-producer alone => YELLOW (orphan-produces).
+        coherence_page.persona_cards["orphan-producer"].is_selected = True
+        assert "\U0001f7e1" in coherence_page._coherence_label.text()
+
+        # Add the consumer (whose 'thing' is unsatisfied) => still YELLOW
+        # (BEAN-292: missing-producer is also a WARNING, so adding it
+        # doesn't escalate to RED — both findings co-exist as warnings).
+        coherence_page.persona_cards["consumer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        assert "\U0001f7e1" in text
+        assert "\U0001f534" not in text
+
+    def test_indicator_hides_when_all_personas_unchecked(
+        self, coherence_page,
+    ):
+        coherence_page.persona_cards["consumer"].is_selected = True
+        assert coherence_page._coherence_label.isHidden() is False
+        coherence_page.persona_cards["consumer"].is_selected = False
+        assert coherence_page._coherence_label.isHidden() is True
+
+    def test_indicator_refreshes_on_set_team_config(self, coherence_page):
+        """``set_team_config`` (used when navigating back into the wizard)
+        must also refresh the indicator — not just card toggles.
+
+        BEAN-292: the consumer-without-producer team renders as YELLOW
+        (missing-producer is a warning, not an error).
+        """
+        # Restore a missing-producer team via the public API.
+        coherence_page.set_team_config(
+            TeamConfig(personas=[PersonaSelection(id="consumer")]),
+        )
+        assert coherence_page._coherence_label.isHidden() is False
+        assert "\U0001f7e1" in coherence_page._coherence_label.text()
+
+    def test_combined_missing_and_orphan_warnings_render_yellow(
+        self, coherence_page,
+    ):
+        """When BOTH a missing producer AND an orphan produce are present
+        the indicator stays YELLOW — both findings are advisory warnings
+        per BEAN-292. The headline carries sub-counts so the user sees
+        "1 missing role, 1 unused output".
+        """
+        # Select consumer (missing producer = YELLOW) AND orphan-producer
+        # (orphan produces = YELLOW).
+        coherence_page.persona_cards["consumer"].is_selected = True
+        coherence_page.persona_cards["orphan-producer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        assert "\U0001f7e1" in text
+        # Red emoji must NOT be present — both findings are warnings.
+        assert "\U0001f534" not in text
+        # Headline mentions both sub-counts with user-vocabulary labels.
+        assert "missing role" in text
+        assert "unused output" in text
+
+
+class TestCoherenceIndicatorRedReachable:
+    """BEAN-292 AC: the 🔴 state remains *reachable* for ERROR-severity
+    contract-graph findings, even though ``validate_contract_graph`` no
+    longer emits any ERRORs by default. The persona page's coherence
+    indicator branches on raw severity, so any future contract-graph
+    error code (or a ``Strictness.STRICT`` promotion routed through this
+    surface) will still trigger the red state. We simulate a future
+    ERROR via monkeypatch so the dead branch stays guarded against
+    accidental removal.
+    """
+
+    def test_red_state_reachable_when_validator_emits_error(
+        self, coherence_page, monkeypatch,
+    ):
+        from foundry_app.core.models import Severity, ValidationMessage, ValidationResult
+        from foundry_app.ui.screens.builder.wizard_pages import persona_page
+
+        # Inject a synthetic ERROR-severity contract-graph finding by
+        # patching the validator the indicator calls. The indicator's
+        # severity branch must route to the red state.
+        def fake_validate(team, library):
+            return ValidationResult(messages=[
+                ValidationMessage(
+                    severity=Severity.ERROR,
+                    code="hook-pack-conflict",
+                    message="Two enabled hook packs disagree on policy.",
+                ),
+            ])
+
+        monkeypatch.setattr(
+            persona_page, "validate_contract_graph", fake_validate,
+        )
+
+        # Toggle a card so _update_coherence_indicator runs against the
+        # patched validator.
+        coherence_page.persona_cards["consumer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        # Red emoji marks the ERROR-severity branch.
+        assert "\U0001f534" in text, (
+            f"Expected red emoji in indicator, got: {text!r}"
+        )
+        # Yellow emoji must NOT be present — error dominates warning.
+        assert "\U0001f7e1" not in text
+        # Verbatim error message surfaces.
+        assert "hook packs disagree" in text
+
+
+# ---------------------------------------------------------------------------
+# BEAN-286 — Inline validation findings (verbatim messages + truncation cap)
+#
+# The indicator now renders the validator's per-message text below its
+# header so the user sees what specifically is broken, not just a count.
+# Long lists collapse to a final "+N more" line.
+# ---------------------------------------------------------------------------
+
+
+class TestCoherenceIndicatorVerbatimMessages:
+    """🟡 states surface the validator's actionable per-message text.
+
+    BEAN-292: the missing-producer verbatim test moved from the red
+    state into the yellow state — the per-message text is unchanged
+    (BEAN-286 contract still holds), only the surrounding emoji /
+    headline copy moved.
+    """
+
+    def test_yellow_includes_verbatim_missing_producer_message(
+        self, coherence_page,
+    ):
+        coherence_page.persona_cards["consumer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        # BEAN-292: missing-producer renders inside the YELLOW state.
+        assert "\U0001f7e1" in text
+        # BEAN-290: missing-producer message names the affected team
+        # member and the suggested persona to add, both in user vocabulary.
+        assert "Your Consumer needs" in text
+        assert "Add the Producer" in text
+        # The specific artifact name from the fixture must round-trip
+        # (no human label registered for "thing", so it falls through).
+        assert "thing" in text
+
+    def test_yellow_includes_verbatim_orphan_message(self, coherence_page):
+        coherence_page.persona_cards["orphan-producer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        # BEAN-290: orphan-produces message names the producing persona
+        # in user vocabulary (title-cased id) and points the user at how
+        # to fix it.
+        assert "The Orphan Producer produces" in text
+        assert "no one else on your team uses" in text
+        # Artifact name from the fixture round-trips. The label helper's
+        # fallback turns "orphan-thing" into "orphan thing".
+        assert "orphan thing" in text
+
+
+class TestCoherenceIndicatorTruncationCap:
+    """Six or more findings collapse the surplus to '+N more'."""
+
+    def test_yellow_findings_capped_at_five_with_overflow_line(self):
+        # Build a single consumer with 6 unsatisfied artifact types so the
+        # validator emits 6 missing-producer warnings. The indicator
+        # shows the first 5 verbatim and a single '+1 more' line for the
+        # rest.
+        # BEAN-292: missing-producer is now a WARNING, so the truncation
+        # cap exercises the yellow state rather than the red one. The
+        # cap behaviour itself (5 visible bullets + overflow) is
+        # unchanged.
+        lib = LibraryIndex(
+            library_root="/fake",
+            personas=[
+                _make_contract_persona(
+                    "lonely",
+                    consumes=["aaa", "bbb", "ccc", "ddd", "eee", "fff"],
+                ),
+            ],
+        )
+        page = PersonaSelectionPage(library_index=lib)
+        try:
+            page.persona_cards["lonely"].is_selected = True
+            text = page._coherence_label.text()
+            # The state is YELLOW since all findings are warnings.
+            assert "\U0001f7e1" in text
+            # All six types are *findings*; only the first five appear
+            # verbatim. The validator sorts alphabetically, so 'fff' is the
+            # one that gets pushed past the cap. BEAN-290: artifact ids
+            # appear bare (no quotes) since the message no longer wraps
+            # them in `type 'X'` syntax.
+            assert "needs aaa" in text
+            assert "needs bbb" in text
+            assert "needs ccc" in text
+            assert "needs ddd" in text
+            assert "needs eee" in text
+            assert "fff" not in text
+            assert "+1 more" in text
+        finally:
+            page.close()
+
+    def test_no_overflow_line_when_count_at_or_below_cap(
+        self, coherence_page,
+    ):
+        coherence_page.persona_cards["consumer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        # One missing producer ⇒ one bullet, no '+N more' suffix.
+        # BEAN-292: surrounding state is YELLOW, but the truncation
+        # behaviour itself is severity-agnostic.
+        assert "more" not in text.lower()

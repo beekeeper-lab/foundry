@@ -17,8 +17,12 @@ from foundry_app.core.models import (
     GenerationManifest,
     LibraryIndex,
     OverlayPlan,
+    PersonaInfo,
+    PersonaSelection,
+    Severity,
     StageResult,
     Strictness,
+    ValidationMessage,
     ValidationResult,
 )
 from foundry_app.services.agent_writer import write_agents
@@ -31,7 +35,11 @@ from foundry_app.services.safety_writer import write_safety
 from foundry_app.services.scaffold import scaffold_project
 from foundry_app.services.seeder import seed_tasks
 from foundry_app.services.subtree_setup import setup_subtree
-from foundry_app.services.validator import run_pre_generation_validation
+from foundry_app.services.validator import (
+    _apply_strictness,
+    run_pre_generation_validation,
+    validate_contract_graph,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +72,124 @@ def _get_library_version(library_root: Path) -> str:
 def _make_run_id() -> str:
     """Generate a unique run identifier from current timestamp."""
     return datetime.now().strftime("%Y%m%d-%H%M%S")
+
+
+def _apply_default_team(
+    composition: CompositionSpec,
+    library: LibraryIndex,
+) -> None:
+    """Fill an empty ``team.personas`` with the library's core tier (ADR-014).
+
+    A composition that omits the ``personas:`` block (or supplies an empty
+    list) inherits every persona whose ``tier == "core"``. Mutates the spec
+    in place; no-op when the user has explicitly selected at least one
+    persona. Using this hook keeps the file-system reorg, the wire format,
+    and the implicit default in lock-step: whatever the library reports as
+    core *is* the default team.
+    """
+    if composition.team.personas:
+        return
+    core = sorted(
+        (p for p in library.personas if p.tier == "core"),
+        key=lambda p: p.id,
+    )
+    if not core:
+        # Library has no core personas — leave the empty list to surface the
+        # existing 'no-personas' validator warning rather than synthesizing
+        # a phantom team here.
+        return
+    composition.team.personas = [PersonaSelection(id=p.id) for p in core]
+    logger.info(
+        "No personas selected — defaulting to core tier: %s",
+        ", ".join(p.id for p in core),
+    )
+
+
+def _resolve_team_personas(
+    composition: CompositionSpec,
+    library: LibraryIndex,
+) -> list[PersonaInfo]:
+    """Resolve the composition's selected persona ids to ``PersonaInfo`` records.
+
+    Unknown ids (already surfaced by ``run_pre_generation_validation`` as
+    ``missing-persona`` errors) are skipped here so the contract-graph
+    check can run cleanly on whatever is resolvable. Order is preserved.
+    """
+    resolved: list[PersonaInfo] = []
+    for ps in composition.team.personas:
+        info = library.persona_by_id(ps.id)
+        if info is not None:
+            resolved.append(info)
+    return resolved
+
+
+def _run_contract_graph_check(
+    composition: CompositionSpec,
+    library: LibraryIndex,
+    overlay: bool,
+    strictness: Strictness = Strictness.STANDARD,
+) -> tuple[list[ValidationMessage], StageResult | None]:
+    """Run :func:`validate_contract_graph` and adapt for the run mode.
+
+    In **standard** mode, the contract-graph messages are routed through
+    :func:`_apply_strictness` (BEAN-292) so the strictness lever applies
+    uniformly to the merged pre-generation result — STRICT promotes the
+    WARNING-level ``missing-producer`` findings back to ERROR (preserving
+    the hard gate the wizard offers as opt-in), STANDARD keeps them as
+    WARNINGs (so ``developer + tech-qa``-only teams pass ``is_valid``),
+    and LIGHT demotes them to INFO. The caller merges the returned
+    messages into the pre-generation ``ValidationResult`` so the
+    ``is_valid`` gate sees a consistent severity scale.
+
+    In **overlay** mode, ERRORs are demoted to WARNINGs (the pipeline must
+    proceed because the user is re-generating against an existing tree)
+    and the caller receives a :class:`StageResult` whose ``warnings`` list
+    captures the contract-graph findings — appending it to
+    ``manifest.stages`` is enough to make them surface via
+    ``GenerationManifest.all_warnings``. Strictness is *not* re-applied
+    after the demotion: an overlay re-generation never blocks on a
+    contract-graph finding regardless of the user's strictness setting.
+
+    Returns a tuple ``(messages, stage_result)``: in standard mode
+    ``stage_result`` is ``None``; in overlay mode it carries the warnings
+    to record on the manifest.
+    """
+    team = _resolve_team_personas(composition, library)
+    contract_result = validate_contract_graph(team, library)
+
+    if not contract_result.messages:
+        return [], None
+
+    if not overlay:
+        # Apply strictness so missing-producer (now WARNING by default per
+        # BEAN-292) gets promoted to ERROR under STRICT and demoted to
+        # INFO under LIGHT — same policy as the rest of the pre-generation
+        # messages.
+        return _apply_strictness(
+            list(contract_result.messages), strictness,
+        ), None
+
+    # Overlay mode: demote errors to warnings, record on the manifest, proceed.
+    demoted: list[ValidationMessage] = []
+    for msg in contract_result.messages:
+        if msg.severity == Severity.ERROR:
+            demoted.append(
+                msg.model_copy(update={"severity": Severity.WARNING})
+            )
+        else:
+            demoted.append(msg)
+
+    warnings_text = [
+        f"[{msg.code}] {msg.message}" for msg in demoted
+    ]
+    stage = StageResult(wrote=[], warnings=warnings_text)
+
+    for msg in demoted:
+        logger.warning(
+            "Contract-graph (overlay) %s: %s", msg.code, msg.message,
+        )
+
+    return demoted, stage
 
 
 def _compare_trees(source: Path, target: Path) -> OverlayPlan:
@@ -166,20 +292,28 @@ def _run_pipeline(
     output_dir: Path,
     overlay_plan: OverlayPlan | None = None,
     stage_callback: StageCallback | None = None,
+    claude_kit_root: Path | None = None,
 ) -> dict[str, StageResult]:
     """Execute all pipeline stages in order and return per-stage results."""
     stages: dict[str, StageResult] = {}
 
-    def _run_stage(key: str, func, *args) -> None:
+    def _run_stage(key: str, func, *args, **kwargs) -> None:
         if stage_callback:
             stage_callback(key, "running", 0)
-        result = func(*args)
+        result = func(*args, **kwargs)
         stages[key] = result
         if stage_callback:
             stage_callback(key, "done", len(result.wrote))
 
     # Stage 1: Scaffold
-    _run_stage("scaffold", scaffold_project, spec, output_dir)
+    _run_stage(
+        "scaffold",
+        scaffold_project,
+        spec,
+        output_dir,
+        library_root,
+        library,
+    )
 
     # Stage 2: Compile member prompts
     _run_stage("compile", compile_project, spec, library, library_root, output_dir)
@@ -188,7 +322,15 @@ def _run_pipeline(
     _run_stage("agent_writer", write_agents, spec, library, library_root, output_dir)
 
     # Stage 4: Copy assets
-    _run_stage("copy_assets", copy_assets, spec, library, library_root, output_dir)
+    _run_stage(
+        "copy_assets",
+        copy_assets,
+        spec,
+        library,
+        library_root,
+        output_dir,
+        claude_kit_root=claude_kit_root,
+    )
 
     # Stage 4b: Subtree setup (when claude_kit_url is configured)
     if spec.generation.claude_kit_url:
@@ -197,19 +339,23 @@ def _run_pipeline(
         )
 
     # Stage 5: Write MCP config
-    _run_stage("mcp_config", write_mcp_config, spec, output_dir)
+    _run_stage("mcp_config", write_mcp_config, spec, library_root, output_dir)
 
     # Stage 6: Seed tasks (only if enabled)
     if spec.generation.seed_tasks:
         _run_stage("seed_tasks", seed_tasks, spec, output_dir)
+    elif stage_callback:
+        stage_callback("seed_tasks", "skipped", 0)
 
     # Stage 7: Write safety config
-    _run_stage("safety", write_safety, spec, output_dir)
+    _run_stage("safety", write_safety, spec, output_dir, library)
 
     # Stage 8: Diff report (only if enabled)
     if spec.generation.write_diff_report:
         plan = overlay_plan if overlay_plan is not None else OverlayPlan()
         _run_stage("diff_report", write_diff_report, plan, output_dir)
+    elif stage_callback:
+        stage_callback("diff_report", "skipped", 0)
 
     return stages
 
@@ -223,6 +369,7 @@ def generate_project(
     dry_run: bool = False,
     force: bool = False,
     stage_callback: StageCallback | None = None,
+    claude_kit_root: str | Path | None = None,
 ) -> tuple[GenerationManifest, ValidationResult, OverlayPlan | None]:
     """Orchestrate the full project generation pipeline.
 
@@ -236,6 +383,11 @@ def generate_project(
         dry_run: If True (and overlay=True), compute the overlay plan but
             don't apply it. Ignored when overlay=False.
         force: If True, proceed even when validation produces errors.
+        claude_kit_root: Path to the ClaudeKit checkout used to source
+            kit-distributed skills (e.g. ``generate-image``) in library-copy
+            mode.  When ``None``, ``copy_assets`` derives a default from the
+            foundry repo's bundled ``.claude/shared/`` submodule.  Subtree-mode
+            generations ignore this — the subtree itself supplies the kit.
 
     Returns:
         A tuple of:
@@ -244,6 +396,7 @@ def generate_project(
         - OverlayPlan | None: overlay plan (only when overlay=True)
     """
     library_path = Path(library_root)
+    kit_root = Path(claude_kit_root) if claude_kit_root is not None else None
 
     # Resolve output directory
     if output_root is not None:
@@ -270,8 +423,25 @@ def generate_project(
     # Step 1: Index the library
     library = build_library_index(library_path)
 
+    # Step 1a: Default team — if the composition supplies no personas,
+    # adopt the core tier from the library (ADR-014).
+    _apply_default_team(composition, library)
+
+    # Step 1b: Contract-graph validation (BEAN-274). Runs between default-
+    # team and pre-generation validation so missing-producer findings can
+    # join the same ``ValidationResult`` and ride the existing ``is_valid``
+    # gate. In overlay mode the same check yields warnings (errors demoted)
+    # plus a stage result we attach to the manifest below.
+    contract_messages, contract_stage = _run_contract_graph_check(
+        composition, library, overlay, strictness,
+    )
+
     # Step 2: Validate
     validation = run_pre_generation_validation(composition, library, strictness)
+    if contract_messages:
+        validation = ValidationResult(
+            messages=list(validation.messages) + contract_messages,
+        )
 
     # Build base manifest
     run_id = _make_run_id()
@@ -281,6 +451,8 @@ def generate_project(
         library_version=lib_version,
         composition_snapshot=composition.model_dump(mode="json"),
     )
+    if contract_stage is not None:
+        manifest.stages["contract_validation"] = contract_stage
 
     # Check validation result
     if not validation.is_valid and not force:
@@ -302,8 +474,9 @@ def generate_project(
             stages = _run_pipeline(
                 composition, library, library_path, tmp_path,
                 stage_callback=stage_callback,
+                claude_kit_root=kit_root,
             )
-            manifest.stages = stages
+            manifest.stages.update(stages)
 
             # Phase 2: Compare against target
             overlay_plan = _compare_trees(tmp_path, output_dir)
@@ -332,8 +505,9 @@ def generate_project(
         stages = _run_pipeline(
             composition, library, library_path, output_dir,
             stage_callback=stage_callback,
+            claude_kit_root=kit_root,
         )
-        manifest.stages = stages
+        manifest.stages.update(stages)
 
     # Write manifest file if enabled
     if composition.generation.write_manifest and not dry_run:

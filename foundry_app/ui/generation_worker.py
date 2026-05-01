@@ -15,10 +15,11 @@ logger = logging.getLogger(__name__)
 class GenerationWorker(QThread):
     """Runs generate_project() on a background thread with progress signals."""
 
-    # (stage_key, status, file_count) — status is "running" or "done"
+    # (stage_key, status, file_count) — status is "running", "done", or "skipped"
     stage_progress = Signal(str, str, int)
-    # (total_files, warnings, output_path)
-    finished_ok = Signal(int, int, str)
+    # (total_files, warnings_list, output_path) — warnings_list carries full
+    # messages so the UI can surface content, not just a count.
+    finished_ok = Signal(int, list, str)
     # error message
     finished_err = Signal(str)
 
@@ -44,8 +45,14 @@ class GenerationWorker(QThread):
             )
 
             if not validation.is_valid:
-                errors = "; ".join(e.message for e in validation.errors[:5])
-                self.finished_err.emit(f"Validation failed: {errors}")
+                error_messages = [e.message for e in validation.errors[:5]]
+                if len(error_messages) == 1:
+                    body = error_messages[0]
+                else:
+                    body = error_messages[0] + "\n• " + "\n• ".join(
+                        error_messages[1:]
+                    )
+                self.finished_err.emit(body)
                 return
 
             output_dir = (
@@ -54,7 +61,7 @@ class GenerationWorker(QThread):
             )
             self.finished_ok.emit(
                 manifest.total_files_written,
-                len(manifest.all_warnings),
+                list(manifest.all_warnings),
                 str(output_dir),
             )
         except Exception:

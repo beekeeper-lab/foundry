@@ -47,8 +47,8 @@ adapts its output based on the work type.
    - **spike**: Create a spike summary template in the work directory with time-box, questions to answer, and success criteria.
    - **refactor**: Create a refactoring brief in the work directory with current state, target state, and risk assessment.
 5. **Determine affected personas** -- Based on the work type and affected areas, identify which personas will be involved. Map to the standard dependency wave:
-   - feature: BA → Architect → Developer → Tech-QA
-   - bug: Developer → Tech-QA (skip BA/Architect for simple bugs; include them for complex ones)
+   - feature: Developer → Tech-QA (default); include BA when requirements are ambiguous, and Architect when a new subsystem, cross-cutting API change, or ADR is needed
+   - bug: Developer → Tech-QA (default); include BA/Architect only for complex bugs per their activation criteria
    - chore: Developer (or DevOps, depending on area)
    - spike: Researcher or Architect → Developer
    - refactor: Architect → Developer → Tech-QA

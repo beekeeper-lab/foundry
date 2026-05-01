@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,7 @@ from foundry_app.core.models import (
     ProjectIdentity,
     Strictness,
     TeamConfig,
+    _persona_dirname,
 )
 from foundry_app.io.composition_io import load_composition
 from foundry_app.services.generator import (
@@ -46,12 +48,27 @@ def _make_spec(**kwargs) -> CompositionSpec:
     return CompositionSpec(**defaults)
 
 
+def _seed_mcp_registry(lib_root: Path) -> None:
+    """Write a minimal vetted MCP registry alongside the test library."""
+    workflows = lib_root / "workflows"
+    workflows.mkdir(parents=True, exist_ok=True)
+    (workflows / "mcp-registry.yaml").write_text(
+        "servers:\n"
+        "  filesystem:\n"
+        "    type: stdio\n"
+        "    command: npx\n"
+        "    args: [-y, '@modelcontextprotocol/server-filesystem', '.']\n"
+        "baseline: [filesystem]\n"
+        "by_expertise: {}\n"
+    )
+
+
 def _make_library(tmp_path: Path) -> LibraryIndex:
     """Build a minimal on-disk library with real persona and expertise directories."""
     lib_root = tmp_path / "library"
 
-    # Create persona directory
-    persona_dir = lib_root / "personas" / "developer"
+    # Per ADR-014: personas live under personas/core/<id> (developer is core).
+    persona_dir = lib_root / "personas" / "core" / "developer"
     persona_dir.mkdir(parents=True)
     (persona_dir / "persona.md").write_text("# Developer persona")
 
@@ -59,6 +76,8 @@ def _make_library(tmp_path: Path) -> LibraryIndex:
     expertise_dir = lib_root / "expertise" / "python"
     expertise_dir.mkdir(parents=True)
     (expertise_dir / "conventions.md").write_text("# Python conventions")
+
+    _seed_mcp_registry(lib_root)
 
     return LibraryIndex(
         library_root=str(lib_root),
@@ -87,13 +106,16 @@ def _make_library_dir(tmp_path: Path) -> Path:
     """Create a minimal library directory on disk and return its path."""
     lib_root = tmp_path / "library"
 
-    persona_dir = lib_root / "personas" / "developer"
+    # Per ADR-014: personas live under personas/core/<id> (developer is core).
+    persona_dir = lib_root / "personas" / "core" / "developer"
     persona_dir.mkdir(parents=True)
     (persona_dir / "persona.md").write_text("# Developer persona")
 
     expertise_dir = lib_root / "expertise" / "python"
     expertise_dir.mkdir(parents=True)
     (expertise_dir / "conventions.md").write_text("# Python conventions")
+
+    _seed_mcp_registry(lib_root)
 
     return lib_root
 
@@ -359,7 +381,14 @@ class TestValidationGating:
     def test_strict_mode_blocks_on_warnings(self, tmp_path: Path):
         lib_root = _make_library_dir(tmp_path)
         output_dir = tmp_path / "output" / "test-project"
-        spec = _make_spec(team=TeamConfig(personas=[]))
+        # ADR-014 added a default-team hook: an empty personas list inherits
+        # the library's core tier, so the historic "no-personas" warning is
+        # no longer triggerable. Use a duplicate-persona warning instead —
+        # strict mode promotes any warning into a blocking error.
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer"),
+            PersonaSelection(id="developer"),
+        ]))
 
         manifest, validation, _ = generate_project(
             spec, lib_root, output_root=output_dir,
@@ -1064,23 +1093,29 @@ class TestEndToEnd:
         agents_dir = output_dir / ".claude" / "agents"
         assert agents_dir.is_dir()
         for persona in spec.team.personas:
-            agent_file = agents_dir / f"{persona.id}.md"
+            # Per ADR-014: agent filenames are the bare leaf name (the
+            # ``extended/`` tier prefix is stripped on disk).
+            agent_file = agents_dir / f"{_persona_dirname(persona.id)}.md"
             assert agent_file.is_file(), f"Missing agent file for persona: {persona.id}"
             assert agent_file.stat().st_size > 0
 
     def test_no_extra_agent_files(self, generated_project):
         output_dir, _, spec = generated_project
         agents_dir = output_dir / ".claude" / "agents"
-        expected_ids = {p.id for p in spec.team.personas}
+        # Compare against the on-disk filename form (tier prefix stripped).
+        expected_files = {_persona_dirname(p.id) for p in spec.team.personas}
         actual_files = {f.stem for f in agents_dir.glob("*.md")}
-        extra = actual_files - expected_ids
+        extra = actual_files - expected_files
         assert not extra, f"Unexpected agent files: {extra}"
 
     def test_seed_tasks_created(self, generated_project):
         output_dir, _, _ = generated_project
-        # small-python-team.yml has seed_tasks: true
-        tasks_dir = output_dir / "ai" / "tasks"
-        assert tasks_dir.is_dir()
+        # small-python-team.yml has seed_tasks: true — the Seeder now emits a
+        # starter bean (BEAN-254 / ADR-004) rather than ai/tasks/_index.md.
+        bean_dir = output_dir / "ai" / "beans" / "BEAN-001-bootstrap"
+        assert (bean_dir / "bean.md").is_file()
+        assert any((bean_dir / "tasks").glob("*.md"))
+        assert (output_dir / "ai" / "beans" / "_index.md").is_file()
 
     # -- Deep content checks ------------------------------------------------
 
@@ -1095,9 +1130,15 @@ class TestEndToEnd:
     def test_claude_md_contains_expertise_content(self, generated_project):
         output_dir, _, spec = generated_project
         claude_md = (output_dir / "CLAUDE.md").read_text(encoding="utf-8").lower()
+        expertise_dir = output_dir / "ai" / "generated" / "expertise"
+        # Only expertise whose source file was emitted is referenced from
+        # CLAUDE.md (see BEAN-247 — missing sources are dropped from the
+        # reference list rather than leaving broken links).
         for exp in spec.expertise:
+            if not (expertise_dir / f"{exp.id}.md").is_file():
+                continue
             assert exp.id in claude_md, (
-                f"CLAUDE.md missing reference to expertise: {exp.id}"
+                f"CLAUDE.md missing reference to emitted expertise: {exp.id}"
             )
 
     def test_manifest_json_valid_structure(self, generated_project):
@@ -1119,12 +1160,148 @@ class TestEndToEnd:
         output_dir, _, spec = generated_project
         agents_dir = output_dir / ".claude" / "agents"
         for persona in spec.team.personas:
-            agent_file = agents_dir / f"{persona.id}.md"
+            leaf = _persona_dirname(persona.id)
+            agent_file = agents_dir / f"{leaf}.md"
             content = agent_file.read_text(encoding="utf-8").lower()
-            # The persona id (e.g. "team-lead") or a human form should appear
-            assert persona.id.replace("-", " ") in content or persona.id in content, (
-                f"Agent file {agent_file.name} does not reference persona {persona.id}"
+            # The leaf id (e.g. "team-lead") or its human form should appear.
+            assert leaf.replace("-", " ") in content or leaf in content, (
+                f"Agent file {agent_file.name} does not reference persona "
+                f"{persona.id}"
             )
+
+
+# ---------------------------------------------------------------------------
+# Self-consistency: generated projects must satisfy validate-repo expectations
+# and must not leak Jinja template expressions.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(not _E2E_AVAILABLE, reason="ai-team-library or example YAML not present")
+class TestGenerationSelfConsistency:
+    """Generated projects must have no unrendered Jinja and must satisfy
+    validate-repo's documented structural contract.
+
+    TDD-first driver for BEAN-243 (placeholder leakage fix) and
+    BEAN-244 (composition.yml + README.md emission).
+    """
+
+    # File suffixes that may contain Jinja expressions worth scanning.
+    _SCANNED_SUFFIXES = {".md", ".json", ".yml", ".yaml"}
+    # Jinja markers that must not appear in any generated text file.
+    _JINJA_MARKERS = ("{{", "}}", "{%", "%}")
+
+    @pytest.fixture()
+    def generated_project(self, tmp_path: Path):
+        spec = load_composition(_EXAMPLE_YAML)
+        output_dir = tmp_path / spec.project.slug
+
+        manifest, validation, _ = generate_project(
+            spec,
+            _LIBRARY_ROOT,
+            output_root=output_dir,
+        )
+
+        assert validation.is_valid, f"Validation failed: {validation.errors}"
+        return output_dir, manifest, spec
+
+    def test_no_unresolved_jinja_in_generated_files(self, generated_project):
+        """No generated `.md`/`.json`/`.yml`/`.yaml` file may contain
+        `{{`, `}}`, `{%`, or `%}`. If any do, the compile pipeline failed
+        to render a fragment with the composition context.
+        """
+        output_dir, _, _ = generated_project
+
+        leaks: list[str] = []
+        for path in output_dir.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in self._SCANNED_SUFFIXES:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for line_no, line in enumerate(text.splitlines(), start=1):
+                if any(marker in line for marker in self._JINJA_MARKERS):
+                    rel = path.relative_to(output_dir)
+                    leaks.append(f"{rel}:{line_no}: {line.strip()}")
+                    break  # one occurrence per file is enough to fail
+
+        assert not leaks, (
+            "Unrendered Jinja expressions found in generated output "
+            "(fix: BEAN-243 — render persona/expertise fragments with full "
+            "composition context):\n  " + "\n  ".join(leaks)
+        )
+
+    def test_validate_repo_structural_paths_exist(self, generated_project):
+        """All paths expected by `ai-team-library/claude/skills/validate-repo`
+        must exist in a freshly generated project. Missing `ai/team/composition.yml`
+        or `README.md` is fixed by BEAN-244.
+        """
+        output_dir, _, spec = generated_project
+
+        missing: list[str] = []
+
+        # Root files
+        for rel in ("CLAUDE.md", "README.md", "ai/team/composition.yml"):
+            p = output_dir / rel
+            if not p.is_file() or p.stat().st_size == 0:
+                missing.append(rel)
+
+        # Shared directories
+        for rel in (
+            ".claude/agents",
+            "ai/context",
+            "ai/generated/members",
+            "ai/team",
+            "ai/tasks",
+            "ai/outputs",
+        ):
+            p = output_dir / rel
+            if not p.is_dir():
+                missing.append(rel + "/")
+
+        # Per-persona files and directories. Per ADR-014 the on-disk leaf
+        # name strips any ``extended/`` tier prefix from the composition id.
+        for persona in spec.team.personas:
+            leaf = _persona_dirname(persona.id)
+            agent_file = output_dir / ".claude" / "agents" / f"{leaf}.md"
+            member_file = (
+                output_dir / "ai" / "generated" / "members" / f"{leaf}.md"
+            )
+            outputs_dir = output_dir / "ai" / "outputs" / leaf
+            if not agent_file.is_file():
+                missing.append(f".claude/agents/{leaf}.md")
+            if not member_file.is_file():
+                missing.append(f"ai/generated/members/{leaf}.md")
+            if not outputs_dir.is_dir():
+                missing.append(f"ai/outputs/{leaf}/")
+
+        assert not missing, (
+            "Generated project is missing paths required by validate-repo "
+            "(fix: BEAN-244 for composition.yml + README.md):\n  "
+            + "\n  ".join(missing)
+        )
+
+    def test_claude_md_expertise_references_exist_on_disk(self, generated_project):
+        """Every `ai/generated/expertise/<id>.md` path referenced from the
+        generated CLAUDE.md must correspond to a file that was actually
+        emitted. Guards against BEAN-247's class of defect — a missing
+        expertise source silently producing a broken reference.
+        """
+        output_dir, _, _ = generated_project
+        claude_md = (output_dir / "CLAUDE.md").read_text(encoding="utf-8")
+        referenced = re.findall(
+            r"ai/generated/expertise/([A-Za-z0-9_-]+)\.md",
+            claude_md,
+        )
+        broken = [
+            eid for eid in referenced
+            if not (output_dir / "ai" / "generated" / "expertise" / f"{eid}.md").is_file()
+        ]
+        assert not broken, (
+            "CLAUDE.md references expertise files that were not written "
+            "(fix: BEAN-247 — drop missing-source expertise from the "
+            "reference list):\n  " + "\n  ".join(broken)
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1223,9 +1400,38 @@ class TestStageCallback:
         )
 
         actual_keys = {key for key, _, _ in calls}
-        assert actual_keys == self.DEFAULT_STAGES, (
-            f"Expected stages {self.DEFAULT_STAGES}, got {actual_keys}"
+        # Disabled stages fire a single "skipped" callback — so keys include
+        # both the always-run defaults and the opt-in stages.
+        expected = self.DEFAULT_STAGES | {"seed_tasks", "diff_report"}
+        assert actual_keys == expected, (
+            f"Expected stages {expected}, got {actual_keys}"
         )
+
+    def test_disabled_conditional_stages_emit_skipped(self, tmp_path: Path):
+        """Disabled seed_tasks/diff_report must emit exactly one skipped
+        callback each so the UI can differentiate skipped-by-design from
+        stuck-at-pending.
+        """
+        lib_root = _make_library_dir(tmp_path)
+        output_dir = tmp_path / "output" / "test-project"
+        spec = _make_spec(generation=GenerationOptions(
+            seed_tasks=False, write_diff_report=False,
+        ))
+        calls: list[tuple[str, str, int]] = []
+
+        generate_project(
+            spec, lib_root, output_root=output_dir,
+            stage_callback=lambda key, status, count: calls.append((key, status, count)),
+        )
+
+        skipped = [(k, s, c) for (k, s, c) in calls if s == "skipped"]
+        assert ("seed_tasks", "skipped", 0) in skipped
+        assert ("diff_report", "skipped", 0) in skipped
+        # No done/running calls for the disabled stages.
+        for key in ("seed_tasks", "diff_report"):
+            assert not any(k == key and s != "skipped" for (k, s, _) in calls), (
+                f"Disabled stage {key!r} should not emit non-skipped callbacks; got {calls}"
+            )
 
     def test_optional_seed_tasks_stage_fires_when_enabled(self, tmp_path: Path):
         lib_root = _make_library_dir(tmp_path)
@@ -1267,3 +1473,338 @@ class TestStageCallback:
 
         assert validation.is_valid
         assert "scaffold" in manifest.stages
+
+
+# ---------------------------------------------------------------------------
+# BEAN-274 — Contract-graph validation through the pipeline
+#
+# Standard mode: a known-broken team aborts.
+# Overlay mode: the same team proceeds, manifest carries the warning.
+# ---------------------------------------------------------------------------
+
+
+def _seed_artifact_registry(lib_root: Path, *type_names: str) -> None:
+    """Write a minimal artifact-type registry covering the named types.
+
+    The library indexer drops produces/consumes entries that don't resolve
+    to a registry entry (see ``library_indexer._load_persona_contracts``),
+    so contract-graph integration tests need a registry to keep their
+    fixture contracts intact.
+    """
+    contracts_dir = lib_root / "contracts"
+    contracts_dir.mkdir(parents=True, exist_ok=True)
+    entries = []
+    for name in type_names:
+        entries.append(
+            f"  - name: {name}\n"
+            f"    description: Test artifact-type for {name}.\n"
+            f"    format: markdown\n"
+            f"    required-fields: []\n"
+        )
+    (contracts_dir / "artifact-types.yml").write_text(
+        "types:\n" + "".join(entries)
+    )
+
+
+def _make_library_dir_with_broken_contract(tmp_path: Path) -> Path:
+    """Build a minimal on-disk library where ``developer`` consumes
+    ``task-spec`` (a real artifact-type), but only ``team-lead`` produces
+    it — and the test will compose a team containing just ``developer``,
+    triggering a missing-producer error.
+
+    ``team-lead`` is present in the library (so the validator's library
+    suggestion lists it) but not on the composed team.
+    """
+    lib_root = tmp_path / "library"
+
+    # Developer — consumes task-spec.
+    dev_dir = lib_root / "personas" / "core" / "developer"
+    dev_dir.mkdir(parents=True)
+    (dev_dir / "persona.md").write_text("# Developer persona")
+    (dev_dir / "contracts.yml").write_text(
+        "produces:\n"
+        "  - code-change\n"
+        "consumes:\n"
+        "  - task-spec\n"
+    )
+
+    # Team-lead — produces task-spec. Present in the library but the
+    # test will deliberately leave it off the composed team.
+    tl_dir = lib_root / "personas" / "core" / "team-lead"
+    tl_dir.mkdir(parents=True)
+    (tl_dir / "persona.md").write_text("# Team Lead persona")
+    (tl_dir / "contracts.yml").write_text(
+        "produces:\n"
+        "  - task-spec\n"
+        "consumes: []\n"
+    )
+
+    expertise_dir = lib_root / "expertise" / "python"
+    expertise_dir.mkdir(parents=True)
+    (expertise_dir / "conventions.md").write_text("# Python conventions")
+
+    _seed_mcp_registry(lib_root)
+    _seed_artifact_registry(lib_root, "task-spec", "code-change")
+    return lib_root
+
+
+class TestContractGraphPipelineIntegration:
+    """End-to-end: contract-graph findings ride the standard ``is_valid``
+    gate (errors abort), but in overlay mode they are demoted to warnings
+    and recorded on the manifest so re-generation never breaks an
+    existing project."""
+
+    def test_standard_mode_proceeds_on_missing_producer(self, tmp_path: Path):
+        """BEAN-292: missing-producer is a WARNING (not ERROR) in standard
+        mode, so the pre-generation ``is_valid`` gate passes and the
+        pipeline runs to completion. The warning is still surfaced via
+        ``validation.warnings`` so the wizard / CLI can display it.
+        """
+        lib_root = _make_library_dir_with_broken_contract(tmp_path)
+        output_dir = tmp_path / "output" / "broken-team"
+        spec = _make_spec()  # team = [developer] only
+
+        manifest, validation, overlay_plan = generate_project(
+            spec, lib_root, output_root=output_dir,
+        )
+
+        # Validation surfaces the missing-producer finding as a WARNING,
+        # not an error — is_valid stays True and generation proceeds.
+        assert validation.is_valid
+        warning_codes = [m.code for m in validation.warnings]
+        assert "missing-producer" in warning_codes
+        # The pipeline ran (BEAN-292: generalist teams generate cleanly).
+        assert "scaffold" in manifest.stages
+        assert overlay_plan is None
+
+    def test_strict_mode_aborts_on_missing_producer(self, tmp_path: Path):
+        """The pre-generation validation result carries a missing-producer
+        ERROR under STRICT, ``is_valid`` is False, and the pipeline does
+        not run. BEAN-292 routes contract-graph messages through
+        ``_apply_strictness`` so the strict-mode hard gate is preserved.
+        """
+        lib_root = _make_library_dir_with_broken_contract(tmp_path)
+        output_dir = tmp_path / "output" / "broken-team-strict"
+        spec = _make_spec()  # team = [developer] only
+
+        manifest, validation, overlay_plan = generate_project(
+            spec, lib_root, output_root=output_dir,
+            strictness=Strictness.STRICT,
+        )
+
+        # Strict mode promotes the warning back to an error.
+        assert not validation.is_valid
+        codes = [m.code for m in validation.errors]
+        assert "missing-producer" in codes
+        # The pipeline must NOT have run — no stage results written.
+        assert manifest.stages == {}
+        # And the output directory should be untouched (no scaffolding).
+        agents_dir = output_dir / ".claude" / "agents"
+        assert not agents_dir.exists()
+        assert overlay_plan is None
+
+    def test_standard_mode_proceeds_when_team_is_complete(self, tmp_path: Path):
+        """Adding the producer (team-lead) closes the contract graph and
+        the pipeline runs to completion."""
+        lib_root = _make_library_dir_with_broken_contract(tmp_path)
+        output_dir = tmp_path / "output" / "complete-team"
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer"),
+            PersonaSelection(id="team-lead"),
+        ]))
+
+        manifest, validation, _ = generate_project(
+            spec, lib_root, output_root=output_dir,
+        )
+
+        # No missing-producer errors on a contract-coherent team.
+        assert "missing-producer" not in [m.code for m in validation.errors]
+        assert validation.is_valid
+        # Pipeline ran.
+        assert "scaffold" in manifest.stages
+
+    def test_overlay_mode_proceeds_on_missing_producer(
+        self, tmp_path: Path,
+    ):
+        """Same broken team in overlay mode: the pipeline completes
+        instead of aborting, and validation does not carry the
+        contract-graph error (overlay demotes ERROR → WARNING via the
+        contract_validation stage on the manifest)."""
+        lib_root = _make_library_dir_with_broken_contract(tmp_path)
+        output_dir = tmp_path / "output" / "broken-team-overlay"
+        spec = _make_spec()  # team = [developer] only
+
+        manifest, validation, overlay_plan = generate_project(
+            spec, lib_root, output_root=output_dir, overlay=True,
+        )
+
+        # Validation reported clean — contract-graph did not block.
+        assert validation.is_valid, (
+            f"Overlay mode must not surface contract-graph errors via "
+            f"pre-generation validation; got: {validation.errors}"
+        )
+        # The pipeline did run.
+        assert overlay_plan is not None
+        # The manifest's pipeline stages were produced (sanity check
+        # the run actually completed).
+        assert "scaffold" in manifest.stages
+
+    def test_overlay_mode_records_contract_warning_on_manifest(
+        self, tmp_path: Path,
+    ):
+        """Overlay-mode missing-producer findings are recorded in
+        ``GenerationManifest.stages['contract_validation']`` so they
+        survive on the manifest alongside the pipeline stages."""
+        lib_root = _make_library_dir_with_broken_contract(tmp_path)
+        output_dir = tmp_path / "output" / "broken-team-overlay-warn"
+        spec = _make_spec()
+
+        manifest, _, _ = generate_project(
+            spec, lib_root, output_root=output_dir, overlay=True,
+        )
+
+        assert "contract_validation" in manifest.stages, (
+            "Expected manifest.stages['contract_validation'] to capture "
+            "the demoted contract-graph warning in overlay mode."
+        )
+        warnings = manifest.stages["contract_validation"].warnings
+        assert warnings, "Expected at least one contract_validation warning"
+        joined = "\n".join(warnings)
+        assert "missing-producer" in joined
+        # BEAN-290: messages now use the human label "task specification"
+        # in place of the slug "task-spec".
+        assert "task specification" in joined
+        # The warning must surface through manifest.all_warnings — that's
+        # what UIs and downstream tools read.
+        assert any("task specification" in w for w in manifest.all_warnings)
+
+    def test_strict_mode_force_bypasses_contract_graph(self, tmp_path: Path):
+        """``force=True`` is the documented escape hatch — generation must
+        proceed even when contract-graph validation flagged errors. This
+        test guards the existing ``not force`` gate from a future refactor
+        that accidentally hard-fails.
+
+        BEAN-292: the test is exercised under STRICT strictness so a
+        contract-graph ERROR is actually present (in standard mode the
+        finding is now a WARNING and ``not validation.is_valid`` would
+        not hold).
+        """
+        lib_root = _make_library_dir_with_broken_contract(tmp_path)
+        output_dir = tmp_path / "output" / "broken-forced"
+        spec = _make_spec()  # team = [developer] only
+
+        manifest, validation, _ = generate_project(
+            spec, lib_root, output_root=output_dir, force=True,
+            strictness=Strictness.STRICT,
+        )
+
+        # Validation still reports the error...
+        assert not validation.is_valid
+        # ...but the pipeline ran anyway.
+        assert "scaffold" in manifest.stages
+
+
+# ---------------------------------------------------------------------------
+# BEAN-292 headline scenario — REAL ai-team-library personas
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(
+    not _LIBRARY_ROOT.is_dir(),
+    reason="ai-team-library not present",
+)
+class TestBean292GeneralistTeamRealLibrary:
+    """BEAN-292 headline scenario: a ``developer + tech-qa`` only team
+    drawn from the **real** ai-team-library validates and generates in
+    standard mode. This guards against drift between synthetic personas
+    used in unit tests and what the actual ``developer.contracts.yml`` /
+    ``tech-qa.contracts.yml`` declare for ``consumes:`` — the bean's
+    user-facing acceptance scenario.
+    """
+
+    def _generalist_spec(
+        self,
+        slug: str,
+        strictness: Strictness = Strictness.STANDARD,
+    ) -> CompositionSpec:
+        return CompositionSpec(
+            project=ProjectIdentity(
+                name="BEAN-292 generalist team",
+                slug=slug,
+            ),
+            expertise=[ExpertiseSelection(id="python")],
+            team=TeamConfig(
+                personas=[
+                    PersonaSelection(id="developer"),
+                    PersonaSelection(id="tech-qa"),
+                ],
+            ),
+            strictness=strictness,
+        )
+
+    def test_developer_and_tech_qa_only_team_succeeds_in_standard_mode(
+        self, tmp_path: Path,
+    ):
+        """The bean's headline: ``developer + tech-qa`` only, real library,
+        STANDARD strictness must pass ``is_valid`` and produce a non-None
+        manifest. The missing-producer findings (developer consumes
+        user-story / adr / acceptance-criteria / design-spec / task-spec
+        with no producer on the team; tech-qa consumes acceptance-criteria
+        / design-spec / bean-spec) must surface as warnings, not errors.
+        """
+        spec = self._generalist_spec("bean292-standard")
+        output_dir = tmp_path / "output" / spec.project.slug
+
+        manifest, validation, overlay_plan = generate_project(
+            spec, _LIBRARY_ROOT, output_root=output_dir,
+        )
+
+        assert validation.is_valid, (
+            f"Standard-mode generalist team must validate, got errors: "
+            f"{[m.code + ': ' + m.message for m in validation.errors]}"
+        )
+        assert manifest is not None
+        assert overlay_plan is None
+        # The pipeline ran end-to-end — scaffold + compile stages present.
+        assert "scaffold" in manifest.stages
+        assert "compile" in manifest.stages
+        # Missing-producer findings are still reported as warnings so the
+        # wizard can render the advisory bullets.
+        warning_codes = [m.code for m in validation.warnings]
+        assert "missing-producer" in warning_codes, (
+            f"Expected missing-producer warning, got warnings: "
+            f"{warning_codes}"
+        )
+        # The output directory was actually written.
+        assert (output_dir / ".claude" / "agents").is_dir()
+
+    def test_developer_and_tech_qa_only_team_blocks_in_strict_mode(
+        self, tmp_path: Path,
+    ):
+        """Symmetric STRICT-mode test on the real library: the strictness
+        lever genuinely re-arms — missing-producer is promoted back to
+        ERROR and ``is_valid`` is False so the pipeline aborts.
+        """
+        spec = self._generalist_spec(
+            "bean292-strict", strictness=Strictness.STRICT,
+        )
+        output_dir = tmp_path / "output" / spec.project.slug
+
+        manifest, validation, overlay_plan = generate_project(
+            spec, _LIBRARY_ROOT, output_root=output_dir,
+            strictness=Strictness.STRICT,
+        )
+
+        assert not validation.is_valid, (
+            "Strict-mode generalist team must trip the is_valid gate"
+        )
+        error_codes = [m.code for m in validation.errors]
+        assert "missing-producer" in error_codes, (
+            f"Expected missing-producer error under STRICT, got: {error_codes}"
+        )
+        assert overlay_plan is None
+        # Pipeline did not run — manifest stages should be empty (the gate
+        # blocked before scaffold).
+        assert manifest.stages == {}
+        # And the output directory must be untouched.
+        assert not (output_dir / ".claude" / "agents").exists()

@@ -5,8 +5,18 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QSize, Qt
-from PySide6.QtGui import QFont, QImage, QKeySequence, QPainter, QPixmap, QShortcut
+from PySide6.QtCore import QByteArray, QPointF, QSize, Qt
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QFont,
+    QIcon,
+    QImage,
+    QKeySequence,
+    QPainter,
+    QPixmap,
+    QShortcut,
+)
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QButtonGroup,
@@ -183,6 +193,66 @@ class MainWindow(QMainWindow):
         quit_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
         quit_shortcut.activated.connect(self.close)
 
+    # -- Sidebar nav-icon rendering (BEAN-288) ----------------------------
+
+    def _apply_nav_icon(
+        self,
+        btn: QToolButton,
+        icon_name: str,
+        *,
+        in_progress: bool,
+    ) -> None:
+        """Render the sidebar nav icon onto ``btn``.
+
+        For the builder button when ``in_progress`` is True, the SVG's
+        "New Project" text is replaced with "Resume Project" before
+        rasterizing, and a small accent-colored dot is painted onto the
+        top-right corner of the resulting pixmap.
+        """
+        svg_path = Path(__file__).parent / "icons" / f"{icon_name}.svg"
+        if svg_path.is_file():
+            svg_bytes = svg_path.read_bytes()
+            if icon_name == "builder" and in_progress:
+                svg_bytes = svg_bytes.replace(b"New Project", b"Resume Project")
+            renderer = QSvgRenderer(QByteArray(svg_bytes))
+            image = QImage(200, 56, QImage.Format.Format_ARGB32_Premultiplied)
+            image.fill(0)  # fully transparent
+            painter = QPainter(image)
+            renderer.render(painter)
+            if icon_name == "builder" and in_progress:
+                # Small accent dot, top-right inset (BA decision in
+                # task 01: filled dot in ACCENT_PRIMARY, ~7 px).
+                dot_radius = 4
+                inset = 6
+                center = QPointF(200 - inset - dot_radius, inset + dot_radius)
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                painter.setBrush(QBrush(QColor(theme.ACCENT_PRIMARY)))
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawEllipse(center, dot_radius, dot_radius)
+            painter.end()
+            btn.setIcon(QIcon(QPixmap.fromImage(image)))
+            btn.setIconSize(QSize(200, 56))
+        else:
+            btn.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonTextUnderIcon
+            )
+            btn.setIconSize(QSize(36, 36))
+            try:
+                btn.setIcon(load_icon(icon_name, color=theme.TEXT_SECONDARY, size=36))
+            except FileNotFoundError:
+                logger.warning("Icon not found for nav: %s", icon_name)
+
+        if icon_name == "builder":
+            btn.setToolTip("Resume Project" if in_progress else "New Project")
+
+    def _on_builder_state_changed(self, in_progress: bool) -> None:
+        """React to wizard state flip — re-render the builder nav button."""
+        self._builder_in_progress = in_progress
+        if self._nav_buttons:
+            self._apply_nav_icon(
+                self._nav_buttons[0], "builder", in_progress=in_progress,
+            )
+
     def _build_ui(self) -> None:
         central = QWidget()
         self.setCentralWidget(central)
@@ -216,28 +286,9 @@ class MainWindow(QMainWindow):
             )
             btn.setCheckable(True)
             btn.setProperty("class", "nav-button")
+            btn.setToolTip(label)
 
-            # Load the full SVG button graphic
-            svg_path = Path(__file__).parent / "icons" / f"{icon_name}.svg"
-            if svg_path.is_file():
-                svg_bytes = svg_path.read_bytes()
-                renderer = QSvgRenderer(QByteArray(svg_bytes))
-                image = QImage(200, 56, QImage.Format.Format_ARGB32_Premultiplied)
-                image.fill(0)  # fully transparent
-                painter = QPainter(image)
-                renderer.render(painter)
-                painter.end()
-                btn.setIcon(QPixmap.fromImage(image))
-                btn.setIconSize(QSize(200, 56))
-            else:
-                btn.setToolButtonStyle(
-                    Qt.ToolButtonStyle.ToolButtonTextUnderIcon
-                )
-                btn.setIconSize(QSize(36, 36))
-                try:
-                    btn.setIcon(load_icon(icon_name, color=theme.TEXT_SECONDARY, size=36))
-                except FileNotFoundError:
-                    logger.warning("Icon not found for nav: %s", icon_name)
+            self._apply_nav_icon(btn, icon_name, in_progress=False)
 
             btn.setFixedHeight(60)
             btn.setMinimumWidth(200)
@@ -280,6 +331,10 @@ class MainWindow(QMainWindow):
         # Index 0: Builder wizard
         self._builder_screen = BuilderScreen()
         self._builder_screen.generate_requested.connect(self._on_generate_requested)
+        # BEAN-288: when wizard accumulates non-default state, the sidebar
+        # builder button flips to "Resume Project" with an in-progress dot.
+        self._builder_in_progress = False
+        self._builder_screen.state_changed.connect(self._on_builder_state_changed)
         self._stack.addWidget(self._builder_screen)
 
         # Index 1: Library Manager
@@ -448,11 +503,19 @@ class MainWindow(QMainWindow):
             self._progress_screen.mark_stage_running(stage_key)
         elif status == "done":
             self._progress_screen.mark_stage_done(stage_key, file_count)
+        elif status == "skipped":
+            self._progress_screen.mark_stage_skipped(stage_key)
 
-    def _on_generation_ok(self, total_files: int, warnings: int, output_path: str) -> None:
+    def _on_generation_ok(
+        self, total_files: int, warnings: list, output_path: str,
+    ) -> None:
         """Handle successful generation."""
         self._progress_screen.set_output_path(output_path)
-        self._progress_screen.finish(total_files=total_files, warnings=warnings)
+        self._progress_screen.finish(
+            total_files=total_files,
+            warnings=len(warnings),
+            warnings_list=warnings,
+        )
         logger.info("Generation complete: %d files at %s", total_files, output_path)
 
     def _on_generation_err(self, message: str) -> None:

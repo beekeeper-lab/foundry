@@ -123,7 +123,10 @@ class TestLifecycle:
         screen.start()
         screen.finish_with_error("Disk full")
         assert not screen.summary_label.isHidden()
-        assert "failed" in screen.summary_label.text().lower()
+        # BEAN-290: banner lead-in changed from "Generation failed:" to a
+        # friendlier, recoverable framing. The validator-message body is
+        # still surfaced verbatim.
+        assert "Can't generate yet" in screen.summary_label.text()
         assert "Disk full" in screen.summary_label.text()
 
     def test_finish_with_error_no_open_button(self):
@@ -137,6 +140,37 @@ class TestLifecycle:
         screen.start()
         screen.append_log("custom message")
         assert "custom message" in screen.log_widget.toPlainText()
+
+    def test_finish_appends_warnings_to_log(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish(
+            total_files=3,
+            warnings=2,
+            warnings_list=[
+                "Expertise 'clean-code' missing conventions.md",
+                "Unresolved placeholders in foo.md: strictness",
+            ],
+        )
+        log_text = screen.log_widget.toPlainText()
+        assert "Expertise 'clean-code'" in log_text
+        assert "Unresolved placeholders" in log_text
+        assert log_text.count("\u26a0") == 2
+
+    def test_finish_without_warnings_list_is_backward_compatible(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish(total_files=3, warnings=0)
+        # No warning-prefixed lines appear.
+        assert "\u26a0" not in screen.log_widget.toPlainText()
+
+    def test_mark_stage_skipped_logs(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.mark_stage_skipped("diff_report")
+        log_text = screen.log_widget.toPlainText()
+        assert "diff_report" in log_text
+        assert "skipped" in log_text
 
     def test_multiple_stages_done(self):
         screen = GenerationProgressScreen()
@@ -226,3 +260,154 @@ class TestOutputPath:
         assert screen.back_button.isHidden()
 
 
+# ---------------------------------------------------------------------------
+# BEAN-287 — Sticky outcome banner (success + failure recovery affordance)
+#
+# When generation finishes (success or failure), the summary + recovery
+# buttons must appear in a sticky banner above the scroll area so the
+# Back to Builder button stays on-screen even on small windows where it
+# previously sat below the fold.
+# ---------------------------------------------------------------------------
+
+
+class TestOutcomeBanner:
+    """The outcome banner is the recovery affordance — must stay above fold."""
+
+    def test_banner_hidden_after_construction(self):
+        screen = GenerationProgressScreen()
+        assert screen._outcome_banner.isHidden() is True
+
+    def test_banner_hidden_after_start_clears_prior_outcome(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish(total_files=5)
+        assert screen._outcome_banner.isHidden() is False
+        # A fresh run must not display the prior outcome.
+        screen.start()
+        assert screen._outcome_banner.isHidden() is True
+
+    def test_banner_visible_after_finish_with_buttons(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish(total_files=5)
+        assert screen._outcome_banner.isHidden() is False
+        # Both recovery affordances are present on success.
+        assert screen.back_button.isHidden() is False
+        assert screen.open_button.isHidden() is False
+        # Summary label has the success text.
+        assert "complete" in screen.summary_label.text().lower()
+
+    def test_banner_visible_after_error_back_only(self):
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish_with_error("Hook packs conflict")
+        assert screen._outcome_banner.isHidden() is False
+        # Back button must be on-screen; Open button hidden on failure.
+        assert screen.back_button.isHidden() is False
+        assert screen.open_button.isHidden() is True
+        # Summary surfaces the failure verbatim with the friendly lead-in
+        # introduced in BEAN-290.
+        assert "Can't generate yet" in screen.summary_label.text()
+        assert "Hook packs conflict" in screen.summary_label.text()
+
+    def test_banner_is_sibling_of_scroll_not_nested(self):
+        """Banner must be a sibling of the scroll area in the outer layout,
+        not a child of the scrolled container — that's what makes it sticky
+        on small windows where the recovery affordance previously sat below
+        the fold (BEAN-287)."""
+        screen = GenerationProgressScreen()
+        # Both must share the same direct parent (the screen) — so neither
+        # is the descendant of the other.
+        assert screen._outcome_banner.parent() is screen
+        assert screen._scroll.parent() is screen
+        # Banner is not a descendant of the scroll viewport.
+        assert not screen._scroll.isAncestorOf(screen._outcome_banner)
+
+    def test_finish_with_error_resets_scroll_to_top(self):
+        """Auto-scroll safety net: failure pops the scroll position back
+        to the top so the banner is on-screen even if a custom theme
+        somehow inflates the banner past the viewport."""
+        screen = GenerationProgressScreen()
+        screen.start()
+        # Simulate a scroll position somewhere in the middle of the body.
+        screen._scroll.verticalScrollBar().setValue(200)
+        screen.finish_with_error("Boom")
+        assert screen._scroll.verticalScrollBar().value() == 0
+
+
+
+
+# ---------------------------------------------------------------------------
+# BEAN-290 — Banner does not double-prefix validator messages.
+#
+# The previous behavior wrapped the validator's already-prefixed errors
+# with `"Validation failed: …"` in the worker, then `"Generation failed:
+# Validation failed: …"` in the screen. The new behavior emits the
+# validator messages bare from the worker, and the screen leads with
+# `"Can't generate yet — "`.
+# ---------------------------------------------------------------------------
+
+
+class TestBannerNoDoublePrefix:
+    """Regression: the banner-construction path can never reintroduce
+    the `"Validation failed: …"` inner prefix."""
+
+    def test_worker_emits_validator_messages_without_inner_prefix(
+        self, monkeypatch,
+    ):
+        from unittest.mock import MagicMock
+
+        from foundry_app.core.models import (
+            CompositionSpec,
+            ProjectIdentity,
+            Severity,
+            ValidationMessage,
+            ValidationResult,
+        )
+        from foundry_app.ui.generation_worker import GenerationWorker
+
+        spec = CompositionSpec(
+            project=ProjectIdentity(name="Test", slug="test"),
+        )
+        worker = GenerationWorker(spec=spec, library_root="/nonexistent/path")
+        captured = MagicMock()
+        monkeypatch.setattr(worker, "finished_err", captured)
+
+        failed = ValidationResult(messages=[
+            ValidationMessage(
+                severity=Severity.ERROR,
+                code="hook-pack-conflict",
+                message="The 'a' and 'b' hook packs can't be used together.",
+            ),
+        ])
+
+        def _fake_generate(*args, **kwargs):
+            return (object(), failed, None)
+
+        monkeypatch.setattr(
+            "foundry_app.services.generator.generate_project", _fake_generate,
+        )
+
+        worker.run()
+
+        captured.emit.assert_called_once()
+        emitted = captured.emit.call_args[0][0]
+        # Must not start with the inner prefix.
+        assert not emitted.startswith("Validation failed:"), emitted
+        # The final composed banner (screen's lead-in + worker's body)
+        # must not contain the legacy double-prefix.
+        composed = f"Can't generate yet — {emitted}"
+        assert "Validation failed:" not in composed, composed
+        # The validator message itself reaches the user.
+        assert "can't be used together" in emitted
+
+    def test_screen_lead_in_replaces_generation_failed_prefix(self):
+        """The screen's failure lead-in is the friendly recoverable
+        framing introduced in BEAN-290 — never the legacy
+        ``"Generation failed:"`` wording."""
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish_with_error("Something broke")
+        text = screen.summary_label.text()
+        assert "Can't generate yet" in text
+        assert "Generation failed:" not in text

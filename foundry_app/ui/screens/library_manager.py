@@ -862,15 +862,37 @@ class LibraryManagerScreen(QWidget):
             item is not None
             and item.data(0, Qt.ItemDataRole.UserRole) is not None
         )
-        # For skills/expertise/personas, also allow deleting the directory node
-        is_asset_dir = (
-            cat in ("Claude Skills", "Expertise", "Personas")
-            and item is not None
-            and item.parent() is not None
-            and item.data(0, Qt.ItemDataRole.UserRole) is None
-            and item.parent().parent() is None  # direct child of top-level
-        )
+        # For skills/expertise/personas, also allow deleting the directory node.
+        # Personas now live two levels deep (Personas → <tier> → <name>) per
+        # ADR-014; allow deletion at that depth too, but never the tier dirs
+        # themselves.
+        is_asset_dir = self._is_asset_dir_node(cat, item)
         self._delete_btn.setEnabled(editable and (has_file or is_asset_dir))
+
+    def _is_asset_dir_node(
+        self, cat: str | None, item: QTreeWidgetItem | None,
+    ) -> bool:
+        """Return True if *item* is a deletable asset-directory tree node.
+
+        - Skills/Expertise: direct children of the category top-level node.
+        - Personas: grandchildren of the category top-level (so the user can
+          delete a specific persona under ``personas/core/`` or
+          ``personas/extended/`` without nuking the whole tier).
+        """
+        if (
+            cat not in ("Claude Skills", "Expertise", "Personas")
+            or item is None
+            or item.data(0, Qt.ItemDataRole.UserRole) is not None
+        ):
+            return False
+        parent = item.parent()
+        if parent is None:
+            return False
+        if cat == "Personas":
+            grand = parent.parent()
+            return grand is not None and grand.parent() is None
+        # Skills/Expertise: direct child of top-level.
+        return parent.parent() is None
 
     # -- Tree selection helpers ---------------------------------------------
 
@@ -1012,9 +1034,12 @@ class LibraryManagerScreen(QWidget):
         rel_path = _EDITABLE_CATEGORIES[cat]
         target_dir = self._library_root / rel_path
 
-        # Personas: create directory with starter files
+        # Personas: create directory with starter files. Per ADR-014, the
+        # core five are a closed set; UI-created personas always land in
+        # ``personas/extended/<name>/`` so they pick up ``tier=extended``
+        # automatically and are referenced as ``extended/<name>``.
         if cat == "Personas":
-            persona_dir = target_dir / name
+            persona_dir = target_dir / "extended" / name
             if persona_dir.exists():
                 QMessageBox.warning(
                     self, "Duplicate", f"Persona '{name}' already exists."
@@ -1182,20 +1207,23 @@ class LibraryManagerScreen(QWidget):
 
         file_path = item.data(0, Qt.ItemDataRole.UserRole)
 
-        # Asset directory node (no path, direct child of category)
-        is_asset_dir = (
-            cat in ("Claude Skills", "Expertise", "Personas")
-            and file_path is None
-            and item.parent() is not None
-            and item.parent().parent() is None
-        )
+        # Asset directory node (no path, direct child of category).
+        # Personas live two levels deep (Personas → <tier> → <name>) per
+        # ADR-014; ``_is_asset_dir_node`` handles that depth difference.
+        is_asset_dir = self._is_asset_dir_node(cat, item)
 
         if file_path:
             path = Path(file_path)
             display = path.name
         elif is_asset_dir:
             rel_path = _EDITABLE_CATEGORIES[cat]
-            path = self._library_root / rel_path / item.text(0)
+            if cat == "Personas":
+                # The selected node is the persona directory; its parent
+                # node text is the tier ("core" or "extended").
+                tier = item.parent().text(0)
+                path = self._library_root / rel_path / tier / item.text(0)
+            else:
+                path = self._library_root / rel_path / item.text(0)
             display = item.text(0)
         else:
             return

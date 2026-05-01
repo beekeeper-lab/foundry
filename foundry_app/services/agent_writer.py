@@ -8,7 +8,20 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from foundry_app.core.models import CompositionSpec, LibraryIndex, StageResult
+from foundry_app.core.models import (
+    CompositionSpec,
+    LibraryIndex,
+    StageResult,
+    _persona_dirname,
+)
+from foundry_app.services.compiler import (
+    _PLACEHOLDER_RE,
+    _build_context,
+    _build_persona_context,
+    _expertise_applies_to,
+    _get_emitted_expertise_ids,
+    _substitute,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -79,14 +92,23 @@ def _extract_key_rules(persona_text: str) -> list[str]:
 
 
 def _extract_expertise_highlights(conventions_text: str) -> str:
-    """Extract the key highlights from an expertise conventions.md file."""
+    """Extract the key highlights from an expertise conventions.md file.
+
+    Captures the Defaults section, soft-capped at _MAX_EXPERTISE_HIGHLIGHT_LINES.
+    Truncation is fence-aware: if the cap is reached while inside a fenced code
+    block (``` ... ```), extraction continues until the fence closes so the
+    emitted excerpt never has an unbalanced fence. A hard cap bounds runaway
+    on malformed sources; if the source still ends with an open fence, the
+    dangling opener (and lines after it) are dropped.
+    """
     lines = conventions_text.strip().splitlines()
     highlights: list[str] = []
     in_defaults = False
+    fence_open = False
+    hard_cap = _MAX_EXPERTISE_HIGHLIGHT_LINES * 4
 
     for line in lines:
         stripped = line.strip()
-        # Skip the title and intro text
         if stripped.startswith("# "):
             continue
         if stripped.startswith("---"):
@@ -96,7 +118,6 @@ def _extract_expertise_highlights(conventions_text: str) -> str:
                 highlights.append("")
             continue
 
-        # Capture the Defaults table
         if stripped == "## Defaults":
             in_defaults = True
             continue
@@ -105,9 +126,22 @@ def _extract_expertise_highlights(conventions_text: str) -> str:
                 in_defaults = False
             else:
                 highlights.append(stripped)
+                if stripped.startswith("```"):
+                    fence_open = not fence_open
 
-        if len(highlights) >= _MAX_EXPERTISE_HIGHLIGHT_LINES:
+        if len(highlights) >= hard_cap:
             break
+        if len(highlights) >= _MAX_EXPERTISE_HIGHLIGHT_LINES and not fence_open:
+            break
+
+    # Safety net: if we still ended inside an open fence (malformed source or
+    # hard cap tripped mid-block), drop everything from the last opener
+    # onward so the output has balanced fences.
+    if fence_open:
+        for i in range(len(highlights) - 1, -1, -1):
+            if highlights[i].startswith("```"):
+                highlights = highlights[:i]
+                break
 
     return "\n".join(highlights).strip()
 
@@ -143,26 +177,47 @@ def write_agents(
     )
     template = env.get_template("agent.md.j2")
 
-    # Gather expertise info
-    expertise_ids = [s.id for s in spec.expertise]
-    expertise_names = ", ".join(expertise_ids) if expertise_ids else "General"
+    # Gather expertise info. Only list expertise whose source file will
+    # actually be emitted — a missing-source expertise produces a warning
+    # elsewhere but must not appear as a "zombie" entry in agent headers.
+    emitted_expertise_ids = _get_emitted_expertise_ids(spec, library_index)
+    expertise_names = (
+        ", ".join(emitted_expertise_ids) if emitted_expertise_ids else "General"
+    )
 
-    # Gather expertise sections (shared across all personas)
-    expertise_sections: list[dict[str, str]] = []
+    # Shared context — used to render non-persona-scoped fragments such as
+    # expertise conventions. Persona-scoped fragments get their own context
+    # built inside the per-persona loop so {{ strictness }} resolves correctly.
+    shared_context = _build_context(spec, emitted_expertise_ids)
+
+    # Pre-compute the unfiltered expertise highlights so we don't re-read
+    # every expertise file once per persona. Each entry retains its source
+    # ExpertiseInfo so the per-persona loop can apply the ADR-012 filter.
+    # Each item: {"name", "highlights", "info"}. Missing-source expertise
+    # is dropped here once (with a warning) rather than per-persona.
+    all_expertise_sections: list[dict[str, object]] = []
+    seen_missing: set[str] = set()
     for expertise_sel in spec.expertise:
         expertise_info = library_index.expertise_by_id(expertise_sel.id)
         if expertise_info is None:
-            warnings.append(f"Expertise '{expertise_sel.id}' not found in library index")
+            if expertise_sel.id not in seen_missing:
+                warnings.append(
+                    f"Expertise '{expertise_sel.id}' not found in library index"
+                )
+                seen_missing.add(expertise_sel.id)
             continue
 
         conventions_path = Path(expertise_info.path) / "conventions.md"
         if conventions_path.is_file():
-            conventions_text = conventions_path.read_text(encoding="utf-8")
+            conventions_text = _substitute(
+                conventions_path.read_text(encoding="utf-8"), shared_context,
+            )
             highlights = _extract_expertise_highlights(conventions_text)
             if highlights:
-                expertise_sections.append({
+                all_expertise_sections.append({
                     "name": expertise_sel.id.replace("-", " ").title(),
                     "highlights": highlights,
+                    "info": expertise_info,
                 })
 
     # Generate agent file for each persona
@@ -182,16 +237,44 @@ def write_agents(
             )
             continue
 
-        persona_text = persona_path.read_text(encoding="utf-8")
+        # Substitute placeholders in the source before extracting fragments.
+        # The template's outer render does not recursively resolve Jinja
+        # expressions that appear inside variable values, so extracted strings
+        # like {{ project_name }} would otherwise leak through verbatim.
+        persona_ctx = _build_persona_context(
+            spec, persona_sel, emitted_expertise_ids,
+        )
+        persona_text = _substitute(
+            persona_path.read_text(encoding="utf-8"), persona_ctx,
+        )
 
-        # Build role name: expertise + persona (e.g., "Python Developer")
-        primary_expertise = expertise_ids[0].replace("-", " ").title() if expertise_ids else ""
-        persona_title = persona_sel.id.replace("-", " ").title()
+        # Build role name: expertise + persona (e.g., "Python Developer").
+        # Use the emitted list so the role name never derives from a
+        # missing-source expertise.
+        primary_expertise = (
+            emitted_expertise_ids[0].replace("-", " ").title()
+            if emitted_expertise_ids
+            else ""
+        )
+        # Strip any ``extended/`` tier prefix (ADR-014) before producing the
+        # human-readable role name; the tier is metadata, not part of the role.
+        persona_title = _persona_dirname(persona_sel.id).replace("-", " ").title()
         role_name = (
             f"{primary_expertise} {persona_title}".strip()
             if primary_expertise
             else persona_title
         )
+
+        # ADR-012 LOAD-BEARING change: filter expertise per persona. Each
+        # expertise's ## Applies To list governs whether its highlights get
+        # inlined into THIS persona's agent file. Empty applies_to means
+        # "all personas" (preserves pre-BEAN-259 behavior for unannotated
+        # expertise files).
+        expertise_sections: list[dict[str, str]] = [
+            {"name": entry["name"], "highlights": entry["highlights"]}
+            for entry in all_expertise_sections
+            if _expertise_applies_to(persona_sel.id, entry["info"])
+        ]
 
         context = {
             "role_name": role_name,
@@ -204,12 +287,25 @@ def write_agents(
         }
 
         content = template.render(**context)
-        agent_file = agents_dir / f"{persona_sel.id}.md"
+        # Use the leaf directory name so .claude/agents/ stays a flat
+        # directory regardless of tier (ADR-014).
+        agent_file = agents_dir / f"{_persona_dirname(persona_sel.id)}.md"
         agent_file.write_text(content, encoding="utf-8")
 
         rel_path = str(agent_file.relative_to(out_root))
         wrote.append(rel_path)
         logger.info("Wrote agent file: %s", rel_path)
+
+    # Placeholder-leakage guard: scan every written agent file and surface
+    # any remaining {{ ... }} expressions as warnings so the leak isn't silent.
+    for rel in wrote:
+        fpath = out_root / rel
+        unresolved = _PLACEHOLDER_RE.findall(fpath.read_text(encoding="utf-8"))
+        if unresolved:
+            unique = sorted(set(unresolved))
+            warnings.append(
+                f"Unresolved placeholders in {rel}: {', '.join(unique)}"
+            )
 
     logger.info(
         "Agent writer complete: %d files written, %d warnings",

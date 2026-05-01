@@ -153,6 +153,38 @@ Newly created beans have status `Unapproved`. The user must review and approve t
 
 **What `/long-run` checks:** When the Team Lead enters autonomous mode, it only processes beans with status `Approved`. Beans with status `Unapproved` are skipped entirely. This ensures the user has reviewed and signed off on every unit of work before it begins.
 
+#### Approval Gate
+
+Transitioning a bean from `Unapproved` to `Approved` is a deliberate, validated action. The gate is enforced by the `/internal:approve-bean` command, which refuses to approve beans that still contain template placeholders or empty required fields.
+
+**Entry point:**
+
+```
+/internal:approve-bean <NNN> [--rationale "<text>"]
+```
+
+**Approval checklist — every field must have real content (not placeholders, not the template's example lines):**
+
+- [ ] **Problem Statement** — states the problem and why it matters.
+- [ ] **Goal** — states the desired outcome.
+- [ ] **Scope — In Scope** — at least one concrete deliverable (beyond `- Item 1` placeholders).
+- [ ] **Acceptance Criteria** — at least one bean-specific criterion beyond the standard `pytest` / `ruff` lines.
+- [ ] **Priority** — set to a real value (not the template default cell).
+- [ ] **Category** — set to `App`, `Process`, or `Infra` (not the placeholder `(App | Process | Infra)`).
+
+**What happens on success:**
+
+1. `bean.md` Status is set to `Approved`.
+2. The matching row in `ai/beans/_index.md` is updated.
+3. A single commit captures both file changes. The commit message is `Approve BEAN-NNN: <title>`; when `--rationale` is supplied, it is recorded in the commit body.
+4. The commit author is the audit trail for **who approved** (derived from git identity).
+
+**What happens on failure:**
+
+The command prints the list of missing or placeholder fields and exits without modifying any file. No commit is created. The reviewer fixes the flagged fields in `bean.md` and retries.
+
+**Implementation note:** The criteria are encoded in `foundry_app/services/bean_approval.py` (`check_bean_approvable`). The same rules are exercised by `tests/test_bean_approval.py`, so the gate behaves identically whether invoked through the command or the Python helper.
+
 ### 3. Picking
 
 The Team Lead reviews the backlog (`ai/beans/_index.md`) and picks beans to work on:
@@ -305,7 +337,7 @@ Each task file should include:
 - **Completed:** — (auto-stamped by telemetry hook)
 - **Duration:** — (auto-computed by telemetry hook)
 - **Goal:** What this task produces
-- **Inputs:** What the owner needs to read
+- **Inputs:** What the owner needs to read. **Required and non-empty** — the `validate-task-inputs.py` hook (BEAN-272, library: `ai-team-library/claude/hooks/`) blocks the Status→`In Progress` transition and any `/spawn-task` dispatch when this field is missing, empty, or only contains placeholder values. Escape hatch for genuinely input-less tasks: `Inputs: NONE (justified: <reason of at least 10 chars>)`. Escape-hatch use is counted in the bean's Orchestration Telemetry (BEAN-278) so over-use surfaces.
 - **Example Output:** A concrete example of the expected output format (see below)
 - **Definition of Done:** Concrete checklist
 
@@ -383,13 +415,20 @@ Before writing any implementation code, the persona writes a brief **comprehensi
 
 ### 7. Execution
 
-Each persona claims their task(s) in dependency order:
+Tasks are executed by **specialist workers dispatched via `/spawn-task`** (BEAN-270, ADR-008). The orchestrator does not play the role inline by default. `/spawn-task` auto-detects tmux: in tmux it spawns a worktree-isolated tmux child window; outside tmux it invokes the `Agent` tool with `subagent_type=<persona>`. The worker reads only the task's `Inputs:` plus the persona's own context bundle.
 
-1. Read the task file and all referenced inputs
-2. Produce the required outputs in `ai/outputs/<persona>/`
-3. Apply the **micro-iteration loop** if verification fails (see below)
-4. Update the task file with completion status
-5. Create a handoff note for downstream tasks if needed
+In-conversation role-switching (the orchestrator reading the task and executing it itself in the same window) remains a fallback for tiny tasks where dispatch overhead is not justified. It is not the default.
+
+For each task in dependency order:
+
+1. Dispatch with `/spawn-task <task-file>`. The worker:
+   1. Reads the task file and all referenced inputs (the `validate-task-inputs.py` hook ensures Inputs is populated before dispatch — BEAN-272).
+   2. Produces the required outputs in `ai/outputs/<persona>/`. The artifacts must be the types declared in the persona's `contracts.yml` (`produces:`, BEAN-273).
+   3. Applies the **micro-iteration loop** if verification fails (see below).
+   4. Updates the task file with completion status.
+2. The orchestrator runs `/handoff <from> <to>` to package outputs for the next persona — typed packets per the artifact registry's required fields and any pair-fields extras (BEAN-276). `/handoff` appends a row to `ai/handoffs/_index.md` for traceability and blocks if a required field is missing.
+
+See `ai/context/orchestration-architecture.md` for the model in full.
 
 #### Micro-Iteration Loop
 
@@ -450,9 +489,13 @@ Workers MUST minimize context consumption during execution. Every file read and 
 
 The Team Lead applies the **Verification-Driven Development (VDD) gate** before closing any bean. See `ai/context/vdd-policy.md` for the full policy.
 
+The gate is automated via `/vdd <bean-id>` (BEAN-277). The skill parses the bean's Acceptance Criteria checklist, runs each "concrete evidence" check programmatically (evidence-type prefixes: `(test:…)`, `(lint:…)`, `(file:…)`; un-prefixed criteria fall back to manual confirmation), and writes a structured pass/fail report to `ai/outputs/tech-qa/vdd-<bean-id>.md`. `/merge-bean` refuses to merge when the report is missing or shows fail.
+
+Apply the gate as follows:
+
 1. Check each task's Definition of Done
-2. Verify outputs match the bean's Acceptance Criteria with **concrete evidence** per the VDD policy
-3. Run category-specific verification checks:
+2. Run `/vdd <bean-id>` to produce the structured report
+3. The skill runs category-specific verification checks:
    - **App beans:** `uv run pytest` (all pass), `uv run ruff check foundry_app/` (clean), new code has tests
    - **Process beans:** documents exist, cross-references valid, instructions actionable, no contradictions
    - **Infra beans:** hooks/scripts execute, git operations succeed, no regressions

@@ -74,6 +74,23 @@ class TestCardSelection:
         assert len(received) == 1
         assert received[0] == ("microservices", False)
 
+    def test_click_on_card_toggles_checkbox(self, card):
+        from PySide6.QtCore import QPointF, Qt
+        from PySide6.QtGui import QMouseEvent
+
+        assert card.is_selected is False
+        event = QMouseEvent(
+            QMouseEvent.Type.MouseButtonPress,
+            QPointF(200, 10),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        card.mousePressEvent(event)
+        assert card.is_selected is True
+        card.mousePressEvent(event)
+        assert card.is_selected is False
+
 
 # ---------------------------------------------------------------------------
 # ArchitectureCard — empty description

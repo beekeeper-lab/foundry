@@ -6,7 +6,14 @@ import logging
 import re
 from pathlib import Path
 
-from foundry_app.core.models import CompositionSpec, LibraryIndex, StageResult
+from foundry_app.core.models import (
+    CompositionSpec,
+    ExpertiseInfo,
+    LibraryIndex,
+    PersonaSelection,
+    StageResult,
+    _persona_dirname,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +25,97 @@ _PERSONA_HEADER_RE = re.compile(r"^#\s+Persona:\s*(.+)", re.MULTILINE)
 
 # Pattern for "(defer to X)" or "(defer to X; extra text)" parentheticals
 _DEFER_TO_RE = re.compile(r"\s*\(defer to ([^;)]+)(?:;[^)]+)?\)")
+
+# Acronyms that should be uppercased when rendering display names derived
+# from kebab-case identifiers (e.g. ``tech-qa`` -> ``Tech QA``). Extend when
+# a new acronym-bearing persona or expertise id is introduced.
+_ACRONYMS: frozenset[str] = frozenset({
+    "qa", "ui", "ux", "api", "sre", "ml", "ai", "ba",
+    "sql", "dba", "aws", "gcp", "ci", "cd",
+})
+
+
+def _display_name_from_id(identifier: str) -> str:
+    """Convert a kebab-case id into a human-readable display name.
+
+    Acronyms listed in ``_ACRONYMS`` are uppercased; other segments are
+    title-cased. Consecutive acronym segments collapse with ``/`` so that
+    ``ux-ui-designer`` renders as ``UX/UI Designer`` rather than
+    ``Ux Ui Designer``.
+    """
+    parts = identifier.split("-")
+    words: list[str] = []
+    run: list[str] = []
+
+    def _flush() -> None:
+        if run:
+            words.append("/".join(run))
+            run.clear()
+
+    for part in parts:
+        if part.lower() in _ACRONYMS:
+            run.append(part.upper())
+        else:
+            _flush()
+            words.append(part.capitalize())
+    _flush()
+    return " ".join(words)
+
+
+def _canonicalize_persona_header(name: str) -> str:
+    """Trim a ``# Persona: <Name>`` header down to its short display form.
+
+    Rules applied in order:
+
+    1. Remove trailing parenthetical annotations (``Business Analyst (BA)``
+       -> ``Business Analyst``).
+    2. Split on `` / ``. Merge consecutive segments whose adjoining tokens
+       are short (<= 3 char) all-upper acronyms using ``/`` — this turns
+       ``UX / UI Designer`` into ``UX/UI Designer``. Otherwise keep only
+       the first segment (``Tech-QA / Test Engineer`` -> ``Tech-QA``).
+    """
+    name = re.sub(r"\s*\([^)]+\)\s*", "", name).strip()
+    if " / " not in name:
+        return name
+
+    segments = [s.strip() for s in name.split(" / ") if s.strip()]
+    merged = [segments[0]]
+    for seg in segments[1:]:
+        prev_tokens = merged[-1].split()
+        cur_tokens = seg.split()
+        if not prev_tokens or not cur_tokens:
+            break
+        prev_last = prev_tokens[-1]
+        cur_first = cur_tokens[0]
+        if (
+            prev_last.isupper() and len(prev_last) <= 3
+            and cur_first.isupper() and len(cur_first) <= 3
+        ):
+            merged[-1] = f"{merged[-1]}/{cur_first}"
+            rest = cur_tokens[1:]
+            if rest:
+                merged.append(" ".join(rest))
+        else:
+            break
+    return " ".join(merged)
+
+
+def _persona_display_name(persona_id: str, index: LibraryIndex) -> str:
+    """Return the display name for a persona.
+
+    Prefers the persona's own ``# Persona: <Name>`` header (canonicalized),
+    falling back to ``_display_name_from_id`` when the header is missing.
+    The fallback strips any ADR-014 ``extended/`` tier prefix so the rendered
+    name is purely role-based, not tier-based.
+    """
+    persona_info = index.persona_by_id(persona_id)
+    if persona_info is not None:
+        persona_md = _read_file(Path(persona_info.path) / "persona.md")
+        if persona_md is not None:
+            match = _PERSONA_HEADER_RE.search(persona_md)
+            if match:
+                return _canonicalize_persona_header(match.group(1).strip())
+    return _display_name_from_id(_persona_dirname(persona_id))
 
 
 def _resolve_placeholder(match: re.Match[str], context: dict[str, str]) -> str:
@@ -60,18 +158,87 @@ def _read_file(path: Path) -> str | None:
     return None
 
 
-def _build_context(spec: CompositionSpec) -> dict[str, str]:
-    """Build the template variable context from the composition spec."""
-    expertise_ids = sorted(
-        (s.id for s in spec.expertise),
-        key=lambda sid: next(
-            (s.order for s in spec.expertise if s.id == sid), 0
-        ),
-    )
+def _expertise_applies_to(
+    persona_id: str,
+    expertise_info: ExpertiseInfo,
+) -> bool:
+    """Return True if *expertise_info* should be inlined into *persona_id*'s prompt.
+
+    The rule (ADR-012): an empty ``applies_to`` list means "applies to every
+    persona" (preserves pre-BEAN-259 behavior); otherwise the persona must be
+    listed explicitly. The library indexer has already filtered out unknown
+    persona IDs from ``applies_to`` (with a warning), so a non-empty list here
+    is guaranteed to contain only real persona IDs.
+    """
+    if not expertise_info.applies_to:
+        return True
+    return persona_id in expertise_info.applies_to
+
+
+def _get_emitted_expertise_ids(
+    spec: CompositionSpec,
+    library_index: LibraryIndex,
+) -> list[str]:
+    """Return the ordered list of expertise IDs whose source file will be
+    emitted (i.e. ``conventions.md`` exists on disk).
+
+    This is the same predicate ``_compile_expertise_section`` uses to decide
+    whether to write ``ai/generated/expertise/<id>.md``. Surfaces it as a
+    helper so other stages (agent headers, persona-scoped substitutions)
+    can stay in sync without re-implementing the check.
+    """
+    emitted: list[str] = []
+    for sel in sorted(spec.expertise, key=lambda s: (s.order, s.id)):
+        info = library_index.expertise_by_id(sel.id)
+        if info is None:
+            continue
+        if (Path(info.path) / "conventions.md").is_file():
+            emitted.append(sel.id)
+    return emitted
+
+
+def _build_context(
+    spec: CompositionSpec,
+    emitted_expertise_ids: list[str] | None = None,
+) -> dict[str, str]:
+    """Build the shared template variable context from the composition spec.
+
+    Use this for non-persona-scoped substitutions (e.g., expertise files).
+    For persona-scoped substitutions, use ``_build_persona_context`` so that
+    ``{{ strictness }}`` resolves to the per-persona strictness value.
+
+    When ``emitted_expertise_ids`` is provided, ``{{ expertise }}`` resolves
+    to only those IDs. Callers with access to a LibraryIndex should compute
+    this via ``_get_emitted_expertise_ids`` so missing-source expertise is
+    dropped from compiled prompts. When None, all spec expertise IDs are
+    used (legacy behavior for callers without library access).
+    """
+    if emitted_expertise_ids is None:
+        expertise_ids: list[str] = sorted(
+            (s.id for s in spec.expertise),
+            key=lambda sid: next(
+                (s.order for s in spec.expertise if s.id == sid), 0
+            ),
+        )
+    else:
+        expertise_ids = list(emitted_expertise_ids)
     return {
         "project_name": spec.project.name,
         "expertise": ",".join(expertise_ids),
     }
+
+
+def _build_persona_context(
+    spec: CompositionSpec,
+    persona_sel: PersonaSelection,
+    emitted_expertise_ids: list[str] | None = None,
+) -> dict[str, str]:
+    """Build a context dict for substituting placeholders in a single persona's
+    source files. Includes every shared key plus the persona's own ``strictness``.
+    """
+    ctx = _build_context(spec, emitted_expertise_ids)
+    ctx["strictness"] = persona_sel.strictness.value
+    return ctx
 
 
 def _build_persona_name_map(index: LibraryIndex) -> dict[str, str]:
@@ -215,15 +382,30 @@ def _compile_persona_section(
     index: LibraryIndex,
     context: dict[str, str],
     warnings: list[str],
+    spec: CompositionSpec | None = None,
 ) -> str | None:
     """Compile the section for a single persona.
+
+    ``context`` must include ``strictness`` — callers build it via
+    ``_build_persona_context`` so ``{{ strictness }}`` resolves to this
+    persona's own strictness value.
+
+    Per ADR-012, when persona sections embed expertise content (today they do
+    not), only expertise where ``_expertise_applies_to(persona_id, info)`` is
+    True contributes. This is a forward-compat guard: if and when this
+    function starts inlining expertise, it must filter through that helper.
 
     Returns the assembled markdown text, or None if the persona directory
     is missing from the library.
     """
     persona_info = index.persona_by_id(persona_id)
     if persona_info is None:
-        warnings.append(f"Persona '{persona_id}' not found in library index")
+        # Lazy-import to avoid a circular dependency between compiler and
+        # library_indexer at module load time.
+        from foundry_app.services.library_indexer import (
+            format_unknown_persona_error,
+        )
+        warnings.append(format_unknown_persona_error(persona_id, index))
         return None
 
     persona_dir = Path(persona_info.path)
@@ -250,6 +432,21 @@ def _compile_persona_section(
     if prompts_md is not None:
         parts.append(_substitute(prompts_md.strip(), context))
         files_read += 1
+
+    # Forward-compat guard (ADR-012): if a future revision inlines expertise
+    # content into persona sections, the same `_expertise_applies_to` filter
+    # used by `agent_writer.write_agents` must gate that inlining. Today the
+    # persona section embeds no expertise, so the guard is a no-op — but we
+    # exercise the lookup here so the path is wired and reviewers see the
+    # filtering decision is intentional, not forgotten.
+    if spec is not None:
+        for sel in spec.expertise:
+            info = index.expertise_by_id(sel.id)
+            if info is None:
+                continue
+            # No-op today: nothing is appended either way. The presence of
+            # this loop is the contract.
+            _ = _expertise_applies_to(persona_id, info)
 
     if files_read == 0:
         warnings.append(f"Persona '{persona_id}' has no source files")
@@ -299,14 +496,17 @@ def _extract_first_sentence(text: str) -> str:
 
 def _build_lean_claude_md(
     spec: CompositionSpec,
-    persona_descriptions: list[tuple[str, str]],
+    persona_descriptions: list[tuple[str, str, str]],
     expertise_ids: list[str],
 ) -> str:
     """Build a lean CLAUDE.md with project summary, tech stack, and pointers.
 
     Args:
         spec: The composition spec.
-        persona_descriptions: List of (persona_id, one-line description) tuples.
+        persona_descriptions: List of ``(persona_id, display_name, one-line
+            description)`` tuples. ``display_name`` is resolved upstream via
+            ``_persona_display_name`` so acronyms and slashed names render
+            correctly in the Team table.
         expertise_ids: Sorted list of expertise IDs included in the project.
 
     Returns:
@@ -320,13 +520,37 @@ def _build_lean_claude_md(
         header += f"\n\n{spec.project.description}"
     sections.append(header)
 
+    # --- Scope (BEAN-251 + BEAN-253) ---
+    # Paired policy: the AI team works under ai/ (matching the narrow
+    # Edit(ai/**) permission in settings.local.json); the human owns the
+    # application source. Foundry does not scaffold stack-specific app
+    # code — users initialize their app with a stack-appropriate command
+    # (see docs/starter-stacks.md in the Foundry repo). See ADR-006.
+    scope_lines = [
+        "## Scope",
+        "",
+        "This project was generated by "
+        "[Foundry](https://github.com/beekeeper-lab/foundry). "
+        "The AI team produces plans, designs, reviews, and docs under "
+        "`ai/`; the human initializes and implements the application "
+        "source code. The `Edit(ai/**)` permission in "
+        "`.claude/settings.local.json` matches this intent — agents "
+        "write under `ai/`, humans write the app.",
+        "",
+        "Foundry does not scaffold stack-specific application code. "
+        "Initialize your application with the stack-appropriate command "
+        "— see `docs/starter-stacks.md` in the Foundry repo for common "
+        "recipes.",
+    ]
+    sections.append("\n".join(scope_lines))
+
     # --- Tech Stack ---
     if expertise_ids:
         tech_lines = ["## Tech Stack", ""]
         tech_lines.append("| Technology | Source |")
         tech_lines.append("|------------|--------|")
         for eid in expertise_ids:
-            display = eid.replace("-", " ").title()
+            display = _display_name_from_id(eid)
             tech_lines.append(
                 f"| {display} | `ai/generated/expertise/{eid}.md` |"
             )
@@ -353,14 +577,60 @@ def _build_lean_claude_md(
         team_lines = ["## Team", ""]
         team_lines.append("| Persona | Role | Agent | Full Prompt |")
         team_lines.append("|---------|------|-------|-------------|")
-        for pid, desc in persona_descriptions:
-            display = pid.replace("-", " ").title()
+        for pid, display, desc in persona_descriptions:
             team_lines.append(
                 f"| {display} | {desc} "
                 f"| `.claude/agents/{pid}.md` "
                 f"| `ai/generated/members/{pid}.md` |"
             )
         sections.append("\n".join(team_lines))
+
+    # --- Team Orchestration Model ---
+    orchestration_lines = [
+        "## Team Orchestration Model",
+        "",
+        "- **Team Lead is the orchestrator.** The Team Lead selects beans, "
+        "decomposes work into tasks, assigns roles, and sequences execution.",
+        "- The listed personas are an **available bench of specialists**, "
+        "not the default active participants for every bean or task.",
+        "- For **software development work**, the Team Lead must always "
+        "assign:",
+        "  - **Developer**",
+        "  - **Tech-QA**",
+        "- Other specialists such as **Architect**, **UX/UI Designer**, "
+        "**Integrator Merge Captain**, and **BA** are assigned only when "
+        "the bean or task requires them.",
+    ]
+    sections.append("\n".join(orchestration_lines))
+
+    # --- Workflow (BEAN-268) ---
+    workflow_lines = [
+        "## Workflow",
+        "",
+        "Work is tracked using the **bean workflow**: each unit of work "
+        "(feature, fix, chore) is a bean stored under "
+        "`ai/beans/BEAN-NNN-<slug>/`. The backlog index is "
+        "`ai/beans/_index.md`. See `ai/context/bean-workflow.md` for the "
+        "full lifecycle.",
+        "",
+        "Day-1 slash commands:",
+        "",
+        "- `/long-run` — autonomous backlog processing "
+        "(`.claude/commands/long-run.md`)",
+        "- `/show-backlog` — display the current bean backlog "
+        "(`.claude/commands/show-backlog.md`)",
+        "- `/pick-bean` — pick the next approved bean and start work on "
+        "it (`.claude/commands/pick-bean.md`)",
+        "- `/new-bean` — create a new bean from a problem description "
+        "(`.claude/commands/new-bean.md`)",
+        "- `/spawn-task` — dispatch a single task to its assigned "
+        "persona (`.claude/commands/spawn-task.md`)",
+        "- `/review-beans` — review beans pending approval "
+        "(`.claude/commands/review-beans.md`)",
+        "",
+        "Full command set: `.claude/commands/`.",
+    ]
+    sections.append("\n".join(workflow_lines))
 
     # --- Pointers ---
     pointer_lines = [
@@ -410,28 +680,39 @@ def compile_project(
     wrote: list[str] = []
     warnings: list[str] = []
 
-    context = _build_context(spec)
+    # Determine which expertise will actually be emitted so persona templates
+    # don't substitute {{ expertise | join(...) }} with missing-source IDs.
+    emitted_expertise_ids = _get_emitted_expertise_ids(spec, library_index)
+    context = _build_context(spec, emitted_expertise_ids)
 
     # Build persona name map and selected IDs for reference filtering
     name_to_id = _build_persona_name_map(library_index)
     selected_ids = {ps.id for ps in spec.team.personas}
 
     # --- Compile and write full persona files to ai/generated/members/ ---
-    persona_descriptions: list[tuple[str, str]] = []
+    persona_descriptions: list[tuple[str, str, str]] = []
     if spec.team.personas:
         members_dir = root / "ai" / "generated" / "members"
         members_dir.mkdir(parents=True, exist_ok=True)
 
         for persona_sel in spec.team.personas:
+            persona_ctx = _build_persona_context(
+                spec, persona_sel, emitted_expertise_ids,
+            )
             persona_section = _compile_persona_section(
-                persona_sel.id, lib_root, library_index, context, warnings,
+                persona_sel.id, lib_root, library_index, persona_ctx, warnings,
+                spec=spec,
             )
             if persona_section is not None:
                 persona_section = _filter_persona_references(
                     persona_section, selected_ids, name_to_id,
                 )
-                # Write full content to separate file
-                member_path = members_dir / f"{persona_sel.id}.md"
+                # Write full content to separate file. Strip any ``extended/``
+                # tier prefix from the id (ADR-014) so the on-disk filename
+                # stays a flat leaf name.
+                member_path = (
+                    members_dir / f"{_persona_dirname(persona_sel.id)}.md"
+                )
                 member_path.write_text(persona_section + "\n", encoding="utf-8")
                 rel = str(member_path.relative_to(root))
                 wrote.append(rel)
@@ -439,11 +720,15 @@ def compile_project(
 
                 # Extract one-line description for CLAUDE.md team table
                 desc = _extract_first_sentence(persona_section)
-                persona_descriptions.append((persona_sel.id, desc))
+                display = _persona_display_name(persona_sel.id, library_index)
+                persona_descriptions.append((persona_sel.id, display, desc))
 
     # --- Compile and write full expertise files to ai/generated/expertise/ ---
+    # ``emitted_expertise_ids`` (computed above) already identifies the
+    # expertise whose source files will be written; iterate in that order so
+    # the warning-emitting path in ``_compile_expertise_section`` still runs
+    # for any missing-source expertise listed in the spec.
     sorted_expertise = sorted(spec.expertise, key=lambda s: (s.order, s.id))
-    expertise_ids: list[str] = [e.id for e in sorted_expertise]
     if sorted_expertise:
         expertise_dir = root / "ai" / "generated" / "expertise"
         expertise_dir.mkdir(parents=True, exist_ok=True)
@@ -453,7 +738,6 @@ def compile_project(
                 expertise_sel.id, lib_root, library_index, context, warnings,
             )
             if expertise_section is not None:
-                # Write full content to separate file
                 exp_path = expertise_dir / f"{expertise_sel.id}.md"
                 exp_path.write_text(expertise_section + "\n", encoding="utf-8")
                 rel = str(exp_path.relative_to(root))
@@ -461,7 +745,9 @@ def compile_project(
                 logger.info("Wrote: %s", exp_path)
 
     # --- Build and write lean CLAUDE.md ---
-    content = _build_lean_claude_md(spec, persona_descriptions, expertise_ids)
+    # Only reference expertise whose source was actually written to avoid
+    # broken links in the generated CLAUDE.md.
+    content = _build_lean_claude_md(spec, persona_descriptions, emitted_expertise_ids)
 
     claude_md_path = root / "CLAUDE.md"
     claude_md_path.parent.mkdir(parents=True, exist_ok=True)

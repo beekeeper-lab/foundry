@@ -27,8 +27,9 @@ pytestmark = pytest.mark.usefixtures("qapp")
 def _create_library(root: Path) -> Path:
     """Create a minimal library directory structure for testing."""
     lib = root / "test-library"
-    # Personas
-    persona_dir = lib / "personas" / "developer"
+    # Personas — per ADR-014, ``developer`` is core, so it lives under
+    # ``personas/core/developer``.
+    persona_dir = lib / "personas" / "core" / "developer"
     persona_dir.mkdir(parents=True)
     (persona_dir / "persona.md").write_text("# Developer persona", encoding="utf-8")
     (persona_dir / "outputs.md").write_text("# Outputs", encoding="utf-8")
@@ -98,8 +99,13 @@ class TestBuildFileTree:
         lib = _create_library(tmp_path)
         tree = _build_file_tree(lib)
         personas = next(c for c in tree if c["name"] == "Personas")
+        # Per ADR-014, personas live under tier dirs (core/extended); the
+        # tree mirrors that nesting.
         assert len(personas["children"]) == 1
-        dev = personas["children"][0]
+        core_tier = personas["children"][0]
+        assert core_tier["name"] == "core"
+        assert len(core_tier["children"]) == 1
+        dev = core_tier["children"][0]
         assert dev["name"] == "developer"
         # developer dir should have persona.md, outputs.md, and templates/ subdir
         child_names = [c["name"] for c in dev["children"]]
@@ -111,7 +117,7 @@ class TestBuildFileTree:
         lib = _create_library(tmp_path)
         tree = _build_file_tree(lib)
         personas = next(c for c in tree if c["name"] == "Personas")
-        dev = personas["children"][0]
+        dev = personas["children"][0]["children"][0]  # core → developer
         persona_md = next(c for c in dev["children"] if c["name"] == "persona.md")
         assert persona_md["path"] is not None
         assert persona_md["path"].endswith("persona.md")
@@ -120,13 +126,16 @@ class TestBuildFileTree:
         lib = _create_library(tmp_path)
         tree = _build_file_tree(lib)
         personas = next(c for c in tree if c["name"] == "Personas")
-        dev = personas["children"][0]
+        dev = personas["children"][0]["children"][0]  # core → developer
         assert dev["path"] is None
 
     def test_missing_category_dir_gives_empty_children(self, tmp_path: Path):
         lib = tmp_path / "sparse-lib"
-        (lib / "personas" / "test").mkdir(parents=True)
-        (lib / "personas" / "test" / "persona.md").write_text("hi", encoding="utf-8")
+        # Per ADR-014, personas live under personas/<tier>/<id>.
+        (lib / "personas" / "extended" / "test").mkdir(parents=True)
+        (lib / "personas" / "extended" / "test" / "persona.md").write_text(
+            "hi", encoding="utf-8",
+        )
         tree = _build_file_tree(lib)
         expertise_items = next(c for c in tree if c["name"] == "Expertise")
         assert expertise_items["children"] == []
@@ -208,8 +217,12 @@ class TestLibraryLoading:
         screen.set_library_root(lib)
         personas_item = screen.tree.topLevelItem(0)
         assert personas_item.text(0) == "Personas"
+        # Per ADR-014, personas are grouped under tier dirs (core/extended).
         assert personas_item.childCount() == 1
-        dev_item = personas_item.child(0)
+        tier_item = personas_item.child(0)
+        assert tier_item.text(0) == "core"
+        assert tier_item.childCount() == 1
+        dev_item = tier_item.child(0)
         assert dev_item.text(0) == "developer"
 
     def test_empty_string_root_shows_empty(self):
@@ -245,9 +258,9 @@ class TestFileEditing:
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        # Navigate to personas > developer > persona.md
+        # Navigate to personas > core > developer > persona.md (ADR-014).
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        dev_item = personas_item.child(0).child(0)
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "persona.md":
@@ -269,7 +282,7 @@ class TestFileEditing:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        dev_item = personas_item.child(0).child(0)  # core → developer
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "persona.md":
@@ -1240,7 +1253,9 @@ class TestCreatePersona:
         screen.tree.setCurrentItem(screen.tree.topLevelItem(0))
         with patch(_INPUT_DIALOG2, return_value=("my-agent", True)):
             screen._on_new_asset()
-        persona_dir = lib / "personas" / "my-agent"
+        # Per ADR-014, UI-created personas land in the extended tier (the
+        # core five are a closed set).
+        persona_dir = lib / "personas" / "extended" / "my-agent"
         assert persona_dir.is_dir()
         assert (persona_dir / "persona.md").is_file()
         assert (persona_dir / "outputs.md").is_file()
@@ -1254,19 +1269,24 @@ class TestCreatePersona:
         screen.tree.setCurrentItem(screen.tree.topLevelItem(0))
         with patch(_INPUT_DIALOG2, return_value=("my-agent", True)):
             screen._on_new_asset()
-        persona_md = (lib / "personas" / "my-agent" / "persona.md").read_text(
-            encoding="utf-8"
-        )
+        # Per ADR-014, UI-created personas land in personas/extended/<name>.
+        persona_md = (
+            lib / "personas" / "extended" / "my-agent" / "persona.md"
+        ).read_text(encoding="utf-8")
         assert "# Persona: My Agent" in persona_md
         assert "## Mission" in persona_md
 
     def test_create_duplicate_persona_shows_warning(self, tmp_path):
         lib = _create_library(tmp_path)
+        # The duplicate-detection check inspects ``personas/extended/<name>``
+        # (UI-created personas always land there per ADR-014). Pre-create an
+        # extended persona so the trigger reflects a realistic collision.
+        (lib / "personas" / "extended" / "my-agent").mkdir(parents=True)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         screen.tree.setCurrentItem(screen.tree.topLevelItem(0))
         with (
-            patch(_INPUT_DIALOG2, return_value=("developer", True)),
+            patch(_INPUT_DIALOG2, return_value=("my-agent", True)),
             patch(_MSG_WARNING2) as mock_warn,
         ):
             screen._on_new_asset()
@@ -1322,10 +1342,12 @@ class TestDeletePersona:
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        target = lib / "personas" / "developer"
+        target = lib / "personas" / "core" / "developer"
         assert target.is_dir()
+        # Per ADR-014, personas live two levels deep (Personas → tier → name).
         personas_item = screen.tree.topLevelItem(0)
-        screen.tree.setCurrentItem(personas_item.child(0))
+        dev_item = personas_item.child(0).child(0)  # core → developer
+        screen.tree.setCurrentItem(dev_item)
         with patch(_MSG_QUESTION2, return_value=QMessageBox.StandardButton.Yes):
             screen._on_delete_asset()
         assert not target.exists()
@@ -1334,9 +1356,10 @@ class TestDeletePersona:
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        target = lib / "personas" / "developer"
+        target = lib / "personas" / "core" / "developer"
         personas_item = screen.tree.topLevelItem(0)
-        screen.tree.setCurrentItem(personas_item.child(0))
+        dev_item = personas_item.child(0).child(0)  # core → developer
+        screen.tree.setCurrentItem(dev_item)
         with patch(_MSG_QUESTION2, return_value=QMessageBox.StandardButton.No):
             screen._on_delete_asset()
         assert target.is_dir()
@@ -1346,7 +1369,8 @@ class TestDeletePersona:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         personas_item = screen.tree.topLevelItem(0)
-        screen.tree.setCurrentItem(personas_item.child(0))
+        dev_item = personas_item.child(0).child(0)  # core → developer
+        screen.tree.setCurrentItem(dev_item)
         with patch(
             _MSG_QUESTION2, return_value=QMessageBox.StandardButton.No
         ) as mock_q:
@@ -1361,12 +1385,19 @@ class TestDeletePersona:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         personas_item = screen.tree.topLevelItem(0)
+        # One tier (core), with one developer under it.
         assert personas_item.childCount() == 1
-        screen.tree.setCurrentItem(personas_item.child(0))
+        tier_item = personas_item.child(0)
+        assert tier_item.childCount() == 1
+        screen.tree.setCurrentItem(tier_item.child(0))  # developer
         with patch(_MSG_QUESTION2, return_value=QMessageBox.StandardButton.Yes):
             screen._on_delete_asset()
+        # After deletion the core tier has no children; the tier dir itself
+        # remains but is empty.
         personas_item = screen.tree.topLevelItem(0)
-        assert personas_item.childCount() == 0
+        if personas_item.childCount() == 0:
+            return  # full pruning is acceptable
+        assert personas_item.child(0).childCount() == 0
 
 
 # ---------------------------------------------------------------------------
@@ -1388,7 +1419,10 @@ class TestPersonaButtonState:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         personas_item = screen.tree.topLevelItem(0)
-        screen.tree.setCurrentItem(personas_item.child(0))
+        # Per ADR-014: the deletable persona node is a grandchild of
+        # ``Personas`` (the immediate child is the tier dir).
+        dev_item = personas_item.child(0).child(0)  # core → developer
+        screen.tree.setCurrentItem(dev_item)
         assert screen.delete_button.isEnabled()
 
 
@@ -1404,7 +1438,8 @@ class TestPersonaFileEditing:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        # Per ADR-014: Personas → tier → name → file.
+        dev_item = personas_item.child(0).child(0)
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "persona.md":
@@ -1417,7 +1452,7 @@ class TestPersonaFileEditing:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        dev_item = personas_item.child(0).child(0)  # core → developer
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "outputs.md":
@@ -1508,7 +1543,7 @@ class TestTemplateButtonState:
         screen.set_library_root(lib)
         # Navigate to Personas > developer > templates
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        dev_item = personas_item.child(0).child(0)  # core → developer
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "templates":
@@ -1522,7 +1557,7 @@ class TestTemplateButtonState:
         screen.set_library_root(lib)
         # Navigate to Personas > developer > templates > impl.md.j2
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        dev_item = personas_item.child(0).child(0)  # core → developer
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "templates":
@@ -1562,7 +1597,7 @@ class TestCreateTemplate:
         screen.set_library_root(lib)
         # Navigate to Personas > developer > templates
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        dev_item = personas_item.child(0).child(0)  # core → developer
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "templates":
@@ -1570,7 +1605,7 @@ class TestCreateTemplate:
                 break
         with patch(_INPUT_DIALOG, return_value=("pr-review", True)):
             screen._on_new_asset()
-        created = lib / "personas" / "developer" / "templates" / "pr-review.md"
+        created = lib / "personas" / "core" / "developer" / "templates" / "pr-review.md"
         assert created.is_file()
         content = created.read_text(encoding="utf-8")
         assert "# Pr Review" in content
@@ -1664,7 +1699,7 @@ class TestCreateTemplate:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        dev_item = personas_item.child(0).child(0)  # core → developer
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "templates":
@@ -1709,11 +1744,11 @@ class TestDeleteTemplate:
         lib = _create_library(tmp_path)
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
-        target = lib / "personas" / "developer" / "templates" / "impl.md.j2"
+        target = lib / "personas" / "core" / "developer" / "templates" / "impl.md.j2"
         assert target.is_file()
         # Navigate to Personas > developer > templates > impl.md.j2
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        dev_item = personas_item.child(0).child(0)  # core → developer
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "templates":
@@ -1795,7 +1830,7 @@ class TestTemplateVisualDistinction:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        dev_item = personas_item.child(0).child(0)  # core → developer
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "templates":
@@ -2232,7 +2267,7 @@ class TestExpertiseRead:
 def _select_persona_file(screen, filename="persona.md"):
     """Navigate the tree to Personas > developer > <filename> and select it."""
     personas_item = screen.tree.topLevelItem(0)
-    dev_item = personas_item.child(0)
+    dev_item = personas_item.child(0).child(0)  # core → developer
     for i in range(dev_item.childCount()):
         child = dev_item.child(i)
         if child.text(0) == filename:
@@ -2279,7 +2314,7 @@ class TestPersonaUpdate:
         screen.editor_widget.editor.setPlainText(new_content)
         result = screen.editor_widget.save()
         assert result is True
-        disk_content = (lib / "personas" / "developer" / "persona.md").read_text(
+        disk_content = (lib / "personas" / "core" / "developer" / "persona.md").read_text(
             encoding="utf-8"
         )
         assert disk_content == new_content
@@ -2470,12 +2505,12 @@ class TestHookUpdate:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         _select_persona_file(screen, "persona.md")
-        original_disk = (lib / "personas" / "developer" / "persona.md").read_text(
+        original_disk = (lib / "personas" / "core" / "developer" / "persona.md").read_text(
             encoding="utf-8"
         )
         screen.editor_widget.editor.setPlainText("# Changed")
         screen.editor_widget.revert()
-        after_disk = (lib / "personas" / "developer" / "persona.md").read_text(
+        after_disk = (lib / "personas" / "core" / "developer" / "persona.md").read_text(
             encoding="utf-8"
         )
         assert after_disk == original_disk
@@ -2601,7 +2636,7 @@ class TestCommandUpdate:
         new_content = "# Updated Outputs\n\nDeliverables list."
         screen.editor_widget.editor.setPlainText(new_content)
         screen.editor_widget.save()
-        disk = (lib / "personas" / "developer" / "outputs.md").read_text(
+        disk = (lib / "personas" / "core" / "developer" / "outputs.md").read_text(
             encoding="utf-8"
         )
         assert disk == new_content
@@ -2622,7 +2657,7 @@ class TestCommandUpdate:
         screen = LibraryManagerScreen()
         screen.set_library_root(lib)
         _select_persona_file(screen, "persona.md")
-        target = lib / "personas" / "developer" / "persona.md"
+        target = lib / "personas" / "core" / "developer" / "persona.md"
         # First edit and save
         screen.editor_widget.editor.setPlainText("# Version 1")
         screen.editor_widget.save()
@@ -3142,7 +3177,7 @@ class TestWorkflowUpdate:
         screen.set_library_root(lib)
         # Navigate to Personas > developer > templates > impl.md.j2
         personas_item = screen.tree.topLevelItem(0)
-        dev_item = personas_item.child(0)
+        dev_item = personas_item.child(0).child(0)  # core → developer
         for i in range(dev_item.childCount()):
             child = dev_item.child(i)
             if child.text(0) == "templates":
@@ -3159,7 +3194,7 @@ class TestWorkflowUpdate:
         result = screen.editor_widget.save()
         assert result is True
         assert screen.editor_widget.dirty is False
-        target = lib / "personas" / "developer" / "templates" / "impl.md.j2"
+        target = lib / "personas" / "core" / "developer" / "templates" / "impl.md.j2"
         assert target.read_text(encoding="utf-8") == "# Updated persona template"
 
     def test_file_label_shows_template_path(self, tmp_path: Path):

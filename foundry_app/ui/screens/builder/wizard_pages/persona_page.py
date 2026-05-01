@@ -3,12 +3,16 @@
 Displays all personas from the library index with checkboxes for multi-select.
 Each persona row shows name/role and expandable per-persona config options
 (include agent, include templates, strictness level).
+
+Per ADR-014, personas are split into two tiers — ``core`` (the default team)
+and ``extended`` (opt-in specialists). The page renders one collapsible
+section per tier with a brief explainer instead of the per-persona-category
+grouping used by earlier versions.
 """
 
 from __future__ import annotations
 
 import logging
-from collections import defaultdict
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -27,9 +31,12 @@ from foundry_app.core.models import (
     LibraryIndex,
     PersonaInfo,
     PersonaSelection,
+    Severity,
     Strictness,
     TeamConfig,
+    _persona_dirname,
 )
+from foundry_app.services.validator import validate_contract_graph
 from foundry_app.ui.theme import (
     ACCENT_PRIMARY,
     ACCENT_SECONDARY_MUTED,
@@ -44,6 +51,8 @@ from foundry_app.ui.theme import (
     RADIUS_MD,
     SPACE_MD,
     STATUS_ERROR,
+    STATUS_SUCCESS,
+    STATUS_WARNING,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
@@ -181,7 +190,7 @@ class CollapsibleGroupBox(QFrame):
     def __init__(self, title: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._title = title
-        self._expanded = True
+        self._expanded = False
         self.setStyleSheet(
             f"QFrame#collapsible-group {{"
             f"  border: 1px solid {BORDER_DEFAULT};"
@@ -195,18 +204,19 @@ class CollapsibleGroupBox(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Header button with chevron
-        self._toggle_btn = QPushButton(f"▼  {title}")
+        # Header button with chevron (collapsed by default)
+        self._toggle_btn = QPushButton(f"▶  {title}")
         self._toggle_btn.setStyleSheet(COLLAPSE_BUTTON_STYLE)
         self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._toggle_btn.clicked.connect(self.toggle)
         layout.addWidget(self._toggle_btn)
 
-        # Content container
+        # Content container (hidden until user expands)
         self._content = QWidget()
         self._content_layout = QVBoxLayout(self._content)
         self._content_layout.setContentsMargins(8, 0, 8, 8)
         self._content_layout.setSpacing(8)
+        self._content.setVisible(False)
         layout.addWidget(self._content)
 
     def title(self) -> str:
@@ -248,15 +258,6 @@ class PersonaCard(QFrame):
 
         self._build_ui()
 
-    def mousePressEvent(self, event):  # noqa: N802
-        """Toggle the main checkbox when clicking anywhere on the card background."""
-        # Let child interactive widgets (sub-checkboxes, combos) handle their own clicks
-        child = self.childAt(event.pos())
-        if isinstance(child, (QCheckBox, QComboBox)):
-            super().mousePressEvent(event)
-            return
-        self._checkbox.setChecked(not self._checkbox.isChecked())
-
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
@@ -271,16 +272,22 @@ class PersonaCard(QFrame):
         self._checkbox.stateChanged.connect(self._on_toggled)
         top_row.addWidget(self._checkbox)
 
+        # Persona descriptions are keyed by bare directory name; strip any
+        # ADR-014 ``extended/`` prefix before lookup so the same dict serves
+        # both tiers.
+        lookup_key = _persona_dirname(self._persona.id)
         display_name, role_desc = PERSONA_DESCRIPTIONS.get(
-            self._persona.id, (self._persona.id.replace("-", " ").title(), "")
+            lookup_key, (lookup_key.replace("-", " ").title(), "")
         )
 
         name_label = QLabel(display_name)
         name_label.setStyleSheet(LABEL_STYLE)
+        name_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         top_row.addWidget(name_label)
 
         role_label = QLabel(f"— {role_desc}" if role_desc else "")
         role_label.setStyleSheet(DESC_STYLE)
+        role_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         top_row.addWidget(role_label, stretch=1)
 
         # Template count badge
@@ -288,6 +295,7 @@ class PersonaCard(QFrame):
         if tmpl_count > 0:
             badge = QLabel(f"{tmpl_count} template{'s' if tmpl_count != 1 else ''}")
             badge.setStyleSheet(TEMPLATES_STYLE)
+            badge.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             top_row.addWidget(badge)
 
         layout.addLayout(top_row)
@@ -299,6 +307,7 @@ class PersonaCard(QFrame):
 
         agent_label = QLabel("Agent file:")
         agent_label.setStyleSheet(CONFIG_LABEL_STYLE)
+        agent_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._agent_check = QCheckBox()
         self._agent_check.setChecked(True)
         config_row.addWidget(agent_label)
@@ -306,6 +315,7 @@ class PersonaCard(QFrame):
 
         templates_label = QLabel("Templates:")
         templates_label.setStyleSheet(CONFIG_LABEL_STYLE)
+        templates_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._templates_check = QCheckBox()
         self._templates_check.setChecked(True)
         config_row.addWidget(templates_label)
@@ -313,6 +323,7 @@ class PersonaCard(QFrame):
 
         strictness_label = QLabel("Strictness:")
         strictness_label.setStyleSheet(CONFIG_LABEL_STYLE)
+        strictness_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._strictness_combo = QComboBox()
         self._strictness_combo.addItems(["light", "standard", "strict"])
         self._strictness_combo.setCurrentText("standard")
@@ -322,6 +333,19 @@ class PersonaCard(QFrame):
 
         config_row.addStretch(1)
         layout.addLayout(config_row)
+
+    def mousePressEvent(self, event) -> None:  # type: ignore[override]
+        """Toggle the selection checkbox when the card area is left-clicked.
+
+        Interactive child widgets (checkbox, combo box) absorb their own
+        clicks before this handler fires; the text labels are marked
+        ``WA_TransparentForMouseEvents`` so clicks on them fall through here.
+        """
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._checkbox.toggle()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
     # -- State access -------------------------------------------------------
 
@@ -385,8 +409,10 @@ class PersonaSelectionPage(QWidget):
     ) -> None:
         super().__init__(parent)
         self._cards: dict[str, PersonaCard] = {}
-        self._category_groups: dict[str, CollapsibleGroupBox] = {}
+        self._tier_groups: dict[str, CollapsibleGroupBox] = {}
         self._warning_label: QLabel | None = None
+        self._coherence_label: QLabel | None = None
+        self._library_index: LibraryIndex | None = None
         self._build_ui()
         if library_index is not None:
             self.load_personas(library_index)
@@ -415,6 +441,17 @@ class PersonaSelectionPage(QWidget):
         self._warning_label.setStyleSheet(WARNING_STYLE)
         self._warning_label.setVisible(False)
         outer.addWidget(self._warning_label)
+
+        # Team-coherence indicator (BEAN-274). Reflects the contract-graph
+        # state of the currently-selected team: green = all consumes
+        # satisfied, amber = orphan produces, red = missing producer.
+        # Hidden until a library is loaded so the empty-state flow is
+        # unchanged.
+        self._coherence_label = QLabel("")
+        self._coherence_label.setObjectName("coherence-indicator")
+        self._coherence_label.setWordWrap(True)
+        self._coherence_label.setVisible(False)
+        outer.addWidget(self._coherence_label)
 
         # Empty-state label (visible until library is loaded)
         self._empty_label = QLabel(
@@ -446,50 +483,84 @@ class PersonaSelectionPage(QWidget):
     # -- Public API ---------------------------------------------------------
 
     def load_personas(self, library_index: LibraryIndex) -> None:
-        """Populate the page with personas from a LibraryIndex, grouped by category."""
+        """Populate the page with personas from a LibraryIndex, grouped by tier.
+
+        Per ADR-014, the wizard renders exactly two collapsible sections —
+        **Core team** (the closed default five) and **Extended specialists**
+        (opt-in). Each section is keyed by ``PersonaInfo.tier`` and ordered
+        core-first.
+        """
+        # Cache the library index for the team-coherence indicator (BEAN-274).
+        self._library_index = library_index
+
         # Clear existing cards and group boxes
         for card in self._cards.values():
             card.deleteLater()
         self._cards.clear()
 
-        for group_box in self._category_groups.values():
+        for group_box in self._tier_groups.values():
             self._card_layout.removeWidget(group_box)
             group_box.deleteLater()
-        self._category_groups.clear()
+        self._tier_groups.clear()
 
-        # Group personas by category
-        groups: dict[str, list[PersonaInfo]] = defaultdict(list)
+        # Group personas by tier, preserving alphabetical order within each.
+        core_personas: list[PersonaInfo] = []
+        extended_personas: list[PersonaInfo] = []
         for persona in library_index.personas:
-            cat = persona.category.strip() if persona.category else ""
-            if not cat:
-                cat = "Other"
-            groups[cat].append(persona)
+            if persona.tier == "core":
+                core_personas.append(persona)
+            else:
+                extended_personas.append(persona)
+        core_personas.sort(key=lambda p: p.id)
+        extended_personas.sort(key=lambda p: p.id)
 
-        # Sort category names alphabetically, with "Other" always last
-        sorted_cats = sorted(
-            groups.keys(), key=lambda c: (c == "Other", c)
-        )
+        # Section descriptors: (tier-key, title, explainer, personas).
+        sections: list[tuple[str, str, str, list[PersonaInfo]]] = [
+            (
+                "core",
+                "Core team",
+                "The default five — every project starts here unless you "
+                "explicitly select otherwise.",
+                core_personas,
+            ),
+            (
+                "extended",
+                "Extended specialists",
+                "Opt-in roles for security, compliance, data, mobile, and "
+                "other specialised work. Pick what your project needs.",
+                extended_personas,
+            ),
+        ]
 
         insert_idx = 0
-        for cat_name in sorted_cats:
-            personas_in_cat = groups[cat_name]
+        for tier_key, title, explainer, personas_in_tier in sections:
+            if not personas_in_tier:
+                continue
             group_box = CollapsibleGroupBox(
-                f"{cat_name} ({len(personas_in_cat)})"
+                f"{title} ({len(personas_in_tier)})"
             )
+            explainer_label = QLabel(explainer)
+            explainer_label.setStyleSheet(SUBHEADING_STYLE)
+            explainer_label.setWordWrap(True)
+            group_box.content_layout.addWidget(explainer_label)
 
-            for persona in personas_in_cat:
+            for persona in personas_in_tier:
                 card = PersonaCard(persona)
                 card.toggled.connect(self._on_card_toggled)
                 group_box.content_layout.addWidget(card)
                 self._cards[persona.id] = card
 
             self._card_layout.insertWidget(insert_idx, group_box)
-            self._category_groups[cat_name] = group_box
+            self._tier_groups[tier_key] = group_box
             insert_idx += 1
 
         self._empty_label.setVisible(len(self._cards) == 0)
-        logger.info("Loaded %d persona cards in %d categories",
-                     len(self._cards), len(self._category_groups))
+        logger.info(
+            "Loaded %d persona cards across %d tier groups",
+            len(self._cards),
+            len(self._tier_groups),
+        )
+        self._update_coherence_indicator()
 
     def get_team_config(self) -> TeamConfig:
         """Return a TeamConfig from currently selected personas."""
@@ -512,6 +583,7 @@ class PersonaSelectionPage(QWidget):
                 card.is_selected = False
 
         self._update_warning()
+        self._update_coherence_indicator()
 
     def selected_count(self) -> int:
         """Return the number of currently selected personas."""
@@ -527,17 +599,156 @@ class PersonaSelectionPage(QWidget):
         return dict(self._cards)
 
     @property
+    def tier_groups(self) -> dict[str, CollapsibleGroupBox]:
+        """Access tier group boxes keyed by ``"core"`` / ``"extended"``."""
+        return dict(self._tier_groups)
+
+    @property
     def category_groups(self) -> dict[str, CollapsibleGroupBox]:
-        """Access category group boxes by name (for testing)."""
-        return dict(self._category_groups)
+        """Backwards-compat alias for :pyattr:`tier_groups`.
+
+        Older tests refer to this attribute by its category-era name; the
+        underlying grouping is now by tier (ADR-014).
+        """
+        return self.tier_groups
 
     # -- Slots --------------------------------------------------------------
 
     def _on_card_toggled(self, persona_id: str, checked: bool) -> None:
         logger.debug("Persona %s toggled: %s", persona_id, checked)
         self._update_warning()
+        self._update_coherence_indicator()
         self.selection_changed.emit()
 
     def _update_warning(self) -> None:
         if self._warning_label is not None:
             self._warning_label.setVisible(not self.is_valid())
+
+    # -- Team-coherence indicator (BEAN-274) -------------------------------
+
+    def _update_coherence_indicator(self) -> None:
+        """Refresh the team-coherence badge from the current selection.
+
+        Runs :func:`validate_contract_graph` against whatever personas are
+        currently checked and renders one of three states:
+
+        - 🟢 — all consumes satisfied, no orphan produces, no missing
+          producers
+        - 🟡 — at least one advisory warning (missing-producer or
+          orphan-produces). Per BEAN-292, ``missing-producer`` is a
+          WARNING (not ERROR): a generalist team that absorbs the
+          producer's role is a valid composition.
+        - 🔴 — at least one ERROR-severity finding from
+          ``validate_contract_graph``. The function itself emits no
+          ERRORs by default after BEAN-292, so this state is reserved for
+          future contract-graph errors and remains reachable via the
+          severity check below.
+
+        Hidden when no library is loaded or no personas are selected (the
+        existing "select at least one persona" warning covers that state).
+
+        Headline copy uses a unified "Team check" line with sub-counts so
+        a single message format covers both ``missing-producer`` and
+        ``orphan-produces`` warnings (BEAN-292 task 01 dispatch choice:
+        unified-headline-with-sub-counts).
+        """
+        label = self._coherence_label
+        if label is None:
+            return
+
+        if self._library_index is None:
+            label.setVisible(False)
+            return
+
+        selected_ids = [
+            pid for pid, card in self._cards.items() if card.is_selected
+        ]
+        if not selected_ids:
+            label.setVisible(False)
+            return
+
+        team: list[PersonaInfo] = []
+        for pid in selected_ids:
+            info = self._library_index.persona_by_id(pid)
+            if info is not None:
+                team.append(info)
+
+        result = validate_contract_graph(team, self._library_index)
+        errors = [m for m in result.messages if m.severity == Severity.ERROR]
+        warnings = [
+            m for m in result.messages if m.severity == Severity.WARNING
+        ]
+        error_count = len(errors)
+        warning_count = len(warnings)
+
+        if error_count > 0:
+            header = (
+                f"\U0001f534  Team check: {error_count} blocking "
+                f"issue{'s' if error_count != 1 else ''} — your team can't "
+                f"generate as composed."
+            )
+            findings = [m.message for m in errors]
+            color = STATUS_ERROR
+        elif warning_count > 0:
+            missing_count = sum(
+                1 for m in warnings if m.code == "missing-producer"
+            )
+            orphan_count = sum(
+                1 for m in warnings if m.code == "orphan-produces"
+            )
+            other_count = warning_count - missing_count - orphan_count
+            sub_counts: list[str] = []
+            if missing_count:
+                sub_counts.append(
+                    f"{missing_count} missing "
+                    f"role{'s' if missing_count != 1 else ''}"
+                )
+            if orphan_count:
+                sub_counts.append(
+                    f"{orphan_count} unused "
+                    f"output{'s' if orphan_count != 1 else ''}"
+                )
+            if other_count:
+                sub_counts.append(
+                    f"{other_count} other "
+                    f"note{'s' if other_count != 1 else ''}"
+                )
+            detail = ", ".join(sub_counts) if sub_counts else (
+                f"{warning_count} team "
+                f"note{'s' if warning_count != 1 else ''}"
+            )
+            header = (
+                f"\U0001f7e1  Team check: {detail} — your team will still "
+                f"generate, but consider the suggestions below."
+            )
+            findings = [m.message for m in warnings]
+            color = STATUS_WARNING
+        else:
+            header = (
+                "\U0001f7e2  Team check: looks good — every output has a "
+                "reader and every need has a supplier."
+            )
+            findings = []
+            color = STATUS_SUCCESS
+
+        # Cap visible findings at 5 to keep the indicator vertically sane;
+        # surplus collapses to a single "+N more" line so the user knows
+        # there's more to see.
+        max_visible = 5
+        visible = findings[:max_visible]
+        overflow = len(findings) - len(visible)
+        bullet_lines = [f"• {msg}" for msg in visible]
+        if overflow > 0:
+            bullet_lines.append(f"… +{overflow} more")
+
+        text = header
+        if bullet_lines:
+            text = header + "\n" + "\n".join(bullet_lines)
+
+        label.setText(text)
+        label.setStyleSheet(
+            f"color: {color}; font-size: {FONT_SIZE_SM}px; "
+            f"font-weight: {FONT_WEIGHT_BOLD};"
+        )
+        label.setWordWrap(True)
+        label.setVisible(True)

@@ -46,3 +46,7 @@ All operations not in the allowed list, including:
 | `baseline` | No | — |
 | `hardened` | Yes | enforcing |
 | `regulated` | Yes | enforcing |
+
+## Conflicts With
+
+- `az-limited-ops` — the read-only guard blocks every mutating verb that `az-limited-ops` is supposed to allow; enabling both neutralizes deployment operations.

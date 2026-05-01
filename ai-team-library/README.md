@@ -13,33 +13,57 @@ A library of reusable building blocks -- personas, templates, expertise, and wor
 
 ```
 ai-team-library/
-  personas/           # 13 role constitutions (persona.md, outputs.md, prompts.md, templates/)
+  personas/
+    core/             # 5 default personas (every team includes these by default)
+    extended/         # 19 opt-in specialist personas
   expertise/          # 39 expertise conventions and skill files
+  contracts/          # Artifact-type registry consumed by the contract graph (BEAN-273 / ADR-013)
   templates/shared/   # 7 cross-persona templates
   workflows/          # Pipeline and taxonomy reference docs
   claude/             # Claude Code integration (commands, skills, hooks)
   README.md           # This file
 ```
 
+## Persona Contracts
+
+Each core persona declares machine-readable `produces:` / `consumes:` artifact types in a sibling `contracts.yml` next to `persona.md` (e.g. `personas/core/developer/contracts.yml`). Names refer to entries in `contracts/artifact-types.yml`. Generated projects emit a flat `contracts:` block at the bottom of `ai/team/composition.yml` describing the team's contract graph; Foundry's compose-time validator hard-fails standard generations whose `consumes:` cannot be satisfied by some persona on the team. See ADR-013 for the format and ADR-015 for the cluster architecture.
+
 ## Personas
 
 Each persona directory contains a constitution (`persona.md`), expected outputs (`outputs.md`), prompt patterns (`prompts.md`), and a `templates/` directory with role-specific templates.
 
-| Persona                   | Mission                                                                 |
-|---------------------------|-------------------------------------------------------------------------|
-| Team Lead                 | Orchestrate the team: decompose work, route tasks, enforce stage gates  |
-| BA                        | Translate business needs into precise, actionable, testable requirements|
-| Architect                 | Own system design, boundaries, NFRs, and architectural decisions        |
-| Developer                 | Deliver clean, tested, incremental implementations                      |
-| Tech-QA                   | Verify acceptance criteria, catch edge cases, prevent regressions       |
-| Code Quality Reviewer     | Review code for readability, correctness, and adherence to standards    |
-| DevOps / Release Engineer | Own CI/CD pipelines, environments, deployments, and rollback            |
-| Security Engineer         | Identify, assess, and mitigate security risks via threat modeling       |
-| Compliance / Risk Analyst | Map controls, gather evidence, manage regulatory risk                   |
-| Researcher / Librarian    | Find references, compare options, deliver curated research              |
-| Technical Writer          | Produce READMEs, runbooks, API docs, and onboarding guides              |
-| UX / UI Designer          | Shape user experience through flows, wireframes, and content design     |
-| Integrator / Merge Captain| Merge work from multiple personas into a conflict-free whole            |
+Personas are split into two tiers (see ADR-014):
+
+- **Core** — the default five. A composition that omits the `personas:` block automatically adopts this team. Reference each by its bare name (`developer`, `tech-qa`, …) in `composition.yml`.
+- **Extended** — opt-in specialists. Reference each with the `extended/` tier prefix in `composition.yml` (e.g. `extended/security-engineer`). Use these when the project actually needs the specialty; they are skipped by default.
+
+| Persona                   | Tier     | Reference id                       | Mission                                                                 |
+|---------------------------|----------|------------------------------------|-------------------------------------------------------------------------|
+| Team Lead                 | core     | `team-lead`                        | Orchestrate the team: decompose work, route tasks, enforce stage gates  |
+| BA                        | core     | `ba`                               | Translate business needs into precise, actionable, testable requirements|
+| Architect                 | core     | `architect`                        | Own system design, boundaries, NFRs, and architectural decisions        |
+| Developer                 | core     | `developer`                        | Deliver clean, tested, incremental implementations                      |
+| Tech-QA                   | core     | `tech-qa`                          | Verify acceptance criteria, catch edge cases, prevent regressions       |
+| Code Quality Reviewer     | extended | `extended/code-quality-reviewer`   | Review code for readability, correctness, and adherence to standards    |
+| DevOps / Release Engineer | extended | `extended/devops-release`          | Own CI/CD pipelines, environments, deployments, and rollback            |
+| Security Engineer         | extended | `extended/security-engineer`       | Identify, assess, and mitigate security risks via threat modeling       |
+| Compliance / Risk Analyst | extended | `extended/compliance-risk`         | Map controls, gather evidence, manage regulatory risk                   |
+| Researcher / Librarian    | extended | `extended/researcher-librarian`    | Find references, compare options, deliver curated research              |
+| Technical Writer          | extended | `extended/technical-writer`        | Produce READMEs, runbooks, API docs, and onboarding guides              |
+| UX / UI Designer          | extended | `extended/ux-ui-designer`          | Shape user experience through flows, wireframes, and content design     |
+| Integrator / Merge Captain| extended | `extended/integrator-merge-captain`| Merge work from multiple personas into a conflict-free whole            |
+| Change Management Lead    | extended | `extended/change-management`       | Plan organizational adoption and transition                             |
+| Customer Success Lead     | extended | `extended/customer-success`        | Customer onboarding, retention, satisfaction                            |
+| Data Analyst              | extended | `extended/data-analyst`            | KPI definition, dashboards, data-driven insights                        |
+| Data Engineer             | extended | `extended/data-engineer`           | Data pipelines, ETL, data infrastructure                                |
+| Data Scientist            | extended | `extended/data-scientist`          | Modeling, statistical inference, experiment design, scientific reporting|
+| Database Administrator    | extended | `extended/database-administrator`  | Database design, tuning, maintenance                                    |
+| Financial Operations      | extended | `extended/financial-operations`    | Cost estimation, budgeting, financial governance                        |
+| Legal Counsel             | extended | `extended/legal-counsel`           | Contract review, IP protection, regulatory compliance                   |
+| Mobile Developer          | extended | `extended/mobile-developer`        | Mobile app development, cross-platform delivery                         |
+| Platform SRE Engineer     | extended | `extended/platform-sre-engineer`   | Reliability engineering, observability, incident response               |
+| Product Owner             | extended | `extended/product-owner`           | Product vision, backlog prioritization, stakeholder management          |
+| Sales Engineer            | extended | `extended/sales-engineer`          | Technical demos, proof-of-concept, sales support                        |
 
 ## Expertise
 
@@ -59,6 +83,7 @@ Each expertise directory contains a `conventions.md` file defining domain standa
 | kotlin             | Kotlin language conventions, JVM interop          |
 | rust               | Rust language conventions, safety, cargo          |
 | swift              | Swift language conventions, Apple frameworks      |
+| r                  | R language conventions, tidyverse, renv, testing  |
 | react-native       | React Native mobile development patterns          |
 | flutter            | Flutter/Dart cross-platform development patterns  |
 | sql-dba            | SQL conventions, schema design, query patterns    |
@@ -120,11 +145,22 @@ The `claude/` directory contains integration files for Claude Code:
 - **skills/** -- Skill definitions that extend Claude's capabilities for the project
 - **hooks/** -- Lifecycle hooks that run at defined points during Claude Code operations
 
+### Orchestration cluster commands & skills (BEAN-270..278)
+
+| Command | Skill | Purpose |
+|---------|-------|---------|
+| `/spawn-task` | `claude/skills/spawn-task/SKILL.md` | Per-task supervisor-pattern dispatch — auto-detects tmux + worktree or invokes `Agent(subagent_type=...)` (BEAN-270, ADR-008). |
+| `/handoff` | `claude/skills/handoff/SKILL.md` | Typed handoff packet driven by sender `produces:` ∩ receiver `consumes:` and the artifact-type registry's required fields (BEAN-276). |
+| `/vdd` | `claude/skills/vdd/SKILL.md` | Programmatic VDD gate. Parses bean Acceptance Criteria, runs evidence checks (test/lint/file/manual), emits structured pass/fail report. `/merge-bean` blocks without a passing report (BEAN-277). |
+| `/orchestration-report` | `claude/skills/orchestration-report/SKILL.md` | Architecture-aware roll-up of per-bean Orchestration Telemetry (bounces, dispatch mode, contract violations, escape-hatch trend). Emits a one-paragraph verdict on whether the orchestration is paying off (BEAN-278). |
+
+The `claude/hooks/validate-task-inputs.py` hook (BEAN-272) blocks task dispatch when a task file's `Inputs:` is missing, empty, or contains only placeholders. Escape hatch: `Inputs: NONE (justified: <≥10 chars>)`.
+
 ## Contributing
 
 To extend the library with new building blocks:
 
-- **Add a persona:** Create a directory under `personas/` containing `persona.md`, `outputs.md`, `prompts.md`, and a `templates/` subdirectory with at least one template. Follow the structure and tone of existing personas.
+- **Add a persona:** New personas always land under `personas/extended/<name>/` — the core five are a closed set. Create the directory there with `persona.md`, `outputs.md`, `prompts.md`, and a `templates/` subdirectory containing at least one template. Reference the new persona from `composition.yml` as `extended/<name>`. Follow the structure and tone of existing personas.
 - **Add expertise:** Create a directory under `expertise/` with `conventions.md` and any skill files. Name the directory after the domain (lowercase, hyphenated).
 - **Add a shared template:** Place a new `.md` file in `templates/shared/`. Include a metadata table, placeholder fields, and a Definition of Done checklist.
 - **Add a workflow:** Place a new `.md` document in `workflows/`. Use it as a reference document, not a template.

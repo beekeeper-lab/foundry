@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import PurePosixPath
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -52,6 +52,34 @@ def _validate_safe_id(v: str, field_name: str) -> str:
     if ".." in v or "/" in v or "\\" in v:
         raise ValueError(
             f"{field_name} must not contain '..', '/', or '\\', got: {v!r}"
+        )
+    return v
+
+
+def _validate_persona_id(v: str) -> str:
+    """Validate a persona id per ADR-014.
+
+    Core personas use bare names (``developer``); extended personas use a
+    single ``extended/<name>`` tier prefix. No other slash-bearing form is
+    accepted; ``..`` and ``\\`` are always rejected.
+    """
+    if ".." in v or "\\" in v:
+        raise ValueError(
+            f"persona id must not contain '..' or '\\', got: {v!r}"
+        )
+    if "/" not in v:
+        return v
+    # Slash-bearing — must be exactly the ADR-014 'extended/<name>' form.
+    if not v.startswith("extended/"):
+        raise ValueError(
+            f"persona id must be a bare core name or 'extended/<name>', "
+            f"got: {v!r}"
+        )
+    leaf = v[len("extended/"):]
+    if not leaf or "/" in leaf or ".." in leaf:
+        raise ValueError(
+            f"persona id 'extended/<name>' name must be non-empty and "
+            f"contain no further '/', got: {v!r}"
         )
     return v
 
@@ -179,13 +207,17 @@ class PersonaSelection(BaseModel):
 
     id: str = Field(
         ..., min_length=1, max_length=100,
-        description="Persona identifier (e.g. 'developer')",
+        description=(
+            "Persona identifier. Core personas use the bare directory name "
+            "(e.g. 'developer'); extended personas are tier-prefixed "
+            "(e.g. 'extended/security-engineer'). See ADR-014."
+        ),
     )
 
     @field_validator("id")
     @classmethod
     def validate_id(cls, v: str) -> str:
-        return _validate_safe_id(v, "persona id")
+        return _validate_persona_id(v)
     include_agent: bool = Field(default=True, description="Generate .claude/agents/ file")
     include_templates: bool = Field(default=True, description="Copy persona templates")
     strictness: Strictness = Field(
@@ -382,6 +414,14 @@ class GenerationOptions(BaseModel):
     )
     write_manifest: bool = Field(default=True, description="Write manifest.json")
     write_diff_report: bool = Field(default=False, description="Write diff-report.md")
+    include_media_skills: bool = Field(
+        default=False,
+        description=(
+            "Stamp IMAGE-PLAN.md and NARRATION-PLAN.md skeletons at the project "
+            "root for projects that will use the generate-image and generate-audio "
+            "skills. Plan-first discipline; see BEAN-282/283 and BEAN-284."
+        ),
+    )
     claude_kit_url: str | None = Field(
         default=None,
         description="Git URL for claude-kit subtree repo. When set, .claude/ is added via "
@@ -540,11 +580,66 @@ class PersonaInfo(BaseModel):
 
     id: str = Field(..., min_length=1)
     path: str = Field(..., description="Path to persona directory")
+    tier: Literal["core", "extended"] = Field(
+        default="core",
+        description=(
+            "Persona tier per ADR-014. 'core' personas are the closed default "
+            "team (bare ids in composition.yml); 'extended' personas are opt-in "
+            "specialists (referenced as 'extended/<name>')."
+        ),
+    )
     has_persona_md: bool = False
     has_outputs_md: bool = False
     has_prompts_md: bool = False
     templates: list[str] = Field(default_factory=list, description="Template filenames")
     category: str = Field(default="", description="Persona category for grouped display")
+    produces: list[str] = Field(
+        default_factory=list,
+        description="Artifact-type names this persona produces. See ADR-013.",
+    )
+    consumes: list[str] = Field(
+        default_factory=list,
+        description="Artifact-type names this persona consumes. See ADR-013.",
+    )
+
+    @property
+    def dirname(self) -> str:
+        """Leaf directory name for the persona (the on-disk folder name).
+
+        Strips the ``extended/`` tier prefix from the id; for core personas
+        the dirname equals the id. Use this when constructing filesystem
+        paths derived from the persona (members files, agent files,
+        ``ai/outputs/<dirname>/``, etc.).
+        """
+        return self.id.split("/", 1)[1] if self.id.startswith("extended/") else self.id
+
+
+def _persona_dirname(persona_id: str) -> str:
+    """Return the on-disk directory name for a persona id (ADR-014).
+
+    Mirrors :pyattr:`PersonaInfo.dirname` but works on a raw id string —
+    useful when only the id from ``PersonaSelection`` is in scope.
+    """
+    return (
+        persona_id.split("/", 1)[1]
+        if persona_id.startswith("extended/")
+        else persona_id
+    )
+
+
+class ArtifactTypeInfo(BaseModel):
+    """Metadata about an artifact type defined in the contracts registry.
+
+    Loaded from ``ai-team-library/contracts/artifact-types.yml``. Each entry
+    declares the canonical ``name`` referenced by per-persona ``contracts.yml``
+    ``produces:`` / ``consumes:`` lists. See ADR-013.
+    """
+
+    name: str = Field(..., min_length=1)
+    description: str = ""
+    format: str = "markdown"  # markdown | yaml | json
+    required_fields: list[str] = Field(default_factory=list)
+    template_path: str | None = None
 
 
 class ExpertiseInfo(BaseModel):
@@ -554,6 +649,14 @@ class ExpertiseInfo(BaseModel):
     path: str = Field(..., description="Path to expertise directory")
     files: list[str] = Field(default_factory=list, description="Convention doc filenames")
     category: str = Field(default="", description="Expertise category for grouped display")
+    applies_to: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Persona IDs this expertise should be inlined into at compile time. "
+            "Empty list = applies to every persona (preserves pre-BEAN-259 behavior). "
+            "See ADR-012."
+        ),
+    )
 
 
 class HookPackInfo(BaseModel):
@@ -563,6 +666,18 @@ class HookPackInfo(BaseModel):
     path: str = Field(..., description="Path to hook pack directory")
     files: list[str] = Field(default_factory=list, description="Hook policy filenames")
     category: str = Field(default="", description="Hook category (git, az, code-quality)")
+    conflicts_with: list[str] = Field(
+        default_factory=list,
+        description="Ids of hook packs that semantically conflict with this one",
+    )
+    posture_compatibility: dict[str, dict[str, str]] = Field(
+        default_factory=dict,
+        description=(
+            "Posture → {included, default_mode} as parsed from the pack's "
+            "## Posture Compatibility table. Included values are raw "
+            "(e.g. 'Yes', 'No', 'Optional'); 'No' marks incompatibility."
+        ),
+    )
 
 
 class LibraryIndex(BaseModel):
@@ -572,6 +687,13 @@ class LibraryIndex(BaseModel):
     personas: list[PersonaInfo] = Field(default_factory=list)
     expertise: list[ExpertiseInfo] = Field(default_factory=list)
     hook_packs: list[HookPackInfo] = Field(default_factory=list)
+    artifact_types: list[ArtifactTypeInfo] = Field(
+        default_factory=list,
+        description=(
+            "Artifact types loaded from ai-team-library/contracts/"
+            "artifact-types.yml. See ADR-013."
+        ),
+    )
 
     def persona_by_id(self, persona_id: str) -> PersonaInfo | None:
         return next((p for p in self.personas if p.id == persona_id), None)
@@ -581,3 +703,6 @@ class LibraryIndex(BaseModel):
 
     def hook_pack_by_id(self, pack_id: str) -> HookPackInfo | None:
         return next((h for h in self.hook_packs if h.id == pack_id), None)
+
+    def artifact_type_by_name(self, name: str) -> ArtifactTypeInfo | None:
+        return next((a for a in self.artifact_types if a.name == name), None)

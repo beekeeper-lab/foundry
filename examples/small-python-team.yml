@@ -13,8 +13,19 @@ expertise:
     order: 20
 
 team:
+  # All five core personas are included so the contract graph (BEAN-274)
+  # is closed: every consumed artifact-type has a producer on the team.
+  # Removing ba or architect will trip the compose-time validator.
   personas:
     - id: team-lead
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: ba
+      include_agent: true
+      include_templates: true
+      strictness: standard
+    - id: architect
       include_agent: true
       include_templates: true
       strictness: standard
@@ -26,7 +37,7 @@ team:
       include_agent: true
       include_templates: true
       strictness: standard
-    - id: code-quality-reviewer
+    - id: extended/code-quality-reviewer
       include_agent: true
       include_templates: true
       strictness: standard

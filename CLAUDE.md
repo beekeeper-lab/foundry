@@ -33,11 +33,12 @@ A **Bean** is a unit of work (feature, enhancement, bug fix, or epic). Beans liv
 2. User reviews and approves beans (status: `Approved`)
 3. Team Lead picks approved beans from the backlog (`ai/beans/_index.md`)
 4. Team Lead decomposes into tasks. Default wave: Developer → Tech-QA. BA and Architect are opt-in when criteria are met. Tech-QA is mandatory for every bean.
-5. Each persona claims tasks, produces outputs, creates handoffs
-6. Team Lead verifies outputs against acceptance criteria
-7. Bean marked Done
+5. Team Lead dispatches each task with `/spawn-task` (preferred per-task dispatch — supervisor pattern, ADR-008). Each task's `Inputs:` is enforced at dispatch by `validate-task-inputs.py` (BEAN-272).
+6. Each persona produces typed artifacts per its `contracts.yml` (BEAN-273) and hands off to the next persona via `/handoff` (typed packets, BEAN-276).
+7. Before merge, `/vdd <bean-id>` runs the programmatic VDD gate (BEAN-277); `/merge-bean` refuses to merge without a passing report.
+8. Bean marked Done; per-bean Orchestration Telemetry rolls up via `/orchestration-report` (BEAN-278).
 
-See `ai/context/bean-workflow.md` for the full lifecycle specification.
+See `ai/context/bean-workflow.md` for the full lifecycle specification and `ai/context/orchestration-architecture.md` for the orchestration model (supervisor pattern, context engineering, specialist contracts, architecture-aware evaluation).
 
 ## Tech Stack
 
@@ -60,6 +61,29 @@ uv run foundry-cli generate <yml> --library ai-team-library  # CLI generation
 ```
 
 @.claude/shared/CLAUDE.md
+
+## Media Skills
+
+Foundry distributes two plan-driven media generators to projects that opt in (`generation.include_media_skills: true` in `composition.yml`). Both live in the kit (`.claude/shared/skills/`) and reach generated projects via subtree mode or the asset_copier kit-distribution path (see ADR-009).
+
+| Skill | Plan file | Purpose |
+|---|---|---|
+| `generate-image` | `IMAGE-PLAN.md` | Routes Gemini (Nanobanana) or OpenAI (gpt-image) per `**Generator:**` frontmatter; unified `--quality low/medium/high`; sidecar JSON per asset. See `.claude/shared/skills/generate-image/SKILL.md` and ADR-010. |
+| `generate-audio` | `NARRATION-PLAN.md` + inline `> 🎙️` blocks in source markdown | ElevenLabs MP3 narration; per-source manifest with stripped-text invariant for content-hash dedup. See `.claude/shared/skills/generate-audio/SKILL.md` and ADR-011. |
+
+### Required environment variables
+
+| Variable | Required for | Notes |
+|---|---|---|
+| `GEMINI_API_KEY` | Default `generate-image` routing | |
+| `OPENAI_API_KEY` | `generate-image` when `**Generator:**` resolves to OpenAI | |
+| `ELEVENLABS_API_KEY` | All `generate-audio` runs (skipped under `--dry-run`) | |
+
+Both skills discover `.env` via `_media_lib.env.load_env`, which walks **cwd → parents → `$HOME`** and loads the first `.env` found. Existing process environment values always win, so a CI secret or shell export beats a stale checked-in `.env`. See `.env.example` at the repo root for the template.
+
+### Cost discipline
+
+ElevenLabs is **1 credit per character** (`eleven_multilingual_v2`); every audio run prints `chars sent = credits` so the user can pace work against the monthly cap. Image cost rates live in `_COST_TABLE` at the top of `generate_image.py` (the source of truth — do not duplicate the table in docs).
 
 ## Claude Kit Submodule
 

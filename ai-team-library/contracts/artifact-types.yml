@@ -1,0 +1,281 @@
+# ai-team-library/contracts/artifact-types.yml
+# Registry of artifact types produced and consumed by core personas.
+# Schema: each entry has name, description, format, required-fields, template-path.
+# Schema enforcement on artifact bodies is out of scope for BEAN-273
+# (a follow-up bean will validate that a markdown file marked `user-story`
+# actually contains the listed required-fields).
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# pair-fields (BEAN-276): per-edge extras the typed `/handoff` skill merges
+# onto an artifact's required-fields when emitting a handoff packet.
+#
+# An artifact-type's required-fields describe what the artifact *itself*
+# must contain. They travel with the artifact across every edge.
+# A pair-fields entry describes what the *receiver* needs about the
+# specific (from → to) edge that the artifact alone does not capture —
+# things that depend on who is reading it next.
+#
+# Worked example (developer → tech-qa):
+#   - `code-change` always carries `summary`, `what-changed`, `how-to-test`,
+#     `files-touched` (its required-fields).
+#   - But Tech-QA also needs to know which targeted tests/files to
+#     focus on (`test-targets`) and the exact reproducer command
+#     (`rerun-command`) to start verification immediately. Those are
+#     edge-scoped, not part of the artifact body — so they live here
+#     under `pair-fields:`, not under `code-change`'s required-fields.
+#
+# Decision rationale (inline; no ADR per BEAN-276):
+#   - List-of-mappings (over `dict[(from,to)] -> extras`) keeps the registry
+#     diff-friendly and human-scannable, and matches how `types:` is shaped.
+#   - Edge keys are core-persona ids only; extended-persona edges are
+#     out-of-scope for BEAN-276 and can be added later without a schema
+#     change.
+#   - `extras:` items are bare strings (field labels). The packet
+#     template renders them in a single Edge Extras section so they
+#     never collide with an artifact's required-fields, which are
+#     scoped under each artifact's subsection.
+# ─────────────────────────────────────────────────────────────────────────────
+
+types:
+  - name: bean-spec
+    description: >-
+      The full specification of a unit of work (feature, fix, chore, epic).
+      Lives at ai/beans/BEAN-NNN-<slug>/bean.md and is the entry point for
+      every wave. Owns problem statement, goal, scope (in/out), acceptance
+      criteria, task table, and notes.
+    format: markdown
+    required-fields:
+      - bean-id
+      - status
+      - priority
+      - problem-statement
+      - goal
+      - scope-in
+      - scope-out
+      - acceptance-criteria
+      - tasks
+    template-path: ai/beans/_bean-template.md
+
+  - name: task-spec
+    description: >-
+      A single assignable task within a bean. Names the owning persona, its
+      depends-on edges, the goal, the inputs the worker may read (Context
+      Diet), and the per-task acceptance criteria. Lives at
+      ai/beans/BEAN-NNN-<slug>/tasks/NN-<owner>-<slug>.md.
+    format: markdown
+    required-fields:
+      - owner
+      - depends-on
+      - status
+      - goal
+      - inputs
+      - acceptance-criteria
+    template-path: personas/team-lead/templates/task-spec.md
+
+  - name: user-story
+    description: >-
+      A vertical slice of user-visible behavior in As-a / I-want / So-that
+      form, with at least two acceptance criteria written in Given/When/Then
+      (or equivalent testable structure). Primary BA output when the BA is
+      activated for a bean.
+    format: markdown
+    required-fields:
+      - title
+      - narrative
+      - acceptance-criteria
+      - dependencies
+      - assumptions
+    template-path: personas/ba/templates/user-story.md
+
+  - name: acceptance-criteria
+    description: >-
+      An enumeration of pass/fail conditions for a story, task, or bean.
+      Each criterion is independently testable with concrete values, no
+      implementation detail. Default-owner ambiguity is documented in the
+      prose note below the registry — BEAN-275 will codify the policy.
+    format: markdown
+    required-fields:
+      - bean-or-story-id
+      - criteria
+    template-path: personas/ba/templates/acceptance-criteria.md
+
+  - name: scope-definition
+    description: >-
+      The In Scope / Out of Scope / Deferred boundary for a bean or feature.
+      Frequently embedded in the bean-spec, but called out separately so
+      personas that consume scope (Architect, Developer, Tech-QA) can point
+      at it cleanly when answering "is this in this bean?".
+    format: markdown
+    required-fields:
+      - in-scope
+      - out-of-scope
+      - deferred
+    template-path: null
+
+  - name: risk-register
+    description: >-
+      A list of risks, assumptions, and open questions identified during
+      requirements analysis or architectural review. Each entry records
+      likelihood, impact, owner, and mitigation. Used by Team-Lead for
+      escalation and by Architect for design-time risk surfacing.
+    format: markdown
+    required-fields:
+      - risks
+      - assumptions
+      - open-questions
+    template-path: null
+
+  - name: adr
+    description: >-
+      Architecture Decision Record — context, options considered, decision
+      taken, and consequences. Numbered sequentially in
+      ai/context/decisions.md. ADRs are append-only; superseded entries
+      link to their replacement.
+    format: markdown
+    required-fields:
+      - number
+      - title
+      - status
+      - context
+      - options
+      - decision
+      - consequences
+    template-path: personas/architect/templates/adr.md
+
+  - name: design-spec
+    description: >-
+      Detailed technical specification for a feature or component:
+      overview, component diagram, API contract, data model, behavior
+      sequences, non-functional requirements, dependencies, open
+      questions. Produced when a bean activates the Architect.
+    format: markdown
+    required-fields:
+      - overview
+      - component-diagram
+      - api-contract
+      - data-model
+      - behavior
+      - non-functional-requirements
+      - dependencies
+    template-path: personas/architect/templates/design-spec.md
+
+  - name: dev-decision
+    description: >-
+      Developer-level design decision recorded when an implementation
+      choice has multiple reasonable options but does not warrant a full
+      ADR (i.e., the decision is reversible and contained). Captures
+      options considered and rationale; lighter-weight than an ADR.
+    format: markdown
+    required-fields:
+      - title
+      - context
+      - options
+      - decision
+      - rationale
+    template-path: personas/developer/templates/dev-design-decision.md
+
+  - name: code-change
+    description: >-
+      A pull-request-ready changeset implementing a task. Covers production
+      source edits, accompanying unit/integration tests authored by the
+      Developer, and a PR description with How-to-Test instructions. The
+      Developer's primary deliverable.
+    format: markdown
+    required-fields:
+      - summary
+      - what-changed
+      - how-to-test
+      - files-touched
+    template-path: personas/developer/templates/pr-description.md
+
+  - name: test-suite
+    description: >-
+      Tech-QA-authored automated tests (unit, integration, end-to-end) and
+      manual test cases mapped to acceptance criteria. The Developer's
+      own tests in code-change are part of the change; this artifact is
+      the Tech-QA test-plan + test-cases bundle that lives alongside the
+      bean and verifies AC coverage.
+    format: markdown
+    required-fields:
+      - test-plan
+      - test-cases
+      - entry-criteria
+      - exit-criteria
+    template-path: personas/tech-qa/templates/test-plan.md
+
+  - name: traceability-matrix
+    description: >-
+      A matrix linking acceptance-criteria → test-cases → code-change
+      paths. Tech-QA owns the matrix; consumed by Team-Lead at bean
+      verification time and by audit/compliance reviewers later.
+    format: markdown
+    required-fields:
+      - bean-id
+      - rows
+    template-path: personas/tech-qa/templates/traceability-matrix.md
+
+  - name: vdd-report
+    description: >-
+      Verification & Defect Disposition report — Tech-QA's per-bean
+      verification output. Records test execution results, defects found
+      (with severity), regression status, and a pass/fail recommendation
+      to the Team-Lead's bean-verification step.
+    format: markdown
+    required-fields:
+      - bean-id
+      - test-results
+      - defects
+      - recommendation
+    template-path: personas/tech-qa/templates/test-report.md
+
+  - name: handoff-packet
+    description: >-
+      The structured payload one persona writes to `ai/outputs/<from>/`
+      when its task completes, naming what produced artifacts the next
+      persona should read. The compiler-emitted contract graph (BEAN-274)
+      and per-edge handoff schemas (BEAN-276) build on this artifact.
+    format: markdown
+    required-fields:
+      - from-persona
+      - to-persona
+      - bean-id
+      - task-id
+      - produced-artifacts
+      - notes
+    template-path: null
+
+  - name: merge-summary
+    description: >-
+      Team-Lead's integration summary after multi-task or multi-persona
+      outputs are reconciled and the bean is marked Done. Names the
+      components integrated, decisions made during integration, rework
+      triggered, and verification performed.
+    format: markdown
+    required-fields:
+      - bean-id
+      - components-integrated
+      - integration-decisions
+      - rework
+      - verification
+    template-path: null
+
+# Per-edge extras layered onto the artifact's required-fields by the
+# typed `/handoff` skill. See header comment for rationale and rendering rules.
+pair-fields:
+  - from: developer
+    to: tech-qa
+    extras:
+      - test-targets       # specific test files / pytest node ids Tech-QA should run first
+      - rerun-command      # exact shell command to reproduce the developer's last green run
+
+  - from: architect
+    to: developer
+    extras:
+      - implementation-priorities  # ordered guidance on which design slices to land first
+      - open-design-questions      # design-time questions the developer should resolve or escalate
+
+  - from: ba
+    to: tech-qa
+    extras:
+      - testability-notes  # any AC the BA flagged as needing creative test design (e.g., perf, fuzz)
+

@@ -11,6 +11,7 @@
 | **Duration** | — |
 | **Owner** | (unassigned) |
 | **Category** | (App \| Process \| Infra) |
+| **Depends On** | — (or comma-separated BEAN-NNN list) |
 
 ## Problem Statement
 
@@ -31,10 +32,16 @@ What is the desired outcome when this bean is complete?
 
 ## Acceptance Criteria
 
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] All tests pass (`uv run pytest`)
-- [ ] Lint clean (`uv run ruff check foundry_app/`)
+> Authored by: BA (when activated) | Team-Lead (default).
+> Prefix each item with an evidence-type tag so `/vdd` can verify it
+> automatically. See `ai/context/vdd-policy.md` for the full convention.
+> Recognized prefixes: `(test:<path>)`, `(lint:<path>)`, `(file:<glob>)`,
+> `(file-contains:<glob>::<substring>)`. Unprefixed items become manual.
+
+- [ ] (test:tests/test_foo.py::test_bar) Example prefixed criterion — runs pytest
+- [ ] Criterion without a prefix becomes a manual sign-off
+- [ ] (test:tests/) All tests pass (`uv run pytest`)
+- [ ] (lint:foundry_app/) Lint clean (`uv run ruff check foundry_app/`)
 
 ## Tasks
 
@@ -43,7 +50,18 @@ What is the desired outcome when this bean is complete?
 | 1 | | | | Pending |
 
 > Tasks are populated by the Team Lead during decomposition.
-> Task files go in `tasks/` subdirectory.
+> Task files go in `tasks/` subdirectory. **Every task file must have a
+> non-empty `## Inputs` section** — the validate-task-inputs hook blocks
+> a task from moving to `In Progress` without one. Example:
+>
+> ```
+> ## Inputs
+> - foundry_app/services/generator.py — `generate_project()` entry point
+> - ai/beans/BEAN-NNN-x/bean.md — full scope
+> ```
+>
+> Escape hatch (rare, repo-wide scans only):
+> `Inputs: NONE (justified: <reason of at least 10 characters>)`
 
 ## Changes
 
@@ -76,3 +94,14 @@ What is the desired outcome when this bean is complete?
 | **Total Tokens In** | — |
 | **Total Tokens Out** | — |
 | **Total Cost** | — |
+
+## Orchestration Telemetry
+
+| Field | Value |
+|-------|-------|
+| **Personas activated** | — (comma-separated, actual not planned) |
+| **Bounces** | — (Tech-QA → Developer kicks) |
+| **Scope changes** | — (in-flight scope edits) |
+| **Contract violations** | — (BEAN-274 catches at compose time) |
+| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
+| **Dispatch mode** | — (in-process / tmux-worker / mixed) |

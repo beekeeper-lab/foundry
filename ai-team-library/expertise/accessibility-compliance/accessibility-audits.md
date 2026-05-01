@@ -3,6 +3,14 @@
 ## Category
 Compliance & Governance
 
+## Applies To
+
+- ux-ui-designer
+- developer
+- tech-qa
+- compliance-risk
+- product-owner
+
 Standards for conducting accessibility audits, documenting findings, prioritizing remediation,
 and maintaining ongoing compliance. A structured audit process ensures consistent evaluation
 and measurable progress toward conformance goals.
