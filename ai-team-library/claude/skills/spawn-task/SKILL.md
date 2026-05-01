@@ -128,6 +128,56 @@ Examples:
     completion, leave Status as `In Progress` (or set it to `!! Failed`)
     and propagate the subagent's message to the calling session.
 
+### Phase 5b: Dispatch-mode marker (both paths, BEAN-278)
+
+After the worker accepts the task and begins execution, it writes a single
+file naming the dispatch mode used. The telemetry-stamp hook reads these
+markers when the bean flips to `Done` to populate the bean's
+**Dispatch mode** field in the Orchestration Telemetry block.
+
+- Path: `ai/beans/<BEAN-ID>-<slug>/.orchestration/task-<NN>-mode`
+  (where `<NN>` is the task number with no zero-padding, e.g. `task-1-mode`,
+  `task-12-mode`).
+- Contents: a single token, no trailing whitespace:
+  - `tmux-worker` — written by Phase-4 workers (worktree path).
+  - `in-process` — written by Phase-5 workers (Agent-tool path).
+- Timing: written immediately after the worker reads its task file, before
+  any substantive edits. Ensures the marker exists even if the worker
+  exits abnormally.
+- Idempotent: re-running `/spawn-task` for the same task overwrites the
+  prior marker.
+
+Aggregation rule (performed by the telemetry hook): if all per-task markers
+agree, that value is the bean's Dispatch mode. If markers disagree, the
+mode is `mixed`. If no markers exist at bean-completion time, the hook
+falls back to checking for `/tmp/agentic-task-<BEAN-ID>-*` worktrees
+(presence implies `tmux-worker` was used somewhere); if even that fallback
+is empty, the conservative default is `in-process`.
+
+### Phase 5c: Bounce-counter increment (both paths, BEAN-278)
+
+A **bounce** is a Tech-QA→Developer hand-back that happens *mid-bean*:
+Tech-QA opens a fresh task pointing back at Developer because verification
+failed and the work needs another pass. Each such opening increments the
+bean's `Bounces` counter inside the Orchestration Telemetry block.
+
+When `/spawn-task` dispatches a task whose `Owner: developer` AND there
+already exists a `Done`-status `developer`-owned task for the same bean
+AND the spawning persona is `tech-qa` (or the calling user is acting on
+Tech-QA's behalf), `/spawn-task` MUST:
+
+1. Read the bean's current `Bounces` value from the Orchestration
+   Telemetry block (parse the row `| **Bounces** | N (...) |`).
+2. Increment N by 1, preserving the parenthesised hint suffix.
+3. Write the new value back to the same row.
+4. Note the bounce in the spawned task file's `## Notes` section so the
+   audit trail is visible: `> Bounce-of: <prior-developer-task-file>`.
+
+If the bean's Orchestration Telemetry block does not yet exist (legacy
+beans pre-BEAN-278), the bounce-counter step is a silent no-op. The
+counter never decrements; recovering an over-counted bounce is a manual
+edit by the Team Lead, not an automation responsibility.
+
 ### Phase 6: Prompt Schema (both paths)
 
 The prompt has five required sections, in this order. Identical across
@@ -154,6 +204,8 @@ not inlined. The worker reads it once on startup.
 | worktree | Directory (tmux path only) | `/tmp/agentic-task-BEAN-NNN-<slug>` |
 | task_status | Markdown edit | The task file's `Status` advances to `Done` (or `!! Failed`). |
 | telemetry | Markdown edit | Bean's Telemetry per-task row updated by the worker on completion. |
+| dispatch_marker | Plain text | `ai/beans/<BEAN-ID>-<slug>/.orchestration/task-<NN>-mode` containing `in-process` or `tmux-worker` (BEAN-278). |
+| bounce_increment | Markdown edit | Bean's Orchestration Telemetry `Bounces` counter incremented by one when the dispatch is a Tech-QA→Developer hand-back mid-bean (BEAN-278). |
 
 ## Quality Criteria
 
@@ -200,3 +252,7 @@ not inlined. The worker reads it once on startup.
 - BEAN-272 — `Inputs:` validation hook integrated at Phase 2.
 - BEAN-273 — `produces:`/`consumes:` contracts; will add a "Consumes"
   line to the prompt schema when it lands.
+- BEAN-278 — Orchestration Telemetry. This skill emits the per-task
+  dispatch-mode markers that `telemetry-stamp.py` aggregates into the
+  bean's Dispatch mode field, and increments the Bounces counter on
+  Tech-QA→Developer hand-backs.
