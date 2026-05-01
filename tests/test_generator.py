@@ -20,6 +20,7 @@ from foundry_app.core.models import (
     ProjectIdentity,
     Strictness,
     TeamConfig,
+    _persona_dirname,
 )
 from foundry_app.io.composition_io import load_composition
 from foundry_app.services.generator import (
@@ -66,8 +67,8 @@ def _make_library(tmp_path: Path) -> LibraryIndex:
     """Build a minimal on-disk library with real persona and expertise directories."""
     lib_root = tmp_path / "library"
 
-    # Create persona directory
-    persona_dir = lib_root / "personas" / "developer"
+    # Per ADR-014: personas live under personas/core/<id> (developer is core).
+    persona_dir = lib_root / "personas" / "core" / "developer"
     persona_dir.mkdir(parents=True)
     (persona_dir / "persona.md").write_text("# Developer persona")
 
@@ -105,7 +106,8 @@ def _make_library_dir(tmp_path: Path) -> Path:
     """Create a minimal library directory on disk and return its path."""
     lib_root = tmp_path / "library"
 
-    persona_dir = lib_root / "personas" / "developer"
+    # Per ADR-014: personas live under personas/core/<id> (developer is core).
+    persona_dir = lib_root / "personas" / "core" / "developer"
     persona_dir.mkdir(parents=True)
     (persona_dir / "persona.md").write_text("# Developer persona")
 
@@ -379,7 +381,14 @@ class TestValidationGating:
     def test_strict_mode_blocks_on_warnings(self, tmp_path: Path):
         lib_root = _make_library_dir(tmp_path)
         output_dir = tmp_path / "output" / "test-project"
-        spec = _make_spec(team=TeamConfig(personas=[]))
+        # ADR-014 added a default-team hook: an empty personas list inherits
+        # the library's core tier, so the historic "no-personas" warning is
+        # no longer triggerable. Use a duplicate-persona warning instead —
+        # strict mode promotes any warning into a blocking error.
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer"),
+            PersonaSelection(id="developer"),
+        ]))
 
         manifest, validation, _ = generate_project(
             spec, lib_root, output_root=output_dir,
@@ -1084,16 +1093,19 @@ class TestEndToEnd:
         agents_dir = output_dir / ".claude" / "agents"
         assert agents_dir.is_dir()
         for persona in spec.team.personas:
-            agent_file = agents_dir / f"{persona.id}.md"
+            # Per ADR-014: agent filenames are the bare leaf name (the
+            # ``extended/`` tier prefix is stripped on disk).
+            agent_file = agents_dir / f"{_persona_dirname(persona.id)}.md"
             assert agent_file.is_file(), f"Missing agent file for persona: {persona.id}"
             assert agent_file.stat().st_size > 0
 
     def test_no_extra_agent_files(self, generated_project):
         output_dir, _, spec = generated_project
         agents_dir = output_dir / ".claude" / "agents"
-        expected_ids = {p.id for p in spec.team.personas}
+        # Compare against the on-disk filename form (tier prefix stripped).
+        expected_files = {_persona_dirname(p.id) for p in spec.team.personas}
         actual_files = {f.stem for f in agents_dir.glob("*.md")}
-        extra = actual_files - expected_ids
+        extra = actual_files - expected_files
         assert not extra, f"Unexpected agent files: {extra}"
 
     def test_seed_tasks_created(self, generated_project):
@@ -1148,11 +1160,13 @@ class TestEndToEnd:
         output_dir, _, spec = generated_project
         agents_dir = output_dir / ".claude" / "agents"
         for persona in spec.team.personas:
-            agent_file = agents_dir / f"{persona.id}.md"
+            leaf = _persona_dirname(persona.id)
+            agent_file = agents_dir / f"{leaf}.md"
             content = agent_file.read_text(encoding="utf-8").lower()
-            # The persona id (e.g. "team-lead") or a human form should appear
-            assert persona.id.replace("-", " ") in content or persona.id in content, (
-                f"Agent file {agent_file.name} does not reference persona {persona.id}"
+            # The leaf id (e.g. "team-lead") or its human form should appear.
+            assert leaf.replace("-", " ") in content or leaf in content, (
+                f"Agent file {agent_file.name} does not reference persona "
+                f"{persona.id}"
             )
 
 
@@ -1245,17 +1259,21 @@ class TestGenerationSelfConsistency:
             if not p.is_dir():
                 missing.append(rel + "/")
 
-        # Per-persona files and directories
+        # Per-persona files and directories. Per ADR-014 the on-disk leaf
+        # name strips any ``extended/`` tier prefix from the composition id.
         for persona in spec.team.personas:
-            agent_file = output_dir / ".claude" / "agents" / f"{persona.id}.md"
-            member_file = output_dir / "ai" / "generated" / "members" / f"{persona.id}.md"
-            outputs_dir = output_dir / "ai" / "outputs" / persona.id
+            leaf = _persona_dirname(persona.id)
+            agent_file = output_dir / ".claude" / "agents" / f"{leaf}.md"
+            member_file = (
+                output_dir / "ai" / "generated" / "members" / f"{leaf}.md"
+            )
+            outputs_dir = output_dir / "ai" / "outputs" / leaf
             if not agent_file.is_file():
-                missing.append(f".claude/agents/{persona.id}.md")
+                missing.append(f".claude/agents/{leaf}.md")
             if not member_file.is_file():
-                missing.append(f"ai/generated/members/{persona.id}.md")
+                missing.append(f"ai/generated/members/{leaf}.md")
             if not outputs_dir.is_dir():
-                missing.append(f"ai/outputs/{persona.id}/")
+                missing.append(f"ai/outputs/{leaf}/")
 
         assert not missing, (
             "Generated project is missing paths required by validate-repo "

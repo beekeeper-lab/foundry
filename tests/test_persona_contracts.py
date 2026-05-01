@@ -174,8 +174,11 @@ class TestPersonaContractsParse:
             )
 
     def test_contracts_yml_files_present_for_core_personas(self):
+        # Per ADR-014, core personas live under personas/core/<id>.
         for persona_id in CORE_PERSONAS:
-            contracts = LIBRARY_ROOT / "personas" / persona_id / "contracts.yml"
+            contracts = (
+                LIBRARY_ROOT / "personas" / "core" / persona_id / "contracts.yml"
+            )
             assert contracts.is_file(), f"{contracts} missing per ADR-013"
 
 
@@ -218,8 +221,10 @@ class TestTypeResolution:
             encoding="utf-8",
         )
 
-        # Synthetic persona referencing one valid + one unknown type
-        persona_dir = tmp_path / "personas" / "synth"
+        # Synthetic persona referencing one valid + one unknown type. Per
+        # ADR-014, place the persona under personas/extended/<id> so the
+        # canonical id is ``extended/synth``.
+        persona_dir = tmp_path / "personas" / "extended" / "synth"
         persona_dir.mkdir(parents=True)
         (persona_dir / "persona.md").write_text(
             "# Persona: Synth\n\n## Category\nTest\n",
@@ -237,7 +242,7 @@ class TestTypeResolution:
         with caplog.at_level("WARNING"):
             idx = build_library_index(tmp_path)
 
-        synth = idx.persona_by_id("synth")
+        synth = idx.persona_by_id("extended/synth")
         assert synth is not None
         # ghost-type was dropped, real-type kept
         assert synth.produces == ["real-type"]
@@ -321,14 +326,15 @@ class TestCrossPersonaPairing:
             "    required-fields: []\n",
             encoding="utf-8",
         )
-        ba_dir = tmp_path / "personas" / "ba"
+        # Per ADR-014, ba and developer are core personas → personas/core/<id>.
+        ba_dir = tmp_path / "personas" / "core" / "ba"
         ba_dir.mkdir(parents=True)
         (ba_dir / "persona.md").write_text("# BA\n", encoding="utf-8")
         (ba_dir / "contracts.yml").write_text(
             "produces:\n  - user-story\nconsumes:\n  - task-spec\n",
             encoding="utf-8",
         )
-        dev_dir = tmp_path / "personas" / "developer"
+        dev_dir = tmp_path / "personas" / "core" / "developer"
         dev_dir.mkdir(parents=True)
         (dev_dir / "persona.md").write_text("# Dev\n", encoding="utf-8")
         # NOTE: developer drops user-story from consumes → chain is broken

@@ -733,7 +733,12 @@ class TestCompileWarnings:
             PersonaSelection(id="nonexistent"),
         ]))
         result = compile_project(spec, index, lib_root, output)
-        assert any("nonexistent" in w and "not found" in w for w in result.warnings)
+        # ADR-014: unknown persona ids surface as
+        # "Unknown persona '<id>' in composition.yml. Core personas (...)..."
+        assert any(
+            "nonexistent" in w and "Unknown persona" in w
+            for w in result.warnings
+        )
 
     def test_warns_on_missing_persona_md(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -1399,7 +1404,11 @@ class TestLeanClaudeMd:
         propagate this to .claude/agents/team-lead.md."""
         import foundry_app
         repo_root = Path(foundry_app.__file__).resolve().parent.parent
-        persona = repo_root / "ai-team-library" / "personas" / "team-lead" / "persona.md"
+        # Per ADR-014, core personas live under personas/core/<id>.
+        persona = (
+            repo_root / "ai-team-library"
+            / "personas" / "core" / "team-lead" / "persona.md"
+        )
         text = persona.read_text(encoding="utf-8")
         assert "## Orchestration Rules" in text
         assert "bench of specialists" in text
