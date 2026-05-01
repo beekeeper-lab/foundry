@@ -22,6 +22,7 @@ EXPECTED_PERSONAS = [
     "extended/customer-success",
     "extended/data-analyst",
     "extended/data-engineer",
+    "extended/data-scientist",
     "extended/database-administrator",
     "extended/devops-release",
     "extended/financial-operations",
@@ -500,6 +501,7 @@ class TestPersonaCategories:
             "extended/customer-success": "Business Operations",
             "extended/data-analyst": "Data & Analytics",
             "extended/data-engineer": "Software Development",
+            "extended/data-scientist": "Data & Analytics",
             "extended/database-administrator": "Software Development",
             "extended/devops-release": "Software Development",
             "extended/financial-operations": "Business Operations",
@@ -896,3 +898,55 @@ class TestExpertiseAppliesTo:
         devops = idx.expertise_by_id("devops")
         assert devops is not None
         assert devops.applies_to == []
+
+
+# ---------------------------------------------------------------------------
+# BEAN-291 — Data Scientist persona regression
+#
+# The data-scientist persona is a load-bearing member of the extended tier
+# for modeling/inference work. The test below pins the contract: the persona
+# must be discoverable by the indexer, declared at the extended tier, and
+# carry the four templates the bean's AC requires.
+# ---------------------------------------------------------------------------
+
+
+class TestDataScientistPersonaRegression:
+    """BEAN-291 — guard the indexer surface for data-scientist."""
+
+    def test_data_scientist_is_indexed(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        target = next(
+            (p for p in idx.personas if p.id == "extended/data-scientist"),
+            None,
+        )
+        assert target is not None, (
+            "extended/data-scientist must be discoverable by the indexer"
+        )
+
+    def test_data_scientist_tier_and_metadata(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        target = next(
+            p for p in idx.personas if p.id == "extended/data-scientist"
+        )
+        assert target.tier == "extended"
+        assert target.has_persona_md is True
+        assert target.has_outputs_md is True
+        assert target.has_prompts_md is True
+        assert target.category == "Data & Analytics"
+
+    def test_data_scientist_carries_required_templates(self):
+        idx = build_library_index(LIBRARY_ROOT)
+        target = next(
+            p for p in idx.personas if p.id == "extended/data-scientist"
+        )
+        # The four templates the bean's AC pins.
+        for required in (
+            "model-card.md",
+            "experiment-design.md",
+            "analysis-notebook.md",
+            "statistical-report.md",
+        ):
+            assert required in target.templates, (
+                f"data-scientist must ship template {required!r}; "
+                f"found: {target.templates}"
+            )

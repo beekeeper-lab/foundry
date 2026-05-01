@@ -56,6 +56,7 @@ Personas are split into two tiers (see ADR-014):
 | Customer Success Lead     | extended | `extended/customer-success`        | Customer onboarding, retention, satisfaction                            |
 | Data Analyst              | extended | `extended/data-analyst`            | KPI definition, dashboards, data-driven insights                        |
 | Data Engineer             | extended | `extended/data-engineer`           | Data pipelines, ETL, data infrastructure                                |
+| Data Scientist            | extended | `extended/data-scientist`          | Modeling, statistical inference, experiment design, scientific reporting|
 | Database Administrator    | extended | `extended/database-administrator`  | Database design, tuning, maintenance                                    |
 | Financial Operations      | extended | `extended/financial-operations`    | Cost estimation, budgeting, financial governance                        |
 | Legal Counsel             | extended | `extended/legal-counsel`           | Contract review, IP protection, regulatory compliance                   |

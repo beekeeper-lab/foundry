@@ -119,6 +119,7 @@ The Team Lead pulls the Data Analyst from the bench when **ANY** of the followin
 | Team Lead                  | Receive task assignments; report progress and blockers |
 | Business Analyst           | Receive business requirements; collaborate on KPI definitions and success criteria |
 | Data Engineer              | Request data pipeline changes; report data quality issues; consume curated datasets |
+| Data Scientist             | Defer modeling, statistical-test design, and ML work; collaborate when modeling work surfaces a metric that belongs in the catalog |
 | Developer                  | Provide analytics requirements for event tracking; consume feature flag data for experiments |
 | Architect                  | Receive data platform guidance; provide feedback on analytics infrastructure needs |
 | UX / UI Designer           | Collaborate on user behavior insights; provide quantitative context for design decisions |
