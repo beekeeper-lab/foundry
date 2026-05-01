@@ -79,10 +79,13 @@ When the validator has actionable information about the user's current selection
 
 | File | Lines |
 |------|-------|
-| `foundry_app/ui/screens/builder/wizard_pages/persona_page.py` | +27/-9 (verbatim-message rendering + 5-cap + overflow line) |
-| `foundry_app/ui/screens/builder/wizard_pages/hook_safety_page.py` | +136/-2 (`_conflict_label`, `_update_conflict_indicator`, `_resolve_default_conflicts`, `_find_conflict_pairs`) |
-| `tests/test_persona_page.py` | +71 (`TestCoherenceIndicatorVerbatimMessages`, `TestCoherenceIndicatorTruncationCap`) |
-| `tests/test_hook_safety_page.py` | +147 (`TestConflictIndicator`, `TestDefaultLoadConflictFree`) |
+| `foundry_app/ui/screens/builder/wizard_pages/persona_page.py` | 36 (verbatim-message rendering + 5-cap + overflow line) |
+| `foundry_app/ui/screens/builder/wizard_pages/hook_safety_page.py` | 129 (`_conflict_label`, `_update_conflict_indicator`, `_resolve_default_conflicts`, `_find_conflict_pairs`) |
+| `tests/test_persona_page.py` | 77 (verbatim-message + truncation tests) |
+| `tests/test_hook_safety_page.py` | 158 (`TestConflictIndicator`, `TestDefaultLoadConflictFree`) |
+| `ai/beans/BEAN-286-wizard-inline-validation-findings/bean.md` | 49 (status, ACs, telemetry) |
+| `ai/beans/BEAN-286-wizard-inline-validation-findings/tasks/01-developer-validation-inline.md` | 52 (new) |
+| `ai/beans/BEAN-286-wizard-inline-validation-findings/tasks/02-tech-qa-validation-inline.md` | 53 (new) |
 
 ## Notes
 
