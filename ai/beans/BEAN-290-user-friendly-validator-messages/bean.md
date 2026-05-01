@@ -231,11 +231,20 @@ key on it). Only the **message text** changes.
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/services/artifact_labels.py` | +90 |
+| `foundry_app/services/validator.py` | +112 |
+| `foundry_app/ui/generation_worker.py` | +10 |
+| `foundry_app/ui/screens/builder/wizard_pages/persona_page.py` | +17 |
+| `foundry_app/ui/screens/generation_progress.py` | +2 |
+| `tests/test_validator.py` | +293 |
+| `tests/test_generation_progress.py` | +86 |
+| `tests/test_persona_page.py` | +60 |
+| `tests/test_generator.py` | +6 |
+| `ai/outputs/ba/BEAN-290-validator-message-phrasing.md` | +180 |
+| `ai/outputs/tech-qa/BEAN-290-manual-verification.md` | +119 |
+| `ai/beans/BEAN-290-user-friendly-validator-messages/` | +296 (bean + tasks) |
 
 ## Notes
 
