@@ -63,7 +63,11 @@ When generation fails, the failure summary and the "Back to Builder" recovery af
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/ui/screens/generation_progress.py` | 153 (sticky `_outcome_banner`, `_build_outcome_banner`, banner-driven start/finish/finish_with_error, scroll-reset safety net) |
+| `tests/test_generation_progress.py` | 74 (`TestOutcomeBanner` — 6 tests) |
+| `ai/beans/BEAN-287-generation-failure-recovery-banner/bean.md` | 40 (status, ACs, telemetry) |
+| `ai/beans/BEAN-287-generation-failure-recovery-banner/tasks/01-developer-sticky-banner.md` | 43 (new) |
+| `ai/beans/BEAN-287-generation-failure-recovery-banner/tasks/02-tech-qa-banner-tests.md` | 38 (new) |
 
 ## Notes
 
