@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-271 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
-| **Started** | — |
+| **Started** | 2026-04-30 23:36 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Infra |
 
 ## Problem Statement
@@ -69,9 +69,11 @@ Clean break: existing compositions that name an extended persona without a `tier
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | ADR — extended-persona ref-syntax in composition.yml | architect | — | Done |
+| 2 | File reorg + indexer + model + compiler + wizard + examples | developer | 1 | In Progress |
+| 3 | Test sweep: fixtures + tier coverage + compiler defaults + error path | tech-qa | 2 | Pending |
 
-> Tasks populated by Team-Lead during decomposition. Likely wave: Architect (decide composition.yml ref-syntax for extended personas, ADR), Developer (file moves + indexer + model + compiler + wizard), Tech-QA (regression tests, example regen).
+> Skipped: BA (default — no requirements ambiguity; the bean is fully specified).
 
 ## Changes
 
@@ -99,7 +101,9 @@ Clean break: existing compositions that name an extended persona without a `tier
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | ADR — extended-persona ref-syntax in composition.yml | architect | 2m | 1,371,999 | 14,050 | $3.41 |
+| 2 | File reorg + indexer + model + compiler + wizard + examples | developer | 14m | 467,401 | 3,256 | $0.99 |
+| 3 | Test sweep: fixtures + tier coverage + compiler defaults + error path | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|

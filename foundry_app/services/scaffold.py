@@ -9,7 +9,12 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 from foundry_app import __version__ as _FOUNDRY_VERSION
-from foundry_app.core.models import CompositionSpec, LibraryIndex, StageResult
+from foundry_app.core.models import (
+    CompositionSpec,
+    LibraryIndex,
+    StageResult,
+    _persona_dirname,
+)
 from foundry_app.io.composition_io import save_composition
 
 logger = logging.getLogger(__name__)
@@ -361,9 +366,12 @@ def scaffold_project(
     for d in _AI_DIRS:
         dirs_to_create.append(root / d)
 
-    # Per-persona output directories
+    # Per-persona output directories. Strip any ``extended/`` tier prefix
+    # from the id so the on-disk layout stays flat across tiers (ADR-014).
     for persona in spec.team.personas:
-        dirs_to_create.append(root / "ai" / "outputs" / persona.id)
+        dirs_to_create.append(
+            root / "ai" / "outputs" / _persona_dirname(persona.id)
+        )
 
     # Track which directories already exist so we know what we actually created
     existing = {d for d in dirs_to_create if d.exists()}

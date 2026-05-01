@@ -32,15 +32,15 @@ team:
       include_agent: true
       include_templates: true
       strictness: strict
-    - id: security-engineer
+    - id: extended/security-engineer
       include_agent: true
       include_templates: true
       strictness: strict
-    - id: compliance-risk
+    - id: extended/compliance-risk
       include_agent: true
       include_templates: true
       strictness: strict
-    - id: devops-release
+    - id: extended/devops-release
       include_agent: true
       include_templates: true
       strictness: strict

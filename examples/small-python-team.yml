@@ -26,7 +26,7 @@ team:
       include_agent: true
       include_templates: true
       strictness: standard
-    - id: code-quality-reviewer
+    - id: extended/code-quality-reviewer
       include_agent: true
       include_templates: true
       strictness: standard

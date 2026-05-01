@@ -13,6 +13,7 @@ from foundry_app.core.models import (
     ValidationMessage,
     ValidationResult,
 )
+from foundry_app.services.library_indexer import format_unknown_persona_error
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +23,19 @@ def _check_personas(
     library_index: LibraryIndex,
     messages: list[ValidationMessage],
 ) -> None:
-    """Validate that all referenced personas exist in the library."""
+    """Validate that all referenced personas exist in the library.
+
+    Per ADR-014, an unknown persona id (or a wrong-tier reference such as
+    a bare extended-persona id) produces an ERROR with the canonical
+    message text from ``format_unknown_persona_error``.
+    """
     for ps in composition.team.personas:
         persona = library_index.persona_by_id(ps.id)
         if persona is None:
             messages.append(ValidationMessage(
                 severity=Severity.ERROR,
                 code="missing-persona",
-                message=f"Persona '{ps.id}' not found in library",
+                message=format_unknown_persona_error(ps.id, library_index),
             ))
         elif not persona.has_persona_md:
             messages.append(ValidationMessage(

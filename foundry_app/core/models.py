@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import PurePosixPath
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -52,6 +52,34 @@ def _validate_safe_id(v: str, field_name: str) -> str:
     if ".." in v or "/" in v or "\\" in v:
         raise ValueError(
             f"{field_name} must not contain '..', '/', or '\\', got: {v!r}"
+        )
+    return v
+
+
+def _validate_persona_id(v: str) -> str:
+    """Validate a persona id per ADR-014.
+
+    Core personas use bare names (``developer``); extended personas use a
+    single ``extended/<name>`` tier prefix. No other slash-bearing form is
+    accepted; ``..`` and ``\\`` are always rejected.
+    """
+    if ".." in v or "\\" in v:
+        raise ValueError(
+            f"persona id must not contain '..' or '\\', got: {v!r}"
+        )
+    if "/" not in v:
+        return v
+    # Slash-bearing — must be exactly the ADR-014 'extended/<name>' form.
+    if not v.startswith("extended/"):
+        raise ValueError(
+            f"persona id must be a bare core name or 'extended/<name>', "
+            f"got: {v!r}"
+        )
+    leaf = v[len("extended/"):]
+    if not leaf or "/" in leaf or ".." in leaf:
+        raise ValueError(
+            f"persona id 'extended/<name>' name must be non-empty and "
+            f"contain no further '/', got: {v!r}"
         )
     return v
 
@@ -179,13 +207,17 @@ class PersonaSelection(BaseModel):
 
     id: str = Field(
         ..., min_length=1, max_length=100,
-        description="Persona identifier (e.g. 'developer')",
+        description=(
+            "Persona identifier. Core personas use the bare directory name "
+            "(e.g. 'developer'); extended personas are tier-prefixed "
+            "(e.g. 'extended/security-engineer'). See ADR-014."
+        ),
     )
 
     @field_validator("id")
     @classmethod
     def validate_id(cls, v: str) -> str:
-        return _validate_safe_id(v, "persona id")
+        return _validate_persona_id(v)
     include_agent: bool = Field(default=True, description="Generate .claude/agents/ file")
     include_templates: bool = Field(default=True, description="Copy persona templates")
     strictness: Strictness = Field(
@@ -548,6 +580,14 @@ class PersonaInfo(BaseModel):
 
     id: str = Field(..., min_length=1)
     path: str = Field(..., description="Path to persona directory")
+    tier: Literal["core", "extended"] = Field(
+        default="core",
+        description=(
+            "Persona tier per ADR-014. 'core' personas are the closed default "
+            "team (bare ids in composition.yml); 'extended' personas are opt-in "
+            "specialists (referenced as 'extended/<name>')."
+        ),
+    )
     has_persona_md: bool = False
     has_outputs_md: bool = False
     has_prompts_md: bool = False
@@ -560,6 +600,30 @@ class PersonaInfo(BaseModel):
     consumes: list[str] = Field(
         default_factory=list,
         description="Artifact-type names this persona consumes. See ADR-013.",
+    )
+
+    @property
+    def dirname(self) -> str:
+        """Leaf directory name for the persona (the on-disk folder name).
+
+        Strips the ``extended/`` tier prefix from the id; for core personas
+        the dirname equals the id. Use this when constructing filesystem
+        paths derived from the persona (members files, agent files,
+        ``ai/outputs/<dirname>/``, etc.).
+        """
+        return self.id.split("/", 1)[1] if self.id.startswith("extended/") else self.id
+
+
+def _persona_dirname(persona_id: str) -> str:
+    """Return the on-disk directory name for a persona id (ADR-014).
+
+    Mirrors :pyattr:`PersonaInfo.dirname` but works on a raw id string —
+    useful when only the id from ``PersonaSelection`` is in scope.
+    """
+    return (
+        persona_id.split("/", 1)[1]
+        if persona_id.startswith("extended/")
+        else persona_id
     )
 
 

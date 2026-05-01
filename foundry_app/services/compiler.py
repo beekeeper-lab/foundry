@@ -12,6 +12,7 @@ from foundry_app.core.models import (
     LibraryIndex,
     PersonaSelection,
     StageResult,
+    _persona_dirname,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,6 +105,8 @@ def _persona_display_name(persona_id: str, index: LibraryIndex) -> str:
 
     Prefers the persona's own ``# Persona: <Name>`` header (canonicalized),
     falling back to ``_display_name_from_id`` when the header is missing.
+    The fallback strips any ADR-014 ``extended/`` tier prefix so the rendered
+    name is purely role-based, not tier-based.
     """
     persona_info = index.persona_by_id(persona_id)
     if persona_info is not None:
@@ -112,7 +115,7 @@ def _persona_display_name(persona_id: str, index: LibraryIndex) -> str:
             match = _PERSONA_HEADER_RE.search(persona_md)
             if match:
                 return _canonicalize_persona_header(match.group(1).strip())
-    return _display_name_from_id(persona_id)
+    return _display_name_from_id(_persona_dirname(persona_id))
 
 
 def _resolve_placeholder(match: re.Match[str], context: dict[str, str]) -> str:
@@ -397,7 +400,12 @@ def _compile_persona_section(
     """
     persona_info = index.persona_by_id(persona_id)
     if persona_info is None:
-        warnings.append(f"Persona '{persona_id}' not found in library index")
+        # Lazy-import to avoid a circular dependency between compiler and
+        # library_indexer at module load time.
+        from foundry_app.services.library_indexer import (
+            format_unknown_persona_error,
+        )
+        warnings.append(format_unknown_persona_error(persona_id, index))
         return None
 
     persona_dir = Path(persona_info.path)
@@ -699,8 +707,12 @@ def compile_project(
                 persona_section = _filter_persona_references(
                     persona_section, selected_ids, name_to_id,
                 )
-                # Write full content to separate file
-                member_path = members_dir / f"{persona_sel.id}.md"
+                # Write full content to separate file. Strip any ``extended/``
+                # tier prefix from the id (ADR-014) so the on-disk filename
+                # stays a flat leaf name.
+                member_path = (
+                    members_dir / f"{_persona_dirname(persona_sel.id)}.md"
+                )
                 member_path.write_text(persona_section + "\n", encoding="utf-8")
                 rel = str(member_path.relative_to(root))
                 wrote.append(rel)

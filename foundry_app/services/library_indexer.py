@@ -216,42 +216,116 @@ def _log_dangling_producers(personas: list[PersonaInfo]) -> None:
                 )
 
 
+def format_unknown_persona_error(
+    persona_id: str,
+    library_index: LibraryIndex,
+) -> str:
+    """Format the ADR-014 error message for an unresolved persona id.
+
+    Two flavors are produced:
+
+    * **Wrong-tier** — the trailing path segment exists in the *other* tier,
+      so the user almost certainly forgot or added the ``extended/`` prefix.
+      The message names the correct form.
+    * **Unknown** — the trailing segment is absent from both tiers; the
+      message lists the live core and extended ids so the user can pick
+      the intended target.
+
+    Both messages are taken verbatim from ADR-014 § Decision.
+    """
+    user_wants_extended = persona_id.startswith("extended/")
+    leaf = persona_id.split("/", 1)[1] if user_wants_extended else persona_id
+
+    # Wrong-tier detection: the trailing leaf exists in the *other* tier.
+    if user_wants_extended:
+        # User wrote 'extended/<leaf>'; check if leaf actually lives in core.
+        other_match = next(
+            (p for p in library_index.personas
+             if p.tier == "core" and p.id == leaf),
+            None,
+        )
+    else:
+        # User wrote bare '<leaf>'; check if it actually lives in extended.
+        other_match = next(
+            (p for p in library_index.personas
+             if p.tier == "extended" and p.id == f"extended/{leaf}"),
+            None,
+        )
+    if other_match is not None:
+        return (
+            f"Persona '{persona_id}' not found at expected tier. "
+            f"Did you mean '{other_match.id}'? Extended personas must be "
+            f"referenced as 'extended/<name>'; core personas use the "
+            f"bare name."
+        )
+
+    core_ids = sorted(p.id for p in library_index.personas if p.tier == "core")
+    extended_ids = sorted(
+        p.id for p in library_index.personas if p.tier == "extended"
+    )
+    core_list = ", ".join(core_ids) if core_ids else "(none)"
+    extended_list = ", ".join(extended_ids) if extended_ids else "(none)"
+    return (
+        f"Unknown persona '{persona_id}' in composition.yml. "
+        f"Core personas (bare names): {core_list}. "
+        f"Extended personas (tier-prefixed): {extended_list}."
+    )
+
+
 def _scan_personas(
     personas_dir: Path,
     known_artifact_names: set[str],
 ) -> list[PersonaInfo]:
-    """Scan the personas/ directory and return PersonaInfo for each subdirectory."""
+    """Scan ``personas/core/`` and ``personas/extended/`` per ADR-014.
+
+    Each subdirectory contributes one ``PersonaInfo`` whose ``id`` is the
+    composition.yml reference form (bare for core, ``extended/<name>`` for
+    extended) and whose ``tier`` is set accordingly. Missing tier dirs are
+    treated as empty (matches the existing missing-``personas/`` behavior).
+    """
     if not personas_dir.is_dir():
         logger.warning("Personas directory not found: %s", personas_dir)
         return []
 
     personas: list[PersonaInfo] = []
-    for entry in sorted(personas_dir.iterdir()):
-        if not entry.is_dir():
+    for tier in ("core", "extended"):
+        tier_dir = personas_dir / tier
+        if not tier_dir.is_dir():
+            logger.warning(
+                "Persona tier directory not found: %s — treating as empty",
+                tier_dir,
+            )
             continue
+        for entry in sorted(tier_dir.iterdir()):
+            if not entry.is_dir():
+                continue
 
-        templates: list[str] = []
-        templates_dir = entry / "templates"
-        if templates_dir.is_dir():
-            templates = sorted(
-                f.name for f in templates_dir.iterdir() if f.is_file()
-            )
+            templates: list[str] = []
+            templates_dir = entry / "templates"
+            if templates_dir.is_dir():
+                templates = sorted(
+                    f.name for f in templates_dir.iterdir() if f.is_file()
+                )
 
-        persona_md = entry / "persona.md"
-        produces, consumes = _load_persona_contracts(entry, known_artifact_names)
-        personas.append(
-            PersonaInfo(
-                id=entry.name,
-                path=str(entry),
-                has_persona_md=persona_md.is_file(),
-                has_outputs_md=(entry / "outputs.md").is_file(),
-                has_prompts_md=(entry / "prompts.md").is_file(),
-                templates=templates,
-                category=_parse_persona_category(persona_md),
-                produces=produces,
-                consumes=consumes,
+            persona_md = entry / "persona.md"
+            produces, consumes = _load_persona_contracts(
+                entry, known_artifact_names,
             )
-        )
+            persona_id = entry.name if tier == "core" else f"extended/{entry.name}"
+            personas.append(
+                PersonaInfo(
+                    id=persona_id,
+                    path=str(entry),
+                    tier=tier,
+                    has_persona_md=persona_md.is_file(),
+                    has_outputs_md=(entry / "outputs.md").is_file(),
+                    has_prompts_md=(entry / "prompts.md").is_file(),
+                    templates=templates,
+                    category=_parse_persona_category(persona_md),
+                    produces=produces,
+                    consumes=consumes,
+                )
+            )
 
     return personas
 

@@ -292,7 +292,7 @@
 | BEAN-268 | Add Workflow Pointers Section to Generated CLAUDE.md | App | Medium | Done | team-lead |
 | BEAN-269 | Make Team Orchestration Model Explicit in Generated Artifacts | App | High | Done | team-lead |
 | BEAN-270 | `/spawn-task` Persona-Scoped Delegation Command | Process | High | Done | team-lead |
-| BEAN-271 | Tier Library Personas — `core/` vs `extended/` | Infra | High | Approved | (unassigned) |
+| BEAN-271 | Tier Library Personas — `core/` vs `extended/` | Infra | High | In Progress | team-lead |
 | BEAN-272 | Validate Task `Inputs:` at Dispatch (Pre-Execution Hook) | Process | High | Done | team-lead |
 | BEAN-273 | Persona `produces:` / `consumes:` Contracts | Infra | High | Done | team-lead |
 | BEAN-274 | Compose-Time Contract Graph Validator | App | High | Approved | (unassigned) |
