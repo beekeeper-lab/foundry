@@ -461,7 +461,7 @@ def generate_project(
                 stage_callback=stage_callback,
                 claude_kit_root=kit_root,
             )
-            manifest.stages = stages
+            manifest.stages.update(stages)
 
             # Phase 2: Compare against target
             overlay_plan = _compare_trees(tmp_path, output_dir)
@@ -492,7 +492,7 @@ def generate_project(
             stage_callback=stage_callback,
             claude_kit_root=kit_root,
         )
-        manifest.stages = stages
+        manifest.stages.update(stages)
 
     # Write manifest file if enabled
     if composition.generation.write_manifest and not dry_run:

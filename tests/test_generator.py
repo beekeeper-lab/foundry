@@ -1622,24 +1622,12 @@ class TestContractGraphPipelineIntegration:
         # the run actually completed).
         assert "scaffold" in manifest.stages
 
-    @pytest.mark.xfail(
-        reason=(
-            "BEAN-274 follow-up: in overlay mode the contract_validation "
-            "stage is attached to manifest.stages at generator.py:440, "
-            "then wiped out by 'manifest.stages = stages' at line 464. "
-            "Move the stage attachment after _run_pipeline so the "
-            "contract-graph warnings survive on the manifest."
-        ),
-        strict=False,
-    )
     def test_overlay_mode_records_contract_warning_on_manifest(
         self, tmp_path: Path,
     ):
-        """The bean spec requires that overlay-mode missing-producer
-        findings be **recorded in GenerationManifest**. The validator
-        produces the StageResult correctly; the bug is in the pipeline
-        wiring — see xfail reason. Once the fix lands this test will
-        XPASS and should be unmarked."""
+        """Overlay-mode missing-producer findings are recorded in
+        ``GenerationManifest.stages['contract_validation']`` so they
+        survive on the manifest alongside the pipeline stages."""
         lib_root = _make_library_dir_with_broken_contract(tmp_path)
         output_dir = tmp_path / "output" / "broken-team-overlay-warn"
         spec = _make_spec()
