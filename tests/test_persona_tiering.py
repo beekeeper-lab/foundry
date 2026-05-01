@@ -75,8 +75,8 @@ class TestScanPersonasTier:
             f"core tier must contain exactly 5 personas; got {len(core)}: "
             f"{sorted(p.id for p in core)}"
         )
-        assert len(extended) == 19, (
-            f"extended tier must contain exactly 19 personas; got "
+        assert len(extended) == 20, (
+            f"extended tier must contain exactly 20 personas; got "
             f"{len(extended)}: {sorted(p.id for p in extended)}"
         )
 

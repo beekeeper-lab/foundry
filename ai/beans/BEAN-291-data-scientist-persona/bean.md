@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-291 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-05-01 |
-| **Started** | — |
+| **Started** | 2026-05-01 16:50 |
 | **Completed** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | — |
 | **Duration** | — |
@@ -140,16 +140,13 @@ defaults.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Author the data-scientist persona | developer | — | Done |
+| 2 | Indexer test, tone consistency, README check, manual | tech-qa | 1 | Pending |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Likely wave: **BA** (canonical mission, scope boundaries, and
-> activation triggers — wording matters for personas), **Developer**
-> (write persona.md / outputs.md / prompts.md / four templates),
-> **Tech-QA** (indexer test, persona-content review for tone
-> consistency with siblings, README update verification).
-> Architect not required — this is content for an existing
-> extended-tier slot, no new abstractions or module boundaries.
+> Skipped: BA (default — bean Notes already pin down mission, scope,
+> activation triggers, output names, and hand-off direction; nothing
+> remains to disambiguate). Architect (default — content for an
+> existing tier slot, no new abstractions).
 
 ## Changes
 
@@ -208,7 +205,8 @@ the persona that makes that compose attempt possible.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Author the data-scientist persona | developer | 8m | 11,588,207 | 38,168 | $21.19 |
+| 2 | Indexer test, tone consistency, README check, manual | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
