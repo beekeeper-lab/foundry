@@ -457,3 +457,147 @@ class TestComposeRoundTrip:
             assert personas == [], (
                 "contracts.personas must be empty when team is empty"
             )
+
+
+# ---------------------------------------------------------------------------
+# Test 7 — pair-fields registry shape (BEAN-276)
+# ---------------------------------------------------------------------------
+
+
+class TestPairFieldsRegistryShape:
+    """The ``pair-fields:`` map in the artifact-types registry is well-formed.
+
+    BEAN-276 introduces per-edge ``extras`` that the typed ``/handoff`` skill
+    merges onto an artifact's required-fields. This is a markdown-spec
+    contract executed by personas at runtime, but the registry shape itself
+    is a YAML file we can validate. These tests make the contract break
+    loudly if a future edit weakens the schema (e.g., drops ``from``,
+    leaves ``extras`` empty, or references a non-core persona).
+    """
+
+    REGISTRY_PATH = LIBRARY_ROOT / "contracts" / "artifact-types.yml"
+    PAIR_FIELDS_REQUIRED_KEYS = ("from", "to", "extras")
+
+    def _load_pair_fields(self) -> list[dict]:
+        data = yaml.safe_load(self.REGISTRY_PATH.read_text(encoding="utf-8"))
+        assert isinstance(data, dict), "registry root is not a YAML mapping"
+        return data.get("pair-fields") or []
+
+    def test_pair_fields_section_is_present_and_is_a_list(self):
+        data = yaml.safe_load(self.REGISTRY_PATH.read_text(encoding="utf-8"))
+        assert "pair-fields" in data, (
+            "registry must define a top-level 'pair-fields:' section "
+            "(BEAN-276)"
+        )
+        assert isinstance(data["pair-fields"], list), (
+            "'pair-fields:' must be a list of edge mappings"
+        )
+
+    def test_pair_fields_is_non_empty(self):
+        pair_fields = self._load_pair_fields()
+        assert pair_fields, (
+            "pair-fields must contain at least one edge — BEAN-276 ships "
+            "developer→tech-qa, architect→developer, ba→tech-qa"
+        )
+
+    def test_every_entry_has_from_to_extras(self):
+        pair_fields = self._load_pair_fields()
+        for idx, entry in enumerate(pair_fields):
+            assert isinstance(entry, dict), (
+                f"pair-fields entry #{idx} is not a mapping: {entry!r}"
+            )
+            for key in self.PAIR_FIELDS_REQUIRED_KEYS:
+                assert key in entry, (
+                    f"pair-fields entry #{idx} missing required key '{key}': "
+                    f"{entry!r}"
+                )
+
+    def test_from_and_to_are_non_empty_strings(self):
+        pair_fields = self._load_pair_fields()
+        for idx, entry in enumerate(pair_fields):
+            for key in ("from", "to"):
+                value = entry.get(key)
+                assert isinstance(value, str) and value.strip(), (
+                    f"pair-fields entry #{idx} '{key}' must be a non-empty "
+                    f"string: {entry!r}"
+                )
+
+    def test_from_and_to_differ(self):
+        pair_fields = self._load_pair_fields()
+        for idx, entry in enumerate(pair_fields):
+            assert entry["from"] != entry["to"], (
+                f"pair-fields entry #{idx} has from == to ({entry['from']!r}); "
+                "a handoff requires two different personas"
+            )
+
+    def test_extras_is_non_empty_list_of_strings(self):
+        pair_fields = self._load_pair_fields()
+        for idx, entry in enumerate(pair_fields):
+            extras = entry.get("extras")
+            assert isinstance(extras, list), (
+                f"pair-fields entry #{idx} 'extras' must be a list: {entry!r}"
+            )
+            assert extras, (
+                f"pair-fields entry #{idx} 'extras' must be non-empty — "
+                "an edge with no extras adds nothing to the packet schema"
+            )
+            for j, item in enumerate(extras):
+                assert isinstance(item, str) and item.strip(), (
+                    f"pair-fields entry #{idx} extras[{j}] must be a "
+                    f"non-empty string: {item!r}"
+                )
+
+    def test_edges_are_unique(self):
+        """No duplicate ``(from, to)`` pairs — the skill expects one match."""
+        pair_fields = self._load_pair_fields()
+        seen: set[tuple[str, str]] = set()
+        for idx, entry in enumerate(pair_fields):
+            edge = (entry["from"], entry["to"])
+            assert edge not in seen, (
+                f"pair-fields entry #{idx} duplicates edge {edge}; the "
+                "typed /handoff skill expects at most one match per edge"
+            )
+            seen.add(edge)
+
+    def test_personas_resolve_to_core_persona_ids(self):
+        """Both ``from`` and ``to`` reference real core personas in the library.
+
+        BEAN-276 scopes pair-fields to core-persona edges; extended-persona
+        edges are explicitly out of scope. This test fails loudly if a
+        future edit references a persona id that doesn't exist (typo) or
+        accidentally references a non-core persona.
+        """
+        idx = build_library_index(LIBRARY_ROOT)
+        core_ids = {
+            p.id for p in idx.personas
+            if "/" not in p.id  # core personas have no namespace prefix
+        }
+        # Sanity check — the five core personas should be present.
+        assert {"ba", "architect", "developer", "tech-qa", "team-lead"} <= core_ids
+        pair_fields = self._load_pair_fields()
+        for entry in pair_fields:
+            assert entry["from"] in core_ids, (
+                f"pair-fields 'from: {entry['from']}' is not a core persona id"
+            )
+            assert entry["to"] in core_ids, (
+                f"pair-fields 'to: {entry['to']}' is not a core persona id"
+            )
+
+    def test_pair_fields_does_not_break_artifact_type_loading(self):
+        """The registry's pair-fields key must not break ``types:`` parsing.
+
+        The indexer's ``_load_artifact_type_registry`` reads only ``types:``
+        and ignores siblings. This test asserts that contract: a future
+        change that accidentally moves pair-fields under ``types:`` would
+        break loudly.
+        """
+        types = _load_artifact_type_registry(LIBRARY_ROOT / "contracts")
+        # Registry still loads with the documented number of types.
+        assert 12 <= len(types) <= 15
+        # No artifact type was named 'pair-fields' (would indicate the key
+        # accidentally landed inside the types: list).
+        names = {t.name for t in types}
+        assert "pair-fields" not in names, (
+            "An artifact type called 'pair-fields' indicates the section "
+            "was misplaced inside types: rather than as a sibling key"
+        )

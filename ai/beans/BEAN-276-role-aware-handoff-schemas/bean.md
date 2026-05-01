@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-276 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-04-28 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-05-01 00:48 |
+| **Completed** | 2026-05-01 01:02 |
+| **Duration** | 1587h 55m |
+| **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | BEAN-273 |
 
@@ -63,15 +63,24 @@ Two failure modes:
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Implement typed /handoff: skill spec + pair-fields registry + index + example | developer | — | Done |
+| 2 | Verify typed /handoff: cold-start walkthrough + registry/index tests | tech-qa | 1 | Done |
 
-> Tasks populated by Team-Lead. Likely wave: Architect (registry pair-fields design), Developer (skill update + index file + example handoff), Tech-QA (validation paths).
+> Skipped: BA (default — no requirements ambiguity); Architect (default — pair-fields schema is a small data-model addition documented inline by Developer with rationale, no ADR needed; bean's notes call this a "small contract decision").
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai-team-library/claude/skills/handoff/SKILL.md` | +241/-? (full rewrite — contract-aware) |
+| `ai-team-library/claude/commands/handoff.md` | +26/-? (≤30-line trigger) |
+| `ai-team-library/contracts/artifact-types.yml` | +52 (pair-fields section + 3 edges) |
+| `ai-team-library/personas/core/{architect,ba,developer,team-lead,tech-qa}/persona.md` | +78 (typed-handoff sections) |
+| `ai/handoffs/_index.md` | +21 (new file with schema) |
+| `ai/handoffs/developer-to-tech-qa-BEAN-274-task-02.md` | +104 (example handoff) |
+| `tests/test_persona_contracts.py` | +144 (TestPairFieldsRegistryShape, 9 tests) |
+| `ai/beans/BEAN-276-role-aware-handoff-schemas/bean.md` + 2 task files | +220 |
+| **Total** | 15 files changed, +826 / -62 |
 
 ## Notes
 
@@ -80,6 +89,12 @@ Two failure modes:
 **Empty `ai/handoffs/` is a real signal.** If the directory is still empty after this bean lands, the typed format is too heavyweight or the dispatch flow doesn't actually require handoffs. Revisit the requirement — maybe `/spawn-task` (BEAN-270) should auto-invoke `/handoff` at task completion when a downstream consumer exists.
 
 **Per BEAN-249**: command file ≤30 lines, skill file is canonical. Comply from day one.
+
+**Tech-QA follow-ups (2026-05-01).** Surfaced during Task 02 cold-start review. Filed as observations rather than fixed under this bean per the verify-don't-re-implement constraint. Both are documentation-quality issues, not AC failures.
+
+1. **Example handoff doesn't satisfy SKILL.md's "Validate before emitting" MUST.** SKILL.md requires the packet to "cite a developer-authored summary doc under `ai/outputs/developer/`" but the example at `ai/handoffs/developer-to-tech-qa-BEAN-274-task-02.md` cites only working-tree files (the actual code change). For BEAN-274 no such summary doc exists. The MUST is overbroad for the real Foundry workflow where production code IS the artifact. Either soften the SKILL.md MUST (e.g., accept working-tree files plus the bean's task spec as a valid citation) or backfill a synthetic developer note under `ai/outputs/developer/`.
+
+2. **SKILL.md "Data sources" parity claim is overbroad.** Says "These three sources are the same data shape that `foundry_app/services/library_indexer.py::_load_persona_contracts` already loads." The indexer only loads `produces:`/`consumes:`; `pair-fields:` is read at handoff time by the skill. Tighten to "Two of these three sources..." or just remove the parity claim.
 
 ## Trello
 
@@ -91,12 +106,13 @@ Two failure modes:
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Implement typed /handoff: skill spec + pair-fields registry + index + example | developer | 6m | 845,302 | 3,014 | $1.53 |
+| 2 | Verify typed /handoff: cold-start walkthrough + registry/index tests | tech-qa | 2m | 886,020 | 2,929 | $1.59 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 8m |
+| **Total Tokens In** | 1,731,322 |
+| **Total Tokens Out** | 5,943 |
+| **Total Cost** | $3.12 |

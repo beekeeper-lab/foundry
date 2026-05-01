@@ -4,6 +4,37 @@
 # Schema enforcement on artifact bodies is out of scope for BEAN-273
 # (a follow-up bean will validate that a markdown file marked `user-story`
 # actually contains the listed required-fields).
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# pair-fields (BEAN-276): per-edge extras the typed `/handoff` skill merges
+# onto an artifact's required-fields when emitting a handoff packet.
+#
+# An artifact-type's required-fields describe what the artifact *itself*
+# must contain. They travel with the artifact across every edge.
+# A pair-fields entry describes what the *receiver* needs about the
+# specific (from → to) edge that the artifact alone does not capture —
+# things that depend on who is reading it next.
+#
+# Worked example (developer → tech-qa):
+#   - `code-change` always carries `summary`, `what-changed`, `how-to-test`,
+#     `files-touched` (its required-fields).
+#   - But Tech-QA also needs to know which targeted tests/files to
+#     focus on (`test-targets`) and the exact reproducer command
+#     (`rerun-command`) to start verification immediately. Those are
+#     edge-scoped, not part of the artifact body — so they live here
+#     under `pair-fields:`, not under `code-change`'s required-fields.
+#
+# Decision rationale (inline; no ADR per BEAN-276):
+#   - List-of-mappings (over `dict[(from,to)] -> extras`) keeps the registry
+#     diff-friendly and human-scannable, and matches how `types:` is shaped.
+#   - Edge keys are core-persona ids only; extended-persona edges are
+#     out-of-scope for BEAN-276 and can be added later without a schema
+#     change.
+#   - `extras:` items are bare strings (field labels). The packet
+#     template renders them in a single Edge Extras section so they
+#     never collide with an artifact's required-fields, which are
+#     scoped under each artifact's subsection.
+# ─────────────────────────────────────────────────────────────────────────────
 
 types:
   - name: bean-spec
@@ -227,3 +258,24 @@ types:
       - rework
       - verification
     template-path: null
+
+# Per-edge extras layered onto the artifact's required-fields by the
+# typed `/handoff` skill. See header comment for rationale and rendering rules.
+pair-fields:
+  - from: developer
+    to: tech-qa
+    extras:
+      - test-targets       # specific test files / pytest node ids Tech-QA should run first
+      - rerun-command      # exact shell command to reproduce the developer's last green run
+
+  - from: architect
+    to: developer
+    extras:
+      - implementation-priorities  # ordered guidance on which design slices to land first
+      - open-design-questions      # design-time questions the developer should resolve or escalate
+
+  - from: ba
+    to: tech-qa
+    extras:
+      - testability-notes  # any AC the BA flagged as needing creative test design (e.g., perf, fuzz)
+

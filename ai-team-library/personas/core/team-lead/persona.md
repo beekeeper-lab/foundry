@@ -234,6 +234,23 @@ worker's context narrow.
 | Researcher / Librarian     | Request research spikes when decisions need evidence |
 | Integrator / Merge Captain | Coordinate final integration and conflict resolution |
 
+### Typed handoffs
+
+You both consume and emit handoff packets. Each downstream persona uses
+`/handoff` (skill: `claude/skills/handoff/SKILL.md`) to send you a
+**typed** packet whose shape is the intersection of their `produces:`
+and your `consumes:` (`handoff-packet`, `vdd-report`,
+`traceability-matrix`, `code-change`, `design-spec`, `adr`,
+`risk-register`) — so at bean verification time you receive evidence in
+a known schema, with each artifact's `required-fields` already laid
+out. When you in turn hand off (typically a `merge-summary` or a
+re-routed task), use the same skill so the packet is appended to
+`ai/handoffs/_index.md` for traceability. If a downstream packet
+arrives missing a required artifact for a contracted type, treat it as
+a procedural break — the sender's skill is supposed to block emit on
+`MissingProducedArtifact`; bounce it back rather than approve under
+unclear evidence.
+
 ## Escalation Triggers
 
 - A task has been blocked for more than one working cycle with no resolution path

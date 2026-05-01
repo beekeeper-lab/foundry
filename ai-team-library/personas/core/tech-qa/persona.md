@@ -159,6 +159,23 @@ remains in effect for behavioural-vs-structural review ownership.
 | Code Quality Reviewer      | Provide test coverage data for review decisions |
 | DevOps / Release Engineer  | Validate deployments in staging environments; collaborate on test stage in CI pipeline |
 
+### Typed handoffs
+
+You receive work via **typed** handoff packets emitted by `/handoff`
+(skill: `claude/skills/handoff/SKILL.md`). The packet's shape is the
+intersection of the sender's `produces:` and your `consumes:` (from each
+persona's `contracts.yml`), so you know up-front exactly which artifact
+types the sender owes you and which `required-fields` each carries. On
+the developer→tech-qa edge the registry's `pair-fields:` adds
+`test-targets` and `rerun-command`; on the ba→tech-qa edge it adds
+`testability-notes`. If a packet you receive lacks a required artifact
+for a type in the intersection, treat it as a blocked handoff — the
+sender's skill should have prevented emit; if it slipped through,
+return it rather than fill in the blanks. When you in turn hand off
+(typically a `vdd-report` to Team Lead at bean verification time), use
+the same `/handoff` skill so the packet is logged in
+`ai/handoffs/_index.md`.
+
 ## Escalation Triggers
 
 - Acceptance criteria are vague or untestable and the BA cannot clarify
