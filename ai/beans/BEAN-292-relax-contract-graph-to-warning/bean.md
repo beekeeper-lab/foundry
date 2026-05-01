@@ -159,11 +159,18 @@ warnings back to errors.
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/services/validator.py` | +47 / -8 |
+| `foundry_app/services/generator.py` | +29 / -3 |
+| `foundry_app/ui/screens/builder/wizard_pages/persona_page.py` | +57 / -16 |
+| `tests/test_validator.py` | +178 / -34 |
+| `tests/test_persona_page.py` | +171 / -33 |
+| `tests/test_generator.py` | +152 / -16 |
+| `ai/outputs/tech-qa/BEAN-292-manual-verification.md` | +89 / -0 |
+| `ai/beans/BEAN-292-…/tasks/01-developer-relax-severity-and-indicator.md` | +157 / -0 |
+| `ai/beans/BEAN-292-…/tasks/02-tech-qa-regression-and-e2e.md` | +132 / -0 |
+| `ai/beans/BEAN-292-…/bean.md` | +30 / -14 |
 
 ## Notes
 
