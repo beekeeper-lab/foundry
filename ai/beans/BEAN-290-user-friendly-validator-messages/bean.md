@@ -21,7 +21,8 @@ ones), what's left is *visible*, *actionable*, and *unreadable*. The
 messages are written in the validator's internal vocabulary, not the
 user's:
 
-Observed 2026-05-01 with `developer + ba + tech-qa` selected:
+Observed 2026-05-01 — example A, persona-page coherence indicator
+with `developer + ba + tech-qa` selected:
 
 ```
 🔴 Team coherence: 2 missing producers — add producers or remove consumers.
@@ -31,6 +32,27 @@ Observed 2026-05-01 with `developer + ba + tech-qa` selected:
   team-lead, tech-qa. Producers in library: architect. Add one to
   your team.
 ```
+
+Observed 2026-05-01 — example B, generation-failure banner with a
+posture-incompatible hook pack selected:
+
+```
+Generation failed: Validation failed: Hook pack 'compliance-gate'
+declares posture 'baseline' as incompatible (Posture Compatibility
+table says Included: No). Remove the pack, lower enforcement, or
+raise the composition's posture.
+```
+
+Both surfaces have the same disease, expressed differently:
+
+- The persona-page version leaks **graph vocabulary** ("producer",
+  "consumer", "type 'adr'").
+- The generation-banner version **double-wraps the prefix**
+  ("Generation failed: Validation failed:") and **leaks an internal
+  data-structure name** ("Posture Compatibility table says Included:
+  No"). The user has no idea what a Posture Compatibility table is
+  — it's a section heading inside a hook pack's metadata file, not
+  a concept the wizard ever exposes.
 
 User feedback: *"They're not human readable. We don't want to say
 things like 'missing producer of type ADR consumed by developer,
@@ -115,6 +137,21 @@ key on it). Only the **message text** changes.
   `foundry_app/ui/screens/builder/wizard_pages/persona_page.py`
   — the headline ("2 missing producers — add producers or remove
   consumers.") inherits the same vocabulary cleanup.
+- **Generation-failure banner wrapping** — the BEAN-287 sticky
+  banner currently double-prefixes validator messages with
+  `"Generation failed: Validation failed: …"`. Drop the inner
+  `"Validation failed:"` (the banner already conveys *that
+  something failed*) and let the cleaned validator message read
+  on its own. Find the wrapping site (likely the generator
+  service or the progress screen) and stop adding the redundant
+  prefix.
+- **Data-structure leakage in messages** — `"(Posture
+  Compatibility table says Included: No)"` and similar
+  parentheticals reference internal hook-pack-metadata sections
+  the user never sees. Strip those clauses from the user-facing
+  text. The same information can land in the log line for
+  developers; the banner gets a clean statement of *what is
+  wrong* and *what to do*.
 
 ### Out of Scope
 
@@ -156,6 +193,18 @@ key on it). Only the **message text** changes.
       user-vocabulary nouns ("missing roles", "outputs no one is
       using", or similar — exact wording chosen during BA
       activation).
+- [ ] (test:tests/) The generation-failure banner no longer
+      double-prefixes validator messages with `"Validation
+      failed:"`. A test against the banner-text construction site
+      asserts the banner copy starts with the cleaned validator
+      message (or a single, user-vocabulary lead-in like
+      `"Can't generate yet — "`), not with `"Validation failed:
+      …"`.
+- [ ] (test:tests/test_validator.py) The
+      `hook-pack-posture-incompatible` message text does NOT
+      contain the substring `"Posture Compatibility table"` or
+      `"Included: No"`. Equivalent assertions on any other
+      data-structure section names that currently leak through.
 - [ ] (test:tests/test_validator.py) Existing message-code-based
       assertions still pass — codes are unchanged.
 - [ ] (test:tests/) All tests pass (`uv run pytest`).
@@ -212,6 +261,18 @@ The fix landed (yellow → green for the 5 core personas), and the
 next layer of UX showed up immediately: when the indicator IS
 red, the messages it surfaces are unreadable. Same surface, next
 quality bar.
+
+**Two surfaces, one fix.** The user hit the same problem on a
+second surface within minutes — the generation-failure banner
+(BEAN-287) showed `"Generation failed: Validation failed: Hook
+pack 'compliance-gate' declares posture 'baseline' as incompatible
+(Posture Compatibility table says Included: No)…"`. Same root
+cause (validator messages constructed in internal vocabulary,
+surfaced verbatim) plus two new sins (the banner double-prefixing
+and the parenthetical leaking an internal-only metadata section
+name). The fix is the same — clean up the validator message text
+at the source — plus drop the redundant `"Validation failed:"`
+prefix at the banner-wrapping site.
 
 **Coverage expectation.** The bean asks for vocabulary tests on
 **every** UI-surfaced code, not just the two visible in the
