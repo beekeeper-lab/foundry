@@ -138,14 +138,13 @@ inverse: posture default changes), so the initial state is valid.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Drop posture-incompatible packs from default selection + audit | developer | — | Pending |
+| 2 | Regression sweep + manual wizard verification at all three postures | tech-qa | 01 | Pending |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Likely wave: **Developer** (root-cause investigation + chosen fix +
-> tests), **Tech-QA** (regression sweep + manual verification at all
-> three postures). Architect not required — this is a defaults
-> alignment, not a model change. BA not required — the wording is
-> already correct; only the trigger condition changes.
+> Skipped: BA (default), Architect (default)
+> Wave: **Developer → Tech-QA**. Architect not required — this is a
+> defaults alignment, not a model change. BA not required — the wording
+> is already correct; only the trigger condition changes.
 
 ## Changes
 
@@ -190,7 +189,8 @@ problem, clear options) — the underlying defaults bug was independent.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Drop posture-incompatible packs from default selection + audit | developer | — | — | — | — |
+| 2 | Regression sweep + manual wizard verification at all three postures | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
