@@ -750,3 +750,210 @@ class TestEmptyState:
         lib = _make_library("developer", "architect")
         page.load_personas(lib)
         assert page._empty_label.isHidden() is True
+
+
+# ---------------------------------------------------------------------------
+# BEAN-274 — Team-coherence indicator (red/yellow/green)
+#
+# The wizard's _coherence_label reflects validate_contract_graph's findings
+# in real time as personas are toggled. Tests bind the user-facing contract:
+# 🔴 missing producer, 🟡 orphan produces, 🟢 all consumes satisfied.
+# ---------------------------------------------------------------------------
+
+
+def _make_contract_persona(
+    pid: str,
+    *,
+    produces: list[str] | None = None,
+    consumes: list[str] | None = None,
+    tier: str = "core",
+    category: str = "Software Development",
+) -> PersonaInfo:
+    """PersonaInfo with explicit produces/consumes — for coherence tests."""
+    return PersonaInfo(
+        id=pid,
+        path=f"/fake/personas/{pid}",
+        tier=tier,
+        has_persona_md=True,
+        has_outputs_md=True,
+        has_prompts_md=True,
+        templates=[],
+        category=category,
+        produces=produces or [],
+        consumes=consumes or [],
+    )
+
+
+@pytest.fixture()
+def coherence_page():
+    """A page loaded with three contract-bearing personas:
+    - producer: produces 'thing' (no consumes)
+    - consumer: consumes 'thing' (no produces)
+    - orphan-producer: produces 'orphan-thing' (no on-team consumer)
+
+    Red = consumer alone (missing producer for 'thing')
+    Yellow = orphan-producer alone (orphan, no error)
+    Green = producer + consumer (closed graph)
+    """
+    lib = LibraryIndex(
+        library_root="/fake/library",
+        personas=[
+            _make_contract_persona("producer", produces=["thing"]),
+            _make_contract_persona("consumer", consumes=["thing"]),
+            _make_contract_persona(
+                "orphan-producer", produces=["orphan-thing"],
+            ),
+        ],
+    )
+    p = PersonaSelectionPage(library_index=lib)
+    yield p
+    p.close()
+
+
+class TestCoherenceIndicatorInitialState:
+    """Before any selection, the indicator is hidden (empty selection
+    is already covered by the existing 'select at least one' warning)."""
+
+    def test_indicator_hidden_when_no_library(self, page):
+        assert page._coherence_label is not None
+        assert page._coherence_label.isHidden() is True
+
+    def test_indicator_hidden_when_library_loaded_but_nothing_selected(
+        self, coherence_page,
+    ):
+        assert coherence_page._coherence_label.isHidden() is True
+
+
+class TestCoherenceIndicatorRed:
+    """🔴 — at least one missing-producer error on the current selection."""
+
+    def test_indicator_red_when_consumer_lacks_producer(
+        self, coherence_page,
+    ):
+        coherence_page.persona_cards["consumer"].is_selected = True
+
+        label = coherence_page._coherence_label
+        assert label.isHidden() is False
+        text = label.text()
+        # Red emoji (\U0001f534) marks the missing-producer state.
+        assert "\U0001f534" in text, f"Expected red emoji, got: {text!r}"
+        # The label messages the user about the missing producer.
+        assert "missing" in text.lower()
+
+    def test_indicator_red_count_reflects_findings(self, coherence_page):
+        """A consumer with multiple unsatisfied consumes must show the
+        right pluralization and count."""
+        # Add a consumer with two unsatisfied types.
+        lib = LibraryIndex(
+            library_root="/fake",
+            personas=[
+                _make_contract_persona(
+                    "lonely",
+                    consumes=["aaa", "bbb"],
+                ),
+            ],
+        )
+        coherence_page.load_personas(lib)
+        coherence_page.persona_cards["lonely"].is_selected = True
+
+        text = coherence_page._coherence_label.text()
+        assert "\U0001f534" in text
+        # Plural "producers" since count == 2.
+        assert "2 missing producer" in text
+        assert "producers" in text  # plural
+
+
+class TestCoherenceIndicatorYellow:
+    """🟡 — orphan produces but no missing producer."""
+
+    def test_indicator_yellow_when_only_orphan_produces(
+        self, coherence_page,
+    ):
+        coherence_page.persona_cards["orphan-producer"].is_selected = True
+
+        label = coherence_page._coherence_label
+        assert label.isHidden() is False
+        text = label.text()
+        # Yellow emoji (\U0001f7e1) marks the orphan-only state.
+        assert "\U0001f7e1" in text, f"Expected yellow emoji, got: {text!r}"
+        assert "orphan" in text.lower()
+
+
+class TestCoherenceIndicatorGreen:
+    """🟢 — all consumes satisfied AND no orphan produces."""
+
+    def test_indicator_green_when_team_is_balanced(self, coherence_page):
+        coherence_page.persona_cards["producer"].is_selected = True
+        coherence_page.persona_cards["consumer"].is_selected = True
+
+        label = coherence_page._coherence_label
+        assert label.isHidden() is False
+        text = label.text()
+        # Green emoji (\U0001f7e2) marks the all-satisfied state.
+        assert "\U0001f7e2" in text, f"Expected green emoji, got: {text!r}"
+        assert "satisfied" in text.lower()
+
+
+class TestCoherenceIndicatorTransitions:
+    """The indicator updates *as personas are checked/unchecked* — that's
+    the user-facing payoff of BEAN-274."""
+
+    def test_indicator_transitions_red_to_green(self, coherence_page):
+        # Start: consumer alone => RED.
+        coherence_page.persona_cards["consumer"].is_selected = True
+        assert "\U0001f534" in coherence_page._coherence_label.text()
+
+        # Add the producer => GREEN.
+        coherence_page.persona_cards["producer"].is_selected = True
+        assert "\U0001f7e2" in coherence_page._coherence_label.text()
+
+    def test_indicator_transitions_green_to_yellow(self, coherence_page):
+        # Start: balanced team => GREEN.
+        coherence_page.persona_cards["producer"].is_selected = True
+        coherence_page.persona_cards["consumer"].is_selected = True
+        assert "\U0001f7e2" in coherence_page._coherence_label.text()
+
+        # Add an orphan producer => YELLOW (graph still has no missing
+        # producer, but now has an orphan output).
+        coherence_page.persona_cards["orphan-producer"].is_selected = True
+        assert "\U0001f7e1" in coherence_page._coherence_label.text()
+
+    def test_indicator_transitions_yellow_to_red(self, coherence_page):
+        # Start: orphan-producer alone => YELLOW.
+        coherence_page.persona_cards["orphan-producer"].is_selected = True
+        assert "\U0001f7e1" in coherence_page._coherence_label.text()
+
+        # Add the consumer (whose 'thing' is unsatisfied) => RED dominates.
+        coherence_page.persona_cards["consumer"].is_selected = True
+        assert "\U0001f534" in coherence_page._coherence_label.text()
+
+    def test_indicator_hides_when_all_personas_unchecked(
+        self, coherence_page,
+    ):
+        coherence_page.persona_cards["consumer"].is_selected = True
+        assert coherence_page._coherence_label.isHidden() is False
+        coherence_page.persona_cards["consumer"].is_selected = False
+        assert coherence_page._coherence_label.isHidden() is True
+
+    def test_indicator_refreshes_on_set_team_config(self, coherence_page):
+        """``set_team_config`` (used when navigating back into the wizard)
+        must also refresh the indicator — not just card toggles."""
+        # Restore a broken team via the public API.
+        coherence_page.set_team_config(
+            TeamConfig(personas=[PersonaSelection(id="consumer")]),
+        )
+        assert coherence_page._coherence_label.isHidden() is False
+        assert "\U0001f534" in coherence_page._coherence_label.text()
+
+    def test_red_dominates_yellow(self, coherence_page):
+        """When BOTH a missing producer AND an orphan produce are present,
+        the red (error) state must win — the spec says red on missing,
+        yellow on orphan, with red being the more severe state."""
+        # Select consumer (missing producer = RED) AND orphan-producer
+        # (orphan produces = YELLOW).
+        coherence_page.persona_cards["consumer"].is_selected = True
+        coherence_page.persona_cards["orphan-producer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        assert "\U0001f534" in text
+        # Yellow emoji must NOT be present — red dominates.
+        assert "\U0001f7e1" not in text

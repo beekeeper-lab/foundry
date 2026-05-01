@@ -17,7 +17,10 @@ from foundry_app.core.models import (
     TeamConfig,
     ValidationResult,
 )
-from foundry_app.services.validator import run_pre_generation_validation
+from foundry_app.services.validator import (
+    run_pre_generation_validation,
+    validate_contract_graph,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -581,3 +584,248 @@ class TestHookPackPostureCompatibility:
         assert not any(
             m.code == "hook-pack-posture-incompatible" for m in result.messages
         )
+
+
+# ---------------------------------------------------------------------------
+# BEAN-274 — Contract-graph validation (validate_contract_graph)
+#
+# These tests bind the compose-time contract: every artifact-type a team
+# member consumes must be produced by some team member, and produces with
+# no consumer surface as warnings. ``handoff-packet`` is excluded by the
+# implementation (universally produced; see ADR-013 / library_indexer).
+# ---------------------------------------------------------------------------
+
+
+def _persona(
+    pid: str,
+    *,
+    produces: list[str] | None = None,
+    consumes: list[str] | None = None,
+) -> PersonaInfo:
+    """Minimal PersonaInfo with explicit contract lists."""
+    return PersonaInfo(
+        id=pid,
+        path=f"/fake/library/personas/{pid}",
+        has_persona_md=True,
+        produces=produces or [],
+        consumes=consumes or [],
+    )
+
+
+def _registry(*personas: PersonaInfo) -> LibraryIndex:
+    """LibraryIndex used as the registry-of-known-producers."""
+    return LibraryIndex(library_root="/fake/library", personas=list(personas))
+
+
+class TestContractGraphValidatorEmptyAndTrivial:
+    """Edge cases at the boundary of the function."""
+
+    def test_empty_team_is_valid(self):
+        """No team members ⇒ no consumes ⇒ trivially valid."""
+        registry = _registry(_persona("developer", produces=["code-change"]))
+        result = validate_contract_graph([], registry)
+        assert result.is_valid
+        assert result.messages == []
+
+    def test_persona_with_neither_produces_nor_consumes(self):
+        """A persona with empty contract lists contributes no findings."""
+        team = [_persona("noop")]
+        result = validate_contract_graph(team, _registry(*team))
+        assert result.is_valid
+        assert result.messages == []
+
+
+class TestContractGraphValidatorValidTeam:
+    """Happy path — every consumed type is produced by someone on the team."""
+
+    def test_valid_team_returns_success(self):
+        """Producer→consumer pairs balance, and the registry agrees."""
+        ba = _persona("ba", produces=["user-story"])
+        dev = _persona("developer", consumes=["user-story"])
+        team = [ba, dev]
+        result = validate_contract_graph(team, _registry(ba, dev))
+        assert result.is_valid
+        assert result.errors == []
+        assert result.warnings == []
+
+    def test_self_satisfied_consume_is_valid(self):
+        """A persona that produces and consumes the same type is satisfied."""
+        p = _persona("solo", produces=["x"], consumes=["x"])
+        team = [p]
+        result = validate_contract_graph(team, _registry(p))
+        assert result.is_valid
+        assert result.warnings == []  # not an orphan — there *is* a consumer
+
+    def test_handoff_packet_is_always_satisfied(self):
+        """``handoff-packet`` is excluded from contract-graph checks; a
+        consumer with no producer for it must NOT raise an error."""
+        team_lead = _persona("team-lead", consumes=["handoff-packet"])
+        result = validate_contract_graph([team_lead], _registry(team_lead))
+        assert result.is_valid
+        # And it must not appear as an orphan when produced either:
+        producer = _persona("dev", produces=["handoff-packet"])
+        result2 = validate_contract_graph(
+            [producer], _registry(producer),
+        )
+        assert result2.is_valid
+        assert result2.warnings == []
+
+
+class TestContractGraphValidatorMissingProducer:
+    """The headline ERROR path — consume with no team-member producer."""
+
+    def test_missing_producer_is_error(self):
+        ba = _persona("ba", produces=["user-story"])
+        dev = _persona("developer", consumes=["user-story"])
+        team = [dev]  # ba is in the library, NOT on the team
+        result = validate_contract_graph(team, _registry(ba, dev))
+        assert not result.is_valid
+        assert len(result.errors) == 1
+        msg = result.errors[0]
+        assert msg.code == "missing-producer"
+        # The artifact-type name must appear in the message — that is what
+        # the user reads to know what's broken.
+        assert "user-story" in msg.message
+        # The consuming persona must be named so the user knows who is
+        # waiting on the input.
+        assert "developer" in msg.message
+        # The library producer is listed as an actionable suggestion.
+        assert "ba" in msg.message
+
+    def test_missing_producer_lists_all_consumers(self):
+        """When several team members consume the same missing type, all
+        appear in the message."""
+        ba = _persona("ba", produces=["user-story"])
+        dev = _persona("developer", consumes=["user-story"])
+        qa = _persona("tech-qa", consumes=["user-story"])
+        result = validate_contract_graph([dev, qa], _registry(ba, dev, qa))
+        errs = [m for m in result.errors if m.code == "missing-producer"]
+        assert len(errs) == 1
+        assert "developer" in errs[0].message
+        assert "tech-qa" in errs[0].message
+
+    def test_missing_producer_lists_library_producers_as_suggestion(self):
+        """The remediation hint names every library persona that produces
+        the missing type."""
+        producer_a = _persona("ba", produces=["user-story"])
+        producer_b = _persona("team-lead", produces=["user-story"])
+        dev = _persona("developer", consumes=["user-story"])
+        result = validate_contract_graph(
+            [dev], _registry(producer_a, producer_b, dev),
+        )
+        msg = result.errors[0].message
+        assert "ba" in msg
+        assert "team-lead" in msg
+
+    def test_missing_producer_with_no_library_producer_says_none(self):
+        """If nobody in the library produces the type either, the message
+        should still be informative (not crash)."""
+        dev = _persona("developer", consumes=["mystery-type"])
+        result = validate_contract_graph([dev], _registry(dev))
+        assert len(result.errors) == 1
+        assert "mystery-type" in result.errors[0].message
+        assert "none" in result.errors[0].message.lower()
+
+    def test_multiple_missing_producers_sorted_by_type(self):
+        """Multiple missing types are emitted as separate ERRORs, sorted
+        by artifact name for deterministic output."""
+        dev = _persona("developer", consumes=["zeta", "alpha", "mu"])
+        result = validate_contract_graph([dev], _registry(dev))
+        errs = [m for m in result.errors if m.code == "missing-producer"]
+        assert len(errs) == 3
+        types_in_order = []
+        for m in errs:
+            for t in ("alpha", "mu", "zeta"):
+                if f"'{t}'" in m.message:
+                    types_in_order.append(t)
+                    break
+        assert types_in_order == ["alpha", "mu", "zeta"]
+
+    def test_missing_producer_severity_is_error(self):
+        """Severity must be ERROR, not WARNING — this is the standard-mode
+        hard-fail signal that the generator pipeline gates on."""
+        dev = _persona("developer", consumes=["task-spec"])
+        result = validate_contract_graph([dev], _registry(dev))
+        assert all(m.severity == Severity.ERROR for m in result.errors)
+        assert not result.is_valid
+
+
+class TestContractGraphValidatorOrphanProduces:
+    """Produce with no on-team consumer ⇒ WARNING (in both modes)."""
+
+    def test_orphan_produces_emits_warning(self):
+        dev = _persona("developer", produces=["dev-decision"])
+        result = validate_contract_graph([dev], _registry(dev))
+        assert result.is_valid  # warnings don't break is_valid
+        warns = [m for m in result.warnings if m.code == "orphan-produces"]
+        assert len(warns) == 1
+        assert "developer" in warns[0].message
+        assert "dev-decision" in warns[0].message
+
+    def test_orphan_produces_severity_is_warning(self):
+        dev = _persona("developer", produces=["dev-decision"])
+        result = validate_contract_graph([dev], _registry(dev))
+        assert all(m.severity == Severity.WARNING for m in result.warnings)
+
+    def test_orphan_produces_skipped_when_someone_on_team_consumes(self):
+        """An orphan only fires when the *team* lacks a consumer — being
+        consumed by a library persona NOT on the team is irrelevant."""
+        on_team_consumer = _persona("ba", consumes=["scope-definition"])
+        on_team_producer = _persona("po", produces=["scope-definition"])
+        result = validate_contract_graph(
+            [on_team_consumer, on_team_producer],
+            _registry(on_team_consumer, on_team_producer),
+        )
+        assert result.warnings == []
+
+    def test_orphan_warning_fires_even_when_library_has_consumer(self):
+        """A library-only consumer doesn't satisfy a team-only produce —
+        the warning is about the *team's* internal coherence."""
+        on_team = _persona("dev", produces=["unconsumed-by-team"])
+        library_only_consumer = _persona(
+            "absent", consumes=["unconsumed-by-team"],
+        )
+        result = validate_contract_graph(
+            [on_team], _registry(on_team, library_only_consumer),
+        )
+        warns = [m for m in result.warnings if m.code == "orphan-produces"]
+        assert len(warns) == 1
+
+    def test_handoff_packet_is_not_an_orphan(self):
+        """``handoff-packet`` is universally produced — it must never
+        appear in orphan-produces output even when nobody declares
+        consuming it."""
+        producer = _persona("dev", produces=["handoff-packet"])
+        result = validate_contract_graph([producer], _registry(producer))
+        assert result.warnings == []
+
+
+class TestContractGraphValidatorMixedResults:
+    """Combinations — ensure errors and warnings co-exist correctly."""
+
+    def test_mixed_missing_and_orphan(self):
+        dev = _persona(
+            "developer",
+            produces=["unused-output"],
+            consumes=["missing-input"],
+        )
+        result = validate_contract_graph([dev], _registry(dev))
+        errs = [m for m in result.errors if m.code == "missing-producer"]
+        warns = [m for m in result.warnings if m.code == "orphan-produces"]
+        assert len(errs) == 1
+        assert len(warns) == 1
+        assert not result.is_valid  # an ERROR was present
+
+    def test_message_ordering_errors_before_warnings(self):
+        """The implementation appends errors first then warnings —
+        downstream UI relies on this order to render severity sections."""
+        dev = _persona(
+            "developer",
+            produces=["orphan-1"],
+            consumes=["unsatisfied-1"],
+        )
+        result = validate_contract_graph([dev], _registry(dev))
+        # First message is the ERROR (missing producer), second is the
+        # WARNING (orphan produce).
+        assert result.messages[0].severity == Severity.ERROR
+        assert result.messages[1].severity == Severity.WARNING

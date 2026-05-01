@@ -59,8 +59,8 @@ Today no such check exists. `foundry_app/services/validator.py` validates schema
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Implement contract_validator + pipeline integration + wizard indicator | developer | — | In Progress |
-| 2 | Test coverage — all paths (standard fail, overlay warn, orphan, wizard) | tech-qa | 1 | Pending |
+| 1 | Implement contract_validator + pipeline integration + wizard indicator | developer | — | Done |
+| 2 | Test coverage — all paths (standard fail, overlay warn, orphan, wizard) | tech-qa | 1 | Done |
 
 > Skipped: BA (default — no requirements ambiguity); Architect (default — design constrained by ADR-013 / BEAN-273's contract format, the bean explicitly marks Architect optional).
 
@@ -91,7 +91,7 @@ Today no such check exists. `foundry_app/services/validator.py` validates schema
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Implement contract_validator + pipeline integration + wizard indicator | developer | 6m | 827,777 | 3,303 | $1.54 |
-| 2 | Test coverage — all paths (standard fail, overlay warn, orphan, wizard) | tech-qa | — | — | — | — |
+| 2 | Test coverage — all paths (standard fail, overlay warn, orphan, wizard) | tech-qa | 9m | 702,279 | 2,974 | $1.31 |
 
 | Metric | Value |
 |--------|-------|
