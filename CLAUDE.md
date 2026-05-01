@@ -33,11 +33,12 @@ A **Bean** is a unit of work (feature, enhancement, bug fix, or epic). Beans liv
 2. User reviews and approves beans (status: `Approved`)
 3. Team Lead picks approved beans from the backlog (`ai/beans/_index.md`)
 4. Team Lead decomposes into tasks. Default wave: Developer → Tech-QA. BA and Architect are opt-in when criteria are met. Tech-QA is mandatory for every bean.
-5. Each persona claims tasks, produces outputs, creates handoffs
-6. Team Lead verifies outputs against acceptance criteria
-7. Bean marked Done
+5. Team Lead dispatches each task with `/spawn-task` (preferred per-task dispatch — supervisor pattern, ADR-008). Each task's `Inputs:` is enforced at dispatch by `validate-task-inputs.py` (BEAN-272).
+6. Each persona produces typed artifacts per its `contracts.yml` (BEAN-273) and hands off to the next persona via `/handoff` (typed packets, BEAN-276).
+7. Before merge, `/vdd <bean-id>` runs the programmatic VDD gate (BEAN-277); `/merge-bean` refuses to merge without a passing report.
+8. Bean marked Done; per-bean Orchestration Telemetry rolls up via `/orchestration-report` (BEAN-278).
 
-See `ai/context/bean-workflow.md` for the full lifecycle specification.
+See `ai/context/bean-workflow.md` for the full lifecycle specification and `ai/context/orchestration-architecture.md` for the orchestration model (supervisor pattern, context engineering, specialist contracts, architecture-aware evaluation).
 
 ## Tech Stack
 

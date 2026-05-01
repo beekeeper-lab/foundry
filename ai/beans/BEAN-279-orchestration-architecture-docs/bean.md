@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-279 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
-| **Started** | — |
+| **Started** | 2026-05-01 01:23 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | BEAN-273, BEAN-274, BEAN-275, BEAN-276, BEAN-277, BEAN-278 |
 
@@ -85,9 +85,10 @@ Two new artifacts plus a checklist sweep:
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Write orchestration-architecture.md + ADR-015 + active-behavior doc sweep | developer | — | In Progress |
+| 2 | Cold-start verification: cross-references, checklist coverage, generated-project spot-check | tech-qa | 1 | Pending |
 
-> Tasks populated by Team-Lead. Likely wave: BA (long-form doc structure), Architect (cross-references and accuracy), Developer (the writing + sweep edits), Tech-QA (cold-start verification + checklist coverage).
+> Skipped: BA (default — doc structure provided in Developer task spec; no requirements ambiguity); Architect (default — cross-references folded into Tech-QA's verification per the supervisor's wave call; bean's notes mark this as a sweep, not a new architecture decision).
 
 ## Changes
 
@@ -115,7 +116,8 @@ Two new artifacts plus a checklist sweep:
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Write orchestration-architecture.md + ADR-015 + active-behavior doc sweep | developer | 9m | 1,442,005 | 3,808 | $2.50 |
+| 2 | Cold-start verification: cross-references, checklist coverage, generated-project spot-check | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|

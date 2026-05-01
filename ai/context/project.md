@@ -16,6 +16,8 @@ Validate → Scaffold → Compile → Copy Assets → Seed → Write Manifest
 
 Each stage returns a `StageResult(wrote=[], warnings=[])`. The orchestrator (`generator.py`) chains them and assembles a `GenerationManifest`.
 
+The bean-execution orchestration model (supervisor pattern, context engineering, specialist contracts, architecture-aware evaluation) is documented separately in `ai/context/orchestration-architecture.md`. ADR-015 records the cluster-level decision; ADR-008/013/014 cover the per-bean structural choices.
+
 ## Module Map
 
 ```
@@ -27,16 +29,18 @@ foundry_app/
     resources.py       # Resource path helpers
   services/
     generator.py       # Pipeline orchestrator — generate_project()
-    validator.py       # Pre-generation validation (strictness levels)
-    scaffold.py        # Creates directory tree + context files
+    validator.py       # Pre-generation validation + contract-graph check (BEAN-274 validate_contract_graph)
+    scaffold.py        # Creates directory tree + context files (emits compiled contracts: block, BEAN-273)
     compiler.py        # Compiles per-member prompts from persona + expertise files
     asset_copier.py    # Copies skills, commands, hooks into .claude/
     seeder.py          # Generates seed tasks (detailed or kickoff mode)
     safety_writer.py   # Writes settings.local.json from SafetyConfig
-    library_indexer.py # Builds LibraryIndex from library directory scan
+    library_indexer.py # Builds LibraryIndex from library directory scan (loads contracts.yml + artifact-types registry, BEAN-273)
     diff_reporter.py   # Generates diff report for generated files
     agent_writer.py    # Writes agent definition files per persona
     mcp_writer.py      # Generates MCP configuration files
+    vdd.py             # Programmatic VDD gate runner (BEAN-277 — parses AC, runs evidence checks)
+    bean_approval.py   # Approval-gate placeholder detector for /internal:approve-bean
   io/
     composition_io.py  # YAML/JSON read/write for CompositionSpec
   templates/
