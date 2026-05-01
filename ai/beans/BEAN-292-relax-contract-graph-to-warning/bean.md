@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-292 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-05-01 |
-| **Started** | — |
+| **Started** | 2026-05-01 17:54 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-290 |
 
@@ -149,12 +149,11 @@ warnings back to errors.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Demote missing-producer to WARNING and update persona-page indicator | developer | — | Pending |
+| 2 | Regression sweep + end-to-end developer+tech-qa generation | tech-qa | 01 | Pending |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Likely wave: **Developer** (severity demotion + persona-page
-> indicator update + docstring rationale), **Tech-QA** (regression
-> tests + manual verification). Architect not required — this is a
+> Skipped: BA (default), Architect (default)
+> Wave: **Developer → Tech-QA**. Architect not required — this is a
 > data-flow severity change, not a model change. BA not required — the
 > wording is already settled by BEAN-290.
 
@@ -212,7 +211,8 @@ before implementing the indicator update.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Demote missing-producer to WARNING and update persona-page indicator | developer | — | — | — | — |
+| 2 | Regression sweep + end-to-end developer+tech-qa generation | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
