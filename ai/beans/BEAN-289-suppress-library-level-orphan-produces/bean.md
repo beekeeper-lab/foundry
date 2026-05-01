@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-289 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-05-01 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-05-01 13:40 |
+| **Completed** | 2026-05-01 13:46 |
+| **Duration** | 1600h 38m |
+| **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-286 |
 
@@ -94,34 +94,33 @@ warning that implies the user must do something.
 
 ## Acceptance Criteria
 
-- [ ] (test:tests/test_validator.py) `validate_contract_graph` does NOT
+- [x] (test:tests/test_validator.py) `validate_contract_graph` does NOT
       emit an orphan-produces warning for an artifact whose library-wide
       consumer set is empty.
-- [ ] (test:tests/test_validator.py) `validate_contract_graph` DOES emit
+- [x] (test:tests/test_validator.py) `validate_contract_graph` DOES emit
       an orphan-produces warning for an artifact whose library-wide
       consumer set is non-empty but the consumer is not on the team
       (regression — current actionable behavior preserved).
-- [ ] (test:tests/test_validator.py) With the real `ai-team-library/`
+- [x] (test:tests/test_validator.py) With the real `ai-team-library/`
       indexed and the 5 core personas (architect, ba, developer,
       team-lead, tech-qa), `validate_contract_graph` emits zero
       orphan-produces warnings.
-- [ ] (test:tests/test_persona_page.py) The team-coherence indicator
+- [x] (test:tests/test_persona_page.py) The team-coherence indicator
       shows 🟢 ("all consumes satisfied") for the 5 core personas
       against the real library — i.e., the user-visible payoff lands.
-- [ ] (test:tests/) All tests pass (`uv run pytest`).
-- [ ] (lint:foundry_app/) Lint clean (`uv run ruff check foundry_app/`).
+- [x] (test:tests/) All tests pass (`uv run pytest`).
+- [x] (lint:foundry_app/) Lint clean (`uv run ruff check foundry_app/`).
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Validator — `library_consumers` map + orphan-produces filter | developer | — | Done |
+| 2 | Orphan-produces filter coverage + real-library regression | tech-qa | 01 | Done |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Likely wave: Developer (validator filter + library-consumer map),
-> Tech-QA (positive + negative tests + real-library regression).
-> BA / Architect not needed — pure validator-correctness fix; no
-> user-facing wording or new abstractions.
+> Skipped: BA (default), Architect (default). Pure validator-correctness
+> fix; no user-facing wording, no new abstractions, no cross-module
+> design.
 
 ## Changes
 
@@ -163,23 +162,24 @@ synthetic consumer just to silence the warning would be cargo-culting.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Validator — `library_consumers` map + orphan-produces filter | developer | 1m | 899,431 | 5,321 | $1.90 |
+| 2 | Orphan-produces filter coverage + real-library regression | tech-qa | 2m | 1,937,413 | 9,891 | $4.06 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 3m |
+| **Total Tokens In** | 2,836,844 |
+| **Total Tokens Out** | 15,212 |
+| **Total Cost** | $5.96 |
 
 ## Orchestration Telemetry
 
 | Field | Value |
 |-------|-------|
-| **Personas activated** | — (comma-separated, actual not planned) |
-| **Bounces** | — (Tech-QA → Developer kicks) |
-| **Scope changes** | — (in-flight scope edits) |
-| **Contract violations** | — (BEAN-274 catches at compose time) |
-| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
-| **Dispatch mode** | — (in-process / tmux-worker / mixed) |
+| **Personas activated** | developer, tech-qa |
+| **Bounces** | 0 (Tech-QA → Developer kicks) |
+| **Scope changes** | 0 (in-flight scope edits) |
+| **Contract violations** | 0 (BEAN-274 catches at compose time) |
+| **Inputs escape-hatch invocations** | 0 (BEAN-272's NONE-justified) |
+| **Dispatch mode** | in-process |

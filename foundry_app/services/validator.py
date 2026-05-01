@@ -345,14 +345,22 @@ def validate_contract_graph(
                 continue
             team_consumers.setdefault(artifact, []).append(persona.id)
 
-    # Library-wide producer index — used to suggest who to add when a
-    # consume is unsatisfied by the current team.
+    # Library-wide producer and consumer indexes. ``library_producers``
+    # is used to suggest who to add when a consume is unsatisfied;
+    # ``library_consumers`` is used to filter orphan-produces warnings
+    # for artifacts no library persona consumes (the user can't fix
+    # those — see BEAN-289).
     library_producers: dict[str, list[str]] = {}
+    library_consumers: dict[str, list[str]] = {}
     for persona in registry.personas:
         for artifact in persona.produces:
             if artifact in _CONTRACT_GRAPH_IGNORED_TYPES:
                 continue
             library_producers.setdefault(artifact, []).append(persona.id)
+        for artifact in persona.consumes:
+            if artifact in _CONTRACT_GRAPH_IGNORED_TYPES:
+                continue
+            library_consumers.setdefault(artifact, []).append(persona.id)
 
     # Missing producers — consumed by the team, produced by nobody on the team.
     missing_types = sorted(
@@ -375,10 +383,16 @@ def validate_contract_graph(
             ),
         ))
 
-    # Orphan produces — produced by the team, consumed by nobody on the team.
+    # Orphan produces — produced by the team, consumed by nobody on the
+    # team. BEAN-289: only warn when at least one library persona
+    # declares ``consumes`` on the artifact. If no library persona
+    # consumes it, the warning is unactionable (the user has no team
+    # composition that closes the graph) and is suppressed.
     orphan_pairs: list[tuple[str, str]] = []
     for artifact in sorted(team_producers):
         if artifact in team_consumers:
+            continue
+        if not library_consumers.get(artifact):
             continue
         for producer_id in team_producers[artifact]:
             orphan_pairs.append((artifact, producer_id))

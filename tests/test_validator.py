@@ -754,8 +754,13 @@ class TestContractGraphValidatorOrphanProduces:
     """Produce with no on-team consumer ⇒ WARNING (in both modes)."""
 
     def test_orphan_produces_emits_warning(self):
+        # BEAN-289: orphan-produces only fires when the library has at
+        # least one consumer for the artifact (i.e., adding that persona
+        # would close the graph). Provide a library-only consumer so the
+        # warning is actionable.
         dev = _persona("developer", produces=["dev-decision"])
-        result = validate_contract_graph([dev], _registry(dev))
+        consumer = _persona("reviewer", consumes=["dev-decision"])
+        result = validate_contract_graph([dev], _registry(dev, consumer))
         assert result.is_valid  # warnings don't break is_valid
         warns = [m for m in result.warnings if m.code == "orphan-produces"]
         assert len(warns) == 1
@@ -764,7 +769,9 @@ class TestContractGraphValidatorOrphanProduces:
 
     def test_orphan_produces_severity_is_warning(self):
         dev = _persona("developer", produces=["dev-decision"])
-        result = validate_contract_graph([dev], _registry(dev))
+        consumer = _persona("reviewer", consumes=["dev-decision"])
+        result = validate_contract_graph([dev], _registry(dev, consumer))
+        assert result.warnings  # ensure we're actually checking warnings
         assert all(m.severity == Severity.WARNING for m in result.warnings)
 
     def test_orphan_produces_skipped_when_someone_on_team_consumes(self):
@@ -800,16 +807,89 @@ class TestContractGraphValidatorOrphanProduces:
         assert result.warnings == []
 
 
+# ---------------------------------------------------------------------------
+# BEAN-289 — Library-level orphan-produces filter
+#
+# The validator suppresses orphan-produces warnings for artifacts that no
+# persona in the entire library consumes. Such warnings are unactionable —
+# the user has no team composition that closes the graph. Only orphans
+# that are actionable (i.e., at least one library persona consumes the
+# artifact) reach the user.
+# ---------------------------------------------------------------------------
+
+
+class TestContractGraphValidatorLibraryConsumerFilter:
+    """BEAN-289 — orphan-produces filtered by library_consumers map."""
+
+    def test_no_library_consumer_suppresses_orphan_warning(self):
+        """A produced artifact with no consumer anywhere in the library
+        is a terminal output. The user cannot fix it by adding a
+        persona — the warning is suppressed."""
+        dev = _persona("developer", produces=["dev-decision"])
+        # Registry has only the producer; no persona consumes "dev-decision".
+        result = validate_contract_graph([dev], _registry(dev))
+        warns = [m for m in result.warnings if m.code == "orphan-produces"]
+        assert warns == []
+        assert result.is_valid
+
+    def test_library_consumer_present_keeps_orphan_warning(self):
+        """A produced artifact whose library consumer is not on the team
+        IS actionable — the user could add that consumer. The warning
+        must fire (regression — preserve current behavior)."""
+        on_team_producer = _persona("dev", produces=["actionable-output"])
+        library_only_consumer = _persona(
+            "absent", consumes=["actionable-output"],
+        )
+        result = validate_contract_graph(
+            [on_team_producer],
+            _registry(on_team_producer, library_only_consumer),
+        )
+        warns = [m for m in result.warnings if m.code == "orphan-produces"]
+        assert len(warns) == 1
+        assert "dev" in warns[0].message
+        assert "actionable-output" in warns[0].message
+
+    def test_real_library_five_core_personas_no_orphan_warnings(self):
+        """End-to-end regression: with the real ai-team-library/ indexed
+        and the 5 core personas selected, validate_contract_graph emits
+        zero orphan-produces warnings. The library-level orphans
+        (dev-decision, merge-summary, test-suite) are correctly
+        suppressed because no library persona consumes them."""
+        from pathlib import Path
+
+        from foundry_app.services.library_indexer import build_library_index
+
+        library_root = Path(__file__).resolve().parent.parent / "ai-team-library"
+        registry = build_library_index(library_root)
+        core_ids = {"architect", "ba", "developer", "team-lead", "tech-qa"}
+        team = [p for p in registry.personas if p.id in core_ids]
+        assert len(team) == len(core_ids), (
+            f"Expected all 5 core personas in library, found "
+            f"{sorted(p.id for p in team)}"
+        )
+        result = validate_contract_graph(team, registry)
+        warns = [m for m in result.warnings if m.code == "orphan-produces"]
+        assert warns == [], (
+            "Expected no orphan-produces warnings for the 5 core personas; "
+            f"got: {[w.message for w in warns]}"
+        )
+
+
 class TestContractGraphValidatorMixedResults:
     """Combinations — ensure errors and warnings co-exist correctly."""
 
     def test_mixed_missing_and_orphan(self):
+        # BEAN-289: ``unused-output`` must have a library consumer so
+        # the orphan warning is actionable and still fires.
         dev = _persona(
             "developer",
             produces=["unused-output"],
             consumes=["missing-input"],
         )
-        result = validate_contract_graph([dev], _registry(dev))
+        absent_consumer = _persona("absent", consumes=["unused-output"])
+        result = validate_contract_graph(
+            [dev], _registry(dev, absent_consumer),
+        )
         errs = [m for m in result.errors if m.code == "missing-producer"]
         warns = [m for m in result.warnings if m.code == "orphan-produces"]
         assert len(errs) == 1
@@ -824,7 +904,12 @@ class TestContractGraphValidatorMixedResults:
             produces=["orphan-1"],
             consumes=["unsatisfied-1"],
         )
-        result = validate_contract_graph([dev], _registry(dev))
+        # BEAN-289: provide a library consumer for ``orphan-1`` so the
+        # orphan-produces warning is actionable and fires.
+        absent_consumer = _persona("absent", consumes=["orphan-1"])
+        result = validate_contract_graph(
+            [dev], _registry(dev, absent_consumer),
+        )
         # First message is the ERROR (missing producer), second is the
         # WARNING (orphan produce).
         assert result.messages[0].severity == Severity.ERROR
