@@ -150,7 +150,7 @@ authoring.
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
 | 1 | Author the R expertise pack (5 files + README + indexer fixtures) | developer | — | Done |
-| 2 | Content-tone parity review + indexer regression + manual verification | tech-qa | 01 | Pending |
+| 2 | Content-tone parity review + indexer regression + manual verification | tech-qa | 01 | Done |
 
 > Skipped: BA (default), Architect (default)
 > Wave: **Developer → Tech-QA**. Architect not required — content for
@@ -231,7 +231,7 @@ exemption is explicit.
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Author the R expertise pack (5 files + README + indexer fixtures) | developer | 9m | 835,474 | 5,454 | $1.70 |
-| 2 | Content-tone parity review + indexer regression + manual verification | tech-qa | — | — | — | — |
+| 2 | Content-tone parity review + indexer regression + manual verification | tech-qa | 5m | 656,831 | 3,112 | $1.55 |
 
 | Metric | Value |
 |--------|-------|
