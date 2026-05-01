@@ -190,11 +190,18 @@ class TestExtendedPersonaReferenceCompiles:
     def test_extended_persona_appears_in_compile_output(
         self, tmp_path: Path,
     ):
+        # Include the full core team so BEAN-274's contract-graph
+        # validator is satisfied; the test's intent is "extended persona
+        # is resolved + emitted alongside core", not "minimal team".
         spec = CompositionSpec(
             project=ProjectIdentity(name="Mixed", slug="mixed"),
             expertise=[ExpertiseSelection(id="python", order=10)],
             team=TeamConfig(personas=[
+                PersonaSelection(id="team-lead"),
+                PersonaSelection(id="ba"),
+                PersonaSelection(id="architect"),
                 PersonaSelection(id="developer"),
+                PersonaSelection(id="tech-qa"),
                 PersonaSelection(id="extended/security-engineer"),
             ]),
         )

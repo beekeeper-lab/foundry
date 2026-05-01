@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-274 |
-| **Status** | Approved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-05-01 00:27 |
+| **Completed** | 2026-05-01 00:47 |
+| **Duration** | 1587h 40m |
+| **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-273 |
 
@@ -59,15 +59,27 @@ Today no such check exists. `foundry_app/services/validator.py` validates schema
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Implement contract_validator + pipeline integration + wizard indicator | developer | — | Done |
+| 2 | Test coverage — all paths (standard fail, overlay warn, orphan, wizard) | tech-qa | 1 | Done |
 
-> Tasks populated by Team-Lead. Likely wave: Developer (validator + pipeline integration + wizard indicator), Tech-QA (cover all paths and edge cases). Architect optional — the design is constrained by BEAN-273's contract format.
+> Skipped: BA (default — no requirements ambiguity); Architect (default — design constrained by ADR-013 / BEAN-273's contract format, the bean explicitly marks Architect optional).
 
 ## Changes
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/services/validator.py` | +125 (validate_contract_graph + helpers) |
+| `foundry_app/services/generator.py` | +100/-? (pipeline integration + manifest fix) |
+| `foundry_app/ui/screens/builder/wizard_pages/persona_page.py` | +92 (coherence indicator) |
+| `tests/test_validator.py` | +250 (contract-graph unit tests) |
+| `tests/test_generator.py` | +193 (pipeline integration + bug-fix coverage) |
+| `tests/test_persona_page.py` | +207 (wizard indicator state transitions) |
+| `tests/test_persona_tiering.py` | +7 (fixture coherence) |
+| `examples/small-python-team.yml` | +11 (added ba, architect for contract coherence) |
+| `examples/foundry-dogfood.yml` | +6 (added ba) |
+| `examples/security-focused.yml` | +6 (added ba) |
+| `ai/beans/BEAN-274-contract-graph-validator/bean.md` + 2 task files | +199 |
+| **Total** | 14 files changed, +1186 / -12 |
 
 ## Notes
 
@@ -89,12 +101,13 @@ Today no such check exists. `foundry_app/services/validator.py` validates schema
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Implement contract_validator + pipeline integration + wizard indicator | developer | 6m | 827,777 | 3,303 | $1.54 |
+| 2 | Test coverage — all paths (standard fail, overlay warn, orphan, wizard) | tech-qa | 9m | 702,279 | 2,974 | $1.31 |
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 15m |
+| **Total Tokens In** | 1,530,056 |
+| **Total Tokens Out** | 6,277 |
+| **Total Cost** | $2.85 |

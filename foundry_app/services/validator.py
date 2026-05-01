@@ -8,6 +8,7 @@ from foundry_app.core.models import (
     CompositionSpec,
     HookMode,
     LibraryIndex,
+    PersonaInfo,
     Severity,
     Strictness,
     ValidationMessage,
@@ -16,6 +17,13 @@ from foundry_app.core.models import (
 from foundry_app.services.library_indexer import format_unknown_persona_error
 
 logger = logging.getLogger(__name__)
+
+# Artifact types intentionally excluded from contract-graph checks.
+# ``handoff-packet`` is universally produced and implicitly consumed by
+# Team Lead at handoff time (see ADR-013 ambiguity resolutions and
+# ``library_indexer._log_dangling_producers``). Treat it as always
+# satisfied so it does not generate noise on every team.
+_CONTRACT_GRAPH_IGNORED_TYPES: frozenset[str] = frozenset({"handoff-packet"})
 
 
 def _check_personas(
@@ -275,6 +283,123 @@ def run_pre_generation_validation(
         len(result.errors),
         len(result.warnings),
         len(result.infos),
+    )
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Contract-graph validation (BEAN-274)
+# ---------------------------------------------------------------------------
+
+
+def validate_contract_graph(
+    personas: list[PersonaInfo],
+    registry: LibraryIndex,
+) -> ValidationResult:
+    """Validate the produces/consumes contract graph for a composed team.
+
+    Per ADR-013, every persona declares ``produces`` and ``consumes`` lists
+    of artifact-type names. This check verifies, for the given team:
+
+    1. **Missing producer** (ERROR): every artifact type consumed by some
+       team member is also produced by some team member. The error names
+       the missing type, the team consumers, and any producer personas in
+       the library so the user knows whom to add.
+
+    2. **Orphan produces** (WARNING): an artifact type is produced by a
+       team member but consumed by no team member. Emitted as a warning
+       in both standard and overlay modes — it indicates a wasted output
+       channel, not a broken pipeline. ``handoff-packet`` is excluded
+       (universally produced; implicitly consumed by Team Lead).
+
+    Args:
+        personas: The selected team (members composing the project). May
+            be empty — in which case the result is trivially valid.
+        registry: The library index, used as the registry of all personas
+            (and their declared produces) for "Producers in library"
+            suggestions when an unsatisfied consume is found.
+
+    Returns:
+        A ``ValidationResult`` with ordered messages: missing-producer
+        errors first (sorted by artifact type), then orphan-produces
+        warnings (sorted by artifact type, then producer id).
+    """
+    messages: list[ValidationMessage] = []
+
+    if not personas:
+        return ValidationResult(messages=messages)
+
+    # Build the produced/consumed maps for the team. Preserve the order of
+    # first-appearance so the rendered persona lists are deterministic and
+    # follow the team's persona order.
+    team_producers: dict[str, list[str]] = {}
+    team_consumers: dict[str, list[str]] = {}
+    for persona in personas:
+        for artifact in persona.produces:
+            if artifact in _CONTRACT_GRAPH_IGNORED_TYPES:
+                continue
+            team_producers.setdefault(artifact, []).append(persona.id)
+        for artifact in persona.consumes:
+            if artifact in _CONTRACT_GRAPH_IGNORED_TYPES:
+                continue
+            team_consumers.setdefault(artifact, []).append(persona.id)
+
+    # Library-wide producer index — used to suggest who to add when a
+    # consume is unsatisfied by the current team.
+    library_producers: dict[str, list[str]] = {}
+    for persona in registry.personas:
+        for artifact in persona.produces:
+            if artifact in _CONTRACT_GRAPH_IGNORED_TYPES:
+                continue
+            library_producers.setdefault(artifact, []).append(persona.id)
+
+    # Missing producers — consumed by the team, produced by nobody on the team.
+    missing_types = sorted(
+        artifact for artifact in team_consumers
+        if artifact not in team_producers
+    )
+    for artifact in missing_types:
+        consumers = team_consumers[artifact]
+        lib_producers = sorted(set(library_producers.get(artifact, [])))
+        producer_list = ", ".join(lib_producers) if lib_producers else "none"
+        consumer_list = ", ".join(consumers)
+        messages.append(ValidationMessage(
+            severity=Severity.ERROR,
+            code="missing-producer",
+            message=(
+                f"Missing producer for type '{artifact}'. "
+                f"Consumed by: {consumer_list}. "
+                f"Producers in library: {producer_list}. "
+                f"Add one to your team."
+            ),
+        ))
+
+    # Orphan produces — produced by the team, consumed by nobody on the team.
+    orphan_pairs: list[tuple[str, str]] = []
+    for artifact in sorted(team_producers):
+        if artifact in team_consumers:
+            continue
+        for producer_id in team_producers[artifact]:
+            orphan_pairs.append((artifact, producer_id))
+    # Stable sort: by artifact (already sorted) then by producer id
+    orphan_pairs.sort(key=lambda pair: (pair[0], pair[1]))
+    for artifact, producer_id in orphan_pairs:
+        messages.append(ValidationMessage(
+            severity=Severity.WARNING,
+            code="orphan-produces",
+            message=(
+                f"Persona '{producer_id}' produces type '{artifact}' but no "
+                f"persona on the team consumes it."
+            ),
+        ))
+
+    result = ValidationResult(messages=messages)
+
+    logger.info(
+        "Contract-graph validation: %d missing producers, %d orphan produces",
+        len(result.errors),
+        len(result.warnings),
     )
 
     return result

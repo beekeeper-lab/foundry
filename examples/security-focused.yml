@@ -15,8 +15,14 @@ expertise:
     order: 30
 
 team:
+  # All five core personas are included so the contract graph (BEAN-274)
+  # is closed: every consumed artifact-type has a producer on the team.
   personas:
     - id: team-lead
+      include_agent: true
+      include_templates: true
+      strictness: strict
+    - id: ba
       include_agent: true
       include_templates: true
       strictness: strict

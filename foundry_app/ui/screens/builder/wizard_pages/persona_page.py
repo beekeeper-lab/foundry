@@ -31,10 +31,12 @@ from foundry_app.core.models import (
     LibraryIndex,
     PersonaInfo,
     PersonaSelection,
+    Severity,
     Strictness,
     TeamConfig,
     _persona_dirname,
 )
+from foundry_app.services.validator import validate_contract_graph
 from foundry_app.ui.theme import (
     ACCENT_PRIMARY,
     ACCENT_SECONDARY_MUTED,
@@ -49,6 +51,8 @@ from foundry_app.ui.theme import (
     RADIUS_MD,
     SPACE_MD,
     STATUS_ERROR,
+    STATUS_SUCCESS,
+    STATUS_WARNING,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
 )
@@ -388,6 +392,8 @@ class PersonaSelectionPage(QWidget):
         self._cards: dict[str, PersonaCard] = {}
         self._tier_groups: dict[str, CollapsibleGroupBox] = {}
         self._warning_label: QLabel | None = None
+        self._coherence_label: QLabel | None = None
+        self._library_index: LibraryIndex | None = None
         self._build_ui()
         if library_index is not None:
             self.load_personas(library_index)
@@ -416,6 +422,17 @@ class PersonaSelectionPage(QWidget):
         self._warning_label.setStyleSheet(WARNING_STYLE)
         self._warning_label.setVisible(False)
         outer.addWidget(self._warning_label)
+
+        # Team-coherence indicator (BEAN-274). Reflects the contract-graph
+        # state of the currently-selected team: green = all consumes
+        # satisfied, amber = orphan produces, red = missing producer.
+        # Hidden until a library is loaded so the empty-state flow is
+        # unchanged.
+        self._coherence_label = QLabel("")
+        self._coherence_label.setObjectName("coherence-indicator")
+        self._coherence_label.setWordWrap(True)
+        self._coherence_label.setVisible(False)
+        outer.addWidget(self._coherence_label)
 
         # Empty-state label (visible until library is loaded)
         self._empty_label = QLabel(
@@ -454,6 +471,9 @@ class PersonaSelectionPage(QWidget):
         (opt-in). Each section is keyed by ``PersonaInfo.tier`` and ordered
         core-first.
         """
+        # Cache the library index for the team-coherence indicator (BEAN-274).
+        self._library_index = library_index
+
         # Clear existing cards and group boxes
         for card in self._cards.values():
             card.deleteLater()
@@ -521,6 +541,7 @@ class PersonaSelectionPage(QWidget):
             len(self._cards),
             len(self._tier_groups),
         )
+        self._update_coherence_indicator()
 
     def get_team_config(self) -> TeamConfig:
         """Return a TeamConfig from currently selected personas."""
@@ -543,6 +564,7 @@ class PersonaSelectionPage(QWidget):
                 card.is_selected = False
 
         self._update_warning()
+        self._update_coherence_indicator()
 
     def selected_count(self) -> int:
         """Return the number of currently selected personas."""
@@ -576,8 +598,78 @@ class PersonaSelectionPage(QWidget):
     def _on_card_toggled(self, persona_id: str, checked: bool) -> None:
         logger.debug("Persona %s toggled: %s", persona_id, checked)
         self._update_warning()
+        self._update_coherence_indicator()
         self.selection_changed.emit()
 
     def _update_warning(self) -> None:
         if self._warning_label is not None:
             self._warning_label.setVisible(not self.is_valid())
+
+    # -- Team-coherence indicator (BEAN-274) -------------------------------
+
+    def _update_coherence_indicator(self) -> None:
+        """Refresh the team-coherence badge from the current selection.
+
+        Runs :func:`validate_contract_graph` against whatever personas are
+        currently checked and renders one of three states:
+
+        - 🟢 — all consumes satisfied, no orphan produces
+        - 🟡 — at least one orphan-produces warning, no missing producers
+        - 🔴 — at least one missing-producer error
+
+        Hidden when no library is loaded or no personas are selected (the
+        existing "select at least one persona" warning covers that state).
+        """
+        label = self._coherence_label
+        if label is None:
+            return
+
+        if self._library_index is None:
+            label.setVisible(False)
+            return
+
+        selected_ids = [
+            pid for pid, card in self._cards.items() if card.is_selected
+        ]
+        if not selected_ids:
+            label.setVisible(False)
+            return
+
+        team: list[PersonaInfo] = []
+        for pid in selected_ids:
+            info = self._library_index.persona_by_id(pid)
+            if info is not None:
+                team.append(info)
+
+        result = validate_contract_graph(team, self._library_index)
+        error_count = sum(
+            1 for m in result.messages if m.severity == Severity.ERROR
+        )
+        warning_count = sum(
+            1 for m in result.messages if m.severity == Severity.WARNING
+        )
+
+        if error_count > 0:
+            text = (
+                f"\U0001f534  Team coherence: {error_count} missing "
+                f"producer{'s' if error_count != 1 else ''} "
+                f"— add producers or remove consumers."
+            )
+            color = STATUS_ERROR
+        elif warning_count > 0:
+            text = (
+                f"\U0001f7e1  Team coherence: {warning_count} orphan "
+                f"produce{'s' if warning_count != 1 else ''} "
+                f"— produced types with no consumer on the team."
+            )
+            color = STATUS_WARNING
+        else:
+            text = "\U0001f7e2  Team coherence: all consumes satisfied."
+            color = STATUS_SUCCESS
+
+        label.setText(text)
+        label.setStyleSheet(
+            f"color: {color}; font-size: {FONT_SIZE_SM}px; "
+            f"font-weight: {FONT_WEIGHT_BOLD};"
+        )
+        label.setVisible(True)
