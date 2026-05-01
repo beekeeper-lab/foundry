@@ -313,3 +313,5 @@
 | BEAN-289 | Suppress Library-Level Orphan-Produces Warnings the User Cannot Fix | App | Medium | Done | team-lead |
 | BEAN-290 | User-Friendly Validator Error and Warning Messages | App | Medium | Done | team-lead |
 | BEAN-291 | Add Data Scientist Persona to the Library | App | Medium | Done | team-lead |
+| BEAN-292 | Relax Contract-Graph "Missing Producer" from Error to Warning | App | High | Unapproved | (unassigned) |
+| BEAN-293 | Compliance-Gate Hook Pack Should Not Default-On at Baseline Posture | App | High | Unapproved | (unassigned) |
