@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-287 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-05-01 |
-| **Started** | — |
+| **Started** | 2026-05-01 11:43 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | — |
 
