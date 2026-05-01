@@ -79,8 +79,8 @@ Each bean carries a small Orchestration Telemetry block alongside the existing T
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Implement orchestration telemetry: template + hook + skill + command + spawn-task/handoff hooks | developer | — | In Progress |
-| 2 | Verify orchestration telemetry: hook tests + skill walkthrough + aggregator smoke | tech-qa | 1 | Pending |
+| 1 | Implement orchestration telemetry: template + hook + skill + command + spawn-task/handoff hooks | developer | — | Done |
+| 2 | Verify orchestration telemetry: hook tests + skill walkthrough + aggregator smoke | tech-qa | 1 | In Progress |
 
 > Skipped: BA (default — verdict-paragraph wording is not user-facing requirements; Developer drafts inline); Architect (default — no new subsystem boundary; extends existing telemetry).
 
@@ -109,7 +109,7 @@ Each bean carries a small Orchestration Telemetry block alongside the existing T
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Implement orchestration telemetry: template + hook + skill + command + spawn-task/handoff hooks | developer | 7m | 1,236,562 | 3,564 | $2.17 |
-| 2 | Verify orchestration telemetry: hook tests + skill walkthrough + aggregator smoke | tech-qa | — | — | — | — |
+| 2 | Verify orchestration telemetry: hook tests + skill walkthrough + aggregator smoke | tech-qa | 5m | 779,282 | 2,992 | $1.42 |
 
 | Metric | Value |
 |--------|-------|
