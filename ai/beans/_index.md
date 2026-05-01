@@ -309,4 +309,4 @@
 | BEAN-285 | Documentation + CLAUDE.md Updates for Media Skills | Process | Medium | Done | team-lead |
 | BEAN-286 | Wizard Surfaces Validation Findings Inline (Persona + Hook Safety Pages) | App | High | Done | team-lead |
 | BEAN-287 | Generation Failure Recovery — Sticky Banner + Auto-Scroll | App | Medium | Done | team-lead |
-| BEAN-288 | Sidebar Navigation Preserves and Surfaces In-Progress Wizard State | App | Medium | In Progress | team-lead |
+| BEAN-288 | Sidebar Navigation Preserves and Surfaces In-Progress Wizard State | App | Medium | Done | team-lead |
