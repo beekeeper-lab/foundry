@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-271 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
 | **Started** | 2026-04-30 23:36 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-05-01 00:24 |
+| **Duration** | 1587h 17m |
 | **Owner** | team-lead |
 | **Category** | Infra |
 
@@ -71,7 +71,7 @@ Clean break: existing compositions that name an extended persona without a `tier
 |---|------|-------|------------|--------|
 | 1 | ADR — extended-persona ref-syntax in composition.yml | architect | — | Done |
 | 2 | File reorg + indexer + model + compiler + wizard + examples | developer | 1 | Done |
-| 3 | Test sweep: fixtures + tier coverage + compiler defaults + error path | tech-qa | 2 | In Progress |
+| 3 | Test sweep: fixtures + tier coverage + compiler defaults + error path | tech-qa | 2 | Done |
 
 > Skipped: BA (default — no requirements ambiguity; the bean is fully specified).
 
@@ -113,8 +113,8 @@ Clean break: existing compositions that name an extended persona without a `tier
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 3 |
+| **Total Duration** | 40m |
+| **Total Tokens In** | 2,354,696 |
+| **Total Tokens Out** | 20,311 |
+| **Total Cost** | $5.43 |
