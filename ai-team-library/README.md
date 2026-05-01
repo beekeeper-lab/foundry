@@ -17,11 +17,16 @@ ai-team-library/
     core/             # 5 default personas (every team includes these by default)
     extended/         # 19 opt-in specialist personas
   expertise/          # 39 expertise conventions and skill files
+  contracts/          # Artifact-type registry consumed by the contract graph (BEAN-273 / ADR-013)
   templates/shared/   # 7 cross-persona templates
   workflows/          # Pipeline and taxonomy reference docs
   claude/             # Claude Code integration (commands, skills, hooks)
   README.md           # This file
 ```
+
+## Persona Contracts
+
+Each core persona declares machine-readable `produces:` / `consumes:` artifact types in a sibling `contracts.yml` next to `persona.md` (e.g. `personas/core/developer/contracts.yml`). Names refer to entries in `contracts/artifact-types.yml`. Generated projects emit a flat `contracts:` block at the bottom of `ai/team/composition.yml` describing the team's contract graph; Foundry's compose-time validator hard-fails standard generations whose `consumes:` cannot be satisfied by some persona on the team. See ADR-013 for the format and ADR-015 for the cluster architecture.
 
 ## Personas
 
@@ -135,6 +140,17 @@ The `claude/` directory contains integration files for Claude Code:
 - **commands/** -- Slash commands that can be invoked during a Claude Code session
 - **skills/** -- Skill definitions that extend Claude's capabilities for the project
 - **hooks/** -- Lifecycle hooks that run at defined points during Claude Code operations
+
+### Orchestration cluster commands & skills (BEAN-270..278)
+
+| Command | Skill | Purpose |
+|---------|-------|---------|
+| `/spawn-task` | `claude/skills/spawn-task/SKILL.md` | Per-task supervisor-pattern dispatch — auto-detects tmux + worktree or invokes `Agent(subagent_type=...)` (BEAN-270, ADR-008). |
+| `/handoff` | `claude/skills/handoff/SKILL.md` | Typed handoff packet driven by sender `produces:` ∩ receiver `consumes:` and the artifact-type registry's required fields (BEAN-276). |
+| `/vdd` | `claude/skills/vdd/SKILL.md` | Programmatic VDD gate. Parses bean Acceptance Criteria, runs evidence checks (test/lint/file/manual), emits structured pass/fail report. `/merge-bean` blocks without a passing report (BEAN-277). |
+| `/orchestration-report` | `claude/skills/orchestration-report/SKILL.md` | Architecture-aware roll-up of per-bean Orchestration Telemetry (bounces, dispatch mode, contract violations, escape-hatch trend). Emits a one-paragraph verdict on whether the orchestration is paying off (BEAN-278). |
+
+The `claude/hooks/validate-task-inputs.py` hook (BEAN-272) blocks task dispatch when a task file's `Inputs:` is missing, empty, or contains only placeholders. Escape hatch: `Inputs: NONE (justified: <≥10 chars>)`.
 
 ## Contributing
 

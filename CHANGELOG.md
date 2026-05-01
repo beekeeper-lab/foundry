@@ -6,6 +6,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-01
+
+### Added — Orchestration Architecture Cluster (BEAN-270..279)
+
+The orchestration cluster makes Foundry's bean execution model real rather than convention. See `ai/context/orchestration-architecture.md` and ADR-015 for the full synthesis.
+
+**Three principles:**
+
+- **Supervisor pattern (BEAN-270, ADR-008).** New `/spawn-task` skill + command for per-task dispatch. Auto-detects tmux (worktree-isolated worker) vs non-tmux (`Agent`-tool subagent). The worker reads only the task's `Inputs:` plus its persona's context bundle — the orchestrator never accumulates role baggage.
+- **Context engineering (BEAN-272 + BEAN-273 + BEAN-274).** New `validate-task-inputs.py` hook blocks task dispatch when `Inputs:` is missing, empty, or placeholder (escape hatch: `Inputs: NONE (justified: …)`). Personas declare typed `produces:` / `consumes:` contracts in `contracts.yml` next to each `persona.md`; a new artifact-type registry at `ai-team-library/contracts/artifact-types.yml` names every type. New `validate_contract_graph()` in `validator.py` runs between validate and scaffold — standard mode hard-fails on unsatisfied consume; overlay mode warns and proceeds. Wizard surfaces a real-time team coherence indicator. ADR-013 locks contract format; ADR-014 locks extended-persona reference syntax.
+- **Specialist contracts (BEAN-271 + BEAN-275 + BEAN-276).** Library personas split into `personas/core/` (5 default) and `personas/extended/` (19 opt-in). Compositions reference extended personas with the `extended/` tier prefix. Acceptance-criteria authorship and ADR-vs-dev-decision boundaries codified into a "Scope Boundaries" subsection on every core persona file (BA owns AC when on the wave; Team-Lead owns by default; Developer escalates to Architect at the ADR threshold). Typed `/handoff` reads sender `produces:` ∩ receiver `consumes:` and emits a packet with the registry's required fields plus per-pair extras; `ai/handoffs/_index.md` tracks every handoff.
+
+**Architecture-aware evaluation (BEAN-278):**
+
+- Bean template carries an Orchestration Telemetry block (Personas activated, Bounces, Scope changes, Contract violations, Inputs escape-hatch invocations, Dispatch mode).
+- `.claude/hooks/telemetry-stamp.py` auto-populates Personas activated and Dispatch mode.
+- New `/orchestration-report` skill aggregates across Done beans and emits `ai/outputs/team-lead/orchestration-report-YYYY-MM-DD.md` with a one-paragraph verdict.
+
+**Programmatic VDD gate (BEAN-277):**
+
+- New `/vdd <bean-id>` command parses Acceptance Criteria, runs evidence checks (`test:`, `lint:`, `file:`, manual fallback), and emits `ai/outputs/tech-qa/vdd-<bean-id>.md`. `/merge-bean` refuses to merge a bean without a passing VDD report. New service module `foundry_app/services/vdd.py`.
+
+**Documentation (BEAN-279):**
+
+- New `ai/context/orchestration-architecture.md` — canonical long-form doc covering the three principles, evaluation methodology, bean lifecycle under the new model, and a cross-reference index.
+- ADR-015 in `ai/context/decisions.md` — cluster-level architectural decision record with pointer to the long-form doc.
+- Sweep update of CLAUDE.md, README.md, `bean-workflow.md`, `project.md`, all five core agent files, the `/long-run` skill and command, and `ai-team-library/README.md`.
+
 ### Added
 
 **App**
