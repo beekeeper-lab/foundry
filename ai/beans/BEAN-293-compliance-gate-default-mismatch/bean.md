@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-293 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-05-01 |
 | **Started** | 2026-05-01 18:12 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-05-01 18:25 |
+| **Duration** | 1605h 18m |
 | **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | — |
@@ -148,11 +148,14 @@ inverse: posture default changes), so the initial state is valid.
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/ui/screens/builder/wizard_pages/hook_safety_page.py` | +49 / -0 |
+| `tests/test_hook_safety_page.py` | +369 / -0 |
+| `ai/outputs/tech-qa/BEAN-293-manual-verification.md` | +149 / -0 |
+| `ai/beans/BEAN-293-…/tasks/01-developer-fix-defaults-and-audit.md` | +172 / -0 |
+| `ai/beans/BEAN-293-…/tasks/02-tech-qa-regression-and-manual.md` | +127 / -0 |
+| `ai/beans/BEAN-293-…/bean.md` | +9 / -9 |
 
 ## Notes
 
@@ -194,19 +197,19 @@ problem, clear options) — the underlying defaults bug was independent.
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 8m |
+| **Total Tokens In** | 1,234,092 |
+| **Total Tokens Out** | 8,805 |
+| **Total Cost** | $2.90 |
 
 ## Orchestration Telemetry
 
 | Field | Value |
 |-------|-------|
-| **Personas activated** | — (comma-separated, actual not planned) |
-| **Bounces** | — (Tech-QA → Developer kicks) |
-| **Scope changes** | — (in-flight scope edits) |
-| **Contract violations** | — (BEAN-274 catches at compose time) |
-| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
-| **Dispatch mode** | — (in-process / tmux-worker / mixed) |
+| **Personas activated** | developer, tech-qa |
+| **Bounces** | 0 (Tech-QA → Developer kicks) |
+| **Scope changes** | 0 (in-flight scope edits) |
+| **Contract violations** | 0 (BEAN-274 catches at compose time) |
+| **Inputs escape-hatch invocations** | 0 (BEAN-272's NONE-justified) |
+| **Dispatch mode** | in-process |
