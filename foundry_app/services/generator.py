@@ -17,6 +17,7 @@ from foundry_app.core.models import (
     GenerationManifest,
     LibraryIndex,
     OverlayPlan,
+    PersonaSelection,
     StageResult,
     Strictness,
     ValidationResult,
@@ -64,6 +65,37 @@ def _get_library_version(library_root: Path) -> str:
 def _make_run_id() -> str:
     """Generate a unique run identifier from current timestamp."""
     return datetime.now().strftime("%Y%m%d-%H%M%S")
+
+
+def _apply_default_team(
+    composition: CompositionSpec,
+    library: LibraryIndex,
+) -> None:
+    """Fill an empty ``team.personas`` with the library's core tier (ADR-014).
+
+    A composition that omits the ``personas:`` block (or supplies an empty
+    list) inherits every persona whose ``tier == "core"``. Mutates the spec
+    in place; no-op when the user has explicitly selected at least one
+    persona. Using this hook keeps the file-system reorg, the wire format,
+    and the implicit default in lock-step: whatever the library reports as
+    core *is* the default team.
+    """
+    if composition.team.personas:
+        return
+    core = sorted(
+        (p for p in library.personas if p.tier == "core"),
+        key=lambda p: p.id,
+    )
+    if not core:
+        # Library has no core personas — leave the empty list to surface the
+        # existing 'no-personas' validator warning rather than synthesizing
+        # a phantom team here.
+        return
+    composition.team.personas = [PersonaSelection(id=p.id) for p in core]
+    logger.info(
+        "No personas selected — defaulting to core tier: %s",
+        ", ".join(p.id for p in core),
+    )
 
 
 def _compare_trees(source: Path, target: Path) -> OverlayPlan:
@@ -296,6 +328,10 @@ def generate_project(
 
     # Step 1: Index the library
     library = build_library_index(library_path)
+
+    # Step 1a: Default team — if the composition supplies no personas,
+    # adopt the core tier from the library (ADR-014).
+    _apply_default_team(composition, library)
 
     # Step 2: Validate
     validation = run_pre_generation_validation(composition, library, strictness)

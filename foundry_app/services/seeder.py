@@ -11,6 +11,7 @@ from foundry_app.core.models import (
     CompositionSpec,
     SeedMode,
     StageResult,
+    _persona_dirname,
 )
 
 logger = logging.getLogger(__name__)
@@ -240,7 +241,15 @@ def _render_bean_md(spec: CompositionSpec, charter_present: bool) -> str:
 def _render_task_md(
     task_num: int, persona_id: str, description: str
 ) -> str:
-    """Render an individual task file under tasks/NN-<owner>-<slug>.md."""
+    """Render an individual task file under tasks/NN-<owner>-<slug>.md.
+
+    ``persona_id`` is the canonical reference form (per ADR-014, extended
+    personas are ``extended/<name>``). The Owner row keeps that form so the
+    document round-trips with composition.yml; the on-disk ``ai/outputs/``
+    pointer uses the leaf directory name to match the actual filesystem
+    layout the scaffolder creates.
+    """
+    output_dir_name = _persona_dirname(persona_id)
     return (
         f"# Task {task_num:02d} — {persona_id}: {description}\n"
         "\n"
@@ -261,7 +270,7 @@ def _render_task_md(
         "\n"
         "- [ ] Goal above is complete.\n"
         "- [ ] Output is recorded under "
-        f"`ai/outputs/{persona_id}/` when applicable.\n"
+        f"`ai/outputs/{output_dir_name}/` when applicable.\n"
     )
 
 
@@ -337,7 +346,12 @@ def seed_tasks(spec: CompositionSpec, output_dir: str | Path) -> StageResult:
 
     task_num = 1
     for persona_id in persona_ids:
-        tasks = templates.get(persona_id, [])
+        # Seed templates are keyed by the bare directory name; strip the
+        # ADR-014 ``extended/`` prefix before lookup. Use the leaf for the
+        # task filename too, so files don't sprout a phantom ``extended/``
+        # subdirectory under ``tasks/``.
+        leaf = _persona_dirname(persona_id)
+        tasks = templates.get(leaf, [])
         if not tasks:
             warnings.append(
                 f"No seed task templates for persona '{persona_id}'"
@@ -346,7 +360,7 @@ def seed_tasks(spec: CompositionSpec, output_dir: str | Path) -> StageResult:
 
         for task_desc in tasks:
             slug = _slugify(task_desc)
-            filename = f"{task_num:02d}-{persona_id}-{slug}.md"
+            filename = f"{task_num:02d}-{leaf}-{slug}.md"
             task_path = tasks_dir / filename
             task_path.write_text(
                 _render_task_md(task_num, persona_id, task_desc),

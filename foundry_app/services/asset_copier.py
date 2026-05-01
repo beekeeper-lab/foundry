@@ -40,20 +40,26 @@ _DEV_LOOP_DIRNAME = "dev-loop"
 
 # Map: governance command filename (under claude/commands/) → personas that unlock it.
 # When NONE of the listed personas is on the team, the command is NOT copied.
+# Persona ids use the canonical ADR-014 reference form (extended personas
+# carry the ``extended/`` tier prefix).
 _GOVERNANCE_COMMANDS: dict[str, set[str]] = {
-    "threat-model.md": {"security-engineer"},
-    "risk-liability.md": {"legal-counsel", "compliance-risk"},
+    "threat-model.md": {"extended/security-engineer"},
+    "risk-liability.md": {"extended/legal-counsel", "extended/compliance-risk"},
 }
 
 # Map: governance skill name (skill directory or file under claude/skills/) → personas
 # that unlock it.  When NONE of the listed personas is on the team, the skill is NOT copied.
+# Persona ids use the canonical ADR-014 reference form.
 _GOVERNANCE_SKILLS: dict[str, set[str]] = {
-    "threat-model": {"security-engineer"},
-    "risk-liability": {"legal-counsel", "compliance-risk"},
-    "ip-licensing": {"legal-counsel"},
-    "contract-review": {"legal-counsel"},
-    "regulatory-assessment": {"legal-counsel", "compliance-risk"},
-    "legal-drafting": {"legal-counsel"},
+    "threat-model": {"extended/security-engineer"},
+    "risk-liability": {"extended/legal-counsel", "extended/compliance-risk"},
+    "ip-licensing": {"extended/legal-counsel"},
+    "contract-review": {"extended/legal-counsel"},
+    "regulatory-assessment": {
+        "extended/legal-counsel",
+        "extended/compliance-risk",
+    },
+    "legal-drafting": {"extended/legal-counsel"},
 }
 
 # Cross-project skills owned by ClaudeKit (`.claude/shared/skills/<name>/`) rather
@@ -205,8 +211,12 @@ def _copy_persona_templates(
             warnings.append(f"Persona '{persona.id}' not found in library index")
             continue
 
-        src_dir = lib_root / "personas" / persona.id / "templates"
-        dest_dir = out_root / "ai" / "outputs" / persona.id
+        # Per ADR-014, persona.id may carry the 'extended/' prefix; the
+        # source dir lives at persona_info.path (the canonical on-disk
+        # location) and the destination uses the leaf directory name so
+        # ai/outputs/ stays flat across tiers.
+        src_dir = Path(persona_info.path) / "templates"
+        dest_dir = out_root / "ai" / "outputs" / persona_info.dirname
 
         if not src_dir.is_dir():
             warnings.append(f"No templates directory for persona '{persona.id}'")

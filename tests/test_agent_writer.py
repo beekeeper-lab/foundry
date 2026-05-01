@@ -482,9 +482,11 @@ class TestTeamAgentVerification:
     def test_one_agent_file_per_persona(self, team_output):
         output, _, spec = team_output
         agents_dir = output / ".claude" / "agents"
-        expected_ids = {p.id for p in spec.team.personas}
+        # Per ADR-014, agent filenames strip the ``extended/`` tier prefix.
+        from foundry_app.core.models import _persona_dirname
+        expected_files = {_persona_dirname(p.id) for p in spec.team.personas}
         actual_files = {f.stem for f in agents_dir.glob("*.md")}
-        assert actual_files == expected_ids
+        assert actual_files == expected_files
 
     def test_agent_count_matches_persona_count(self, team_output):
         output, _, spec = team_output
@@ -495,28 +497,33 @@ class TestTeamAgentVerification:
     def test_no_extra_agent_files(self, team_output):
         output, _, spec = team_output
         agents_dir = output / ".claude" / "agents"
-        expected_ids = {p.id for p in spec.team.personas}
+        from foundry_app.core.models import _persona_dirname
+        expected_files = {_persona_dirname(p.id) for p in spec.team.personas}
         actual_files = {f.stem for f in agents_dir.glob("*.md")}
-        extra = actual_files - expected_ids
+        extra = actual_files - expected_files
         assert not extra, f"Unexpected agent files: {extra}"
 
     def test_no_missing_agent_files(self, team_output):
         output, _, spec = team_output
         agents_dir = output / ".claude" / "agents"
-        expected_ids = {p.id for p in spec.team.personas}
+        from foundry_app.core.models import _persona_dirname
+        expected_files = {_persona_dirname(p.id) for p in spec.team.personas}
         actual_files = {f.stem for f in agents_dir.glob("*.md")}
-        missing = expected_ids - actual_files
+        missing = expected_files - actual_files
         assert not missing, f"Missing agent files for personas: {missing}"
 
     def test_each_agent_references_persona_name(self, team_output):
         output, _, spec = team_output
         agents_dir = output / ".claude" / "agents"
+        from foundry_app.core.models import _persona_dirname
         for persona in spec.team.personas:
-            agent_file = agents_dir / f"{persona.id}.md"
+            leaf = _persona_dirname(persona.id)
+            agent_file = agents_dir / f"{leaf}.md"
             content = agent_file.read_text(encoding="utf-8").lower()
-            readable = persona.id.replace("-", " ")
-            assert readable in content or persona.id in content, (
-                f"Agent {agent_file.name} does not reference persona '{persona.id}'"
+            readable = leaf.replace("-", " ")
+            assert readable in content or leaf in content, (
+                f"Agent {agent_file.name} does not reference persona "
+                f"'{persona.id}'"
             )
 
     def test_all_agent_files_nonempty(self, team_output):
@@ -931,8 +938,9 @@ class TestRealLibraryAppliesToFilter:
             team=TeamConfig(personas=[
                 PersonaSelection(id="developer"),
                 PersonaSelection(id="tech-qa"),
-                PersonaSelection(id="devops-release"),
-                PersonaSelection(id="ux-ui-designer"),
+                # ADR-014: extended personas use the ``extended/`` prefix.
+                PersonaSelection(id="extended/devops-release"),
+                PersonaSelection(id="extended/ux-ui-designer"),
             ]),
             expertise=[
                 ExpertiseSelection(id="python", order=10),
@@ -953,6 +961,7 @@ class TestRealLibraryAppliesToFilter:
         """ADR-012 case 1 + part of case 2: DevOps-Release agent file
         contains no tsconfig and no ruff (neither expertise lists it)."""
         out = self._build(tmp_path)
+        # Per ADR-014, the on-disk agent filename strips the ``extended/`` prefix.
         content = (out / ".claude" / "agents" / "devops-release.md").read_text()
         assert "tsconfig" not in content.lower()
         assert "ruff" not in content
@@ -999,10 +1008,11 @@ class TestBean259TokenSavings:
                 PersonaSelection(id="developer"),
                 PersonaSelection(id="tech-qa"),
                 PersonaSelection(id="architect"),
-                PersonaSelection(id="devops-release"),
-                PersonaSelection(id="ux-ui-designer"),
+                # ADR-014: extended personas use the ``extended/`` prefix.
+                PersonaSelection(id="extended/devops-release"),
+                PersonaSelection(id="extended/ux-ui-designer"),
                 PersonaSelection(id="ba"),
-                PersonaSelection(id="security-engineer"),
+                PersonaSelection(id="extended/security-engineer"),
             ]),
             expertise=[
                 ExpertiseSelection(id="python", order=10),
@@ -1015,6 +1025,7 @@ class TestBean259TokenSavings:
     def test_at_least_one_non_developer_persona_shrinks_20pct(
         self, tmp_path: Path,
     ):
+        from foundry_app.core.models import _persona_dirname
         from foundry_app.services.library_indexer import build_library_index
 
         spec = self._spec()
@@ -1036,8 +1047,10 @@ class TestBean259TokenSavings:
         for ps in spec.team.personas:
             if ps.id == "developer":
                 continue
-            before_path = before_dir / ".claude" / "agents" / f"{ps.id}.md"
-            after_path = after_dir / ".claude" / "agents" / f"{ps.id}.md"
+            # Per ADR-014 the on-disk filename strips the tier prefix.
+            leaf = _persona_dirname(ps.id)
+            before_path = before_dir / ".claude" / "agents" / f"{leaf}.md"
+            after_path = after_dir / ".claude" / "agents" / f"{leaf}.md"
             before_size = before_path.stat().st_size
             after_size = after_path.stat().st_size
             pct = (before_size - after_size) / before_size * 100.0

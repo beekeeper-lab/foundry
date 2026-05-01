@@ -27,11 +27,17 @@ def _make_persona(
     pid: str,
     templates: list[str] | None = None,
     category: str = "",
+    tier: str = "core",
 ) -> PersonaInfo:
-    """Create a minimal PersonaInfo for testing."""
+    """Create a minimal PersonaInfo for testing.
+
+    Per ADR-014, ``tier`` is part of the wire-level identity. Defaults to
+    ``"core"`` so existing tests that pass a bare id keep working.
+    """
     return PersonaInfo(
         id=pid,
         path=f"/fake/personas/{pid}",
+        tier=tier,
         has_persona_md=True,
         has_outputs_md=True,
         has_prompts_md=True,
@@ -48,7 +54,13 @@ def _make_library(*persona_ids: str) -> LibraryIndex:
     )
 
 
-# Category mapping matching the real library
+# Tier mapping matching ADR-014 (5 core + 19 extended). Categories retained
+# so legacy assertions that exercise the per-persona category metadata still
+# resolve, but the page now groups by tier — see TestTierGrouping below.
+_CORE_PERSONAS: tuple[str, ...] = (
+    "architect", "ba", "developer", "team-lead", "tech-qa",
+)
+
 _PERSONA_CATEGORIES: dict[str, str] = {
     "architect": "Software Development",
     "ba": "Software Development",
@@ -78,14 +90,21 @@ _PERSONA_CATEGORIES: dict[str, str] = {
 
 
 def _make_full_library() -> LibraryIndex:
-    """Create a LibraryIndex matching the real 24-persona library with categories."""
-    return LibraryIndex(
-        library_root="/fake/library",
-        personas=[
-            _make_persona(pid, category=cat)
-            for pid, cat in _PERSONA_CATEGORIES.items()
-        ],
-    )
+    """Create a LibraryIndex matching the real 24-persona library.
+
+    Per ADR-014 the persona id format depends on tier: core personas use the
+    bare name, extended use ``extended/<name>``. Tier is set explicitly so
+    grouping tests see the canonical wire form.
+    """
+    personas = []
+    for pid, cat in _PERSONA_CATEGORIES.items():
+        if pid in _CORE_PERSONAS:
+            personas.append(_make_persona(pid, category=cat, tier="core"))
+        else:
+            personas.append(
+                _make_persona(f"extended/{pid}", category=cat, tier="extended")
+            )
+    return LibraryIndex(library_root="/fake/library", personas=personas)
 
 
 # ---------------------------------------------------------------------------
@@ -300,9 +319,13 @@ class TestLoadPersonas:
         assert len(loaded_page.persona_cards) == 24
 
     def test_all_known_persona_ids_present(self, loaded_page):
+        # Per ADR-014, the cards dict is keyed by canonical id — bare for
+        # core, ``extended/<name>`` for extended. PERSONA_DESCRIPTIONS still
+        # lists bare leaf names, so look up in the tier-aware form.
         cards = loaded_page.persona_cards
         for pid in PERSONA_DESCRIPTIONS:
-            assert pid in cards, f"Missing persona card: {pid}"
+            key = pid if pid in _CORE_PERSONAS else f"extended/{pid}"
+            assert key in cards, f"Missing persona card: {key}"
 
     def test_loads_via_constructor(self):
         lib = _make_library("developer", "architect")
@@ -353,39 +376,73 @@ class TestPersonaDescriptions:
 # ---------------------------------------------------------------------------
 
 class TestCategoryGrouping:
+    """Tier-based grouping introduced by ADR-014.
+
+    Persona cards are now grouped under ``core`` and ``extended`` tier
+    sections rather than per-category boxes. The page exposes both
+    ``tier_groups`` (the canonical accessor) and ``category_groups`` (a
+    backward-compat alias kept for older test/UI consumers).
+    """
+
     def test_creates_category_groups(self, loaded_page):
+        # Returns the same dict as ``tier_groups`` (BC alias).
         groups = loaded_page.category_groups
         assert len(groups) > 0
+        assert groups == loaded_page.tier_groups
 
     def test_expected_categories_present(self, loaded_page):
+        # ADR-014: only two tier groups exist — ``core`` and ``extended``.
         groups = loaded_page.category_groups
-        expected = {"Software Development", "Business Operations",
-                    "Compliance & Legal", "Data & Analytics"}
-        assert set(groups.keys()) == expected
+        assert set(groups.keys()) == {"core", "extended"}
 
     def test_category_header_shows_count(self, loaded_page):
         groups = loaded_page.category_groups
-        sw_group = groups["Software Development"]
-        assert isinstance(sw_group, CollapsibleGroupBox)
-        # Should contain the count in parentheses
-        title = sw_group.title()
-        assert "Software Development" in title
-        assert "(13)" in title
+        core_group = groups["core"]
+        assert isinstance(core_group, CollapsibleGroupBox)
+        title = core_group.title()
+        # 5 core personas (team-lead, ba, architect, developer, tech-qa).
+        assert "Core team" in title
+        assert "(5)" in title
 
     def test_business_operations_count(self, loaded_page):
+        # The extended tier holds the 19 specialist personas. Replaces the
+        # historic per-category counts (Business Operations, etc.) — those
+        # categories are persona metadata, not page-grouping keys.
         groups = loaded_page.category_groups
-        title = groups["Business Operations"].title()
-        assert "(6)" in title
+        title = groups["extended"].title()
+        assert "Extended specialists" in title
+        assert "(19)" in title
 
     def test_compliance_legal_count(self, loaded_page):
+        # Holdover from the per-category grouping era. The two extended
+        # security/compliance personas now live inside the single Extended
+        # specialists tier section.
         groups = loaded_page.category_groups
-        title = groups["Compliance & Legal"].title()
-        assert "(2)" in title
+        extended_ids = [
+            pid for pid, cat in _PERSONA_CATEGORIES.items()
+            if cat == "Compliance & Legal"
+        ]
+        assert len(extended_ids) == 2
+        # Both personas appear in the page's card map under their canonical
+        # extended ids.
+        cards = loaded_page.persona_cards
+        for pid in extended_ids:
+            assert f"extended/{pid}" in cards
+        assert "extended" in groups
 
     def test_data_analytics_count(self, loaded_page):
+        # Holdover: confirm the 3 Data & Analytics personas now live under
+        # the Extended specialists tier section.
         groups = loaded_page.category_groups
-        title = groups["Data & Analytics"].title()
-        assert "(3)" in title
+        analytics_ids = [
+            pid for pid, cat in _PERSONA_CATEGORIES.items()
+            if cat == "Data & Analytics"
+        ]
+        assert len(analytics_ids) == 3
+        cards = loaded_page.persona_cards
+        for pid in analytics_ids:
+            assert f"extended/{pid}" in cards
+        assert "extended" in groups
 
     def test_all_groups_collapsed_by_default(self, loaded_page):
         for name, group in loaded_page.category_groups.items():
@@ -395,33 +452,46 @@ class TestCategoryGrouping:
             )
 
     def test_personas_with_no_category_go_to_other(self):
+        # Tier grouping ignores the legacy ``category`` field. A persona
+        # without a category still groups by tier — both personas below are
+        # core, so they share the ``core`` group.
         lib = LibraryIndex(
             library_root="/fake",
             personas=[
-                _make_persona("developer", category="Software Development"),
-                _make_persona("custom-role", category=""),
+                _make_persona(
+                    "developer", category="Software Development", tier="core",
+                ),
+                _make_persona("custom-role", category="", tier="core"),
             ],
         )
         page = PersonaSelectionPage(library_index=lib)
         groups = page.category_groups
-        assert "Other" in groups
-        assert "Other (1)" == groups["Other"].title()
+        # No "Other" bucket exists — tier is the only grouping axis now.
+        assert "Other" not in groups
+        assert "core" in groups
+        assert "(2)" in groups["core"].title()
         page.close()
 
     def test_other_group_not_created_when_all_have_categories(self, loaded_page):
+        # Tier grouping has no "Other" bucket regardless of category data.
         groups = loaded_page.category_groups
         assert "Other" not in groups
 
     def test_reload_clears_old_groups(self, loaded_page):
-        # Reload with a small library
+        # Reload with a small extended-only library; the ``core`` group
+        # should disappear.
         new_lib = LibraryIndex(
             library_root="/fake",
-            personas=[_make_persona("developer", category="Dev")],
+            personas=[
+                _make_persona(
+                    "extended/lone", category="Dev", tier="extended",
+                ),
+            ],
         )
         loaded_page.load_personas(new_lib)
         groups = loaded_page.category_groups
         assert len(groups) == 1
-        assert "Dev" in groups
+        assert "extended" in groups
 
 
 # ---------------------------------------------------------------------------
@@ -461,11 +531,12 @@ class TestPageSelection:
         assert loaded_page._warning_label.isHidden() is True
 
     def test_select_across_groups(self, loaded_page):
-        # Select from different categories
-        loaded_page.persona_cards["developer"].is_selected = True  # Software Dev
-        loaded_page.persona_cards["data-analyst"].is_selected = True  # Data
-        loaded_page.persona_cards["compliance-risk"].is_selected = True  # Compliance
-        loaded_page.persona_cards["change-management"].is_selected = True  # Business
+        # Select from both tier groups (ADR-014). Cards are keyed by their
+        # canonical id — bare for core, ``extended/<name>`` for extended.
+        loaded_page.persona_cards["developer"].is_selected = True  # core
+        loaded_page.persona_cards["extended/data-analyst"].is_selected = True
+        loaded_page.persona_cards["extended/compliance-risk"].is_selected = True
+        loaded_page.persona_cards["extended/change-management"].is_selected = True
         assert loaded_page.selected_count() == 4
 
 
@@ -504,12 +575,16 @@ class TestGetTeamConfig:
         assert "architect" not in ids
 
     def test_get_config_across_groups(self, loaded_page):
+        # Cards are keyed by canonical id (ADR-014); selections round-trip
+        # the same id form into TeamConfig.
         loaded_page.persona_cards["developer"].is_selected = True
-        loaded_page.persona_cards["data-analyst"].is_selected = True
-        loaded_page.persona_cards["legal-counsel"].is_selected = True
+        loaded_page.persona_cards["extended/data-analyst"].is_selected = True
+        loaded_page.persona_cards["extended/legal-counsel"].is_selected = True
         config = loaded_page.get_team_config()
         ids = {p.id for p in config.personas}
-        assert ids == {"developer", "data-analyst", "legal-counsel"}
+        assert ids == {
+            "developer", "extended/data-analyst", "extended/legal-counsel",
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -591,21 +666,29 @@ class TestSetTeamConfig:
     def test_set_config_across_groups(self, loaded_page):
         config = TeamConfig(personas=[
             PersonaSelection(id="developer"),
-            PersonaSelection(id="data-analyst"),
-            PersonaSelection(id="compliance-risk"),
-            PersonaSelection(id="change-management"),
+            PersonaSelection(id="extended/data-analyst"),
+            PersonaSelection(id="extended/compliance-risk"),
+            PersonaSelection(id="extended/change-management"),
         ])
         loaded_page.set_team_config(config)
         assert loaded_page.persona_cards["developer"].is_selected is True
-        assert loaded_page.persona_cards["data-analyst"].is_selected is True
-        assert loaded_page.persona_cards["compliance-risk"].is_selected is True
-        assert loaded_page.persona_cards["change-management"].is_selected is True
+        assert (
+            loaded_page.persona_cards["extended/data-analyst"].is_selected is True
+        )
+        assert (
+            loaded_page.persona_cards["extended/compliance-risk"].is_selected
+            is True
+        )
+        assert (
+            loaded_page.persona_cards["extended/change-management"].is_selected
+            is True
+        )
         assert loaded_page.persona_cards["architect"].is_selected is False
 
     def test_roundtrip_across_groups(self, loaded_page):
         loaded_page.persona_cards["developer"].is_selected = True
-        loaded_page.persona_cards["data-analyst"].is_selected = True
-        loaded_page.persona_cards["compliance-risk"].is_selected = True
+        loaded_page.persona_cards["extended/data-analyst"].is_selected = True
+        loaded_page.persona_cards["extended/compliance-risk"].is_selected = True
         original = loaded_page.get_team_config()
 
         for card in loaded_page.persona_cards.values():
@@ -614,7 +697,7 @@ class TestSetTeamConfig:
         loaded_page.set_team_config(original)
         restored = loaded_page.get_team_config()
         assert {p.id for p in restored.personas} == {
-            "developer", "data-analyst", "compliance-risk"
+            "developer", "extended/data-analyst", "extended/compliance-risk",
         }
 
 

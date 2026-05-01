@@ -3,12 +3,16 @@
 Displays all personas from the library index with checkboxes for multi-select.
 Each persona row shows name/role and expandable per-persona config options
 (include agent, include templates, strictness level).
+
+Per ADR-014, personas are split into two tiers — ``core`` (the default team)
+and ``extended`` (opt-in specialists). The page renders one collapsible
+section per tier with a brief explainer instead of the per-persona-category
+grouping used by earlier versions.
 """
 
 from __future__ import annotations
 
 import logging
-from collections import defaultdict
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -29,6 +33,7 @@ from foundry_app.core.models import (
     PersonaSelection,
     Strictness,
     TeamConfig,
+    _persona_dirname,
 )
 from foundry_app.ui.theme import (
     ACCENT_PRIMARY,
@@ -244,8 +249,12 @@ class PersonaCard(QFrame):
         self._checkbox.stateChanged.connect(self._on_toggled)
         top_row.addWidget(self._checkbox)
 
+        # Persona descriptions are keyed by bare directory name; strip any
+        # ADR-014 ``extended/`` prefix before lookup so the same dict serves
+        # both tiers.
+        lookup_key = _persona_dirname(self._persona.id)
         display_name, role_desc = PERSONA_DESCRIPTIONS.get(
-            self._persona.id, (self._persona.id.replace("-", " ").title(), "")
+            lookup_key, (lookup_key.replace("-", " ").title(), "")
         )
 
         name_label = QLabel(display_name)
@@ -377,7 +386,7 @@ class PersonaSelectionPage(QWidget):
     ) -> None:
         super().__init__(parent)
         self._cards: dict[str, PersonaCard] = {}
-        self._category_groups: dict[str, CollapsibleGroupBox] = {}
+        self._tier_groups: dict[str, CollapsibleGroupBox] = {}
         self._warning_label: QLabel | None = None
         self._build_ui()
         if library_index is not None:
@@ -438,50 +447,80 @@ class PersonaSelectionPage(QWidget):
     # -- Public API ---------------------------------------------------------
 
     def load_personas(self, library_index: LibraryIndex) -> None:
-        """Populate the page with personas from a LibraryIndex, grouped by category."""
+        """Populate the page with personas from a LibraryIndex, grouped by tier.
+
+        Per ADR-014, the wizard renders exactly two collapsible sections —
+        **Core team** (the closed default five) and **Extended specialists**
+        (opt-in). Each section is keyed by ``PersonaInfo.tier`` and ordered
+        core-first.
+        """
         # Clear existing cards and group boxes
         for card in self._cards.values():
             card.deleteLater()
         self._cards.clear()
 
-        for group_box in self._category_groups.values():
+        for group_box in self._tier_groups.values():
             self._card_layout.removeWidget(group_box)
             group_box.deleteLater()
-        self._category_groups.clear()
+        self._tier_groups.clear()
 
-        # Group personas by category
-        groups: dict[str, list[PersonaInfo]] = defaultdict(list)
+        # Group personas by tier, preserving alphabetical order within each.
+        core_personas: list[PersonaInfo] = []
+        extended_personas: list[PersonaInfo] = []
         for persona in library_index.personas:
-            cat = persona.category.strip() if persona.category else ""
-            if not cat:
-                cat = "Other"
-            groups[cat].append(persona)
+            if persona.tier == "core":
+                core_personas.append(persona)
+            else:
+                extended_personas.append(persona)
+        core_personas.sort(key=lambda p: p.id)
+        extended_personas.sort(key=lambda p: p.id)
 
-        # Sort category names alphabetically, with "Other" always last
-        sorted_cats = sorted(
-            groups.keys(), key=lambda c: (c == "Other", c)
-        )
+        # Section descriptors: (tier-key, title, explainer, personas).
+        sections: list[tuple[str, str, str, list[PersonaInfo]]] = [
+            (
+                "core",
+                "Core team",
+                "The default five — every project starts here unless you "
+                "explicitly select otherwise.",
+                core_personas,
+            ),
+            (
+                "extended",
+                "Extended specialists",
+                "Opt-in roles for security, compliance, data, mobile, and "
+                "other specialised work. Pick what your project needs.",
+                extended_personas,
+            ),
+        ]
 
         insert_idx = 0
-        for cat_name in sorted_cats:
-            personas_in_cat = groups[cat_name]
+        for tier_key, title, explainer, personas_in_tier in sections:
+            if not personas_in_tier:
+                continue
             group_box = CollapsibleGroupBox(
-                f"{cat_name} ({len(personas_in_cat)})"
+                f"{title} ({len(personas_in_tier)})"
             )
+            explainer_label = QLabel(explainer)
+            explainer_label.setStyleSheet(SUBHEADING_STYLE)
+            explainer_label.setWordWrap(True)
+            group_box.content_layout.addWidget(explainer_label)
 
-            for persona in personas_in_cat:
+            for persona in personas_in_tier:
                 card = PersonaCard(persona)
                 card.toggled.connect(self._on_card_toggled)
                 group_box.content_layout.addWidget(card)
                 self._cards[persona.id] = card
 
             self._card_layout.insertWidget(insert_idx, group_box)
-            self._category_groups[cat_name] = group_box
+            self._tier_groups[tier_key] = group_box
             insert_idx += 1
 
         self._empty_label.setVisible(len(self._cards) == 0)
-        logger.info("Loaded %d persona cards in %d categories",
-                     len(self._cards), len(self._category_groups))
+        logger.info(
+            "Loaded %d persona cards across %d tier groups",
+            len(self._cards),
+            len(self._tier_groups),
+        )
 
     def get_team_config(self) -> TeamConfig:
         """Return a TeamConfig from currently selected personas."""
@@ -519,9 +558,18 @@ class PersonaSelectionPage(QWidget):
         return dict(self._cards)
 
     @property
+    def tier_groups(self) -> dict[str, CollapsibleGroupBox]:
+        """Access tier group boxes keyed by ``"core"`` / ``"extended"``."""
+        return dict(self._tier_groups)
+
+    @property
     def category_groups(self) -> dict[str, CollapsibleGroupBox]:
-        """Access category group boxes by name (for testing)."""
-        return dict(self._category_groups)
+        """Backwards-compat alias for :pyattr:`tier_groups`.
+
+        Older tests refer to this attribute by its category-era name; the
+        underlying grouping is now by tier (ADR-014).
+        """
+        return self.tier_groups
 
     # -- Slots --------------------------------------------------------------
 

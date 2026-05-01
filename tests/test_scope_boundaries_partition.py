@@ -28,7 +28,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CORE_PERSONAS = ("ba", "architect", "developer", "tech-qa", "team-lead")
 
 LIBRARY_PERSONA_FILES = {
-    role: REPO_ROOT / "ai-team-library" / "personas" / role / "persona.md"
+    # Per ADR-014, core personas live under ``personas/core/<role>``.
+    role: REPO_ROOT / "ai-team-library" / "personas" / "core" / role / "persona.md"
     for role in CORE_PERSONAS
 }
 

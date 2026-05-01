@@ -901,16 +901,31 @@ def _make_devloop_library(tmp_path: Path) -> Path:
 
 
 def _devloop_index(lib: Path) -> LibraryIndex:
+    # Per ADR-014, extended persona ids carry the ``extended/`` prefix and
+    # the on-disk path includes the tier directory. ``developer`` is core,
+    # so it stays bare.
     return LibraryIndex(
         library_root=str(lib),
         personas=[
-            PersonaInfo(id="developer", path=str(lib / "personas" / "developer")),
-            PersonaInfo(id="legal-counsel", path=str(lib / "personas" / "legal-counsel")),
             PersonaInfo(
-                id="security-engineer", path=str(lib / "personas" / "security-engineer")
+                id="developer",
+                path=str(lib / "personas" / "core" / "developer"),
+                tier="core",
             ),
             PersonaInfo(
-                id="compliance-risk", path=str(lib / "personas" / "compliance-risk")
+                id="extended/legal-counsel",
+                path=str(lib / "personas" / "extended" / "legal-counsel"),
+                tier="extended",
+            ),
+            PersonaInfo(
+                id="extended/security-engineer",
+                path=str(lib / "personas" / "extended" / "security-engineer"),
+                tier="extended",
+            ),
+            PersonaInfo(
+                id="extended/compliance-risk",
+                path=str(lib / "personas" / "extended" / "compliance-risk"),
+                tier="extended",
             ),
         ],
     )
@@ -1037,7 +1052,8 @@ class TestGovernanceGating:
             expertise=[ExpertiseSelection(id="python")],
             team=TeamConfig(personas=[
                 PersonaSelection(id="developer"),
-                PersonaSelection(id="security-engineer"),
+                # ADR-014: extended personas use the ``extended/`` prefix.
+                PersonaSelection(id="extended/security-engineer"),
             ]),
         )
         result = copy_assets(spec, idx, lib, output)
@@ -1057,7 +1073,7 @@ class TestGovernanceGating:
             expertise=[ExpertiseSelection(id="python")],
             team=TeamConfig(personas=[
                 PersonaSelection(id="developer"),
-                PersonaSelection(id="compliance-risk"),
+                PersonaSelection(id="extended/compliance-risk"),
             ]),
         )
         result = copy_assets(spec, idx, lib, output)
@@ -1094,7 +1110,7 @@ class TestGovernanceGating:
             expertise=[ExpertiseSelection(id="python")],
             team=TeamConfig(personas=[
                 PersonaSelection(id="developer"),
-                PersonaSelection(id="legal-counsel"),
+                PersonaSelection(id="extended/legal-counsel"),
             ]),
         )
         result = copy_assets(spec, idx, lib, output)

@@ -8,7 +8,12 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from foundry_app.core.models import CompositionSpec, LibraryIndex, StageResult
+from foundry_app.core.models import (
+    CompositionSpec,
+    LibraryIndex,
+    StageResult,
+    _persona_dirname,
+)
 from foundry_app.services.compiler import (
     _PLACEHOLDER_RE,
     _build_context,
@@ -251,7 +256,9 @@ def write_agents(
             if emitted_expertise_ids
             else ""
         )
-        persona_title = persona_sel.id.replace("-", " ").title()
+        # Strip any ``extended/`` tier prefix (ADR-014) before producing the
+        # human-readable role name; the tier is metadata, not part of the role.
+        persona_title = _persona_dirname(persona_sel.id).replace("-", " ").title()
         role_name = (
             f"{primary_expertise} {persona_title}".strip()
             if primary_expertise
@@ -280,7 +287,9 @@ def write_agents(
         }
 
         content = template.render(**context)
-        agent_file = agents_dir / f"{persona_sel.id}.md"
+        # Use the leaf directory name so .claude/agents/ stays a flat
+        # directory regardless of tier (ADR-014).
+        agent_file = agents_dir / f"{_persona_dirname(persona_sel.id)}.md"
         agent_file.write_text(content, encoding="utf-8")
 
         rel_path = str(agent_file.relative_to(out_root))
