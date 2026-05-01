@@ -70,7 +70,14 @@ A user navigating away from an in-progress wizard via the sidebar can **see at a
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `foundry_app/ui/main_window.py` | 101 (`_apply_nav_icon`, `_on_builder_state_changed`, builder-state wiring) |
+| `foundry_app/ui/screens/builder_screen.py` | 81 (`has_in_progress_state`, `start_over`, `state_changed` signal, Start Over button) |
+| `tests/test_builder_screen.py` | 184 (new — BEAN-288 behavior tests) |
+| `tests/test_main_window.py` | 66 (`TestBuilderInProgressIndicator`) |
+| `ai/beans/BEAN-288-sidebar-resume-in-progress-wizard/bean.md` | 46 (status, ACs, telemetry) |
+| `ai/beans/BEAN-288-sidebar-resume-in-progress-wizard/tasks/01-ba-label-decision.md` | 56 (new) |
+| `ai/beans/BEAN-288-sidebar-resume-in-progress-wizard/tasks/02-developer-resume-sidebar.md` | 55 (new) |
+| `ai/beans/BEAN-288-sidebar-resume-in-progress-wizard/tasks/03-tech-qa-resume-tests.md` | 44 (new) |
 
 ## Notes
 
