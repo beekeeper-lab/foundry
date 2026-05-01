@@ -394,7 +394,9 @@ class TestHookPackConflictDetection:
         msg = conflict_errors[0].message
         assert "az-limited-ops" in msg
         assert "az-read-only" in msg
-        assert "mutually exclusive" in msg
+        # BEAN-290: friendlier wording — "can't be used together" replaces
+        # the "mutually exclusive" jargon.
+        assert "can't be used together" in msg
 
     def test_single_pack_from_conflicting_pair_passes(self):
         spec = _make_spec(hooks=HooksConfig(packs=[
@@ -683,14 +685,14 @@ class TestContractGraphValidatorMissingProducer:
         assert len(result.errors) == 1
         msg = result.errors[0]
         assert msg.code == "missing-producer"
-        # The artifact-type name must appear in the message — that is what
-        # the user reads to know what's broken.
-        assert "user-story" in msg.message
+        # BEAN-290: artifact-id "user-story" → human label "user stories";
+        # personas are title-cased in the message text.
+        assert "user stories" in msg.message
         # The consuming persona must be named so the user knows who is
         # waiting on the input.
-        assert "developer" in msg.message
+        assert "Developer" in msg.message
         # The library producer is listed as an actionable suggestion.
-        assert "ba" in msg.message
+        assert "BA" in msg.message
 
     def test_missing_producer_lists_all_consumers(self):
         """When several team members consume the same missing type, all
@@ -701,8 +703,9 @@ class TestContractGraphValidatorMissingProducer:
         result = validate_contract_graph([dev, qa], _registry(ba, dev, qa))
         errs = [m for m in result.errors if m.code == "missing-producer"]
         assert len(errs) == 1
-        assert "developer" in errs[0].message
-        assert "tech-qa" in errs[0].message
+        # BEAN-290: persona ids are title-cased (`tech-qa` → `Tech-QA`).
+        assert "Developer" in errs[0].message
+        assert "Tech-QA" in errs[0].message
 
     def test_missing_producer_lists_library_producers_as_suggestion(self):
         """The remediation hint names every library persona that produces
@@ -714,17 +717,22 @@ class TestContractGraphValidatorMissingProducer:
             [dev], _registry(producer_a, producer_b, dev),
         )
         msg = result.errors[0].message
-        assert "ba" in msg
-        assert "team-lead" in msg
+        # BEAN-290: title-cased persona names.
+        assert "BA" in msg
+        assert "Team Lead" in msg
 
     def test_missing_producer_with_no_library_producer_says_none(self):
         """If nobody in the library produces the type either, the message
-        should still be informative (not crash)."""
+        should still be informative (not crash). BEAN-290: instead of
+        the literal word "none", the message now states explicitly that
+        the gap is a library issue, not the user's composition."""
         dev = _persona("developer", consumes=["mystery-type"])
         result = validate_contract_graph([dev], _registry(dev))
         assert len(result.errors) == 1
-        assert "mystery-type" in result.errors[0].message
-        assert "none" in result.errors[0].message.lower()
+        # No artifact label override for "mystery-type" → falls back to
+        # "mystery type" (hyphen → space).
+        assert "mystery type" in result.errors[0].message
+        assert "library gap" in result.errors[0].message.lower()
 
     def test_multiple_missing_producers_sorted_by_type(self):
         """Multiple missing types are emitted as separate ERRORs, sorted
@@ -733,10 +741,12 @@ class TestContractGraphValidatorMissingProducer:
         result = validate_contract_graph([dev], _registry(dev))
         errs = [m for m in result.errors if m.code == "missing-producer"]
         assert len(errs) == 3
+        # BEAN-290: artifact ids appear bare in the message (no quoted
+        # `type 'X'` syntax). Single consumer ⇒ message uses verb "needs".
         types_in_order = []
         for m in errs:
             for t in ("alpha", "mu", "zeta"):
-                if f"'{t}'" in m.message:
+                if f"needs {t}" in m.message:
                     types_in_order.append(t)
                     break
         assert types_in_order == ["alpha", "mu", "zeta"]
@@ -764,8 +774,10 @@ class TestContractGraphValidatorOrphanProduces:
         assert result.is_valid  # warnings don't break is_valid
         warns = [m for m in result.warnings if m.code == "orphan-produces"]
         assert len(warns) == 1
-        assert "developer" in warns[0].message
-        assert "dev-decision" in warns[0].message
+        # BEAN-290: persona ids title-cased; artifact id `dev-decision`
+        # → human label "development-decision note".
+        assert "Developer" in warns[0].message
+        assert "development-decision note" in warns[0].message
 
     def test_orphan_produces_severity_is_warning(self):
         dev = _persona("developer", produces=["dev-decision"])
@@ -846,8 +858,10 @@ class TestContractGraphValidatorLibraryConsumerFilter:
         )
         warns = [m for m in result.warnings if m.code == "orphan-produces"]
         assert len(warns) == 1
-        assert "dev" in warns[0].message
-        assert "actionable-output" in warns[0].message
+        # BEAN-290: title-cased persona id; artifact id falls back to
+        # space-substituted slug since no override is registered.
+        assert "Dev" in warns[0].message
+        assert "actionable output" in warns[0].message
 
     def test_real_library_five_core_personas_no_orphan_warnings(self):
         """End-to-end regression: with the real ai-team-library/ indexed

@@ -220,7 +220,7 @@ key on it). Only the **message text** changes.
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
 | 1 | Canonical phrasing for validator messages | ba | — | Done |
-| 2 | Wire canonical messages into validator + UI | developer | 1 | Pending |
+| 2 | Wire canonical messages into validator + UI | developer | 1 | Done |
 | 3 | Vocabulary tests + regression sweep | tech-qa | 2 | Pending |
 
 > Skipped: Architect (default — no new abstractions; `ValidationMessage`
@@ -289,7 +289,7 @@ leave the same problem latent in the rarely-triggered ones.
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Canonical phrasing for validator messages | ba | 2m | 1,717,125 | 16,323 | $4.29 |
-| 2 | Wire canonical messages into validator + UI | developer | — | — | — | — |
+| 2 | Wire canonical messages into validator + UI | developer | 8m | 12,515,731 | 36,592 | $22.75 |
 | 3 | Vocabulary tests + regression sweep | tech-qa | — | — | — | — |
 
 | Metric | Value |

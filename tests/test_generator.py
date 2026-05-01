@@ -1644,10 +1644,12 @@ class TestContractGraphPipelineIntegration:
         assert warnings, "Expected at least one contract_validation warning"
         joined = "\n".join(warnings)
         assert "missing-producer" in joined
-        assert "task-spec" in joined
+        # BEAN-290: messages now use the human label "task specification"
+        # in place of the slug "task-spec".
+        assert "task specification" in joined
         # The warning must surface through manifest.all_warnings — that's
         # what UIs and downstream tools read.
-        assert any("task-spec" in w for w in manifest.all_warnings)
+        assert any("task specification" in w for w in manifest.all_warnings)
 
     def test_standard_mode_force_bypasses_contract_graph(self, tmp_path: Path):
         """``force=True`` is the documented escape hatch — generation must

@@ -45,8 +45,14 @@ class GenerationWorker(QThread):
             )
 
             if not validation.is_valid:
-                errors = "; ".join(e.message for e in validation.errors[:5])
-                self.finished_err.emit(f"Validation failed: {errors}")
+                error_messages = [e.message for e in validation.errors[:5]]
+                if len(error_messages) == 1:
+                    body = error_messages[0]
+                else:
+                    body = error_messages[0] + "\n• " + "\n• ".join(
+                        error_messages[1:]
+                    )
+                self.finished_err.emit(body)
                 return
 
             output_dir = (

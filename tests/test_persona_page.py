@@ -864,9 +864,10 @@ class TestCoherenceIndicatorRed:
 
         text = coherence_page._coherence_label.text()
         assert "\U0001f534" in text
-        # Plural "producers" since count == 2.
-        assert "2 missing producer" in text
-        assert "producers" in text  # plural
+        # BEAN-290: headline talks about "missing roles" (user vocabulary),
+        # not "missing producers" (graph vocabulary).
+        assert "2 missing role" in text
+        assert "roles" in text  # plural
 
 
 class TestCoherenceIndicatorYellow:
@@ -882,7 +883,9 @@ class TestCoherenceIndicatorYellow:
         text = label.text()
         # Yellow emoji (\U0001f7e1) marks the orphan-only state.
         assert "\U0001f7e1" in text, f"Expected yellow emoji, got: {text!r}"
-        assert "orphan" in text.lower()
+        # BEAN-290: yellow headline describes "unused output(s)" rather
+        # than "orphan produces".
+        assert "unused output" in text.lower()
 
 
 class TestCoherenceIndicatorGreen:
@@ -897,7 +900,8 @@ class TestCoherenceIndicatorGreen:
         text = label.text()
         # Green emoji (\U0001f7e2) marks the all-satisfied state.
         assert "\U0001f7e2" in text, f"Expected green emoji, got: {text!r}"
-        assert "satisfied" in text.lower()
+        # BEAN-290: green headline reads "looks good".
+        assert "looks good" in text.lower()
 
     def test_indicator_green_for_five_core_personas_against_real_library(
         self,
@@ -925,7 +929,8 @@ class TestCoherenceIndicatorGreen:
             assert "\U0001f7e2" in text, (
                 f"Expected GREEN indicator for 5 core personas, got: {text!r}"
             )
-            assert "satisfied" in text.lower()
+            # BEAN-290: green headline reads "looks good".
+            assert "looks good" in text.lower()
         finally:
             page.close()
 
@@ -1012,22 +1017,25 @@ class TestCoherenceIndicatorVerbatimMessages:
     ):
         coherence_page.persona_cards["consumer"].is_selected = True
         text = coherence_page._coherence_label.text()
-        # The validator's missing-producer message has a fixed shape; both
-        # the leading clause and the producer-list phrase must be present.
-        assert "Missing producer for type" in text
-        assert "Producers in library:" in text
-        # The specific artifact name from the fixture must round-trip.
-        assert "'thing'" in text
+        # BEAN-290: missing-producer message names the affected team
+        # member and the suggested persona to add, both in user vocabulary.
+        assert "Your Consumer needs" in text
+        assert "Add the Producer" in text
+        # The specific artifact name from the fixture must round-trip
+        # (no human label registered for "thing", so it falls through).
+        assert "thing" in text
 
     def test_yellow_includes_verbatim_orphan_message(self, coherence_page):
         coherence_page.persona_cards["orphan-producer"].is_selected = True
         text = coherence_page._coherence_label.text()
-        # Verbatim phrase from validator.validate_contract_graph().
-        assert "produces type" in text
-        assert "no persona on the team consumes it" in text
-        # Producer id and artifact name from the fixture round-trip too.
-        assert "'orphan-producer'" in text
-        assert "'orphan-thing'" in text
+        # BEAN-290: orphan-produces message names the producing persona
+        # in user vocabulary (title-cased id) and points the user at how
+        # to fix it.
+        assert "The Orphan Producer produces" in text
+        assert "no one else on your team uses" in text
+        # Artifact name from the fixture round-trips. The label helper's
+        # fallback turns "orphan-thing" into "orphan thing".
+        assert "orphan thing" in text
 
 
 class TestCoherenceIndicatorTruncationCap:
@@ -1052,13 +1060,15 @@ class TestCoherenceIndicatorTruncationCap:
             text = page._coherence_label.text()
             # All six types are *findings*; only the first five appear
             # verbatim. The validator sorts alphabetically, so 'fff' is the
-            # one that gets pushed past the cap.
-            assert "'aaa'" in text
-            assert "'bbb'" in text
-            assert "'ccc'" in text
-            assert "'ddd'" in text
-            assert "'eee'" in text
-            assert "'fff'" not in text
+            # one that gets pushed past the cap. BEAN-290: artifact ids
+            # appear bare (no quotes) since the message no longer wraps
+            # them in `type 'X'` syntax.
+            assert "needs aaa" in text
+            assert "needs bbb" in text
+            assert "needs ccc" in text
+            assert "needs ddd" in text
+            assert "needs eee" in text
+            assert "fff" not in text
             assert "+1 more" in text
         finally:
             page.close()

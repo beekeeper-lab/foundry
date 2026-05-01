@@ -5,10 +5,10 @@
 | **Task ID** | BEAN-290 / 02 |
 | **Owner** | developer |
 | **Depends On** | 01 |
-| **Status** | Pending |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Status** | Done |
+| **Started** | 2026-05-01 16:35 |
+| **Completed** | 2026-05-01 16:43 |
+| **Duration** | 8m |
 
 ## Goal
 

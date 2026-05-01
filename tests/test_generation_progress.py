@@ -123,7 +123,10 @@ class TestLifecycle:
         screen.start()
         screen.finish_with_error("Disk full")
         assert not screen.summary_label.isHidden()
-        assert "failed" in screen.summary_label.text().lower()
+        # BEAN-290: banner lead-in changed from "Generation failed:" to a
+        # friendlier, recoverable framing. The validator-message body is
+        # still surfaced verbatim.
+        assert "Can't generate yet" in screen.summary_label.text()
         assert "Disk full" in screen.summary_label.text()
 
     def test_finish_with_error_no_open_button(self):
@@ -302,8 +305,9 @@ class TestOutcomeBanner:
         # Back button must be on-screen; Open button hidden on failure.
         assert screen.back_button.isHidden() is False
         assert screen.open_button.isHidden() is True
-        # Summary names the failure verbatim.
-        assert "failed" in screen.summary_label.text().lower()
+        # Summary surfaces the failure verbatim with the friendly lead-in
+        # introduced in BEAN-290.
+        assert "Can't generate yet" in screen.summary_label.text()
         assert "Hook packs conflict" in screen.summary_label.text()
 
     def test_banner_is_sibling_of_scroll_not_nested(self):
