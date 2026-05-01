@@ -315,3 +315,4 @@
 | BEAN-291 | Add Data Scientist Persona to the Library | App | Medium | Done | team-lead |
 | BEAN-292 | Relax Contract-Graph "Missing Producer" from Error to Warning | App | High | Unapproved | (unassigned) |
 | BEAN-293 | Compliance-Gate Hook Pack Should Not Default-On at Baseline Posture | App | High | Unapproved | (unassigned) |
+| BEAN-294 | R Language Expertise | App | Medium | Unapproved | (unassigned) |
