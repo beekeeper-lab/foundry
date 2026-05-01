@@ -77,6 +77,7 @@ Each expertise directory contains a `conventions.md` file defining domain standa
 | typescript         | TypeScript language conventions and type safety   |
 | node               | Node.js runtime, server patterns, npm ecosystem  |
 | java               | Java language conventions, build tools, patterns  |
+| dart               | Dart language conventions, async, isolates         |
 | dotnet             | .NET / C# conventions, project structure          |
 | go                 | Go language conventions, concurrency, tooling     |
 | kotlin             | Kotlin language conventions, JVM interop          |
@@ -84,6 +85,7 @@ Each expertise directory contains a `conventions.md` file defining domain standa
 | swift              | Swift language conventions, Apple frameworks      |
 | r                  | R language conventions, tidyverse, renv, testing  |
 | react-native       | React Native mobile development patterns          |
+| flutter            | Flutter/Dart cross-platform development patterns  |
 | sql-dba            | SQL conventions, schema design, query patterns    |
 | devops             | CI/CD, containerization, infrastructure-as-code   |
 | security           | Secure coding, dependency scanning, hardening     |
