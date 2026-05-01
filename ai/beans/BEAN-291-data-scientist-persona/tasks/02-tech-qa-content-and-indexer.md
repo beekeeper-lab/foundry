@@ -5,10 +5,10 @@
 | **Task ID** | BEAN-291 / 02 |
 | **Owner** | tech-qa |
 | **Depends On** | 01 |
-| **Status** | Pending |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
+| **Status** | Done |
+| **Started** | 2026-05-01 17:00 |
+| **Completed** | 2026-05-01 17:02 |
+| **Duration** | 2m |
 
 ## Goal
 
