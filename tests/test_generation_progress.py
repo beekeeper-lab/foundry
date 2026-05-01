@@ -123,7 +123,10 @@ class TestLifecycle:
         screen.start()
         screen.finish_with_error("Disk full")
         assert not screen.summary_label.isHidden()
-        assert "failed" in screen.summary_label.text().lower()
+        # BEAN-290: banner lead-in changed from "Generation failed:" to a
+        # friendlier, recoverable framing. The validator-message body is
+        # still surfaced verbatim.
+        assert "Can't generate yet" in screen.summary_label.text()
         assert "Disk full" in screen.summary_label.text()
 
     def test_finish_with_error_no_open_button(self):
@@ -302,8 +305,9 @@ class TestOutcomeBanner:
         # Back button must be on-screen; Open button hidden on failure.
         assert screen.back_button.isHidden() is False
         assert screen.open_button.isHidden() is True
-        # Summary names the failure verbatim.
-        assert "failed" in screen.summary_label.text().lower()
+        # Summary surfaces the failure verbatim with the friendly lead-in
+        # introduced in BEAN-290.
+        assert "Can't generate yet" in screen.summary_label.text()
         assert "Hook packs conflict" in screen.summary_label.text()
 
     def test_banner_is_sibling_of_scroll_not_nested(self):
@@ -331,3 +335,79 @@ class TestOutcomeBanner:
         assert screen._scroll.verticalScrollBar().value() == 0
 
 
+
+
+# ---------------------------------------------------------------------------
+# BEAN-290 — Banner does not double-prefix validator messages.
+#
+# The previous behavior wrapped the validator's already-prefixed errors
+# with `"Validation failed: …"` in the worker, then `"Generation failed:
+# Validation failed: …"` in the screen. The new behavior emits the
+# validator messages bare from the worker, and the screen leads with
+# `"Can't generate yet — "`.
+# ---------------------------------------------------------------------------
+
+
+class TestBannerNoDoublePrefix:
+    """Regression: the banner-construction path can never reintroduce
+    the `"Validation failed: …"` inner prefix."""
+
+    def test_worker_emits_validator_messages_without_inner_prefix(
+        self, monkeypatch,
+    ):
+        from unittest.mock import MagicMock
+
+        from foundry_app.core.models import (
+            CompositionSpec,
+            ProjectIdentity,
+            Severity,
+            ValidationMessage,
+            ValidationResult,
+        )
+        from foundry_app.ui.generation_worker import GenerationWorker
+
+        spec = CompositionSpec(
+            project=ProjectIdentity(name="Test", slug="test"),
+        )
+        worker = GenerationWorker(spec=spec, library_root="/nonexistent/path")
+        captured = MagicMock()
+        monkeypatch.setattr(worker, "finished_err", captured)
+
+        failed = ValidationResult(messages=[
+            ValidationMessage(
+                severity=Severity.ERROR,
+                code="hook-pack-conflict",
+                message="The 'a' and 'b' hook packs can't be used together.",
+            ),
+        ])
+
+        def _fake_generate(*args, **kwargs):
+            return (object(), failed, None)
+
+        monkeypatch.setattr(
+            "foundry_app.services.generator.generate_project", _fake_generate,
+        )
+
+        worker.run()
+
+        captured.emit.assert_called_once()
+        emitted = captured.emit.call_args[0][0]
+        # Must not start with the inner prefix.
+        assert not emitted.startswith("Validation failed:"), emitted
+        # The final composed banner (screen's lead-in + worker's body)
+        # must not contain the legacy double-prefix.
+        composed = f"Can't generate yet — {emitted}"
+        assert "Validation failed:" not in composed, composed
+        # The validator message itself reaches the user.
+        assert "can't be used together" in emitted
+
+    def test_screen_lead_in_replaces_generation_failed_prefix(self):
+        """The screen's failure lead-in is the friendly recoverable
+        framing introduced in BEAN-290 — never the legacy
+        ``"Generation failed:"`` wording."""
+        screen = GenerationProgressScreen()
+        screen.start()
+        screen.finish_with_error("Something broke")
+        text = screen.summary_label.text()
+        assert "Can't generate yet" in text
+        assert "Generation failed:" not in text

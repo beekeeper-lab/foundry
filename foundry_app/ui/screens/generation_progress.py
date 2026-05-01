@@ -499,7 +499,7 @@ class GenerationProgressScreen(QWidget):
     def finish_with_error(self, message: str) -> None:
         """Mark generation as failed."""
         elapsed = self._elapsed()
-        self._summary_label.setText(f"Generation failed: {message}")
+        self._summary_label.setText(f"Can't generate yet — {message}")
         self._summary_label.setStyleSheet(
             f"color: {STATUS_ERROR}; font-size: {FONT_SIZE_MD}px; "
             f"font-weight: {FONT_WEIGHT_BOLD};"

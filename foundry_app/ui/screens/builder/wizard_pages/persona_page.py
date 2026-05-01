@@ -651,22 +651,25 @@ class PersonaSelectionPage(QWidget):
 
         if error_count > 0:
             header = (
-                f"\U0001f534  Team coherence: {error_count} missing "
-                f"producer{'s' if error_count != 1 else ''} "
-                f"— add producers or remove consumers."
+                f"\U0001f534  Team check: {error_count} missing "
+                f"role{'s' if error_count != 1 else ''} — your team is short "
+                f"of someone."
             )
             findings = [m.message for m in errors]
             color = STATUS_ERROR
         elif warning_count > 0:
             header = (
-                f"\U0001f7e1  Team coherence: {warning_count} orphan "
-                f"produce{'s' if warning_count != 1 else ''} "
-                f"— produced types with no consumer on the team."
+                f"\U0001f7e1  Team check: {warning_count} unused "
+                f"output{'s' if warning_count != 1 else ''} — someone on your "
+                f"team produces something no teammate uses."
             )
             findings = [m.message for m in warnings]
             color = STATUS_WARNING
         else:
-            header = "\U0001f7e2  Team coherence: all consumes satisfied."
+            header = (
+                "\U0001f7e2  Team check: looks good — every output has a "
+                "reader and every need has a supplier."
+            )
             findings = []
             color = STATUS_SUCCESS
 

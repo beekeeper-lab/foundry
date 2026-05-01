@@ -14,6 +14,11 @@ from foundry_app.core.models import (
     ValidationMessage,
     ValidationResult,
 )
+from foundry_app.services.artifact_labels import (
+    artifact_label,
+    join_personas,
+    persona_name,
+)
 from foundry_app.services.library_indexer import format_unknown_persona_error
 
 logger = logging.getLogger(__name__)
@@ -49,7 +54,12 @@ def _check_personas(
             messages.append(ValidationMessage(
                 severity=Severity.WARNING,
                 code="persona-no-persona-md",
-                message=f"Persona '{ps.id}' has no persona.md file",
+                message=(
+                    f"The {persona_name(ps.id)} persona is in the library but its "
+                    f"profile file (persona.md) is missing — this is a library-data "
+                    f"issue, not your composition. Generation will continue but the "
+                    f"agent file will be sparse."
+                ),
             ))
 
 
@@ -65,13 +75,21 @@ def _check_expertise(
             messages.append(ValidationMessage(
                 severity=Severity.ERROR,
                 code="missing-expertise",
-                message=f"Expertise '{ss.id}' not found in library",
+                message=(
+                    f"The '{ss.id}' expertise pack isn't in the library — check the "
+                    f"spelling, or remove it from your selection."
+                ),
             ))
         elif not expertise.files:
             messages.append(ValidationMessage(
                 severity=Severity.WARNING,
                 code="expertise-no-files",
-                message=f"Expertise '{ss.id}' has no convention files",
+                message=(
+                    f"The '{ss.id}' expertise pack is in the library but has no "
+                    f"convention files — this is a library-data issue, not your "
+                    f"composition. Generation will continue but the expertise will "
+                    f"contribute nothing."
+                ),
             ))
 
 
@@ -87,7 +105,10 @@ def _check_hook_packs(
             messages.append(ValidationMessage(
                 severity=Severity.ERROR,
                 code="missing-hook-pack",
-                message=f"Hook pack '{hp.id}' not found in library",
+                message=(
+                    f"The '{hp.id}' hook pack isn't in the library — check the "
+                    f"spelling, or remove it from your selection."
+                ),
             ))
 
 
@@ -127,9 +148,8 @@ def _check_hook_conflicts(
                     severity=Severity.ERROR,
                     code="hook-pack-conflict",
                     message=(
-                        f"Hook packs '{pair[0]}' and '{pair[1]}' are mutually "
-                        f"exclusive and cannot both be enabled in the same "
-                        f"composition. Remove one of them."
+                        f"The '{pair[0]}' and '{pair[1]}' hook packs can't be used "
+                        f"together — pick one and remove the other."
                     ),
                 ))
 
@@ -158,14 +178,18 @@ def _check_hook_posture_compatibility(
         if row is None:
             continue
         if row.get("included", "").strip().lower() == "no":
+            logger.info(
+                "hook-pack-posture-incompatible: pack=%s posture=%s "
+                "(Posture Compatibility table says Included: No)",
+                hp.id, posture_key,
+            )
             messages.append(ValidationMessage(
                 severity=Severity.ERROR,
                 code="hook-pack-posture-incompatible",
                 message=(
-                    f"Hook pack '{hp.id}' declares posture '{posture_key}' as "
-                    f"incompatible (Posture Compatibility table says "
-                    f"Included: No). Remove the pack, lower enforcement, or "
-                    f"raise the composition's posture."
+                    f"The '{hp.id}' hook pack isn't available at the "
+                    f"'{posture_key}' safety posture. Either remove the pack, or "
+                    f"raise your composition's posture so it's allowed."
                 ),
             ))
 
@@ -179,14 +203,22 @@ def _check_required_fields(
         messages.append(ValidationMessage(
             severity=Severity.WARNING,
             code="no-personas",
-            message="No personas selected — the generated project will have no team",
+            message=(
+                "You haven't selected any team members yet. Pick at least one "
+                "persona on the Persona Selection page so the generated project "
+                "has a team."
+            ),
         ))
 
     if not composition.expertise:
         messages.append(ValidationMessage(
             severity=Severity.INFO,
             code="no-expertise",
-            message="No expertise selected — no convention files will be included",
+            message=(
+                "You haven't selected any expertise packs. The generated project "
+                "will work, but it won't carry any technology-specific "
+                "conventions. If that's intentional, you can ignore this."
+            ),
         ))
 
 
@@ -202,7 +234,11 @@ def _check_duplicates(
             messages.append(ValidationMessage(
                 severity=Severity.WARNING,
                 code="duplicate-persona",
-                message=f"Persona '{pid}' is selected more than once",
+                message=(
+                    f"You've added the {persona_name(pid)} more than once — "
+                    f"extra copies have no effect, you can remove the "
+                    f"duplicates."
+                ),
             ))
         seen_personas.add(pid)
 
@@ -213,7 +249,11 @@ def _check_duplicates(
             messages.append(ValidationMessage(
                 severity=Severity.WARNING,
                 code="duplicate-expertise",
-                message=f"Expertise '{sid}' is selected more than once",
+                message=(
+                    f"You've added the '{sid}' expertise pack more than once — "
+                    f"extra copies have no effect, you can remove the "
+                    f"duplicates."
+                ),
             ))
         seen_expertise.add(sid)
 
@@ -370,17 +410,26 @@ def validate_contract_graph(
     for artifact in missing_types:
         consumers = team_consumers[artifact]
         lib_producers = sorted(set(library_producers.get(artifact, [])))
-        producer_list = ", ".join(lib_producers) if lib_producers else "none"
-        consumer_list = ", ".join(consumers)
+        consumers_label = join_personas(consumers, prefix="")
+        type_label = artifact_label(artifact)
+        verb = "needs" if len(consumers) == 1 else "need"
+        if lib_producers:
+            producer_options_label = join_personas(lib_producers)
+            text = (
+                f"Your {consumers_label} {verb} {type_label}, but no one on "
+                f"your team can supply it. Add {producer_options_label} to "
+                f"your team."
+            )
+        else:
+            text = (
+                f"Your {consumers_label} {verb} {type_label}, but no persona "
+                f"in the library can supply it — this is a library gap, not a "
+                f"team-composition issue."
+            )
         messages.append(ValidationMessage(
             severity=Severity.ERROR,
             code="missing-producer",
-            message=(
-                f"Missing producer for type '{artifact}'. "
-                f"Consumed by: {consumer_list}. "
-                f"Producers in library: {producer_list}. "
-                f"Add one to your team."
-            ),
+            message=text,
         ))
 
     # Orphan produces — produced by the team, consumed by nobody on the
@@ -399,12 +448,25 @@ def validate_contract_graph(
     # Stable sort: by artifact (already sorted) then by producer id
     orphan_pairs.sort(key=lambda pair: (pair[0], pair[1]))
     for artifact, producer_id in orphan_pairs:
+        producer_label = persona_name(producer_id)
+        type_label = artifact_label(artifact)
+        consumer_options = sorted(set(library_consumers.get(artifact, [])))
+        if consumer_options:
+            consumer_options_label = join_personas(consumer_options)
+            fix_clause = (
+                f"Either add {consumer_options_label} so someone reads it, or "
+                f"remove the {producer_label} if you don't need this output."
+            )
+        else:
+            fix_clause = (
+                f"Remove the {producer_label} if you don't need this output."
+            )
         messages.append(ValidationMessage(
             severity=Severity.WARNING,
             code="orphan-produces",
             message=(
-                f"Persona '{producer_id}' produces type '{artifact}' but no "
-                f"persona on the team consumes it."
+                f"The {producer_label} produces {type_label} that no one else "
+                f"on your team uses. {fix_clause}"
             ),
         ))
 
