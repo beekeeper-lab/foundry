@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-274 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | High |
 | **Created** | 2026-04-28 |
-| **Started** | — |
+| **Started** | 2026-05-01 00:27 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-273 |
 
@@ -59,9 +59,10 @@ Today no such check exists. `foundry_app/services/validator.py` validates schema
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Implement contract_validator + pipeline integration + wizard indicator | developer | — | In Progress |
+| 2 | Test coverage — all paths (standard fail, overlay warn, orphan, wizard) | tech-qa | 1 | Pending |
 
-> Tasks populated by Team-Lead. Likely wave: Developer (validator + pipeline integration + wizard indicator), Tech-QA (cover all paths and edge cases). Architect optional — the design is constrained by BEAN-273's contract format.
+> Skipped: BA (default — no requirements ambiguity); Architect (default — design constrained by ADR-013 / BEAN-273's contract format, the bean explicitly marks Architect optional).
 
 ## Changes
 
@@ -89,7 +90,8 @@ Today no such check exists. `foundry_app/services/validator.py` validates schema
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Implement contract_validator + pipeline integration + wizard indicator | developer | 6m | 827,777 | 3,303 | $1.54 |
+| 2 | Test coverage — all paths (standard fail, overlay warn, orphan, wizard) | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|

@@ -17,9 +17,12 @@ from foundry_app.core.models import (
     GenerationManifest,
     LibraryIndex,
     OverlayPlan,
+    PersonaInfo,
     PersonaSelection,
+    Severity,
     StageResult,
     Strictness,
+    ValidationMessage,
     ValidationResult,
 )
 from foundry_app.services.agent_writer import write_agents
@@ -32,7 +35,10 @@ from foundry_app.services.safety_writer import write_safety
 from foundry_app.services.scaffold import scaffold_project
 from foundry_app.services.seeder import seed_tasks
 from foundry_app.services.subtree_setup import setup_subtree
-from foundry_app.services.validator import run_pre_generation_validation
+from foundry_app.services.validator import (
+    run_pre_generation_validation,
+    validate_contract_graph,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +102,79 @@ def _apply_default_team(
         "No personas selected — defaulting to core tier: %s",
         ", ".join(p.id for p in core),
     )
+
+
+def _resolve_team_personas(
+    composition: CompositionSpec,
+    library: LibraryIndex,
+) -> list[PersonaInfo]:
+    """Resolve the composition's selected persona ids to ``PersonaInfo`` records.
+
+    Unknown ids (already surfaced by ``run_pre_generation_validation`` as
+    ``missing-persona`` errors) are skipped here so the contract-graph
+    check can run cleanly on whatever is resolvable. Order is preserved.
+    """
+    resolved: list[PersonaInfo] = []
+    for ps in composition.team.personas:
+        info = library.persona_by_id(ps.id)
+        if info is not None:
+            resolved.append(info)
+    return resolved
+
+
+def _run_contract_graph_check(
+    composition: CompositionSpec,
+    library: LibraryIndex,
+    overlay: bool,
+) -> tuple[list[ValidationMessage], StageResult | None]:
+    """Run :func:`validate_contract_graph` and adapt for the run mode.
+
+    In **standard** mode, the contract-graph messages are returned as-is so
+    the caller can merge them into the pre-generation ``ValidationResult``;
+    a missing producer therefore aborts generation through the existing
+    ``validation.is_valid`` gate.
+
+    In **overlay** mode, ERRORs are demoted to WARNINGs (the pipeline must
+    proceed because the user is re-generating against an existing tree)
+    and the caller receives a :class:`StageResult` whose ``warnings`` list
+    captures the contract-graph findings — appending it to
+    ``manifest.stages`` is enough to make them surface via
+    ``GenerationManifest.all_warnings``.
+
+    Returns a tuple ``(messages, stage_result)``: in standard mode
+    ``stage_result`` is ``None``; in overlay mode it carries the warnings
+    to record on the manifest.
+    """
+    team = _resolve_team_personas(composition, library)
+    contract_result = validate_contract_graph(team, library)
+
+    if not contract_result.messages:
+        return [], None
+
+    if not overlay:
+        return list(contract_result.messages), None
+
+    # Overlay mode: demote errors to warnings, record on the manifest, proceed.
+    demoted: list[ValidationMessage] = []
+    for msg in contract_result.messages:
+        if msg.severity == Severity.ERROR:
+            demoted.append(
+                msg.model_copy(update={"severity": Severity.WARNING})
+            )
+        else:
+            demoted.append(msg)
+
+    warnings_text = [
+        f"[{msg.code}] {msg.message}" for msg in demoted
+    ]
+    stage = StageResult(wrote=[], warnings=warnings_text)
+
+    for msg in demoted:
+        logger.warning(
+            "Contract-graph (overlay) %s: %s", msg.code, msg.message,
+        )
+
+    return demoted, stage
 
 
 def _compare_trees(source: Path, target: Path) -> OverlayPlan:
@@ -333,8 +412,21 @@ def generate_project(
     # adopt the core tier from the library (ADR-014).
     _apply_default_team(composition, library)
 
+    # Step 1b: Contract-graph validation (BEAN-274). Runs between default-
+    # team and pre-generation validation so missing-producer findings can
+    # join the same ``ValidationResult`` and ride the existing ``is_valid``
+    # gate. In overlay mode the same check yields warnings (errors demoted)
+    # plus a stage result we attach to the manifest below.
+    contract_messages, contract_stage = _run_contract_graph_check(
+        composition, library, overlay,
+    )
+
     # Step 2: Validate
     validation = run_pre_generation_validation(composition, library, strictness)
+    if contract_messages:
+        validation = ValidationResult(
+            messages=list(validation.messages) + contract_messages,
+        )
 
     # Build base manifest
     run_id = _make_run_id()
@@ -344,6 +436,8 @@ def generate_project(
         library_version=lib_version,
         composition_snapshot=composition.model_dump(mode="json"),
     )
+    if contract_stage is not None:
+        manifest.stages["contract_validation"] = contract_stage
 
     # Check validation result
     if not validation.is_valid and not force:
