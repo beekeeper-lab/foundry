@@ -128,7 +128,13 @@ warning that implies the user must do something.
 
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai/beans/BEAN-289-.../bean.md` | 58 |
+| `.../tasks/01-developer-validator-library-consumers-filter.md` | 59 |
+| `.../tasks/02-tech-qa-orphan-produces-filter-coverage.md` | 78 |
+| `ai/beans/_index.md` | 2 |
+| `foundry_app/services/validator.py` | 20 |
+| `tests/test_persona_page.py` | 38 |
+| `tests/test_validator.py` | 93 |
 
 ## Notes
 
