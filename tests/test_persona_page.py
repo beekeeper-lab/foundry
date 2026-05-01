@@ -786,10 +786,13 @@ def _make_contract_persona(
 
 @pytest.fixture()
 def coherence_page():
-    """A page loaded with three contract-bearing personas:
+    """A page loaded with four contract-bearing personas:
     - producer: produces 'thing' (no consumes)
     - consumer: consumes 'thing' (no produces)
     - orphan-producer: produces 'orphan-thing' (no on-team consumer)
+    - orphan-consumer-absent: consumes 'orphan-thing' (library-only;
+      keeps the orphan-produces warning actionable per BEAN-289 so the
+      yellow indicator fires when only orphan-producer is selected)
 
     Red = consumer alone (missing producer for 'thing')
     Yellow = orphan-producer alone (orphan, no error)
@@ -802,6 +805,9 @@ def coherence_page():
             _make_contract_persona("consumer", consumes=["thing"]),
             _make_contract_persona(
                 "orphan-producer", produces=["orphan-thing"],
+            ),
+            _make_contract_persona(
+                "orphan-consumer-absent", consumes=["orphan-thing"],
             ),
         ],
     )
@@ -892,6 +898,36 @@ class TestCoherenceIndicatorGreen:
         # Green emoji (\U0001f7e2) marks the all-satisfied state.
         assert "\U0001f7e2" in text, f"Expected green emoji, got: {text!r}"
         assert "satisfied" in text.lower()
+
+    def test_indicator_green_for_five_core_personas_against_real_library(
+        self,
+    ):
+        """BEAN-289 user-visible payoff: with the real ai-team-library/
+        loaded and the 5 core personas selected, the team-coherence
+        indicator is GREEN (not yellow). The library-level orphans
+        (dev-decision, merge-summary, test-suite) no longer surface as
+        unactionable yellow warnings."""
+        from pathlib import Path
+
+        from foundry_app.services.library_indexer import build_library_index
+
+        library_root = (
+            Path(__file__).resolve().parent.parent / "ai-team-library"
+        )
+        registry = build_library_index(library_root)
+        page = PersonaSelectionPage(library_index=registry)
+        try:
+            for pid in ("architect", "ba", "developer", "team-lead", "tech-qa"):
+                page.persona_cards[pid].is_selected = True
+            label = page._coherence_label
+            assert label.isHidden() is False
+            text = label.text()
+            assert "\U0001f7e2" in text, (
+                f"Expected GREEN indicator for 5 core personas, got: {text!r}"
+            )
+            assert "satisfied" in text.lower()
+        finally:
+            page.close()
 
 
 class TestCoherenceIndicatorTransitions:
