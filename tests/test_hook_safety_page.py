@@ -964,6 +964,42 @@ class TestPostureIncompatibleDefaultsFilter:
         finally:
             p.close()
 
+    def test_posture_change_with_empty_metadata_does_not_crash(self):
+        """BEAN-293 (Tech-QA regression): older-library packs survive
+        the posture-change path.
+
+        Developer's ``test_pack_without_posture_metadata_not_filtered``
+        covers the ``load_hook_packs`` entry to ``_apply_posture_filter``.
+        The ``_on_posture_changed`` entry is the second call site, and
+        the AC item asks the page filter to "not crash" on either path
+        when ``posture_compatibility`` is empty (mirroring the validator's
+        documented backward-compatibility skip). This test pins the
+        posture-change path so a future refactor that, say, replaces
+        ``not pack.posture_compatibility`` with
+        ``pack.posture_compatibility[key]`` is caught here, not in
+        production.
+        """
+        # Library where every pack has empty posture_compatibility (older
+        # library shape). _make_library leaves posture_compatibility={}.
+        lib = _make_library("pre-commit-lint", "post-task-qa")
+        p = HookSafetyPage(library_index=lib)
+        try:
+            # Posture change (the _on_posture_changed → _apply_posture_filter
+            # path) must not crash and must leave card states unchanged.
+            p.posture = Posture.HARDENED
+            assert p.hook_cards["pre-commit-lint"].is_enabled is True
+            assert p.hook_cards["post-task-qa"].is_enabled is True
+
+            p.posture = Posture.REGULATED
+            assert p.hook_cards["pre-commit-lint"].is_enabled is True
+            assert p.hook_cards["post-task-qa"].is_enabled is True
+
+            p.posture = Posture.BASELINE
+            assert p.hook_cards["pre-commit-lint"].is_enabled is True
+            assert p.hook_cards["post-task-qa"].is_enabled is True
+        finally:
+            p.close()
+
     def test_regulated_to_baseline_unchecks_now_incompatible_pack(self):
         """User switches regulated → baseline; compliance-gate gets unchecked."""
         lib = _library_with_compliance_gate_posture()
@@ -1143,5 +1179,79 @@ class TestPostureIncompatibleRealLibrary:
             assert card.is_enabled is False, (
                 "compliance-gate should default-off at baseline"
             )
+        finally:
+            page.close()
+
+    def test_user_explicit_check_at_baseline_trips_validator(self):
+        """BEAN-293 (Tech-QA regression): user opts in to compliance-gate
+        at baseline → validator surface still fires.
+
+        Headless substitution for the bean's last (manual) AC item:
+        "manually enable ``compliance-gate`` at the default ``baseline``
+        posture, click Generate → still fails with the friendly BEAN-290
+        message". Loads the **real** library through the **real** page
+        (no mocked HookPackInfo — see task Notes), confirms the default
+        filter unchecks compliance-gate, then re-enables it
+        programmatically and asserts ``run_pre_generation_validation``
+        produces a ``hook-pack-posture-incompatible`` ERROR. Proves the
+        defaults filter and the validator surface are independent: the
+        former runs at the page layer, the latter at composition time.
+        """
+        from pathlib import Path
+
+        from foundry_app.core.models import (
+            CompositionSpec,
+            PersonaSelection,
+            ProjectIdentity,
+            TeamConfig,
+        )
+        from foundry_app.services.library_indexer import build_library_index
+        from foundry_app.services.validator import (
+            run_pre_generation_validation,
+        )
+
+        repo_root = Path(__file__).resolve().parent.parent
+        library_root = repo_root / "ai-team-library"
+        if not library_root.exists():
+            pytest.skip("ai-team-library/ not available in this checkout")
+
+        lib = build_library_index(library_root)
+        page = HookSafetyPage(library_index=lib)
+        try:
+            # Sanity: defaults filter unchecked compliance-gate at baseline.
+            assert page.posture == Posture.BASELINE
+            assert page.hook_cards["compliance-gate"].is_enabled is False
+
+            # User explicitly opts in by checking the card.
+            page.hook_cards["compliance-gate"].is_enabled = True
+            assert page.hook_cards["compliance-gate"].is_enabled is True
+
+            # Build the composition the wizard would assemble.
+            cfg = page.get_hooks_config()
+            spec = CompositionSpec(
+                project=ProjectIdentity(
+                    name="test", slug="test", description="", purpose="t",
+                ),
+                team=TeamConfig(
+                    personas=[PersonaSelection(id="developer")],
+                ),
+                hooks=cfg,
+            )
+
+            # Validator surface must surface the mismatch as an ERROR.
+            result = run_pre_generation_validation(spec, lib)
+            posture_errors = [
+                m for m in result.errors
+                if m.code == "hook-pack-posture-incompatible"
+            ]
+            assert len(posture_errors) >= 1, (
+                "User-explicit compliance-gate at baseline should ERROR "
+                f"via hook-pack-posture-incompatible. Got errors: "
+                f"{[(m.code, m.message) for m in result.errors]}"
+            )
+            # Friendly BEAN-290 message names the pack and posture.
+            msg = posture_errors[0].message
+            assert "compliance-gate" in msg
+            assert "baseline" in msg
         finally:
             page.close()

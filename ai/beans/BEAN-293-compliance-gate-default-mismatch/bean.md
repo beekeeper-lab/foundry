@@ -139,7 +139,7 @@ inverse: posture default changes), so the initial state is valid.
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
 | 1 | Drop posture-incompatible packs from default selection + audit | developer | — | Done |
-| 2 | Regression sweep + manual wizard verification at all three postures | tech-qa | 01 | Pending |
+| 2 | Regression sweep + manual wizard verification at all three postures | tech-qa | 01 | Done |
 
 > Skipped: BA (default), Architect (default)
 > Wave: **Developer → Tech-QA**. Architect not required — this is a
@@ -190,7 +190,7 @@ problem, clear options) — the underlying defaults bug was independent.
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
 | 1 | Drop posture-incompatible packs from default selection + audit | developer | 4m | 687,276 | 5,484 | $1.48 |
-| 2 | Regression sweep + manual wizard verification at all three postures | tech-qa | — | — | — | — |
+| 2 | Regression sweep + manual wizard verification at all three postures | tech-qa | 4m | 546,816 | 3,321 | $1.42 |
 
 | Metric | Value |
 |--------|-------|
