@@ -297,7 +297,7 @@
 | BEAN-273 | Persona `produces:` / `consumes:` Contracts | Infra | High | Done | team-lead |
 | BEAN-274 | Compose-Time Contract Graph Validator | App | High | Done | team-lead |
 | BEAN-275 | Resolve Acceptance Criteria & ADR Boundary Ownership | Process | Medium | Done | team-lead |
-| BEAN-276 | Role-Aware Handoff Schemas | Process | Medium | In Progress | team-lead |
+| BEAN-276 | Role-Aware Handoff Schemas | Process | Medium | Done | team-lead |
 | BEAN-277 | Programmatic VDD Gate Skill | Process | Medium | Done | team-lead |
 | BEAN-278 | Architecture-Aware Telemetry & `/orchestration-report` | Process | Medium | Approved | (unassigned) |
 | BEAN-279 | Orchestration Architecture Doc + Comprehensive Documentation Update | Process | High | Approved | (unassigned) |
