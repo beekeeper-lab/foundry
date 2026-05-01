@@ -312,4 +312,4 @@
 | BEAN-288 | Sidebar Navigation Preserves and Surfaces In-Progress Wizard State | App | Medium | Done | team-lead |
 | BEAN-289 | Suppress Library-Level Orphan-Produces Warnings the User Cannot Fix | App | Medium | Done | team-lead |
 | BEAN-290 | User-Friendly Validator Error and Warning Messages | App | Medium | Done | team-lead |
-| BEAN-291 | Add Data Scientist Persona to the Library | App | Medium | Approved | (unassigned) |
+| BEAN-291 | Add Data Scientist Persona to the Library | App | Medium | In Progress | team-lead |
