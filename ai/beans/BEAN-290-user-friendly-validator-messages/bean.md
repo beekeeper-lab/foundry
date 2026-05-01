@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-290 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-05-01 |
-| **Started** | — |
+| **Started** | 2026-05-01 16:31 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-286, BEAN-289 |
 
@@ -219,14 +219,12 @@ key on it). Only the **message text** changes.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Canonical phrasing for validator messages | ba | — | Done |
+| 2 | Wire canonical messages into validator + UI | developer | 1 | Pending |
+| 3 | Vocabulary tests + regression sweep | tech-qa | 2 | Pending |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Likely wave: **BA** (write the canonical phrasing for each
-> code — this is a wording bean), **Developer** (replace the
-> message strings, add an artifact-label lookup), **Tech-QA**
-> (vocabulary tests + UI regression). Architect not required —
-> no new abstractions; the `ValidationMessage` shape is preserved.
+> Skipped: Architect (default — no new abstractions; `ValidationMessage`
+> shape is preserved).
 
 ## Changes
 
@@ -290,7 +288,9 @@ leave the same problem latent in the rarely-triggered ones.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Canonical phrasing for validator messages | ba | 2m | 1,717,125 | 16,323 | $4.29 |
+| 2 | Wire canonical messages into validator + UI | developer | — | — | — | — |
+| 3 | Vocabulary tests + regression sweep | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
