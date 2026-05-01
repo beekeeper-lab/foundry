@@ -149,16 +149,14 @@ authoring.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Author the R expertise pack (5 files + README + indexer fixtures) | developer | — | Pending |
+| 2 | Content-tone parity review + indexer regression + manual verification | tech-qa | 01 | Pending |
 
-> Tasks are populated by the Team Lead during decomposition.
-> Likely wave: **Developer** (author the five expertise files,
-> update README, update test fixtures), **Tech-QA** (indexer
-> regression test, content-tone review for parity with `python/` and
-> `go/`, manual verification). Architect not required — content for
-> an existing category slot, no new abstractions or module
-> boundaries. BA not required — the bean Notes already pin down
-> defaults (tidyverse), file shape (5 files), and applies-to set.
+> Skipped: BA (default), Architect (default)
+> Wave: **Developer → Tech-QA**. Architect not required — content for
+> an existing category slot, no new abstractions or module boundaries.
+> BA not required — the bean Notes already pin down defaults
+> (tidyverse), file shape (5 files), and applies-to set.
 
 ## Changes
 
@@ -232,7 +230,8 @@ exemption is explicit.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Author the R expertise pack (5 files + README + indexer fixtures) | developer | — | — | — | — |
+| 2 | Content-tone parity review + indexer regression + manual verification | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
