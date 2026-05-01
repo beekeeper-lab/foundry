@@ -138,7 +138,7 @@ inverse: posture default changes), so the initial state is valid.
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | Drop posture-incompatible packs from default selection + audit | developer | — | Pending |
+| 1 | Drop posture-incompatible packs from default selection + audit | developer | — | Done |
 | 2 | Regression sweep + manual wizard verification at all three postures | tech-qa | 01 | Pending |
 
 > Skipped: BA (default), Architect (default)
@@ -189,7 +189,7 @@ problem, clear options) — the underlying defaults bug was independent.
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 | Drop posture-incompatible packs from default selection + audit | developer | — | — | — | — |
+| 1 | Drop posture-incompatible packs from default selection + audit | developer | 4m | 687,276 | 5,484 | $1.48 |
 | 2 | Regression sweep + manual wizard verification at all three postures | tech-qa | — | — | — | — |
 
 | Metric | Value |
