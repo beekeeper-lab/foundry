@@ -300,7 +300,7 @@
 | BEAN-276 | Role-Aware Handoff Schemas | Process | Medium | Done | team-lead |
 | BEAN-277 | Programmatic VDD Gate Skill | Process | Medium | Done | team-lead |
 | BEAN-278 | Architecture-Aware Telemetry & `/orchestration-report` | Process | Medium | Done | team-lead |
-| BEAN-279 | Orchestration Architecture Doc + Comprehensive Documentation Update | Process | High | In Progress | team-lead |
+| BEAN-279 | Orchestration Architecture Doc + Comprehensive Documentation Update | Process | High | Done | team-lead |
 | BEAN-280 | ClaudeKit as Canonical Source for Cross-Project Skills | Infra | High | Done | team-lead |
 | BEAN-281 | Media-Skills Shared Library (`_lib/`) | Infra | High | Done | team-lead |
 | BEAN-282 | `generate-image` Plan-Driven Rewrite (Multi-Provider) | App | High | Done | team-lead |
