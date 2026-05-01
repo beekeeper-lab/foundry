@@ -145,6 +145,20 @@ The Developer is **mandatory** for any bean that produces or modifies code. The 
 | Security Engineer          | Implement security requirements; flag security-sensitive changes for review |
 | DevOps / Release Engineer  | Support CI/CD pipeline; resolve build failures; follow deployment conventions |
 
+### Typed handoffs
+
+When you finish a task and the next persona needs to pick up, use
+`/handoff` (skill: `claude/skills/handoff/SKILL.md`). The packet is now
+**typed**: its shape is the intersection of your `produces:` and the
+receiver's `consumes:` (from each persona's `contracts.yml`), with each
+artifact spelled out in the registry's `required-fields`. On the
+common developer→tech-qa edge the registry's `pair-fields:` adds
+`test-targets` and `rerun-command` so Tech-QA can verify immediately.
+The skill **blocks** the handoff if you have not actually produced an
+artifact for a required type in the intersection — see the
+`MissingProducedArtifact` error condition. Every emitted packet is
+appended to `ai/handoffs/_index.md`.
+
 ## Escalation Triggers
 
 - Task requirements are ambiguous and cannot be resolved from available documentation

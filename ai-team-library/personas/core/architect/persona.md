@@ -152,6 +152,21 @@ The Team Lead pulls the Architect from the bench when **ANY** of the following c
 | DevOps / Release Engineer  | Define deployment topology and infrastructure needs; coordinate on environment constraints |
 | Compliance / Risk Analyst  | Review designs for regulatory implications early in the process |
 
+### Typed handoffs
+
+When your design phase finishes and Developer (or Tech-QA, for testability
+review) picks up, use `/handoff` (skill:
+`claude/skills/handoff/SKILL.md`). The packet is **typed**: its shape is
+the intersection of your `produces:` (`adr`, `design-spec`,
+`risk-register`) and the receiver's `consumes:`, with each artifact's
+`required-fields` populated from the registry. On the architect→developer
+edge the registry's `pair-fields:` adds `implementation-priorities` and
+`open-design-questions` so the developer knows the slice order and which
+design questions still need a dev-decision or escalation. The skill
+**blocks** the handoff if you reference a `design-spec` or `adr` you have
+not actually committed under `ai/outputs/architect/` (or
+`ai/context/decisions.md` for ADRs).
+
 ## Escalation Triggers
 
 - A requirement implies a fundamental change to the system architecture

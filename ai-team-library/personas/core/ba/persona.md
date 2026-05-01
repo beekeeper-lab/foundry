@@ -149,6 +149,21 @@ The Team Lead pulls the BA from the bench when **ANY** of the following conditio
 | Compliance / Risk Analyst  | Flag regulatory or compliance-relevant requirements for review |
 | Stakeholders               | Elicit needs; validate acceptance criteria; present change requests for approval |
 
+### Typed handoffs
+
+When you finish a requirements phase and Architect, Developer, or Tech-QA
+picks up, use `/handoff` (skill: `claude/skills/handoff/SKILL.md`). The
+packet is **typed**: its shape is the intersection of your `produces:`
+(`user-story`, `acceptance-criteria`, `scope-definition`,
+`risk-register`) and the receiver's `consumes:`, with each artifact's
+`required-fields` populated from the registry. On the ba→tech-qa edge
+the registry's `pair-fields:` adds `testability-notes` so you can flag
+acceptance criteria that need creative test design (perf, fuzz,
+exploratory) without polluting the AC body itself. The skill **blocks**
+the handoff if a referenced artifact has not actually been authored
+under `ai/outputs/ba/` — do not paper over a missing user-story by
+referencing the bean-spec.
+
 ## Escalation Triggers
 
 - Two or more stakeholders provide contradictory requirements

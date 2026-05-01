@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-276 |
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Priority** | Medium |
 | **Created** | 2026-04-28 |
-| **Started** | — |
+| **Started** | 2026-05-01 00:48 |
 | **Completed** | — |
 | **Duration** | — |
-| **Owner** | (unassigned) |
+| **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | BEAN-273 |
 
@@ -63,9 +63,10 @@ Two failure modes:
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Implement typed /handoff: skill spec + pair-fields registry + index + example | developer | — | In Progress |
+| 2 | Verify typed /handoff: cold-start walkthrough + registry/index tests | tech-qa | 1 | Pending |
 
-> Tasks populated by Team-Lead. Likely wave: Architect (registry pair-fields design), Developer (skill update + index file + example handoff), Tech-QA (validation paths).
+> Skipped: BA (default — no requirements ambiguity); Architect (default — pair-fields schema is a small data-model addition documented inline by Developer with rationale, no ADR needed; bean's notes call this a "small contract decision").
 
 ## Changes
 
@@ -91,7 +92,8 @@ Two failure modes:
 
 | # | Task | Owner | Duration | Tokens In | Tokens Out | Cost |
 |---|------|-------|----------|-----------|------------|------|
-| 1 |      |       |          |           |            |      |
+| 1 | Implement typed /handoff: skill spec + pair-fields registry + index + example | developer | 6m | 845,302 | 3,014 | $1.53 |
+| 2 | Verify typed /handoff: cold-start walkthrough + registry/index tests | tech-qa | — | — | — | — |
 
 | Metric | Value |
 |--------|-------|
