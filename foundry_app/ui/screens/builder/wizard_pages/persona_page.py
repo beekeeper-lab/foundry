@@ -642,34 +642,52 @@ class PersonaSelectionPage(QWidget):
                 team.append(info)
 
         result = validate_contract_graph(team, self._library_index)
-        error_count = sum(
-            1 for m in result.messages if m.severity == Severity.ERROR
-        )
-        warning_count = sum(
-            1 for m in result.messages if m.severity == Severity.WARNING
-        )
+        errors = [m for m in result.messages if m.severity == Severity.ERROR]
+        warnings = [
+            m for m in result.messages if m.severity == Severity.WARNING
+        ]
+        error_count = len(errors)
+        warning_count = len(warnings)
 
         if error_count > 0:
-            text = (
+            header = (
                 f"\U0001f534  Team coherence: {error_count} missing "
                 f"producer{'s' if error_count != 1 else ''} "
                 f"— add producers or remove consumers."
             )
+            findings = [m.message for m in errors]
             color = STATUS_ERROR
         elif warning_count > 0:
-            text = (
+            header = (
                 f"\U0001f7e1  Team coherence: {warning_count} orphan "
                 f"produce{'s' if warning_count != 1 else ''} "
                 f"— produced types with no consumer on the team."
             )
+            findings = [m.message for m in warnings]
             color = STATUS_WARNING
         else:
-            text = "\U0001f7e2  Team coherence: all consumes satisfied."
+            header = "\U0001f7e2  Team coherence: all consumes satisfied."
+            findings = []
             color = STATUS_SUCCESS
+
+        # Cap visible findings at 5 to keep the indicator vertically sane;
+        # surplus collapses to a single "+N more" line so the user knows
+        # there's more to see.
+        max_visible = 5
+        visible = findings[:max_visible]
+        overflow = len(findings) - len(visible)
+        bullet_lines = [f"• {msg}" for msg in visible]
+        if overflow > 0:
+            bullet_lines.append(f"… +{overflow} more")
+
+        text = header
+        if bullet_lines:
+            text = header + "\n" + "\n".join(bullet_lines)
 
         label.setText(text)
         label.setStyleSheet(
             f"color: {color}; font-size: {FONT_SIZE_SM}px; "
             f"font-weight: {FONT_WEIGHT_BOLD};"
         )
+        label.setWordWrap(True)
         label.setVisible(True)

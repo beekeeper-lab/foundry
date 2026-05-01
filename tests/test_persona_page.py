@@ -957,3 +957,80 @@ class TestCoherenceIndicatorTransitions:
         assert "\U0001f534" in text
         # Yellow emoji must NOT be present — red dominates.
         assert "\U0001f7e1" not in text
+
+
+# ---------------------------------------------------------------------------
+# BEAN-286 — Inline validation findings (verbatim messages + truncation cap)
+#
+# The indicator now renders the validator's per-message text below its
+# header so the user sees what specifically is broken, not just a count.
+# Long lists collapse to a final "+N more" line.
+# ---------------------------------------------------------------------------
+
+
+class TestCoherenceIndicatorVerbatimMessages:
+    """🔴/🟡 states surface the validator's actionable per-message text."""
+
+    def test_red_includes_verbatim_missing_producer_message(
+        self, coherence_page,
+    ):
+        coherence_page.persona_cards["consumer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        # The validator's missing-producer message has a fixed shape; both
+        # the leading clause and the producer-list phrase must be present.
+        assert "Missing producer for type" in text
+        assert "Producers in library:" in text
+        # The specific artifact name from the fixture must round-trip.
+        assert "'thing'" in text
+
+    def test_yellow_includes_verbatim_orphan_message(self, coherence_page):
+        coherence_page.persona_cards["orphan-producer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        # Verbatim phrase from validator.validate_contract_graph().
+        assert "produces type" in text
+        assert "no persona on the team consumes it" in text
+        # Producer id and artifact name from the fixture round-trip too.
+        assert "'orphan-producer'" in text
+        assert "'orphan-thing'" in text
+
+
+class TestCoherenceIndicatorTruncationCap:
+    """Six or more findings collapse the surplus to '+N more'."""
+
+    def test_red_findings_capped_at_five_with_overflow_line(self):
+        # Build a single consumer with 6 unsatisfied artifact types so the
+        # validator emits 6 missing-producer errors. The indicator shows
+        # the first 5 verbatim and a single '+1 more' line for the rest.
+        lib = LibraryIndex(
+            library_root="/fake",
+            personas=[
+                _make_contract_persona(
+                    "lonely",
+                    consumes=["aaa", "bbb", "ccc", "ddd", "eee", "fff"],
+                ),
+            ],
+        )
+        page = PersonaSelectionPage(library_index=lib)
+        try:
+            page.persona_cards["lonely"].is_selected = True
+            text = page._coherence_label.text()
+            # All six types are *findings*; only the first five appear
+            # verbatim. The validator sorts alphabetically, so 'fff' is the
+            # one that gets pushed past the cap.
+            assert "'aaa'" in text
+            assert "'bbb'" in text
+            assert "'ccc'" in text
+            assert "'ddd'" in text
+            assert "'eee'" in text
+            assert "'fff'" not in text
+            assert "+1 more" in text
+        finally:
+            page.close()
+
+    def test_no_overflow_line_when_count_at_or_below_cap(
+        self, coherence_page,
+    ):
+        coherence_page.persona_cards["consumer"].is_selected = True
+        text = coherence_page._coherence_label.text()
+        # One missing producer ⇒ one bullet, no '+N more' suffix.
+        assert "more" not in text.lower()
