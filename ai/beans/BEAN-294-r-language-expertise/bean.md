@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-294 |
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-05-01 |
 | **Started** | 2026-05-01 18:26 |
-| **Completed** | — |
-| **Duration** | — |
+| **Completed** | 2026-05-01 18:45 |
+| **Duration** | 1605h 37m |
 | **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-291 |
@@ -160,11 +160,20 @@ authoring.
 
 ## Changes
 
-> Auto-populated by `/merge-bean` with the git diff summary.
-
 | File | Lines |
 |------|-------|
-| — | — |
+| `ai-team-library/expertise/r/conventions.md` | +347 / -0 |
+| `ai-team-library/expertise/r/packaging.md` | +324 / -0 |
+| `ai-team-library/expertise/r/performance.md` | +364 / -0 |
+| `ai-team-library/expertise/r/security.md` | +352 / -0 |
+| `ai-team-library/expertise/r/testing.md` | +409 / -0 |
+| `ai-team-library/README.md` | +1 / -0 |
+| `tests/test_library_indexer.py` | +18 / -0 |
+| `tests/test_compiler.py` | +71 / -0 |
+| `ai/outputs/tech-qa/BEAN-294-manual-verification.md` | +197 / -0 |
+| `ai/beans/BEAN-294-…/tasks/01-developer-author-r-expertise.md` | +127 / -0 |
+| `ai/beans/BEAN-294-…/tasks/02-tech-qa-content-and-indexer.md` | +116 / -0 |
+| `ai/beans/BEAN-294-…/bean.md` | +12 / -11 |
 
 ## Notes
 
@@ -235,19 +244,19 @@ exemption is explicit.
 
 | Metric | Value |
 |--------|-------|
-| **Total Tasks** | — |
-| **Total Duration** | — |
-| **Total Tokens In** | — |
-| **Total Tokens Out** | — |
-| **Total Cost** | — |
+| **Total Tasks** | 2 |
+| **Total Duration** | 14m |
+| **Total Tokens In** | 1,492,305 |
+| **Total Tokens Out** | 8,566 |
+| **Total Cost** | $3.25 |
 
 ## Orchestration Telemetry
 
 | Field | Value |
 |-------|-------|
-| **Personas activated** | — (comma-separated, actual not planned) |
-| **Bounces** | — (Tech-QA → Developer kicks) |
-| **Scope changes** | — (in-flight scope edits) |
-| **Contract violations** | — (BEAN-274 catches at compose time) |
-| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
-| **Dispatch mode** | — (in-process / tmux-worker / mixed) |
+| **Personas activated** | developer, tech-qa |
+| **Bounces** | 0 (Tech-QA → Developer kicks) |
+| **Scope changes** | 0 (in-flight scope edits) |
+| **Contract violations** | 0 (BEAN-274 catches at compose time) |
+| **Inputs escape-hatch invocations** | 0 (BEAN-272's NONE-justified) |
+| **Dispatch mode** | in-process |
