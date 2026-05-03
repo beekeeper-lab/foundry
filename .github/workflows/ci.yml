@@ -18,9 +18,23 @@ jobs:
           submodules: recursive
 
       - name: Install system dependencies for PySide6
+        # Retry to ride through transient apt-mirror DNS / network flaps
+        # on GitHub-hosted runners (e.g. azure.archive.ubuntu.com outages).
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libegl1 libopengl0 libxkbcommon0 libxcb-cursor0
+          for attempt in 1 2 3; do
+            echo "::group::apt attempt ${attempt}"
+            if sudo apt-get update && \
+               sudo apt-get install -y --no-install-recommends \
+                 libegl1 libopengl0 libxkbcommon0 libxcb-cursor0; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            echo "apt failed on attempt ${attempt}, sleeping 30s before retry..."
+            sleep 30
+          done
+          echo "apt failed after 3 attempts" >&2
+          exit 1
 
       - uses: astral-sh/setup-uv@v5
         with:
