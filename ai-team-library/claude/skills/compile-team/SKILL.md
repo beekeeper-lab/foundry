@@ -25,7 +25,7 @@ compiled and from where. This is the core build step in the Foundry pipeline
 | Input                  | Type                              | Required | Description                                                        |
 |------------------------|-----------------------------------|----------|--------------------------------------------------------------------|
 | composition_spec       | YAML file path                    | Yes      | The composition defining personas, stacks, and workflows to include |
-| library_path           | Directory path                    | Yes      | Root of the ai-team-library (contains personas/, stacks/, workflows/) |
+| library_path           | Directory path                    | Yes      | Root of the ai-team-library (contains personas/, expertise/, workflows/) |
 | output_dir             | Directory path                    | No       | Where to write compiled output; defaults to `./build/`             |
 | validation_strictness  | Enum: `light`, `standard`, `strict` | No    | Validation level; defaults to `standard`                           |
 
@@ -33,7 +33,7 @@ compiled and from where. This is the core build step in the Foundry pipeline
 
 1. **Parse and validate the composition spec** -- Load the YAML, validate against the CompositionSpec Pydantic model, and reject malformed input early.
 2. **Resolve persona references** -- For each persona listed in the spec, load `persona.md`, `outputs.md`, `prompts.md`, and any files under `templates/` from the library.
-3. **Resolve stack references** -- For each stack listed, load `conventions.md` and associated skill files from `stacks/{stack}/`.
+3. **Resolve stack references** -- For each stack listed, load `conventions.md` and associated skill files from `expertise/{expertise}/`.
 4. **Resolve workflow references** -- Load any workflow definitions referenced in the spec from `workflows/`.
 5. **Check for dependency conflicts** -- Detect missing references, circular dependencies, duplicate persona slots, or incompatible stack combinations.
 6. **Merge all resolved content into a unified CLAUDE.md** -- Concatenate sections in deterministic order: project header, persona definitions, stack conventions, workflow rules, and shared instructions.
@@ -62,7 +62,7 @@ compiled and from where. This is the core build step in the Foundry pipeline
 |------------------------------|----------------------------------------------------|---------------------------------------------------------|
 | `InvalidCompositionSpec`     | YAML fails schema validation                       | Fix the composition YAML to match the CompositionSpec model |
 | `PersonaNotFound`            | Persona name in spec has no matching library folder | Check spelling; ensure the persona exists under `personas/` |
-| `StackNotFound`              | Stack name in spec has no matching library folder   | Check spelling; ensure the stack exists under `stacks/`    |
+| `StackNotFound`              | Stack name in spec has no matching library folder   | Check spelling; ensure the stack exists under `expertise/`    |
 | `MissingRequiredFile`        | A persona directory lacks persona.md or outputs.md  | Add the missing file to the persona's library directory    |
 | `DependencyConflict`         | Two stacks or personas declare incompatible rules   | Remove one conflicting entry or resolve the conflict manually |
 | `OutputDirectoryNotWritable` | The output_dir path is not writable                 | Check filesystem permissions or choose a different path    |
@@ -70,6 +70,6 @@ compiled and from where. This is the core build step in the Foundry pipeline
 ## Dependencies
 
 - **Validate Composition** skill (or inline validation via Pydantic models)
-- Access to the ai-team-library file tree (personas/, stacks/, workflows/)
+- Access to the ai-team-library file tree (personas/, expertise/, workflows/)
 - `foundry_app/core/models.py` -- CompositionSpec and GenerationManifest data contracts
 - `foundry_app/services/compiler.py` -- reference implementation of the compile logic

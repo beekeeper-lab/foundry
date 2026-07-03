@@ -179,7 +179,7 @@ Data Engineer (for optimization feedback).
 
 ## Output Format Guidelines
 
-- Analysis follows the stack-specific conventions document (`stacks/<stack>/conventions.md`).
+- Analysis follows the stack-specific conventions document (`expertise/<expertise>/conventions.md`).
 - Queries and analysis code follow the same conventions as production code:
   consistent formatting, meaningful aliases, documented CTEs.
 - Reports are written as if the reader has no prior context about the analysis.

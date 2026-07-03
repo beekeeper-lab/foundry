@@ -171,7 +171,7 @@ prioritization.
 
 ## Output Format Guidelines
 
-- Code follows the stack-specific conventions document (`stacks/<stack>/conventions.md`).
+- Code follows the stack-specific conventions document (`expertise/<expertise>/conventions.md`).
 - Tests follow the same conventions as production code: same linting, same
   formatting, same naming rules.
 - PR descriptions are written as if the reviewer has no prior context about the

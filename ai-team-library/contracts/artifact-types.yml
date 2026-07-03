@@ -54,7 +54,7 @@ types:
       - scope-out
       - acceptance-criteria
       - tasks
-    template-path: ai/beans/_bean-template.md
+    template-path: process/beans/_bean-template.md
 
   - name: task-spec
     description: >-
@@ -70,7 +70,7 @@ types:
       - goal
       - inputs
       - acceptance-criteria
-    template-path: personas/team-lead/templates/task-spec.md
+    template-path: personas/core/team-lead/templates/task-spec.md
 
   - name: user-story
     description: >-
@@ -85,7 +85,7 @@ types:
       - acceptance-criteria
       - dependencies
       - assumptions
-    template-path: personas/ba/templates/user-story.md
+    template-path: personas/core/ba/templates/user-story.md
 
   - name: acceptance-criteria
     description: >-
@@ -97,7 +97,7 @@ types:
     required-fields:
       - bean-or-story-id
       - criteria
-    template-path: personas/ba/templates/acceptance-criteria.md
+    template-path: personas/core/ba/templates/acceptance-criteria.md
 
   - name: scope-definition
     description: >-
@@ -140,7 +140,7 @@ types:
       - options
       - decision
       - consequences
-    template-path: personas/architect/templates/adr.md
+    template-path: personas/core/architect/templates/adr.md
 
   - name: design-spec
     description: >-
@@ -157,7 +157,7 @@ types:
       - behavior
       - non-functional-requirements
       - dependencies
-    template-path: personas/architect/templates/design-spec.md
+    template-path: personas/core/architect/templates/design-spec.md
 
   - name: dev-decision
     description: >-
@@ -172,7 +172,7 @@ types:
       - options
       - decision
       - rationale
-    template-path: personas/developer/templates/dev-design-decision.md
+    template-path: personas/core/developer/templates/dev-design-decision.md
 
   - name: code-change
     description: >-
@@ -186,7 +186,7 @@ types:
       - what-changed
       - how-to-test
       - files-touched
-    template-path: personas/developer/templates/pr-description.md
+    template-path: personas/core/developer/templates/pr-description.md
 
   - name: test-suite
     description: >-
@@ -201,7 +201,7 @@ types:
       - test-cases
       - entry-criteria
       - exit-criteria
-    template-path: personas/tech-qa/templates/test-plan.md
+    template-path: personas/core/tech-qa/templates/test-plan.md
 
   - name: traceability-matrix
     description: >-
@@ -212,7 +212,7 @@ types:
     required-fields:
       - bean-id
       - rows
-    template-path: personas/tech-qa/templates/traceability-matrix.md
+    template-path: personas/core/tech-qa/templates/traceability-matrix.md
 
   - name: vdd-report
     description: >-
@@ -226,7 +226,7 @@ types:
       - test-results
       - defects
       - recommendation
-    template-path: personas/tech-qa/templates/test-report.md
+    template-path: personas/core/tech-qa/templates/test-report.md
 
   - name: handoff-packet
     description: >-

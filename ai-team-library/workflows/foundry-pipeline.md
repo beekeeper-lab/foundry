@@ -98,7 +98,7 @@ Each stage validates its inputs before performing any work. Failures are reporte
 The library is designed to grow. New building blocks can be added without modifying the pipeline code.
 
 - **Adding a persona:** Per ADR-014, personas live under `personas/core/` (the default five — a closed set) or `personas/extended/` (opt-in specialists). New personas always go under `personas/extended/<name>/` with `persona.md`, `outputs.md`, `prompts.md`, and a `templates/` directory containing at least one template. The library indexer discovers the new persona automatically and tags it `tier=extended`; reference it from `composition.yml` as `extended/<name>`.
-- **Adding a tech stack:** Create a new directory under `stacks/` with `conventions.md` and any additional skill files. Follow the naming convention of existing stacks.
+- **Adding a tech stack:** Create a new directory under `expertise/` with `conventions.md` and any additional skill files. Follow the naming convention of existing stacks.
 - **Adding a shared template:** Place a new `.md` file in `templates/shared/`. It will be available to all compositions.
 - **Adding a workflow:** Place a new `.md` document in `workflows/`. Reference it by filename in composition specs.
 - **Custom commands and skills:** Add `.md` files to `claude/commands/` or `claude/skills/` to extend the Claude Code integration layer.

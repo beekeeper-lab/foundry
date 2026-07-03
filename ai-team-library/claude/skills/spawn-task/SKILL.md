@@ -64,7 +64,7 @@ Examples:
    normalize (lowercase, replace spaces with `-`). If neither yields a
    persona, fail with a remediation message.
 3. **Validate persona exists** — Confirm a persona file exists at
-   `ai-team-library/personas/<persona>/persona.md` (library) or the
+   `ai-team-library/personas/<tier>/<persona>/persona.md` (library) or the
    project-local equivalent. If missing, fail with the search paths tried.
 
 ### Phase 2: Inputs Validation (BEAN-272 hook integration point)
@@ -198,7 +198,7 @@ beans like BEAN-273 are backwards-compatible).
 | **Completion contract** | (a) Flip task Status to `Done` when criteria met; (b) commit on the current branch with message `BEAN-NNN task NN: <summary>`; (c) exit. |
 
 The persona's own context bundle
-(`ai-team-library/personas/<persona>/persona.md`) is referenced by name,
+(`ai-team-library/personas/<tier>/<persona>/persona.md`) is referenced by name,
 not inlined. The worker reads it once on startup.
 
 ## Outputs
@@ -239,7 +239,7 @@ not inlined. The worker reads it once on startup.
 
 - Task file at the supplied path with a `## Inputs`, `## Acceptance Criteria`,
   and `Owner:` field in the metadata table.
-- Persona file at `ai-team-library/personas/<persona>/persona.md` (or the
+- Persona file at `ai-team-library/personas/<tier>/<persona>/persona.md` (or the
   project-local mirror).
 - For the tmux path: an active tmux session (`$TMUX` set), `git worktree`
   available, and the bean's feature branch already created.

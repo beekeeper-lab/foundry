@@ -45,7 +45,7 @@ Tech-QA is **mandatory for every bean — no exceptions**, regardless of categor
 
 ## Scope Boundaries
 
-The review space between Tech-QA and Code-Quality-Reviewer is partitioned so that no bean needs to re-negotiate ownership. Tech-QA owns the *behavioural and coverage* quality of the change; CQR owns the *structural and stylistic* quality. See also `ai-team-library/personas/code-quality-reviewer/persona.md`.
+The review space between Tech-QA and Code-Quality-Reviewer is partitioned so that no bean needs to re-negotiate ownership. Tech-QA owns the *behavioural and coverage* quality of the change; CQR owns the *structural and stylistic* quality. See also `ai-team-library/personas/extended/code-quality-reviewer/persona.md`.
 
 ### Owns (Tech-QA)
 
@@ -65,7 +65,7 @@ The review space between Tech-QA and Code-Quality-Reviewer is partitioned so tha
 - Style and convention conformance (linter posture, formatting, import order)
 - **Structural** quality of test code: naming, independence, setup/teardown hygiene, whether assertions target behaviour versus implementation
 
-## Scope Boundaries (AC and ADR/dev-decision)
+### AC and ADR/dev-decision boundaries
 
 These rules partition acceptance-criteria authorship and ADR/dev-decision
 boundaries across the core team. See also `team-lead/persona.md`,
