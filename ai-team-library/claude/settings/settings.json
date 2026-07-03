@@ -18,6 +18,15 @@
             "command": "python3 .claude/hooks/validate-task-inputs.py"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/vdd-gate.py"
+          }
+        ]
       }
     ],
     "PostToolUse": [
