@@ -261,6 +261,14 @@ class HooksConfig(BaseModel):
         default_factory=list,
         description="Selected hook packs",
     )
+    replace_defaults: bool = Field(
+        default=False,
+        description=(
+            "When true, explicit pack selections REPLACE the posture's "
+            "stack-aware default packs instead of extending them. Dropping "
+            "base packs (e.g. branch protection) is surfaced as a warning."
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------

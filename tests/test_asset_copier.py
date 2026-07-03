@@ -365,7 +365,7 @@ class TestHookCopying:
         spec = _make_spec(hooks=HooksConfig(packs=[]))
         result = copy_assets(spec, idx, lib, output)
 
-        assert not (output / ".claude" / "hooks").exists()
+        # Pack docs are selection-gated; none selected -> none copied.
         hook_writes = [w for w in result.wrote if ".claude/hooks" in w]
         assert hook_writes == []
 
@@ -381,9 +381,25 @@ class TestHookCopying:
         ]))
         result = copy_assets(spec, idx, lib, output)
 
-        assert not (output / ".claude" / "hooks").exists()
         hook_writes = [w for w in result.wrote if ".claude/hooks" in w]
         assert hook_writes == []
+
+    def test_hook_scripts_always_copied(self, tmp_path: Path):
+        """Executable hook scripts (*.py) are copied regardless of pack
+        selection — settings.json references them (SPEC-004)."""
+        lib = _make_library(tmp_path)
+        (lib / "claude" / "hooks" / "validate-task-inputs.py").write_text(
+            "# hook script\n"
+        )
+        idx = _make_index(lib)
+        output = tmp_path / "project"
+        output.mkdir()
+
+        spec = _make_spec(hooks=HooksConfig(packs=[]))
+        result = copy_assets(spec, idx, lib, output)
+
+        assert (output / ".claude" / "hooks" / "validate-task-inputs.py").is_file()
+        assert ".claude/hooks/validate-task-inputs.py" in result.wrote
 
     def test_commands_and_skills_copied_regardless_of_hook_selection(self, tmp_path: Path):
         lib = _make_library(tmp_path)

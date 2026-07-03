@@ -132,6 +132,30 @@ class TestMissingReferences:
         assert not result.is_valid
         assert result.errors[0].code == "missing-hook-pack"
 
+    def test_pack_without_registry_entry_is_error(self):
+        """SPEC-004: a pack that exists in the library as a doc but has no
+        generator registry entry renders zero hooks -> ERROR."""
+        lib = _make_library()
+        lib.hook_packs.append(HookPackInfo(
+            id="doc-only-pack",
+            path="/fake/library/claude/hooks/doc-only-pack.md",
+        ))
+        spec = _make_spec(
+            hooks=HooksConfig(packs=[HookPackSelection(id="doc-only-pack")]),
+        )
+        result = run_pre_generation_validation(spec, lib)
+        assert not result.is_valid
+        codes = {e.code for e in result.errors}
+        assert "hook-pack-renders-nothing" in codes
+
+    def test_registry_backed_pack_passes_render_check(self):
+        spec = _make_spec(
+            hooks=HooksConfig(packs=[HookPackSelection(id="security-scan")]),
+        )
+        result = run_pre_generation_validation(spec, _make_library())
+        codes = {e.code for e in result.errors}
+        assert "hook-pack-renders-nothing" not in codes
+
     def test_multiple_missing_references(self):
         spec = _make_spec(
             expertise=[ExpertiseSelection(id="cobol")],

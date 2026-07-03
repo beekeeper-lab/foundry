@@ -109,7 +109,10 @@ def _check_hook_packs(
     library_index: LibraryIndex,
     messages: list[ValidationMessage],
 ) -> None:
-    """Validate that all referenced hook packs exist in the library."""
+    """Validate that all referenced hook packs exist and render hooks."""
+    # Imported here to avoid a circular import at module load time.
+    from foundry_app.services.safety_writer import _HOOK_PACK_REGISTRY
+
     for hp in composition.hooks.packs:
         pack = library_index.hook_pack_by_id(hp.id)
         if pack is None:
@@ -119,6 +122,20 @@ def _check_hook_packs(
                 message=(
                     f"The '{hp.id}' hook pack isn't in the library — check the "
                     f"spelling, or remove it from your selection."
+                ),
+            ))
+        elif hp.enabled and hp.id not in _HOOK_PACK_REGISTRY:
+            # A pack documented in the library but absent from the hook
+            # registry renders zero hooks — the composition asked for
+            # protection it won't get (SPEC-004).
+            messages.append(ValidationMessage(
+                severity=Severity.ERROR,
+                code="hook-pack-renders-nothing",
+                message=(
+                    f"The '{hp.id}' hook pack exists in the library but has "
+                    f"no hook definitions in the generator registry — it "
+                    f"would render zero hooks in settings.json. Remove it "
+                    f"or add a registry entry in safety_writer."
                 ),
             ))
 

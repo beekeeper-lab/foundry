@@ -443,17 +443,15 @@ def _copy_selected_hooks(
     wrote: list[str],
     warnings: list[str],
 ) -> None:
-    """Copy only hook files matching enabled hook packs from the spec.
+    """Copy hook files matching enabled hook packs, plus all hook scripts.
 
     Each hook pack ID maps to a file named ``{pack_id}.md`` in the library's
-    ``claude/hooks/`` directory.  Only files whose stem matches an enabled pack
-    are copied.  If no packs are enabled, no hooks are copied at all.
+    ``claude/hooks/`` directory; only docs whose stem matches an enabled pack
+    are copied. Executable hook scripts (``*.py``) are ALWAYS copied — the
+    settings.json hook wiring references them regardless of pack selection
+    (SPEC-004).
     """
     enabled_ids = {p.id for p in spec.hooks.packs if p.enabled}
-
-    if not enabled_ids:
-        logger.debug("No hook packs enabled — skipping hook copy")
-        return
 
     src_dir = lib_root / "claude" / "hooks"
     if not src_dir.is_dir():
@@ -471,7 +469,7 @@ def _copy_selected_hooks(
         if not src_entry.is_file():
             continue
 
-        if src_entry.stem not in enabled_ids:
+        if src_entry.suffix != ".py" and src_entry.stem not in enabled_ids:
             logger.debug("Hook '%s' not in enabled packs, skipping", src_entry.stem)
             continue
 
