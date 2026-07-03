@@ -33,6 +33,17 @@ _DEV_LOOP_STACK_BY_EXPERTISE: dict[str, str] = {
     "typescript": "node",
     "react-native": "node",
     "frontend-build-tooling": "node",
+    # SPEC-021: every language pack gets a dev-loop command set.
+    "go": "go",
+    "rust": "rust",
+    "dotnet": "dotnet",
+    "java": "jvm",
+    "kotlin": "jvm",
+    "dart": "dart",
+    "flutter": "flutter",
+    "swift": "swift",
+    "r": "r",
+    "llm-applications": "python",
 }
 
 # Directory name (under claude/commands/) holding stack-keyed dev-loop command sets.
