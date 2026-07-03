@@ -32,8 +32,8 @@ The result is that standing up a new AI-powered project goes from a day of boile
 
 **The Building Block Library**
 - [Library Overview](#library-overview)
-- [Personas](#personas-13)
-- [Expertise](#expertise-39)
+- [Personas](#personas-25)
+- [Expertise](#expertise-42)
 - [Hook Packs](#hook-packs-5)
 - [Jinja2 Templating](#jinja2-templating)
 
@@ -272,48 +272,54 @@ Every generated project is self-contained — no runtime dependency on Foundry o
 my-project/
   CLAUDE.md                          # Project entry point for Claude Code
   README.md                          # Basic project readme
+  MEMORY.md                          # Durable lessons; appended by the retro step
+  manifest.json                      # Generation metadata and file manifest
+  .mcp.json                          # MCP servers (baseline + composition opt-ins)
   .claude/
     agents/                          # Sub-agent definitions (one per persona)
-      team-lead.md
+      team-lead.md                   # YAML frontmatter: name/description/model/tools
       developer.md
       ...
-    skills/                          # Project-specific skills
-    commands/                        # Project-specific commands
-    hooks/                           # Hook policy files
+    skills/                          # Skills copied from the library
+    commands/                        # Commands copied from the library
+    hooks/                           # Hook scripts (*.py) + selected pack docs
+    settings.json                    # Wired hooks (branch guard, VDD gate, telemetry, ...)
+    settings.local.json              # Posture-derived permissions (allow/deny)
   ai/
     context/
-      project.md                     # Project overview, team, expertise, conventions
-      expertise.md                   # Expertise context summary
-      decisions.md                   # Architecture decision records
+      bean-workflow.md               # The bean lifecycle specification
+      project-charter.md             # Starter charter (TODO template)
     team/
       composition.yml                # The authoritative project spec (preserved)
     generated/
       members/                       # Compiled team member prompts
-        team-lead.md                 # Persona + expertise + context merged
+        team-lead.md                 # Persona + applicable expertise + context
         developer.md
         ...
-      manifest.json                  # Generation metadata and file manifest
+      expertise/                     # Full compiled expertise conventions
       diff-report.md                 # Changes vs previous generation
     outputs/
-      team-lead/                     # Output directory per role
-        README.md
+      team-lead/                     # Output directory per role (persona templates)
       developer/
-        README.md
       ...
-    tasks/
-      seeded-tasks.md                # Starter task list with dependency waves
+    beans/
+      BEAN-001-bootstrap/            # Seed bean with VDD-checkable acceptance criteria
+        bean.md
+        tasks/                       # Per-persona kickoff tasks
+      _index.md                      # Backlog index
+    tasks/                           # (reserved; tasks live under beans/*/tasks/)
 ```
 
 ### Component Roles
 
 | Component | Purpose |
 |---|---|
-| **CLAUDE.md** | The first file Claude Code reads. Contains project context, team roster, expertise conventions, hooks posture, and directory layout. |
-| **.claude/agents/** | Thin wrappers that point to the full compiled prompts in `ai/generated/members/`. Claude Code loads these as sub-agent definitions. |
+| **CLAUDE.md** | The first file Claude Code reads. Contains project context, team roster with links, orchestration model (including merge ownership), hooks posture, and directory layout. |
+| **.claude/agents/** | Sub-agent definitions with YAML frontmatter (`name`, `description`, optional `model`/`tools` from persona defaults or composition overrides). Self-contained summaries that point to the full compiled prompts in `ai/generated/members/`. |
 | **ai/generated/members/** | The compiled team member prompts. Each merges the persona's identity, outputs contract, invocation prompts, and project context, plus an inline Defaults excerpt of each expertise that applies to the persona (with a pointer to the full conventions under `ai/generated/expertise/`). |
 | **ai/team/composition.yml** | The full composition spec, preserved in the project for traceability. |
-| **ai/outputs/** | Per-role output directories where each agent writes its deliverables. |
-| **ai/tasks/seeded-tasks.md** | Starter task list following a wave-based dependency model: Developer → Tech-QA (default), with BA and Architect included when criteria are met. Parallel lanes for Security, DevOps, Code Quality, and Docs. |
+| **ai/outputs/** | Per-role output directories where each agent writes its deliverables (pre-stocked with the persona's templates). |
+| **ai/beans/BEAN-001-bootstrap/** | Seed bean with per-persona kickoff tasks and machine-verifiable acceptance criteria the `/vdd` gate can pass programmatically. |
 
 ---
 
@@ -323,11 +329,11 @@ my-project/
 
 Foundry ships with a built-in library (`ai-team-library/`) containing a comprehensive set of building blocks ready to use. The library is a read-only content store — Foundry never modifies it. It is designed to be extended by adding new personas, expertise packs, or hook packs without changing existing ones.
 
-The library contains **207 markdown files** across **24 personas**, **39 expertise packs**, **72 templates**, and **5 hook packs**.
+The library contains **~490 markdown files** across **25 personas** (5 core + 20 extended), **42 expertise packs**, **72 templates**, and the hook/skill/command assets under `claude/`.
 
 ---
 
-## Personas (24)
+## Personas (25)
 
 Each persona includes four component files that together define the role's complete behavior:
 
@@ -369,7 +375,7 @@ Each persona includes four component files that together define the role's compl
 
 ---
 
-## Expertise (39)
+## Expertise (42)
 
 Each expertise pack contains convention docs covering best practices, testing strategies, security patterns, and tooling. Expertise packs are topic-specific — they know nothing about roles. At compile time, the relevant expertise docs are injected into each persona's compiled prompt. Expertise items are organized into six categories:
 
@@ -1581,7 +1587,7 @@ foundry/
         spinner_widget.py              # Branded spinner graphic
   ai-team-library/                     # Bundled building-block library (read-only)
     personas/                          # 13 role definitions
-    expertise/                         # 39 expertise packs
+    expertise/                         # 42 expertise packs
     workflows/                         # Pipeline + task taxonomy docs
     claude/
       commands/                        # Claude Code commands
