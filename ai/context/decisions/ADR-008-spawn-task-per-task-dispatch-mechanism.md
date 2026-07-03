@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-04-28 |
-| **Status** | Accepted |
+| **Status** | Superseded in part by ADR-017 (dispatch transport; supervisor-pattern rationale unchanged) |
 | **Bean** | BEAN-270 |
 | **Deciders** | Architect |
 

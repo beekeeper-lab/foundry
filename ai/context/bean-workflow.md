@@ -423,7 +423,7 @@ def validate_example(spec: CompositionSpec) -> StageResult:
 
 ### 7. Execution
 
-Tasks are executed by **specialist workers dispatched via `/spawn-task`** (BEAN-270, ADR-008). The orchestrator does not play the role inline by default. `/spawn-task` auto-detects tmux: in tmux it spawns a worktree-isolated tmux child window; outside tmux it invokes the `Agent` tool with `subagent_type=<persona>`. The worker reads only the task's `Inputs:` plus the persona's own context bundle.
+Tasks are executed by **specialist workers dispatched via `/spawn-task`** (BEAN-270; ADR-017, superseding ADR-008's tmux transport). The orchestrator does not play the role inline by default. `/spawn-task` issues a background `Agent` call with `subagent_type=<persona>` — with worktree isolation when a wave's tasks run in parallel — under the standard permission mode (never permission-bypass flags). The worker reads only the task's `Inputs:` plus the persona's own context bundle.
 
 In-conversation role-switching (the orchestrator reading the task and executing it itself in the same window) remains a fallback for tiny tasks where dispatch overhead is not justified. It is not the default.
 

@@ -22,3 +22,4 @@ as `decisions/ADR-NNN-<slug>.md` and register them here.
 | [ADR-014](decisions/ADR-014-extended-persona-reference-syntax-in-composition-yml.md) | Extended-Persona Reference Syntax in `composition.yml` | Accepted | 2026-04-30 |
 | [ADR-015](decisions/ADR-015-orchestration-architecture-as-a-coordinated-cluster.md) | Orchestration Architecture as a Coordinated Cluster | Accepted | 2026-05-01 |
 | [ADR-016](decisions/ADR-016-kit-distribution-plugin-direction-with-a-contribution-flow.md) | Kit Distribution — Plugin Direction with a Contribution Flow | Accepted | 2026-07-03 |
+| [ADR-017](decisions/ADR-017-native-subagent-dispatch.md) | Native Subagent Dispatch Replaces the tmux Worker Scheme | Accepted | 2026-07-03 |
