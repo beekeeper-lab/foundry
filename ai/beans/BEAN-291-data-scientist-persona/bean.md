@@ -11,7 +11,7 @@
 | **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | — |
-| **Duration** | 1603h 56m |
+| **Duration** | 13m (corrected 2026-07) |
 
 ## Problem Statement
 

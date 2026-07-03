@@ -8,7 +8,7 @@
 | **Created** | 2026-04-28 |
 | **Started** | 2026-04-30 23:36 |
 | **Completed** | 2026-05-01 00:24 |
-| **Duration** | 1587h 17m |
+| **Duration** | 48m (corrected 2026-07) |
 | **Owner** | team-lead |
 | **Category** | Infra |
 

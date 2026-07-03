@@ -8,7 +8,7 @@
 | **Created** | 2026-04-29 |
 | **Started** | 2026-04-29 21:44 |
 | **Completed** | 2026-04-30 08:32 |
-| **Duration** | 1571h 24m |
+| **Duration** | 10h 48m (corrected 2026-07) |
 | **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | BEAN-280, BEAN-281, BEAN-282, BEAN-283, BEAN-284 |

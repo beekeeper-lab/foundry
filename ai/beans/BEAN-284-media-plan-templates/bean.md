@@ -8,7 +8,7 @@
 | **Created** | 2026-04-29 |
 | **Started** | 2026-04-29 21:36 |
 | **Completed** | 2026-04-29 21:42 |
-| **Duration** | 1560h 35m |
+| **Duration** | 6m (corrected 2026-07) |
 | **Owner** | team-lead |
 | **Category** | Infra |
 | **Depends On** | BEAN-282, BEAN-283 |

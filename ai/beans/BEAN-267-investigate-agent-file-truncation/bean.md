@@ -9,7 +9,7 @@
 | **Started** | 2026-04-17 18:45 |
 | **Completed** | 2026-04-17 18:47 |
 | **Owner** | developer + tech-qa |
-| **Duration** | 1269h 39m |
+| **Duration** | 2m (corrected 2026-07) |
 | **Category** | App |
 
 > Skipped: BA (default — defect is code-level, not requirements-ambiguous), Architect (default — fix is localized to one function in one service).

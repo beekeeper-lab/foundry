@@ -8,7 +8,7 @@
 | **Created** | 2026-04-28 |
 | **Started** | 2026-04-30 15:12 |
 | **Completed** | 2026-04-30 15:26 |
-| **Duration** | 1578h 19m |
+| **Duration** | 14m (corrected 2026-07) |
 | **Owner** | team-lead |
 | **Category** | Process |
 | **Depends On** | — |
