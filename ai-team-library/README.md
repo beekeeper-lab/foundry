@@ -69,6 +69,8 @@ Personas are split into two tiers (see ADR-014):
 
 Each expertise directory has an **entry file** — `conventions.md` when present, otherwise its first `.md` alphabetically — plus additional skill files as needed. Items span languages, architecture patterns, infrastructure, data/ML, compliance, and business practices.
 
+**Conflict precedence (SPEC-020):** when a generic practices pack (e.g. `clean-code`) and a language/framework pack give conflicting guidance in the same composition, the language pack wins — idiom beats generality.
+
 **Pack authoring contract (SPEC-019):** the entry file starts with YAML frontmatter — `id` (must match the directory name), `category`, optional `applies_to` (persona ids; omitted = applies to all), `entry: true`, and `last-reviewed` — which the indexer reads in preference to heading scraping. The compiler emits the entry file (packs without `conventions.md` fall back to compiling all their `.md` files, SPEC-003); frontmatter is stripped from compiled output. The `## Defaults` table is the high-signal excerpt inlined into agent files and member prompts — keep it decision-dense.
 
 | Expertise          | Scope                                           |

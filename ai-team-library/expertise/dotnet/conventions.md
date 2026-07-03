@@ -11,7 +11,7 @@ last-reviewed: 2026-07
 Languages
 
 These conventions are non-negotiable defaults for .NET applications on this
-team. They target .NET 8+ and C# 12+. Deviations require an ADR with
+team. They target .NET 8+ (target the current LTS — .NET 10 as of Nov 2025 — for new projects) and C# 12+. Deviations require an ADR with
 justification. "I prefer it differently" is not justification.
 
 ---

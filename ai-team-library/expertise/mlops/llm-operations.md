@@ -37,7 +37,9 @@ class LLMProvider(ABC):
 
 
 class AnthropicProvider(LLMProvider):
-    def __init__(self, model: str = "claude-sonnet-4-20250514", api_key: str | None = None):
+    def __init__(self, model: str, api_key: str | None = None):
+        # Model ids churn quickly — take the id from config, never hardcode
+        # a default; check the provider's docs for current models.
         import anthropic
         self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
@@ -325,10 +327,11 @@ def redact_pii(text: str) -> str:
 ### Cost Tracking
 
 ```python
-MODEL_COSTS = {
-    "claude-sonnet-4-20250514": {"input": 3.00, "output": 15.00},  # per 1M tokens
-    "gpt-4o": {"input": 2.50, "output": 10.00},
-}
+# Do NOT hardcode a price table in application code — model prices and ids
+# change faster than deployments. Load rates from configuration and refresh
+# them from the provider's published pricing (Anthropic/OpenAI pricing pages)
+# as part of dependency maintenance.
+MODEL_COSTS: dict[str, dict[str, float]] = load_model_costs_from_config()
 
 
 def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
