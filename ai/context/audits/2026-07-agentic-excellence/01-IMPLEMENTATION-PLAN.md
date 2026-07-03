@@ -106,7 +106,16 @@ S ×6 (005, 006, 013, 018, 024, 028) · M ×18 · L ×5 (003, 010, 017, 021, 026
 - Also done: ~~016~~ ✅ (regulated_safety + effective_safety + write_permissions stage; postures produce nested deny sets).
 - Session 3: ~~012~~ ✅ (retried cleanly — expertise inlined into member prompts, header over-claim fixed), ~~015~~ ✅ (session-start-context/format-on-save/stop-quality-reminder hooks wired kit+library+generated; doc-only hooks bannered), ~~009~~ ✅ (orchestration_report service + CLI, baseline over 295 beans committed, MEMORY.md + scaffold, close-loop retro/cadence), ~~019~~ ✅ (frontmatter on all 42 entry files, indexer frontmatter-first, compile-time stripping, CI guard).
 - Session 3 continued: ~~020~~ ✅, ~~022~~ ✅, ~~023~~ ✅ (58 command stubs), ~~024~~ ✅, ~~025~~ ✅ (sync rewritten: staged swap, portable relpath, merge dedup, hook backup), ~~027~~ ✅ (kit-manifest.json, subtree settings copy, canonical branch guard), ~~028~~ ✅, ~~029~~ ✅ (decisions.md split into 16 ADR files, gates keep/enforce/drop table).
-- Remaining: 010 (L — native dispatch), 017 (L — extended-persona contracts), 021 (L — new expertise packs).
+- Session 3 final: ~~017~~ ✅ (20 extended contracts, code-review/analysis-report types, 6 templates, handoff restriction lifted), ~~021~~ ✅ (llm-applications pack, 40 dev-loop commands across 8 new stacks; Vue/Svelte/backend-framework packs deferred to authoring beans), ~~010~~ ✅ (ADR-017: native background subagent dispatch with worktree isolation; tmux scheme retired; --dangerously-skip-permissions purged).
+
+## ALL 29 SPECS IMPLEMENTED (2026-07-03)
+
+Explicitly deferred slices (each noted in its spec/commit): SPEC-003 pack
+conventions.md curation for the 19 fallback packs; SPEC-008 handoff-emission
+hook (warn-only candidate); SPEC-021 additional web/backend framework packs;
+SPEC-026 plugin manifest implementation (ADR-016 phase 2+); SPEC-028 CI
+regeneration-diff job. Kit branch `fix/spec-005-telemetry-integrity` must be
+pushed to beekeeper-lab/claude-kit and PR'd before merging this branch.
 - (Historical note) **SPEC-012 was started and reverted** — an attempted move of `_extract_expertise_highlights` from agent_writer.py to compiler.py corrupted the file and was rolled back to the SPEC-016 commit. Implementation notes for the next session: (1) inline persona-relevant expertise into `_compile_persona_section` (replace the ADR-012 no-op guard loop at the end with real blocks: Defaults excerpt + pointer to `ai/generated/expertise/<id>.md`, gated by `_expertise_applies_to`, using `_expertise_entry_file`); (2) move the highlights extractor to compiler.py with a careful Edit (not string slicing) and re-import in agent_writer; (3) fix the agent header over-claim (`expertise_names` lists all emitted ids; should list only ids applicable to that persona); (4) update README's member-prompt claim.
 - Next: 012 (retry), 015, 009, 019, then 017 (L), 010 (L), remaining P2s (020-025, 027-029).
 - [ ] Phase 2: 004, 008, 011, 012, 015, 016, 017, 019
