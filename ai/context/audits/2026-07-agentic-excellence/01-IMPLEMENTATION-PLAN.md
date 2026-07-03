@@ -97,8 +97,15 @@ S ×6 (005, 006, 013, 018, 024, 028) · M ×18 · L ×5 (003, 010, 017, 021, 026
 ## Progress
 
 - [ ] Phase 0: 026-decision
-- [ ] Phase 1: ~~001~~ ✅, 002, ~~003~~ ✅ (code path only — pack conventions.md authoring + frontmatter deferred to SPEC-019), 005, ~~006~~ ✅, 007, 013, 014, 018
-  - Done on branch `audit/agentic-excellence-2026-07` (commits 84db462, fa6a946). Next up per priority list: SPEC-005 (telemetry — note: kit submodule, commit inside `.claude/shared` on a branch), then 004, 013, 007, 002 (scriptable — inject frontmatter programmatically rather than hand-editing ~150 files).
+- [x] Phase 1 (except 018): ~~001~~ ✅, ~~002~~ ✅ (157 files, script-injected), ~~003~~ ✅ (code path — pack conventions.md authoring deferred to SPEC-019), ~~005~~ ✅ (incl. 69-bean backfill), ~~006~~ ✅, ~~007~~ ✅ (incl. tests/test_reference_integrity.py guard), ~~013~~ ✅, ~~014~~ ✅ (32 hook tests). 018 not started.
+- Phase 2 partial: ~~004~~ ✅, ~~008~~ ✅ core slice (vdd-gate.py blocks Done-transition without passing VDD report; handoff-emission warning hook NOT yet done — remaining scope in SPEC-008).
+- All on branch `audit/agentic-excellence-2026-07`; kit changes on submodule branch `fix/spec-005-telemetry-integrity` (NOT yet pushed to beekeeper-lab/claude-kit — run claude-publish/PR before merging the parent branch).
+- Audit-spec corrections found during implementation: SPEC-006/007's tech-qa "duplicate Scope Boundaries heading" finding was a false positive (BEAN-275 intent; partition tests key on it) — reverted.
+- Phase 0 ✅: ~~026~~ done in full for the "regardless" scope — ADR-016 (Accepted, plugin direction staged via hybrid), claude-publish.sh detached-HEAD guard, scripts/kit-contribute.sh (branch+PR with fork fallback), README override policy. Plugin manifest itself = follow-on.
+- Also done: ~~018~~ ✅ (fallback table + validator advisories + composition-aware CLAUDE.md orchestration block), ~~011~~ ✅ (model/tools tiering; 25 defaults.yml).
+- Also done: ~~016~~ ✅ (regulated_safety + effective_safety + write_permissions stage; postures produce nested deny sets).
+- **SPEC-012 was started and reverted** — an attempted move of `_extract_expertise_highlights` from agent_writer.py to compiler.py corrupted the file and was rolled back to the SPEC-016 commit. Implementation notes for the next session: (1) inline persona-relevant expertise into `_compile_persona_section` (replace the ADR-012 no-op guard loop at the end with real blocks: Defaults excerpt + pointer to `ai/generated/expertise/<id>.md`, gated by `_expertise_applies_to`, using `_expertise_entry_file`); (2) move the highlights extractor to compiler.py with a careful Edit (not string slicing) and re-import in agent_writer; (3) fix the agent header over-claim (`expertise_names` lists all emitted ids; should list only ids applicable to that persona); (4) update README's member-prompt claim.
+- Next: 012 (retry), 015, 009, 019, then 017 (L), 010 (L), remaining P2s (020-025, 027-029).
 - [ ] Phase 2: 004, 008, 011, 012, 015, 016, 017, 019
 - [ ] Phase 3: 009, 010, 029
 - [ ] Phase 4: 020, 021, 022, 023, 024, 025, 026-impl, 027
