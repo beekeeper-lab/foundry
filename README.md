@@ -179,10 +179,12 @@ team:
       include_agent: true
       include_templates: true
       strictness: standard
+      model: standard        # optional: strongest | standard | fast (or opus/sonnet/haiku)
     - id: security-engineer
       include_agent: true
       include_templates: true
       strictness: strict
+      tools: read-review     # optional: full | read-review | docs-only, or an explicit tool list
 
 hooks:
   posture: hardened

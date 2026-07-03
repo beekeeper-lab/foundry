@@ -1328,3 +1328,37 @@ class TestWorkflowOwnership:
         codes = {m.code for m in result.infos}
         assert "merge-ownership-fallback" not in codes
         assert "deploy-ownership-fallback" in codes
+
+
+class TestPersonaModelTools:
+    """SPEC-011: model tier / tools preset validation."""
+
+    def test_unknown_model_tier_is_error(self):
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", model="gpt-4"),
+        ]))
+        result = run_pre_generation_validation(spec, _make_library())
+        assert "unknown-model-tier" in {e.code for e in result.errors}
+
+    def test_unknown_tools_preset_is_error(self):
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", tools="everything"),
+        ]))
+        result = run_pre_generation_validation(spec, _make_library())
+        assert "unknown-tools-preset" in {e.code for e in result.errors}
+
+    def test_unknown_tool_name_is_warning(self):
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", tools=["Read", "Teleport"]),
+        ]))
+        result = run_pre_generation_validation(spec, _make_library())
+        assert "unknown-tool-name" in {w.code for w in result.warnings}
+
+    def test_valid_tier_and_preset_pass(self):
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", model="strongest", tools="read-review"),
+        ]))
+        result = run_pre_generation_validation(spec, _make_library())
+        codes = {m.code for m in result.errors} | {m.code for m in result.warnings}
+        assert "unknown-model-tier" not in codes
+        assert "unknown-tools-preset" not in codes

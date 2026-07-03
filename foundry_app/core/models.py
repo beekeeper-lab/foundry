@@ -224,6 +224,25 @@ class PersonaSelection(BaseModel):
         default=Strictness.STANDARD,
         description="Validation strictness for this persona",
     )
+    model: str | None = Field(
+        default=None,
+        description=(
+            "Model for this persona's agent: a semantic tier ('strongest', "
+            "'standard', 'fast') or a concrete alias ('opus', 'sonnet', "
+            "'haiku'). Overrides the persona's library default (defaults.yml). "
+            "None -> library default; neither -> no model frontmatter "
+            "(inherit session model). SPEC-011."
+        ),
+    )
+    tools: str | list[str] | None = Field(
+        default=None,
+        description=(
+            "Tool access for this persona's agent: a preset name ('full', "
+            "'read-review', 'docs-only') or an explicit tool list. Overrides "
+            "the persona's library default. None -> library default; "
+            "neither/'full' -> no tools frontmatter (all tools). SPEC-011."
+        ),
+    )
 
 
 class TeamConfig(BaseModel):

@@ -141,6 +141,58 @@ def _check_hook_packs(
             ))
 
 
+def _check_persona_model_tools(
+    composition: CompositionSpec,
+    messages: list[ValidationMessage],
+) -> None:
+    """Validate PersonaSelection model tiers and tool presets (SPEC-011).
+
+    Unknown tier/preset names are ERRORs (typo protection); unknown tool
+    names in an explicit list only WARN — the harness tool set evolves.
+    """
+    from foundry_app.services.agent_writer import (
+        _CONCRETE_MODELS,
+        KNOWN_TOOLS,
+        MODEL_TIERS,
+        TOOL_PRESETS,
+    )
+
+    for ps in composition.team.personas:
+        if ps.model is not None and ps.model not in MODEL_TIERS \
+                and ps.model not in _CONCRETE_MODELS:
+            messages.append(ValidationMessage(
+                severity=Severity.ERROR,
+                code="unknown-model-tier",
+                message=(
+                    f"Persona '{ps.id}' sets model '{ps.model}' — expected a "
+                    f"tier ({', '.join(sorted(MODEL_TIERS))}) or alias "
+                    f"({', '.join(sorted(_CONCRETE_MODELS))})."
+                ),
+            ))
+        if isinstance(ps.tools, str) and ps.tools not in TOOL_PRESETS:
+            messages.append(ValidationMessage(
+                severity=Severity.ERROR,
+                code="unknown-tools-preset",
+                message=(
+                    f"Persona '{ps.id}' sets tools preset '{ps.tools}' — "
+                    f"expected one of: {', '.join(sorted(TOOL_PRESETS))}, "
+                    f"or an explicit tool list."
+                ),
+            ))
+        elif isinstance(ps.tools, list):
+            unknown = [t for t in ps.tools if t not in KNOWN_TOOLS]
+            if unknown:
+                messages.append(ValidationMessage(
+                    severity=Severity.WARNING,
+                    code="unknown-tool-name",
+                    message=(
+                        f"Persona '{ps.id}' tool list contains names not in "
+                        f"the known set (as of 2026-07): "
+                        f"{', '.join(unknown)}. They will be emitted as-is."
+                    ),
+                ))
+
+
 def _check_workflow_ownership(
     composition: CompositionSpec,
     messages: list[ValidationMessage],
@@ -374,6 +426,7 @@ def run_pre_generation_validation(
     _check_personas(composition, library_index, messages)
     _check_expertise(composition, library_index, messages)
     _check_hook_packs(composition, library_index, messages)
+    _check_persona_model_tools(composition, messages)
     _check_workflow_ownership(composition, messages)
     _check_hook_conflicts(composition, library_index, messages)
     _check_hook_posture_compatibility(composition, library_index, messages)

@@ -1,0 +1,7 @@
+# Per-persona agent defaults (SPEC-011).
+# model: semantic tier — strongest | standard | fast (mapped to concrete
+#        aliases in foundry_app/services/agent_writer.py MODEL_TIERS)
+# tools: preset — full | read-review | docs-only (expanded in TOOL_PRESETS)
+# A composition.yml PersonaSelection model:/tools: overrides these.
+model: standard
+tools: full

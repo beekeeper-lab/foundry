@@ -31,6 +31,68 @@ _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 # Max number of operating principles / key rules to extract per persona
 _MAX_KEY_RULES = 5
 
+# ---------------------------------------------------------------------------
+# Model tiers and tool presets (SPEC-011). The library's per-persona
+# defaults.yml files use SEMANTIC names; the concrete mapping lives only
+# here so model churn is a one-line change, never a library-wide edit.
+# Known tool names dated 2026-07; the harness set evolves, so unknown
+# names WARN rather than fail (see validator).
+# ---------------------------------------------------------------------------
+
+MODEL_TIERS: dict[str, str] = {
+    "strongest": "opus",
+    "standard": "sonnet",
+    "fast": "haiku",
+}
+_CONCRETE_MODELS = frozenset({"opus", "sonnet", "haiku", "inherit"})
+
+# None means "emit no tools key" (all tools available).
+TOOL_PRESETS: dict[str, list[str] | None] = {
+    "full": None,
+    # Reviewers: read + search + run checks, but no edits to source.
+    "read-review": ["Read", "Grep", "Glob", "Bash"],
+    # Doc-centric roles: author documents, never run shell commands.
+    "docs-only": ["Read", "Grep", "Glob", "Write", "Edit"],
+}
+
+KNOWN_TOOLS = frozenset({
+    "Read", "Write", "Edit", "NotebookEdit", "Bash", "Grep", "Glob",
+    "WebFetch", "WebSearch", "Agent", "TodoWrite", "AskUserQuestion",
+})
+
+
+def _load_persona_defaults(persona_dir: Path) -> dict[str, str]:
+    """Read the persona's defaults.yml ({model: <tier>, tools: <preset>})."""
+    path = persona_dir / "defaults.yml"
+    if not path.is_file():
+        return {}
+    try:
+        import yaml
+
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:  # malformed defaults must never break generation
+        logger.warning("Unparseable defaults.yml at %s", path)
+        return {}
+
+
+def resolve_model(value: str | None) -> str | None:
+    """Resolve a tier or concrete alias to the frontmatter model value."""
+    if value is None:
+        return None
+    if value in MODEL_TIERS:
+        return MODEL_TIERS[value]
+    return value  # concrete alias (validated elsewhere)
+
+
+def resolve_tools(value: str | list[str] | None) -> list[str] | None:
+    """Resolve a preset name or explicit list to a tool list (None = all)."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return TOOL_PRESETS.get(value)
+    return list(value)
+
 # Max lines of expertise conventions to include as highlights
 _MAX_EXPERTISE_HIGHLIGHT_LINES = 15
 
@@ -288,9 +350,27 @@ def write_agents(
         )
         agent_description = " ".join(agent_description.split()).replace('"', "'")
 
+        # Model/tools: composition override wins, else library defaults.yml,
+        # else omit the key entirely (inherit session model / all tools).
+        defaults = _load_persona_defaults(Path(persona_info.path))
+        agent_model = resolve_model(
+            persona_sel.model
+            if persona_sel.model is not None
+            else defaults.get("model")
+        )
+        agent_tools = resolve_tools(
+            persona_sel.tools
+            if persona_sel.tools is not None
+            else defaults.get("tools")
+        )
+        if agent_model == "inherit":
+            agent_model = None
+
         context = {
             "agent_name": leaf,
             "agent_description": agent_description,
+            "agent_model": agent_model,
+            "agent_tools": agent_tools,
             "role_name": role_name,
             "role_description": role_description,
             "expertise_names": expertise_names,

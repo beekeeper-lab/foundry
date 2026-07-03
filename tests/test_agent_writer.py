@@ -1070,3 +1070,62 @@ class TestBean259TokenSavings:
             f"BEAN-259 acceptance failed: largest non-Developer reduction "
             f"is {biggest_pid}={biggest_pct:.1f}%, expected >=20%"
         )
+
+
+class TestModelToolTiering:
+    """SPEC-011: per-persona model/tools resolution into frontmatter."""
+
+    def _library_with_defaults(self, tmp_path, defaults_yml: str):
+        lib_root, index = _make_library(tmp_path)
+        dev_dir = Path(index.personas[0].path)
+        (dev_dir / "defaults.yml").write_text(defaults_yml, encoding="utf-8")
+        return lib_root, index
+
+    def _agent_text(self, tmp_path, lib_root, index, spec) -> str:
+        output = tmp_path / "out"
+        output.mkdir(exist_ok=True)
+        write_agents(spec, index, lib_root, output)
+        return (output / ".claude" / "agents" / "developer.md").read_text()
+
+    def test_library_defaults_resolve_to_frontmatter(self, tmp_path):
+        lib_root, index = self._library_with_defaults(
+            tmp_path, "model: strongest\ntools: read-review\n",
+        )
+        content = self._agent_text(tmp_path, lib_root, index, _make_spec())
+        assert "model: opus" in content
+        assert "tools: Read, Grep, Glob, Bash" in content
+
+    def test_composition_override_wins(self, tmp_path):
+        lib_root, index = self._library_with_defaults(
+            tmp_path, "model: strongest\ntools: read-review\n",
+        )
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", model="fast", tools=["Read"]),
+        ]))
+        content = self._agent_text(tmp_path, lib_root, index, spec)
+        assert "model: haiku" in content
+        assert "tools: Read\n" in content
+
+    def test_no_defaults_omits_keys(self, tmp_path):
+        lib_root, index = _make_library(tmp_path)
+        content = self._agent_text(tmp_path, lib_root, index, _make_spec())
+        assert "model:" not in content.split("---")[1]
+        assert "tools:" not in content.split("---")[1]
+
+    def test_full_preset_omits_tools_key(self, tmp_path):
+        lib_root, index = self._library_with_defaults(
+            tmp_path, "model: standard\ntools: full\n",
+        )
+        content = self._agent_text(tmp_path, lib_root, index, _make_spec())
+        assert "model: sonnet" in content
+        assert "tools:" not in content.split("---")[1]
+
+    def test_include_agent_false_writes_no_file(self, tmp_path):
+        lib_root, index = _make_library(tmp_path)
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", include_agent=False),
+        ]))
+        output = tmp_path / "out"
+        output.mkdir()
+        write_agents(spec, index, lib_root, output)
+        assert not (output / ".claude" / "agents" / "developer.md").exists()
