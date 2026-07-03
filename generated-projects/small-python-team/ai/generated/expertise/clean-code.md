@@ -165,6 +165,12 @@ work that motivates it.
 
 ---
 
+## Precedence
+
+When this pack's generic guidance conflicts with a language or framework
+pack selected in the same composition, the **language pack wins** — idiom
+beats generality (e.g. Dart's camelCase constants over UPPER_SNAKE).
+
 ## Do / Don't
 
 **Do:**

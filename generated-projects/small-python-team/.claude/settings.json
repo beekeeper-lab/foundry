@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "branch=$(git branch --show-current 2>/dev/null); if [ \"$branch\" = \"main\" ] || [ \"$branch\" = \"master\" ]; then echo 'BLOCKED: Cannot edit files on main. Create a feature branch first: git checkout -b <branch-name>'; exit 1; fi"
+            "command": "branch=$(git branch --show-current 2>/dev/null); if [ \"$branch\" = \"main\" ] || [ \"$branch\" = \"master\" ] || [ \"$branch\" = \"test\" ] || [ \"$branch\" = \"prod\" ]; then echo 'BLOCKED: Cannot edit files on a protected branch ($branch). Create a feature branch first.'; exit 1; fi"
           }
         ]
       },
@@ -25,15 +25,6 @@
           {
             "type": "command",
             "command": "python3 .claude/hooks/vdd-gate.py"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "branch=$(git branch --show-current 2>/dev/null); if [ \"$branch\" = \"main\" ] || [ \"$branch\" = \"master\" ] || [ \"$branch\" = \"test\" ] || [ \"$branch\" = \"prod\" ]; then echo 'BLOCKED: Cannot edit files on a protected branch ($branch). Create a feature branch first.'; exit 1; fi"
           }
         ]
       }

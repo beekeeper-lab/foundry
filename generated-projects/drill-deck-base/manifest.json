@@ -1,7 +1,7 @@
 {
-  "run_id": "20260703-181545",
-  "generated_at": "2026-07-03T22:15:45.233813Z",
-  "library_version": "a372336",
+  "run_id": "20260703-182917",
+  "generated_at": "2026-07-03T22:29:17.807872Z",
+  "library_version": "94bcebd",
   "composition_snapshot": {
     "project": {
       "name": "Drill_Deck_Base",
@@ -165,9 +165,7 @@
   },
   "stages": {
     "scaffold": {
-      "wrote": [
-        "ai/team/composition.yml"
-      ],
+      "wrote": [],
       "warnings": []
     },
     "compile": {
@@ -210,7 +208,9 @@
       "warnings": []
     },
     "copy_assets": {
-      "wrote": [],
+      "wrote": [
+        ".claude/settings.json"
+      ],
       "warnings": [
         "File already exists with different content: .claude/commands/backlog-consolidate.md",
         "File already exists with different content: .claude/commands/backlog-refinement.md",
@@ -277,7 +277,6 @@
         "File already exists with different content: .claude/skills/validate-config/SKILL.md",
         "File already exists with different content: .claude/skills/validate-repo/SKILL.md",
         "File already exists with different content: .claude/skills/vdd/SKILL.md",
-        "File already exists with different content: .claude/settings.json",
         "File already exists with different content: .claude/settings.local.json",
         "File already exists with different content: ai/beans/_index.md",
         "File already exists with different content: ai/context/bean-workflow.md",
