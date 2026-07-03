@@ -490,6 +490,22 @@ class GenerationOptions(BaseModel):
 # CompositionSpec — the top-level spec
 # ---------------------------------------------------------------------------
 
+class McpConfig(BaseModel):
+    """Composition-level MCP server selection (SPEC-022).
+
+    ``add`` maps server id -> definition; a ``None`` value means "use the
+    library registry's definition for this id". Inline definitions carry
+    type/command/args and optional env (credential passthrough uses
+    ``${VAR}`` references, never literal secrets). ``remove`` drops
+    baseline/expertise-derived servers. ``env`` overlays environment
+    variables onto emitted servers by id.
+    """
+
+    add: dict[str, dict[str, Any] | None] = Field(default_factory=dict)
+    remove: list[str] = Field(default_factory=list)
+    env: dict[str, dict[str, str]] = Field(default_factory=dict)
+
+
 class CompositionSpec(BaseModel):
     """Top-level composition specification — the input to the generation pipeline."""
 
@@ -502,6 +518,10 @@ class CompositionSpec(BaseModel):
     safety: SafetyConfig | None = Field(
         default=None,
         description="Inline safety config; if omitted, derived from hooks posture",
+    )
+    mcp: McpConfig = Field(
+        default_factory=McpConfig,
+        description="MCP server selection overrides (SPEC-022)",
     )
 
     def effective_safety(self) -> SafetyConfig:

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 REGISTRY_RELPATH = Path("workflows") / "mcp-registry.yaml"
 
-_EMITTED_FIELDS = ("type", "command", "args")
+_EMITTED_FIELDS = ("type", "command", "args", "env")
 
 
 def _load_registry(library_root: Path) -> dict[str, Any]:
@@ -109,11 +109,49 @@ def write_mcp_config(
     servers: dict[str, dict] = {}
     for sid in server_ids:
         entry = registry["servers"][sid]
-        servers[sid] = {field: entry[field] for field in _EMITTED_FIELDS}
+        servers[sid] = {
+            field: entry[field] for field in _EMITTED_FIELDS if field in entry
+        }
+
+    # Composition overrides (SPEC-022): remove, then add (null value = pull
+    # the definition from the registry), then env overlay.
+    for sid in spec.mcp.remove:
+        if sid in servers:
+            del servers[sid]
+        else:
+            warnings.append(
+                f"mcp.remove: '{sid}' is not among the emitted servers"
+            )
+    for sid, definition in spec.mcp.add.items():
+        if definition is None:
+            entry = registry["servers"].get(sid)
+            if entry is None:
+                warnings.append(
+                    f"mcp.add: '{sid}' has no definition and is not in the "
+                    f"library registry — skipped"
+                )
+                continue
+            definition = {
+                field: entry[field]
+                for field in _EMITTED_FIELDS if field in entry
+            }
+        servers[sid] = {
+            field: definition[field]
+            for field in _EMITTED_FIELDS if field in definition
+        }
+    for sid, env in spec.mcp.env.items():
+        if sid not in servers:
+            warnings.append(f"mcp.env: '{sid}' is not an emitted server")
+            continue
+        merged_env = dict(servers[sid].get("env") or {})
+        merged_env.update(env)
+        servers[sid]["env"] = merged_env
 
     mcp_config = {"mcpServers": servers}
 
-    mcp_path = out_root / ".claude" / "mcp.json"
+    # Root .mcp.json — the location Claude Code actually reads
+    # (.claude/mcp.json was never loaded; SPEC-022).
+    mcp_path = out_root / ".mcp.json"
     mcp_path.parent.mkdir(parents=True, exist_ok=True)
     mcp_path.write_text(
         json.dumps(mcp_config, indent=2) + "\n",
