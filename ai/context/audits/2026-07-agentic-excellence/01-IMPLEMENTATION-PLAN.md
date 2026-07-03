@@ -97,7 +97,8 @@ S ×6 (005, 006, 013, 018, 024, 028) · M ×18 · L ×5 (003, 010, 017, 021, 026
 ## Progress
 
 - [ ] Phase 0: 026-decision
-- [ ] Phase 1: 001, 002, 003, 005, 006, 007, 013, 014, 018
+- [ ] Phase 1: ~~001~~ ✅, 002, ~~003~~ ✅ (code path only — pack conventions.md authoring + frontmatter deferred to SPEC-019), 005, ~~006~~ ✅, 007, 013, 014, 018
+  - Done on branch `audit/agentic-excellence-2026-07` (commits 84db462, fa6a946). Next up per priority list: SPEC-005 (telemetry — note: kit submodule, commit inside `.claude/shared` on a branch), then 004, 013, 007, 002 (scriptable — inject frontmatter programmatically rather than hand-editing ~150 files).
 - [ ] Phase 2: 004, 008, 011, 012, 015, 016, 017, 019
 - [ ] Phase 3: 009, 010, 029
 - [ ] Phase 4: 020, 021, 022, 023, 024, 025, 026-impl, 027
