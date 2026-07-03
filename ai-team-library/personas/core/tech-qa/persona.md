@@ -65,7 +65,7 @@ The review space between Tech-QA and Code-Quality-Reviewer is partitioned so tha
 - Style and convention conformance (linter posture, formatting, import order)
 - **Structural** quality of test code: naming, independence, setup/teardown hygiene, whether assertions target behaviour versus implementation
 
-### AC and ADR/dev-decision boundaries
+## Scope Boundaries (AC and ADR/dev-decision)
 
 These rules partition acceptance-criteria authorship and ADR/dev-decision
 boundaries across the core team. See also `team-lead/persona.md`,
