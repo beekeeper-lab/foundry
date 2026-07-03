@@ -94,6 +94,17 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Repository root (default: current working directory).",
     )
 
+    report = sub.add_parser(
+        "orchestration-report",
+        help="Aggregate per-bean telemetry into a monthly roll-up report.",
+    )
+    report.add_argument(
+        "--repo-root",
+        type=str,
+        default=None,
+        help="Repository root (default: current working directory).",
+    )
+
     return parser
 
 
@@ -215,6 +226,20 @@ def main(argv: list[str] | None = None) -> int:
         if args.repo_root:
             argv.extend(["--repo-root", args.repo_root])
         return vdd_main(argv)
+
+    if args.command == "orchestration-report":
+        from foundry_app.services.orchestration_report import write_report
+
+        repo_root = Path(args.repo_root) if args.repo_root else Path.cwd()
+        if not (repo_root / "ai" / "beans").is_dir():
+            print(
+                f"Error: no ai/beans directory under {repo_root}",
+                file=sys.stderr,
+            )
+            return EXIT_VALIDATION_ERROR
+        out_path = write_report(repo_root)
+        print(f"Orchestration report written: {out_path}")
+        return EXIT_SUCCESS
 
     parser.print_help()
     return EXIT_SUCCESS

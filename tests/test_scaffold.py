@@ -185,8 +185,9 @@ class TestStageResult:
         )
         result = scaffold_project(spec, output)
         # root + 4 .claude dirs + 7 ai dirs (incl. ai/team) + 1 persona dir
-        # + ai/team/composition.yml + README.md + project-charter.md = 16
-        assert len(result.wrote) == 16
+        # + ai/team/composition.yml + README.md + project-charter.md
+        # + MEMORY.md (SPEC-009) = 17
+        assert len(result.wrote) == 17
 
 
 # ---------------------------------------------------------------------------
