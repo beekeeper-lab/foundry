@@ -1,3 +1,8 @@
+---
+name: telemetry-report
+description: "Produces an aggregate summary of project telemetry: total time invested, average bean duration, breakdowns by category and owner, and outlier identification."
+---
+
 # /telemetry-report Command
 
 Produces an aggregate summary of project telemetry: total time invested, average bean duration, breakdowns by category and owner, and outlier identification.

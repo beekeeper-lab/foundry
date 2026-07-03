@@ -1,3 +1,8 @@
+---
+name: risk-liability
+description: "Performs a risk assessment and liability analysis across six legal domains: contractual liability, indemnification, limitation of liability, insurance, incident response obligations, and breach notification duties."
+---
+
 # /risk-liability Command
 
 Performs a risk assessment and liability analysis across six legal domains: contractual liability, indemnification, limitation of liability, insurance, incident response obligations, and breach notification duties.

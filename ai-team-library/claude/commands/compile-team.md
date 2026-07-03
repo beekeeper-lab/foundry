@@ -1,3 +1,8 @@
+---
+name: compile-team
+description: "Compiles selected personas, stacks, and workflows into a complete team configuration ready for use in a project workspace. Reads a composition spec, resolves all references against the AI Team Library, and produces a unified CLAUDE.md plus supporting artifacts."
+---
+
 # /compile-team Command
 
 Compiles selected personas, stacks, and workflows into a complete team configuration ready for use in a project workspace. Reads a composition spec, resolves all references against the AI Team Library, and produces a unified `CLAUDE.md` plus supporting artifacts.

@@ -1,3 +1,8 @@
+---
+name: bean-status
+description: "- Invoked by the /bean-status slash command. - Called by the Team Lead during planning, standups, or retrospectives. - Can be invoked by any persona who wants to see the current backlog state."
+---
+
 # Skill: Bean Status
 
 ## Description

@@ -1,3 +1,8 @@
+---
+name: compile-team
+description: "- Invoked by the /compile-team slash command. - Called programmatically by foundry_app/services/compiler.py during pipeline execution. - Can be run standalone for dry-run validation without writing output files."
+---
+
 # Skill: Compile Team
 
 ## Description

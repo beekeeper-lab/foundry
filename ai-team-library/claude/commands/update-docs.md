@@ -1,3 +1,8 @@
+---
+name: update-docs
+description: "Detects documentation drift and proposes updates. Compares docs against recent code, config, and dependency changes to identify stale sections, then proposes specific updates."
+---
+
 # /update-docs Command
 
 Detects documentation drift and proposes updates. Compares docs against recent code, config, and dependency changes to identify stale sections, then proposes specific updates.

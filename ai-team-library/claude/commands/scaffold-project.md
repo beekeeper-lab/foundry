@@ -1,3 +1,8 @@
+---
+name: scaffold-project
+description: "Creates a new project folder structure from a composition spec — directory tree, CLAUDE.md, agent wrappers, context documents, and output folders. Run this before /compile-team and /seed-tasks."
+---
+
 # /scaffold-project Command
 
 Creates a new project folder structure from a composition spec — directory tree, CLAUDE.md, agent wrappers, context documents, and output folders. Run this before `/compile-team` and `/seed-tasks`.

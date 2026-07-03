@@ -1,3 +1,8 @@
+---
+name: update-docs
+description: "- Invoked by the /update-docs slash command. - Called by the Technical Writer persona during documentation cycles. - Useful as a pre-release check to ensure docs ship in sync with code."
+---
+
 # Skill: Update Docs
 
 ## Description

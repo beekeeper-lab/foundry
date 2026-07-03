@@ -1,3 +1,8 @@
+---
+name: build-traceability
+description: "Builds a requirements-to-tests traceability matrix. Maps every acceptance criterion to the test cases that verify it, computes coverage, and identifies gaps and orphan tests."
+---
+
 # /build-traceability Command
 
 Builds a requirements-to-tests traceability matrix. Maps every acceptance criterion to the test cases that verify it, computes coverage, and identifies gaps and orphan tests.

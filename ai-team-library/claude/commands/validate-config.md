@@ -1,3 +1,8 @@
+---
+name: validate-config
+description: "Checks configuration hygiene and detects exposed secrets — hardcoded credentials, missing config variables, untracked .env files, and cross-environment inconsistencies."
+---
+
 # /validate-config Command
 
 Checks configuration hygiene and detects exposed secrets — hardcoded credentials, missing config variables, untracked .env files, and cross-environment inconsistencies.

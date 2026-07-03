@@ -1,3 +1,8 @@
+---
+name: deploy
+description: "Validates the main branch, runs tests, and creates a version tag. With trunk-based development, all work is already on main via feature branch merges — deploy simply tags a release point."
+---
+
 # /deploy Command
 
 Validates the `main` branch, runs tests, and creates a version tag. With trunk-based development, all work is already on `main` via feature branch merges — deploy simply tags a release point.

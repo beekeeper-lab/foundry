@@ -1,3 +1,8 @@
+---
+name: format
+description: "Format Python source files according to the project's style."
+---
+
 # /format Command
 
 Format Python source files according to the project's style.

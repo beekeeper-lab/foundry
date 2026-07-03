@@ -1,3 +1,8 @@
+---
+name: backlog-refinement
+description: "Turns raw ideas, feature descriptions, or broad vision text into one or more well-formed beans through an iterative dialogue with the Team Lead. The structured 'front door' to the beans workflow."
+---
+
 # /backlog-refinement Command
 
 Turns raw ideas, feature descriptions, or broad vision text into one or more well-formed beans through an iterative dialogue with the Team Lead. The structured "front door" to the beans workflow.

@@ -1,3 +1,8 @@
+---
+name: new-work
+description: "Creates a new work item — the single entry point for bugs, features, chores, spikes, and refactors. Asks the right questions, creates a task spec, drafts the appropriate BA artifact (story or bug report), and seeds initial tasks."
+---
+
 # /new-work Command
 
 Creates a new work item — the single entry point for bugs, features, chores, spikes, and refactors. Asks the right questions, creates a task spec, drafts the appropriate BA artifact (story or bug report), and seeds initial tasks.

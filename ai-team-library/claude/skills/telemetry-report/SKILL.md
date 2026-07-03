@@ -1,3 +1,8 @@
+---
+name: telemetry-report
+description: "- Invoked by the /telemetry-report slash command."
+---
+
 # Skill: Telemetry Report
 
 ## Description

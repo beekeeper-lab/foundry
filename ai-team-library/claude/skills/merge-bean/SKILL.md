@@ -1,3 +1,8 @@
+---
+name: merge-bean
+description: "- Invoked by the /merge-bean slash command. - Called automatically by /long-run as the final stage after bean verification. - Should be executed by the Team Lead (acting as Merge Captain) or the integrator-merge-captain persona."
+---
+
 # Skill: Merge Bean
 
 ## Description

@@ -1,3 +1,8 @@
+---
+name: review-pr
+description: "Performs a structured, checklist-driven code review covering readability, correctness, maintainability, convention consistency, test coverage, and security. Produces a clear verdict (ship / ship with comments / request changes) with actionable line-level feedback."
+---
+
 # /review-pr Command
 
 Performs a structured, checklist-driven code review covering readability, correctness, maintainability, convention consistency, test coverage, and security. Produces a clear verdict (ship / ship with comments / request changes) with actionable line-level feedback.

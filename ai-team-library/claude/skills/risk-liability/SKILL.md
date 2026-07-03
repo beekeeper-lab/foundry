@@ -1,3 +1,8 @@
+---
+name: risk-liability
+description: "- Invoked by the /risk-liability slash command. - Called by the Legal Counsel persona during project onboarding or when the risk landscape changes (new contracts, new jurisdictions, regulatory updates). - Should be re-run when contracts are signed, renewed, or materially amended. - Should be re-run after a security incident or data breach."
+---
+
 # Skill: Risk Assessment & Liability Analysis
 
 ## Description

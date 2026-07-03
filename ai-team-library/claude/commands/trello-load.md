@@ -1,3 +1,8 @@
+---
+name: trello-load
+description: "Connects to Trello, pulls cards from a board's Sprint_Backlog list, and feeds each card into /backlog-refinement to create well-formed beans. Cards are moved to In_Progress after refinement."
+---
+
 # /trello-load Command
 
 Connects to Trello, pulls cards from a board's Sprint_Backlog list, and feeds each card into `/backlog-refinement` to create well-formed beans. Cards are moved to In_Progress after refinement.

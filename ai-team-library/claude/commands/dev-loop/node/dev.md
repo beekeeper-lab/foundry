@@ -1,3 +1,8 @@
+---
+name: dev
+description: "Start the project's development server with hot reload."
+---
+
 # /dev Command
 
 Start the project's development server with hot reload.

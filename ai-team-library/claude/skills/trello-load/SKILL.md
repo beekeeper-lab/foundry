@@ -1,3 +1,8 @@
+---
+name: trello-load
+description: "- Invoked by the /trello-load slash command. - Requires the Trello MCP server to be configured and accessible. - Requires ai/beans/_index.md and ai/beans/_bean-template.md to exist."
+---
+
 # Skill: Trello Load
 
 ## Description

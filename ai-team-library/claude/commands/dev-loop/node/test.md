@@ -1,3 +1,8 @@
+---
+name: test
+description: "Run the project's JavaScript/TypeScript test suite."
+---
+
 # /test Command
 
 Run the project's JavaScript/TypeScript test suite.

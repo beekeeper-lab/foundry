@@ -1,3 +1,8 @@
+---
+name: spawn-task
+description: "- Invoked by the /spawn-task slash command. - Should typically be called by Team-Lead during wave execution. Can be called manually for ad-hoc per-task dispatch."
+---
+
 # Skill: Spawn Task
 
 ## Description

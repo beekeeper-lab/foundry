@@ -1,3 +1,8 @@
+---
+name: close-loop
+description: "- Invoked automatically when a persona marks a task as complete. - Invoked by the /close-loop slash command for on-demand status verification. - Called programmatically by the orchestration layer after artifact production."
+---
+
 # Skill: Close Loop
 
 ## Description

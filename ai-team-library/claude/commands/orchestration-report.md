@@ -1,3 +1,8 @@
+---
+name: orchestration-report
+description: "Aggregates the per-bean Orchestration Telemetry blocks (BEAN-278) across recent Done beans and produces a markdown report answering whether the orchestration changes are paying off. Distinct from /telemetry-report (raw cost/duration/tokens); this command layers orchestration-quality metrics — bounces, persona activations, contract violations, escape-hatch trend, dispatch-mode mix — on top."
+---
+
 # /orchestration-report Command
 
 Aggregates the per-bean Orchestration Telemetry blocks (BEAN-278) across

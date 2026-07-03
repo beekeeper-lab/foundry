@@ -1,3 +1,8 @@
+---
+name: format
+description: "Format JavaScript/TypeScript source files according to the project's style."
+---
+
 # /format Command
 
 Format JavaScript/TypeScript source files according to the project's style.

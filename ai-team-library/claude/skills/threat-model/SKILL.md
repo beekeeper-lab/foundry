@@ -1,3 +1,8 @@
+---
+name: threat-model
+description: "- Invoked by the /threat-model slash command. - Called by the Security Engineer persona after architecture is defined. - Should be re-run when architecture changes significantly."
+---
+
 # Skill: Threat Model
 
 ## Description

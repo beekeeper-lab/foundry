@@ -1,3 +1,8 @@
+---
+name: lint
+description: "Run the Python linter against the project."
+---
+
 # /lint Command
 
 Run the Python linter against the project.

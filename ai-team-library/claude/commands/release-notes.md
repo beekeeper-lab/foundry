@@ -1,3 +1,8 @@
+---
+name: release-notes
+description: "Generates release notes and a changelog entry from completed work. Collects completed tasks, merged changes, and known issues from a release cycle; produces both user-facing notes and a Keep a Changelog entry."
+---
+
 # /release-notes Command
 
 Generates release notes and a changelog entry from completed work. Collects completed tasks, merged changes, and known issues from a release cycle; produces both user-facing notes and a Keep a Changelog entry.

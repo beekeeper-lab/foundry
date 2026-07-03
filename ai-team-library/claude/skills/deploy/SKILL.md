@@ -1,3 +1,8 @@
+---
+name: deploy
+description: "- Invoked by the /deploy slash command. - Must be run on the main branch. - main must have commits ahead of the last release tag (or ahead of the initial commit if no tags exist)."
+---
+
 # Skill: Deploy
 
 ## Description

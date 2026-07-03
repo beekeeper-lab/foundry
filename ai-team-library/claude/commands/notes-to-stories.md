@@ -1,3 +1,8 @@
+---
+name: notes-to-stories
+description: "Converts unstructured notes (meeting notes, feature requests, brainstorming output) into properly formatted user stories with testable acceptance criteria, flagged open questions, and identified risks."
+---
+
 # /notes-to-stories Command
 
 Converts unstructured notes (meeting notes, feature requests, brainstorming output) into properly formatted user stories with testable acceptance criteria, flagged open questions, and identified risks.

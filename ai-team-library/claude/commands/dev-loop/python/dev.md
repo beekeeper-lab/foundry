@@ -1,3 +1,8 @@
+---
+name: dev
+description: "Launch the project's main entry point in development mode."
+---
+
 # /dev Command
 
 Launch the project's main entry point in development mode.

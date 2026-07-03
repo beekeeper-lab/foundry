@@ -1,3 +1,8 @@
+---
+name: review-beans
+description: "Generates a filtered Map of Content (MOC) linking to beans by status, then opens Obsidian on the ai/beans/ directory for review."
+---
+
 # /review-beans Command
 
 Generates a filtered Map of Content (MOC) linking to beans by status, then opens Obsidian on the `ai/beans/` directory for review.

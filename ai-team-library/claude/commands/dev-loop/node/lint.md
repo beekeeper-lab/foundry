@@ -1,3 +1,8 @@
+---
+name: lint
+description: "Run the JavaScript/TypeScript linter against the project."
+---
+
 # /lint Command
 
 Run the JavaScript/TypeScript linter against the project.

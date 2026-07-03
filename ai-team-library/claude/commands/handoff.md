@@ -1,3 +1,8 @@
+---
+name: handoff
+description: "Emit a typed handoff packet between two personas. The packet shape is the intersection of the sender's produces: and the receiver's consumes:, with each artifact's required-fields from the registry, plus any edge-specific pair-fields extras."
+---
+
 # /handoff Command
 
 Emit a **typed** handoff packet between two personas. The packet shape is the

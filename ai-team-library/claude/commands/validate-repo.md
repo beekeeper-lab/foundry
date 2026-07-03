@@ -1,3 +1,8 @@
+---
+name: validate-repo
+description: "Runs a comprehensive health check on a Foundry project — verifies structure, files, internal links, and stack-specific tooling. Catches missing files, broken references, secrets exposure, and configuration drift."
+---
+
 # /validate-repo Command
 
 Runs a comprehensive health check on a Foundry project — verifies structure, files, internal links, and stack-specific tooling. Catches missing files, broken references, secrets exposure, and configuration drift.

@@ -1,3 +1,8 @@
+---
+name: health-check
+description: "Runs the project health-check suite and produces a table-format report. Detects context bloat, telemetry anomalies, stale artifacts, and cost trends."
+---
+
 # /health-check Command
 
 Runs the project health-check suite and produces a table-format report. Detects context bloat, telemetry anomalies, stale artifacts, and cost trends.

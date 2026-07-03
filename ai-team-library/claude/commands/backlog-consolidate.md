@@ -1,3 +1,8 @@
+---
+name: backlog-consolidate
+description: "Detects and resolves duplicates, overlaps, contradictions, missing dependencies, and merge opportunities across recently created beans. Designed for post-refinement cleanup after running multiple /backlog-refinement sessions in parallel."
+---
+
 # /backlog-consolidate Command
 
 Detects and resolves duplicates, overlaps, contradictions, missing dependencies, and merge opportunities across recently created beans. Designed for post-refinement cleanup after running multiple `/backlog-refinement` sessions in parallel.

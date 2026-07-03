@@ -1,3 +1,8 @@
+---
+name: orchestration-report
+description: "- Invoked by the /orchestration-report slash command. - Should be run periodically by the Team Lead (cadence at their discretion; monthly is a reasonable default). - Useful immediately after a wave of orchestration-related beans lands — the verdict paragraph is the honest answer to 'did this help?'"
+---
+
 # Skill: Orchestration Report
 
 ## Description

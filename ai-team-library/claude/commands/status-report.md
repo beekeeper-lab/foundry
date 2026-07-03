@@ -1,3 +1,8 @@
+---
+name: status-report
+description: "Generates a status report summarizing current progress, blockers, and next steps across the team. Scans the project workspace for task states, completed artifacts, and outstanding blockers, then produces a single-document view."
+---
+
 # /status-report Command
 
 Generates a status report summarizing current progress, blockers, and next steps across the team. Scans the project workspace for task states, completed artifacts, and outstanding blockers, then produces a single-document view.

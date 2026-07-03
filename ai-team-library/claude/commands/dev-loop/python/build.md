@@ -1,3 +1,8 @@
+---
+name: build
+description: "Build the Python project distributable (wheel + sdist)."
+---
+
 # /build Command
 
 Build the Python project distributable (wheel + sdist).

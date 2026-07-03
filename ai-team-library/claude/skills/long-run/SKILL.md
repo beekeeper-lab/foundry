@@ -1,3 +1,8 @@
+---
+name: long-run
+description: "- Invoked by the /long-run slash command. - Should only be used by the Team Lead persona. - Requires at least one bean in _index.md with status Approved."
+---
+
 # Skill: Long Run
 
 ## Description

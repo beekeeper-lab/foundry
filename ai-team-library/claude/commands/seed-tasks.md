@@ -1,3 +1,8 @@
+---
+name: seed-tasks
+description: "Generates an initial set of tasks from project objectives and assigns them to team personas. Decomposes high-level objectives into discrete, assignable tasks with dependencies, priorities, and a dependency graph."
+---
+
 # /seed-tasks Command
 
 Generates an initial set of tasks from project objectives and assigns them to team personas. Decomposes high-level objectives into discrete, assignable tasks with dependencies, priorities, and a dependency graph.

@@ -1,3 +1,8 @@
+---
+name: new-dev-decision
+description: "- Invoked by the /new-dev-decision slash command. - Called by the Developer persona during implementation when a non-trivial choice is made. - Can be invoked by any persona making an implementation-level decision."
+---
+
 # Skill: New Dev Decision
 
 ## Description

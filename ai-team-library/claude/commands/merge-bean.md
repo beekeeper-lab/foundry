@@ -1,3 +1,8 @@
+---
+name: merge-bean
+description: "Merges a bean's feature branch into the main branch using a safe merge sequence (validate, sync, no-ff merge, push, cleanup). The final stage of the bean execution wave — integrates completed work so other beans can build on it."
+---
+
 # /merge-bean Command
 
 Merges a bean's feature branch into the `main` branch using a safe merge sequence (validate, sync, no-ff merge, push, cleanup). The final stage of the bean execution wave — integrates completed work so other beans can build on it.

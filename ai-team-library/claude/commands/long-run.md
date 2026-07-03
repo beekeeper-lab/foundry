@@ -1,3 +1,8 @@
+---
+name: long-run
+description: "Puts the Team Lead in autonomous mode, processing beans from the backlog until the backlog is empty or no actionable beans remain. Supports sequential (default) and parallel (--fast N) modes."
+---
+
 # /long-run Command
 
 Puts the Team Lead in autonomous mode, processing beans from the backlog until the backlog is empty or no actionable beans remain. Supports sequential (default) and parallel (`--fast N`) modes.

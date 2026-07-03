@@ -1,3 +1,8 @@
+---
+name: backlog-refinement
+description: "- Invoked by the /backlog-refinement slash command. - Should only be used by the Team Lead persona. - Requires ai/beans/_index.md and ai/beans/_bean-template.md to exist."
+---
+
 # Skill: Backlog Refinement
 
 ## Description

@@ -1,3 +1,8 @@
+---
+name: health-check
+description: "- Invoked by the /health-check slash command. - Called programmatically by /long-run at the start of each cycle."
+---
+
 # Skill: Health Check
 
 ## Description

@@ -1,3 +1,8 @@
+---
+name: handoff
+description: "- Invoked by the /handoff slash command (see claude/commands/handoff.md). - Called by any persona when its phase completes and a downstream persona needs to begin. - Suggested automatically by close-loop after verification passes if the task has a downstream dependent."
+---
+
 # Skill: Handoff (Typed)
 
 ## Description

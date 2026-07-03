@@ -1,3 +1,8 @@
+---
+name: notes-to-stories
+description: "- Invoked by the /notes-to-stories slash command. - Called by the BA persona during requirements gathering. - Can be run iteratively as new information surfaces."
+---
+
 # Skill: Notes to Stories
 
 ## Description

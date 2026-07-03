@@ -1,3 +1,8 @@
+---
+name: new-dev-decision
+description: "Records a lightweight developer decision — implementation-level choices that matter but don't warrant a full ADR (library choices, algorithm approaches, error handling strategies, performance tradeoffs)."
+---
+
 # /new-dev-decision Command
 
 Records a lightweight developer decision — implementation-level choices that matter but don't warrant a full ADR (library choices, algorithm approaches, error handling strategies, performance tradeoffs).

@@ -1,3 +1,8 @@
+---
+name: bean-status
+description: "Displays the current state of the beans backlog — counts by status, a table grouped by status, and (with --verbose) task-level detail for active beans."
+---
+
 # /bean-status Command
 
 Displays the current state of the beans backlog — counts by status, a table grouped by status, and (with `--verbose`) task-level detail for active beans.

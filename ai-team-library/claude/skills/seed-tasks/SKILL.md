@@ -1,3 +1,8 @@
+---
+name: seed-tasks
+description: "- Invoked by the /seed-tasks slash command. - Called programmatically by foundry_app/services/seeder.py at project kickoff or cycle start. - Can be re-run mid-project when objectives change or new work is identified."
+---
+
 # Skill: Seed Tasks
 
 ## Description

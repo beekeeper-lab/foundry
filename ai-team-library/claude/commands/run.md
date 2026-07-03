@@ -1,3 +1,8 @@
+---
+name: run
+description: "Pulls the latest code from main and launches the desktop app. Designed for running locally after dev work is pushed from a remote server."
+---
+
 # /run Command
 
 Pulls the latest code from `main` and launches the desktop app. Designed for running locally after dev work is pushed from a remote server.

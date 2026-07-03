@@ -1,3 +1,8 @@
+---
+name: new-adr
+description: "Creates a new Architecture Decision Record documenting a significant technical decision with context, options, tradeoffs, rationale, and consequences."
+---
+
 # /new-adr Command
 
 Creates a new Architecture Decision Record documenting a significant technical decision with context, options, tradeoffs, rationale, and consequences.

@@ -1,3 +1,8 @@
+---
+name: vdd
+description: "- Invoked by the /vdd slash command. - Called automatically by /merge-bean as a pre-merge gate. - Tech-QA may call it during the verification wave to confirm an AC sweep."
+---
+
 # Skill: VDD (Verification-Driven Development) Gate
 
 ## Description
