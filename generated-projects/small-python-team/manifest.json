@@ -1,0 +1,261 @@
+{
+  "run_id": "20260703-181545",
+  "generated_at": "2026-07-03T22:15:45.020350Z",
+  "library_version": "a372336",
+  "composition_snapshot": {
+    "project": {
+      "name": "Small Python Team",
+      "description": null,
+      "slug": "small-python-team",
+      "output_root": "./generated-projects",
+      "output_folder": null
+    },
+    "expertise": [
+      {
+        "id": "python",
+        "order": 10
+      },
+      {
+        "id": "clean-code",
+        "order": 20
+      }
+    ],
+    "team": {
+      "personas": [
+        {
+          "id": "team-lead",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard",
+          "model": null,
+          "tools": null
+        },
+        {
+          "id": "ba",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard",
+          "model": null,
+          "tools": null
+        },
+        {
+          "id": "architect",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard",
+          "model": null,
+          "tools": null
+        },
+        {
+          "id": "developer",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard",
+          "model": null,
+          "tools": null
+        },
+        {
+          "id": "tech-qa",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard",
+          "model": null,
+          "tools": null
+        },
+        {
+          "id": "extended/code-quality-reviewer",
+          "include_agent": true,
+          "include_templates": true,
+          "strictness": "standard",
+          "model": null,
+          "tools": null
+        }
+      ]
+    },
+    "architecture": {
+      "patterns": [],
+      "cloud_providers": []
+    },
+    "hooks": {
+      "posture": "baseline",
+      "packs": [
+        {
+          "id": "hook-policy",
+          "category": "",
+          "enabled": true,
+          "mode": "enforcing"
+        }
+      ],
+      "replace_defaults": false
+    },
+    "generation": {
+      "seed_tasks": true,
+      "seed_mode": "detailed",
+      "write_manifest": true,
+      "write_diff_report": false,
+      "include_media_skills": false,
+      "claude_kit_url": null
+    },
+    "safety": null,
+    "mcp": {
+      "add": {},
+      "remove": [],
+      "env": {}
+    }
+  },
+  "stages": {
+    "scaffold": {
+      "wrote": [
+        "ai/team/composition.yml"
+      ],
+      "warnings": []
+    },
+    "compile": {
+      "wrote": [
+        "ai/generated/members/team-lead.md",
+        "ai/generated/members/ba.md",
+        "ai/generated/members/architect.md",
+        "ai/generated/members/developer.md",
+        "ai/generated/members/tech-qa.md",
+        "ai/generated/members/code-quality-reviewer.md",
+        "ai/generated/expertise/python.md",
+        "ai/generated/expertise/clean-code.md",
+        "CLAUDE.md"
+      ],
+      "warnings": []
+    },
+    "agent_writer": {
+      "wrote": [
+        ".claude/agents/team-lead.md",
+        ".claude/agents/ba.md",
+        ".claude/agents/architect.md",
+        ".claude/agents/developer.md",
+        ".claude/agents/tech-qa.md",
+        ".claude/agents/code-quality-reviewer.md"
+      ],
+      "warnings": []
+    },
+    "copy_assets": {
+      "wrote": [],
+      "warnings": [
+        "File already exists with different content: .claude/commands/backlog-consolidate.md",
+        "File already exists with different content: .claude/commands/backlog-refinement.md",
+        "File already exists with different content: .claude/commands/bean-status.md",
+        "File already exists with different content: .claude/commands/build-traceability.md",
+        "File already exists with different content: .claude/commands/compile-team.md",
+        "File already exists with different content: .claude/commands/deploy.md",
+        "File already exists with different content: .claude/commands/build.md",
+        "File already exists with different content: .claude/commands/dev.md",
+        "File already exists with different content: .claude/commands/format.md",
+        "File already exists with different content: .claude/commands/lint.md",
+        "File already exists with different content: .claude/commands/test.md",
+        "File already exists with different content: .claude/commands/handoff.md",
+        "File already exists with different content: .claude/commands/long-run.md",
+        "File already exists with different content: .claude/commands/merge-bean.md",
+        "File already exists with different content: .claude/commands/new-adr.md",
+        "File already exists with different content: .claude/commands/new-bean.md",
+        "File already exists with different content: .claude/commands/new-dev-decision.md",
+        "File already exists with different content: .claude/commands/new-work.md",
+        "File already exists with different content: .claude/commands/notes-to-stories.md",
+        "File already exists with different content: .claude/commands/orchestration-report.md",
+        "File already exists with different content: .claude/commands/pick-bean.md",
+        "File already exists with different content: .claude/commands/release-notes.md",
+        "File already exists with different content: .claude/commands/review-beans.md",
+        "File already exists with different content: .claude/commands/review-pr.md",
+        "File already exists with different content: .claude/commands/run.md",
+        "File already exists with different content: .claude/commands/scaffold-project.md",
+        "File already exists with different content: .claude/commands/seed-tasks.md",
+        "File already exists with different content: .claude/commands/show-backlog.md",
+        "File already exists with different content: .claude/commands/spawn-bean.md",
+        "File already exists with different content: .claude/commands/spawn-task.md",
+        "File already exists with different content: .claude/commands/status-report.md",
+        "File already exists with different content: .claude/commands/telemetry-report.md",
+        "File already exists with different content: .claude/commands/trello-load.md",
+        "File already exists with different content: .claude/commands/update-docs.md",
+        "File already exists with different content: .claude/commands/validate-config.md",
+        "File already exists with different content: .claude/commands/validate-repo.md",
+        "File already exists with different content: .claude/commands/vdd.md",
+        "File already exists with different content: .claude/skills/backlog-consolidate/SKILL.md",
+        "File already exists with different content: .claude/skills/backlog-refinement/SKILL.md",
+        "File already exists with different content: .claude/skills/bean-status/SKILL.md",
+        "File already exists with different content: .claude/skills/build-traceability/SKILL.md",
+        "File already exists with different content: .claude/skills/close-loop/SKILL.md",
+        "File already exists with different content: .claude/skills/compile-team/SKILL.md",
+        "File already exists with different content: .claude/skills/deploy/SKILL.md",
+        "File already exists with different content: .claude/skills/generate-audio/SKILL.md",
+        "File already exists with different content: .claude/skills/generate-image/SKILL.md",
+        "File already exists with different content: .claude/skills/generate-screen/SKILL.md",
+        "File already exists with different content: .claude/skills/handoff/SKILL.md",
+        "File already exists with different content: .claude/skills/long-run/SKILL.md",
+        "File already exists with different content: .claude/skills/merge-bean/SKILL.md",
+        "File already exists with different content: .claude/skills/new-adr/SKILL.md",
+        "File already exists with different content: .claude/skills/new-bean/SKILL.md",
+        "File already exists with different content: .claude/skills/new-dev-decision/SKILL.md",
+        "File already exists with different content: .claude/skills/new-work/SKILL.md",
+        "File already exists with different content: .claude/skills/notes-to-stories/SKILL.md",
+        "File already exists with different content: .claude/skills/orchestration-report/SKILL.md",
+        "File already exists with different content: .claude/skills/pick-bean/SKILL.md",
+        "File already exists with different content: .claude/skills/release-notes/SKILL.md",
+        "File already exists with different content: .claude/skills/review-beans/SKILL.md",
+        "File already exists with different content: .claude/skills/review-pr/SKILL.md",
+        "File already exists with different content: .claude/skills/run/SKILL.md",
+        "File already exists with different content: .claude/skills/scaffold-project/SKILL.md",
+        "File already exists with different content: .claude/skills/seed-tasks/SKILL.md",
+        "File already exists with different content: .claude/skills/spawn-task/SKILL.md",
+        "File already exists with different content: .claude/skills/telemetry-report/SKILL.md",
+        "File already exists with different content: .claude/skills/trello-load/SKILL.md",
+        "File already exists with different content: .claude/skills/update-docs/SKILL.md",
+        "File already exists with different content: .claude/skills/validate-config/SKILL.md",
+        "File already exists with different content: .claude/skills/validate-repo/SKILL.md",
+        "File already exists with different content: .claude/skills/vdd/SKILL.md",
+        "File already exists with different content: .claude/settings.json",
+        "File already exists with different content: .claude/settings.local.json",
+        "File already exists with different content: ai/beans/_index.md",
+        "File already exists with different content: ai/context/bean-workflow.md",
+        "File already exists with different content: .claude/hooks/hook-policy.md"
+      ]
+    },
+    "mcp_config": {
+      "wrote": [
+        ".mcp.json"
+      ],
+      "warnings": []
+    },
+    "seed_tasks": {
+      "wrote": [
+        "ai/beans/BEAN-001-bootstrap/bean.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/01-team-lead-review-project-composition-and-verify-all.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/02-team-lead-create-initial-bean-backlog-from-project.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/03-team-lead-assign-team-roles-and-establish-communication.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/04-ba-gather-and-document-initial-project-requirements.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/05-ba-define-user-stories-and-acceptance-criteria.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/06-ba-create-domain-glossary-and-business-rules.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/07-architect-review-generated-architecture-and-validate-patterns.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/08-architect-document-system-boundaries-and-integration-points.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/09-architect-create-initial-adr-for-expertise-decisions.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/10-developer-set-up-local-development-environment-and.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/11-developer-implement-core-module-skeleton-based-on.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/12-developer-write-initial-unit-tests-for-core.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/13-tech-qa-create-test-plan-template-for-the.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/14-tech-qa-set-up-ci-test-pipeline-configuration.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/15-tech-qa-define-quality-gates-and-coverage-thresholds.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/16-code-quality-reviewer-define-code-review-standards-and-style.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/17-code-quality-reviewer-create-pull-request-review-checklist-template.md",
+        "ai/beans/BEAN-001-bootstrap/tasks/18-code-quality-reviewer-establish-ship-no-ship-criteria-and.md"
+      ],
+      "warnings": []
+    },
+    "safety": {
+      "wrote": [
+        ".claude/settings.json"
+      ],
+      "warnings": []
+    },
+    "permissions": {
+      "wrote": [
+        ".claude/settings.local.json"
+      ],
+      "warnings": []
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push *)",
+      "Read(**)",
+      "Edit(ai/**)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Bash(git push origin main)",
+      "Bash(git push origin master)",
+      "Bash(git push * main)",
+      "Bash(git push * master)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git branch -D *)",
+      "Bash(git branch -d *)",
+      "Bash(sudo *)",
+      "Read(/etc/**)",
+      "Edit(/etc/**)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Read(**/credentials*)",
+      "Read(**/secrets*)",
+      "Edit(**/credentials*)",
+      "Edit(**/secrets*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -r *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean -f *)",
+      "Bash(git clean -fd *)",
+      "Bash(git push origin main:*)",
+      "Bash(git push origin master:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Write(./.env)"
+    ],
+    "defaultMode": "acceptEdits"
+  }
+}

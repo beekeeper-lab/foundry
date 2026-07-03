@@ -1,0 +1,180 @@
+project:
+  name: Small Python Team
+  slug: small-python-team
+  output_root: ./generated-projects
+expertise:
+- id: python
+  order: 10
+- id: clean-code
+  order: 20
+team:
+  personas:
+  - id: team-lead
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: ba
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: architect
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: developer
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: tech-qa
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: extended/code-quality-reviewer
+    include_agent: true
+    include_templates: true
+    strictness: standard
+architecture:
+  patterns: []
+  cloud_providers: []
+hooks:
+  posture: baseline
+  packs:
+  - id: hook-policy
+    category: ''
+    enabled: true
+    mode: enforcing
+  replace_defaults: false
+generation:
+  seed_tasks: true
+  seed_mode: detailed
+  write_manifest: true
+  write_diff_report: false
+  include_media_skills: false
+mcp:
+  add: {}
+  remove: []
+  env: {}
+
+orchestration:
+  orchestrator_role: team-lead
+  team_model: available-bench
+  required_roles:
+    software-development:
+      - developer
+      - tech-qa
+  optional_roles:
+    - architect
+    - ux-ui-designer
+    - integrator-merge-captain
+    - ba
+
+contracts:
+  personas:
+    - id: team-lead
+      produces:
+        - bean-spec
+        - task-spec
+        - acceptance-criteria
+        - merge-summary
+      consumes:
+        - handoff-packet
+        - vdd-report
+        - traceability-matrix
+        - code-change
+        - design-spec
+        - adr
+        - risk-register
+    - id: ba
+      produces:
+        - user-story
+        - acceptance-criteria
+        - scope-definition
+        - risk-register
+        - handoff-packet
+      consumes:
+        - bean-spec
+        - scope-definition
+    - id: architect
+      produces:
+        - adr
+        - design-spec
+        - risk-register
+        - handoff-packet
+      consumes:
+        - bean-spec
+        - user-story
+        - acceptance-criteria
+        - scope-definition
+    - id: developer
+      produces:
+        - code-change
+        - dev-decision
+        - handoff-packet
+      consumes:
+        - task-spec
+        - user-story
+        - acceptance-criteria
+        - design-spec
+        - adr
+    - id: tech-qa
+      produces:
+        - test-suite
+        - traceability-matrix
+        - vdd-report
+        - handoff-packet
+      consumes:
+        - acceptance-criteria
+        - design-spec
+        - code-change
+        - bean-spec
+    - id: extended/code-quality-reviewer
+      produces:
+        []
+      consumes:
+        []
+  artifact-types:
+    - name: acceptance-criteria
+      format: markdown
+      template-path: personas/core/ba/templates/acceptance-criteria.md
+    - name: adr
+      format: markdown
+      template-path: personas/core/architect/templates/adr.md
+    - name: bean-spec
+      format: markdown
+      template-path: process/beans/_bean-template.md
+    - name: code-change
+      format: markdown
+      template-path: personas/core/developer/templates/pr-description.md
+    - name: design-spec
+      format: markdown
+      template-path: personas/core/architect/templates/design-spec.md
+    - name: dev-decision
+      format: markdown
+      template-path: personas/core/developer/templates/dev-design-decision.md
+    - name: handoff-packet
+      format: markdown
+      template-path: null
+    - name: merge-summary
+      format: markdown
+      template-path: null
+    - name: risk-register
+      format: markdown
+      template-path: null
+    - name: scope-definition
+      format: markdown
+      template-path: null
+    - name: task-spec
+      format: markdown
+      template-path: personas/core/team-lead/templates/task-spec.md
+    - name: test-suite
+      format: markdown
+      template-path: personas/core/tech-qa/templates/test-plan.md
+    - name: traceability-matrix
+      format: markdown
+      template-path: personas/core/tech-qa/templates/traceability-matrix.md
+    - name: user-story
+      format: markdown
+      template-path: personas/core/ba/templates/user-story.md
+    - name: vdd-report
+      format: markdown
+      template-path: personas/core/tech-qa/templates/test-report.md
