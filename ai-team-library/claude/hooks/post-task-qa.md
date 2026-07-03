@@ -1,5 +1,8 @@
 # Hook Pack: Post-Task QA
 
+> **Status (2026-07, SPEC-015):** Partially implemented — the acceptance-criteria gate is enforced by `vdd-gate.py` (PreToolUse, blocks bean Done without a passing VDD report) and `stop-quality-reminder.py` (Stop, non-blocking). The lifecycle events below (pre-task-start, post-task-complete) are DESIGN, not wired hooks.
+
+
 ## Category
 code-quality
 

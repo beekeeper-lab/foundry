@@ -113,3 +113,46 @@ def test_kit_settings_has_deny_rules():
     deny = settings.get("permissions", {}).get("deny", [])
     assert "Bash(git push origin main:*)" in deny
     assert any(r.startswith("Bash(git push --force") for r in deny)
+
+
+class TestQualityGateHooks:
+    """SPEC-015: the three new quality hooks exist, are wired, and are
+    non-blocking by construction."""
+
+    @pytest.mark.parametrize("script", [
+        "session-start-context.py",
+        "format-on-save.py",
+        "stop-quality-reminder.py",
+    ])
+    def test_scripts_exist_in_kit_and_library(self, script):
+        assert (_HOOKS / script).is_file()
+        lib_hooks = _HOOKS.parent.parent.parent / "ai-team-library" / "claude" / "hooks"
+        assert (lib_hooks / script).is_file()
+
+    def test_wired_into_settings(self):
+        settings = json.loads(
+            (_HOOKS.parent / "settings.json").read_text(encoding="utf-8")
+        )
+        events = settings["hooks"]
+        assert "SessionStart" in events
+        assert "Stop" in events
+        all_cmds = "\n".join(
+            h["command"] for entries in events.values()
+            for e in entries for h in e["hooks"]
+        )
+        assert "session-start-context.py" in all_cmds
+        assert "format-on-save.py" in all_cmds
+        assert "stop-quality-reminder.py" in all_cmds
+
+    def test_format_hook_never_blocks(self):
+        # Non-Python file: exits 0 immediately.
+        assert _run_hook(
+            "format-on-save.py", "Edit", {"file_path": "notes.md"},
+        ) == 0
+
+    def test_session_start_never_blocks(self):
+        proc = subprocess.run(
+            [sys.executable, str(_HOOKS / "session-start-context.py")],
+            input="{}", capture_output=True, text=True, timeout=15,
+        )
+        assert proc.returncode == 0

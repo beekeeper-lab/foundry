@@ -1,5 +1,8 @@
 # Hook Pack: Pre-Commit Lint
 
+> **Status (2026-07, SPEC-015):** Partially implemented — the format/lint-on-save intent is enforced by `format-on-save.py` (PostToolUse). The posture tables below describe the generator's hook-pack model, not additional wired hooks.
+
+
 ## Category
 code-quality
 
