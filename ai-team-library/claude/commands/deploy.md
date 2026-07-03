@@ -3,18 +3,12 @@ name: deploy
 description: "Validates the main branch, runs tests, and creates a version tag. With trunk-based development, all work is already on main via feature branch merges — deploy simply tags a release point."
 ---
 
-# /deploy Command
+# /deploy
 
-Validates the `main` branch, runs tests, and creates a version tag. With trunk-based development, all work is already on `main` via feature branch merges — deploy simply tags a release point.
+This command is a thin entry point; the canonical process lives in the
+`deploy` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-## Usage
+Read `.claude/skills/deploy/SKILL.md` and execute its process with these arguments:
 
-```
-/deploy [--tag <version>]
-```
-
-- `--tag <version>` -- Optional. Tag the current commit with a version (e.g., `v1.2.0`). If omitted, auto-generates from date: `deploy-YYYY-MM-DD`.
-
-## See Also
-
-- Skill: `claude/skills/deploy/SKILL.md` — canonical execution spec.
+$ARGUMENTS

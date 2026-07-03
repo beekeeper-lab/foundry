@@ -3,24 +3,12 @@ name: release-notes
 description: "Generates release notes and a changelog entry from completed work. Collects completed tasks, merged changes, and known issues from a release cycle; produces both user-facing notes and a Keep a Changelog entry."
 ---
 
-# /release-notes Command
+# /release-notes
 
-Generates release notes and a changelog entry from completed work. Collects completed tasks, merged changes, and known issues from a release cycle; produces both user-facing notes and a Keep a Changelog entry.
+This command is a thin entry point; the canonical process lives in the
+`release-notes` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-## Usage
+Read `.claude/skills/release-notes/SKILL.md` and execute its process with these arguments:
 
-```
-/release-notes <version> [--previous <version>] [--audience <internal|external|both>] [--tasks <dir>] [--changelog <path>] [--output <dir>] [--dry-run]
-```
-
-- `version` -- Version identifier for this release (required).
-- `--previous <version>` -- Previous version (auto-detected if omitted).
-- `--audience <level>` -- `internal`, `external`, or `both` (default).
-- `--tasks <dir>` -- Tasks directory (default: `ai/tasks/`).
-- `--changelog <path>` -- Path to the changelog file (default: `CHANGELOG.md`).
-- `--output <dir>` -- Override the output directory (default: `ai/outputs/devops-release/`).
-- `--dry-run` -- Preview without writing files or appending changelog.
-
-## See Also
-
-- Skill: `claude/skills/release-notes/SKILL.md` — canonical execution spec.
+$ARGUMENTS

@@ -3,19 +3,12 @@ name: bean-status
 description: "Displays the current state of the beans backlog — counts by status, a table grouped by status, and (with --verbose) task-level detail for active beans."
 ---
 
-# /bean-status Command
+# /bean-status
 
-Displays the current state of the beans backlog — counts by status, a table grouped by status, and (with `--verbose`) task-level detail for active beans.
+This command is a thin entry point; the canonical process lives in the
+`bean-status` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-## Usage
+Read `.claude/skills/bean-status/SKILL.md` and execute its process with these arguments:
 
-```
-/bean-status [--filter <status>] [--verbose]
-```
-
-- `--filter <status>` -- Show only beans with this status: `unapproved`, `approved`, `in-progress`, `done`, `deferred`. Default: show all.
-- `--verbose` -- Include task breakdown for In Progress beans.
-
-## See Also
-
-- Skill: `claude/skills/bean-status/SKILL.md` — canonical execution spec.
+$ARGUMENTS

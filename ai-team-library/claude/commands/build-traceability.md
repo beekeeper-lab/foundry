@@ -3,22 +3,12 @@ name: build-traceability
 description: "Builds a requirements-to-tests traceability matrix. Maps every acceptance criterion to the test cases that verify it, computes coverage, and identifies gaps and orphan tests."
 ---
 
-# /build-traceability Command
+# /build-traceability
 
-Builds a requirements-to-tests traceability matrix. Maps every acceptance criterion to the test cases that verify it, computes coverage, and identifies gaps and orphan tests.
+This command is a thin entry point; the canonical process lives in the
+`build-traceability` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-## Usage
+Read `.claude/skills/build-traceability/SKILL.md` and execute its process with these arguments:
 
-```
-/build-traceability [--stories <dir>] [--tests <dir>] [--update <path>] [--output <path>] [--format <table|list>]
-```
-
-- `--stories <dir>` -- Stories directory (default: `ai/outputs/ba/user-stories/`).
-- `--tests <dir>` -- Tests directory (default: `ai/outputs/tech-qa/`).
-- `--update <path>` -- Update an existing matrix incrementally.
-- `--output <path>` -- Override the output file path.
-- `--format <table|list>` -- `table` for small sets, `list` for large sets. Default `table`.
-
-## See Also
-
-- Skill: `claude/skills/build-traceability/SKILL.md` — canonical execution spec.
+$ARGUMENTS

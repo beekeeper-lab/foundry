@@ -3,19 +3,12 @@ name: backlog-refinement
 description: "Turns raw ideas, feature descriptions, or broad vision text into one or more well-formed beans through an iterative dialogue with the Team Lead. The structured 'front door' to the beans workflow."
 ---
 
-# /backlog-refinement Command
+# /backlog-refinement
 
-Turns raw ideas, feature descriptions, or broad vision text into one or more well-formed beans through an iterative dialogue with the Team Lead. The structured "front door" to the beans workflow.
+This command is a thin entry point; the canonical process lives in the
+`backlog-refinement` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-## Usage
+Read `.claude/skills/backlog-refinement/SKILL.md` and execute its process with these arguments:
 
-```
-/backlog-refinement <text> [--dry-run]
-```
-
-- `text` -- Free-form description of what you want to build, fix, or improve. Can be a single sentence or multiple paragraphs; can describe one feature or an entire vision.
-- `--dry-run` -- Show proposed beans without creating them.
-
-## See Also
-
-- Skill: `claude/skills/backlog-refinement/SKILL.md` — canonical execution spec.
+$ARGUMENTS

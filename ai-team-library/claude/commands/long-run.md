@@ -3,21 +3,12 @@ name: long-run
 description: "Puts the Team Lead in autonomous mode, processing beans from the backlog until the backlog is empty or no actionable beans remain. Supports sequential (default) and parallel (--fast N) modes."
 ---
 
-# /long-run Command
+# /long-run
 
-Puts the Team Lead in autonomous mode, processing beans from the backlog until the backlog is empty or no actionable beans remain. Supports sequential (default) and parallel (`--fast N`) modes.
+This command is a thin entry point; the canonical process lives in the
+`long-run` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-## Usage
+Read `.claude/skills/long-run/SKILL.md` and execute its process with these arguments:
 
-```
-/long-run [--fast N] [--category <cat>]
-```
-
-- `--fast N` -- Run N beans in parallel using tmux child windows (requires `$TMUX`).
-- `--category <cat>` -- Only process beans matching this category: `App`, `Process`, or `Infra` (case-insensitive).
-
-## See Also
-
-- Skill: `claude/skills/long-run/SKILL.md` — canonical execution spec (sequential and parallel modes, bean selection heuristics, dashboard loop, Status File Protocol).
-- `/spawn-bean` — bean-level worker invocation that uses the same workers and protocol.
-- `/merge-bean` — invoked by the orchestrator after each worker completes.
+$ARGUMENTS
