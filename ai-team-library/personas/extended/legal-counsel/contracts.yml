@@ -1,0 +1,12 @@
+# Persona contract — produces / consumes artifact types declared by this persona.
+# Names must resolve to entries in ai-team-library/contracts/artifact-types.yml.
+# Validated at index time by foundry_app/services/library_indexer.py.
+# Extended-persona contracts added by SPEC-017 (2026-07 audit).
+
+produces:
+  - analysis-report
+  - risk-register
+  - handoff-packet
+consumes:
+  - bean-spec
+  - design-spec

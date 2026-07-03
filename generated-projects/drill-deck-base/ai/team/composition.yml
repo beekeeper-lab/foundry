@@ -162,29 +162,46 @@ contracts:
         - bean-spec
     - id: extended/mobile-developer
       produces:
-        []
+        - code-change
+        - dev-decision
+        - handoff-packet
       consumes:
-        []
+        - task-spec
+        - user-story
+        - acceptance-criteria
+        - design-spec
+        - adr
     - id: extended/ux-ui-designer
       produces:
-        []
+        - design-spec
+        - handoff-packet
       consumes:
-        []
+        - user-story
+        - acceptance-criteria
     - id: extended/code-quality-reviewer
       produces:
-        []
+        - code-review
+        - handoff-packet
       consumes:
-        []
+        - code-change
+        - design-spec
+        - adr
     - id: extended/devops-release
       produces:
-        []
+        - dev-decision
+        - handoff-packet
       consumes:
-        []
+        - code-change
+        - adr
+        - bean-spec
     - id: extended/technical-writer
       produces:
-        []
+        - analysis-report
+        - handoff-packet
       consumes:
-        []
+        - code-change
+        - design-spec
+        - adr
   artifact-types:
     - name: acceptance-criteria
       format: markdown
@@ -192,12 +209,18 @@ contracts:
     - name: adr
       format: markdown
       template-path: personas/core/architect/templates/adr.md
+    - name: analysis-report
+      format: markdown
+      template-path: personas/extended/researcher-librarian/templates/analysis-report.md
     - name: bean-spec
       format: markdown
       template-path: process/beans/_bean-template.md
     - name: code-change
       format: markdown
       template-path: personas/core/developer/templates/pr-description.md
+    - name: code-review
+      format: markdown
+      template-path: personas/extended/code-quality-reviewer/templates/code-review.md
     - name: design-spec
       format: markdown
       template-path: personas/core/architect/templates/design-spec.md
@@ -206,16 +229,16 @@ contracts:
       template-path: personas/core/developer/templates/dev-design-decision.md
     - name: handoff-packet
       format: markdown
-      template-path: null
+      template-path: personas/core/team-lead/templates/handoff-packet.md
     - name: merge-summary
       format: markdown
-      template-path: null
+      template-path: personas/core/team-lead/templates/merge-summary.md
     - name: risk-register
       format: markdown
-      template-path: null
+      template-path: personas/core/architect/templates/risk-register.md
     - name: scope-definition
       format: markdown
-      template-path: null
+      template-path: personas/core/ba/templates/scope-definition.md
     - name: task-spec
       format: markdown
       template-path: personas/core/team-lead/templates/task-spec.md

@@ -65,9 +65,9 @@ types:
     format: markdown
     required-fields:
       - owner
-      - depends-on
+      - dependencies
       - status
-      - goal
+      - objective
       - inputs
       - acceptance-criteria
     template-path: personas/core/team-lead/templates/task-spec.md
@@ -91,8 +91,9 @@ types:
     description: >-
       An enumeration of pass/fail conditions for a story, task, or bean.
       Each criterion is independently testable with concrete values, no
-      implementation detail. Default-owner ambiguity is documented in the
-      prose note below the registry — BEAN-275 will codify the policy.
+      implementation detail. Active producer (SPEC-017, per BEAN-275):
+      BA authors when on the wave; otherwise the Team Lead. Tech-QA may
+      flag criteria as untestable but never edits them directly.
     format: markdown
     required-fields:
       - bean-or-story-id
@@ -110,7 +111,7 @@ types:
       - in-scope
       - out-of-scope
       - deferred
-    template-path: null
+    template-path: personas/core/ba/templates/scope-definition.md
 
   - name: risk-register
     description: >-
@@ -123,7 +124,7 @@ types:
       - risks
       - assumptions
       - open-questions
-    template-path: null
+    template-path: personas/core/architect/templates/risk-register.md
 
   - name: adr
     description: >-
@@ -242,7 +243,7 @@ types:
       - task-id
       - produced-artifacts
       - notes
-    template-path: null
+    template-path: personas/core/team-lead/templates/handoff-packet.md
 
   - name: merge-summary
     description: >-
@@ -257,7 +258,34 @@ types:
       - integration-decisions
       - rework
       - verification
-    template-path: null
+    template-path: personas/core/team-lead/templates/merge-summary.md
+
+  - name: code-review
+    description: >-
+      Code Quality Reviewer's structural/stylistic review of a code-change:
+      findings with file:line references, suggested diffs where cheap, and
+      an explicit ship / no-ship decision. Partition: behavioural coverage
+      belongs to Tech-QA (vdd-report / test-suite), structure belongs here.
+    format: markdown
+    required-fields:
+      - bean-id
+      - summary
+      - findings
+      - ship-decision
+    template-path: personas/extended/code-quality-reviewer/templates/code-review.md
+
+  - name: analysis-report
+    description: >-
+      A structured findings document produced by research/analysis roles
+      (researcher-librarian, data-analyst, technical-writer, compliance,
+      business roles): question, method, findings, and recommendation.
+    format: markdown
+    required-fields:
+      - question
+      - method
+      - findings
+      - recommendation
+    template-path: personas/extended/researcher-librarian/templates/analysis-report.md
 
 # Per-edge extras layered onto the artifact's required-fields by the
 # typed `/handoff` skill. See header comment for rationale and rendering rules.

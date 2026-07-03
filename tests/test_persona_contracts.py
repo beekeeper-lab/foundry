@@ -47,10 +47,11 @@ class TestArtifactTypeRegistryParses:
         assert types, "Expected the bundled registry to load at least one type"
 
     def test_registry_count_in_expected_range(self):
-        """BEAN-273 Scope says ~12-15 types; assert the registry sits in band."""
+        """BEAN-273 shipped 12-15 types; SPEC-017 added code-review and
+        analysis-report. Keep a band so accidental bulk edits break loudly."""
         types = _load_artifact_type_registry(LIBRARY_ROOT / "contracts")
-        assert 12 <= len(types) <= 15, (
-            f"Registry size {len(types)} outside the BEAN-273 expected 12-15 band"
+        assert 12 <= len(types) <= 20, (
+            f"Registry size {len(types)} outside the expected 12-20 band"
         )
 
     def test_registry_contains_named_core_types(self):
@@ -593,7 +594,7 @@ class TestPairFieldsRegistryShape:
         """
         types = _load_artifact_type_registry(LIBRARY_ROOT / "contracts")
         # Registry still loads with the documented number of types.
-        assert 12 <= len(types) <= 15
+        assert 12 <= len(types) <= 20
         # No artifact type was named 'pair-fields' (would indicate the key
         # accidentally landed inside the types: list).
         names = {t.name for t in types}
