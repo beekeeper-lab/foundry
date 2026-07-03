@@ -2410,12 +2410,12 @@ class TestCompilerExpertiseFilterIntegration:
 
 
 class TestCompilePersonaSectionForwardCompat:
-    """The forward-compat guard in _compile_persona_section is wired but a
-    no-op today. Verify that passing spec= does not change persona file
-    contents (regression guard for the no-op).
+    """SPEC-012: passing spec= inlines persona-relevant expertise (the
+    ADR-012 applies_to filter gates which packs land in which persona);
+    without spec the persona section stays persona-only.
     """
 
-    def test_persona_section_unchanged_with_or_without_spec(self, tmp_path: Path):
+    def test_persona_section_inlines_applicable_expertise(self, tmp_path: Path):
         from foundry_app.services.compiler import _compile_persona_section
 
         index, lib_root = _make_library(
@@ -2460,9 +2460,43 @@ class TestCompilePersonaSectionForwardCompat:
         with_spec = _compile_persona_section(
             "developer", Path(lib_root), index, ctx, warnings_b, spec=spec,
         )
-        assert without_spec == with_spec
+        # Without spec: persona-only (no expertise section).
+        assert "## Expertise Conventions" not in without_spec
+        # With spec: applicable expertise inlined — Defaults excerpt plus
+        # a pointer to the full compiled conventions file.
+        assert "## Expertise Conventions" in with_spec
+        assert "ruff" in with_spec
+        assert "tsconfig" in with_spec
+        assert "ai/generated/expertise/python.md" in with_spec
         # No additional warnings produced by passing spec.
         assert warnings_a == warnings_b
+
+    def test_expertise_inlining_respects_applies_to(self, tmp_path: Path):
+        from foundry_app.services.compiler import _compile_persona_section
+
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "ba": {"persona.md": "# Persona: BA\n\n## Mission\nAnalyze."},
+            },
+            expertise={
+                "python": {
+                    "conventions.md": "# Python\n\n## Defaults\n- ruff\n",
+                },
+            },
+        )
+        # python applies only to developer — the BA must not receive it.
+        for e in index.expertise:
+            e.applies_to = ["developer"]
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="ba")]),
+            expertise=[ExpertiseSelection(id="python", order=10)],
+        )
+        ctx = _build_persona_context(spec, spec.team.personas[0], ["python"])
+        section = _compile_persona_section(
+            "ba", Path(lib_root), index, ctx, [], spec=spec,
+        )
+        assert "## Expertise Conventions" not in section
 
 
 # ---------------------------------------------------------------------------

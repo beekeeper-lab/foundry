@@ -448,20 +448,40 @@ def _compile_persona_section(
         parts.append(_substitute(prompts_md.strip(), context))
         files_read += 1
 
-    # Forward-compat guard (ADR-012): if a future revision inlines expertise
-    # content into persona sections, the same `_expertise_applies_to` filter
-    # used by `agent_writer.write_agents` must gate that inlining. Today the
-    # persona section embeds no expertise, so the guard is a no-op — but we
-    # exercise the lookup here so the path is wired and reviewers see the
-    # filtering decision is intentional, not forgotten.
+    # SPEC-012: member prompts carry their persona-relevant expertise —
+    # the high-signal Defaults excerpt inline (token-budgeted by
+    # _extract_expertise_highlights) plus a pointer to the full compiled
+    # conventions file. The ADR-012 `_expertise_applies_to` filter gates
+    # which expertise reaches which persona.
     if spec is not None:
-        for sel in spec.expertise:
+        # Function-level import: agent_writer imports compiler at module
+        # load, so this direction must stay lazy to avoid a cycle.
+        from foundry_app.services.agent_writer import (
+            _extract_expertise_highlights,
+        )
+
+        expertise_blocks: list[str] = []
+        for sel in sorted(spec.expertise, key=lambda s: (s.order, s.id)):
             info = index.expertise_by_id(sel.id)
-            if info is None:
+            if info is None or not _expertise_applies_to(persona_id, info):
                 continue
-            # No-op today: nothing is appended either way. The presence of
-            # this loop is the contract.
-            _ = _expertise_applies_to(persona_id, info)
+            entry = _expertise_entry_file(Path(info.path))
+            if entry is None:
+                continue
+            highlights = _extract_expertise_highlights(
+                _substitute(entry.read_text(encoding="utf-8"), context)
+            )
+            block = [f"### {_display_name_from_id(sel.id)}"]
+            if highlights:
+                block.append(highlights)
+            block.append(
+                f"Full conventions: `ai/generated/expertise/{sel.id}.md`"
+            )
+            expertise_blocks.append("\n\n".join(block))
+        if expertise_blocks:
+            parts.append(
+                "## Expertise Conventions\n\n" + "\n\n".join(expertise_blocks)
+            )
 
     if files_read == 0:
         warnings.append(f"Persona '{persona_id}' has no source files")

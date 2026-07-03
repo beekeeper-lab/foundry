@@ -310,7 +310,7 @@ my-project/
 |---|---|
 | **CLAUDE.md** | The first file Claude Code reads. Contains project context, team roster, expertise conventions, hooks posture, and directory layout. |
 | **.claude/agents/** | Thin wrappers that point to the full compiled prompts in `ai/generated/members/`. Claude Code loads these as sub-agent definitions. |
-| **ai/generated/members/** | The compiled team member prompts. Each merges the persona's identity, outputs contract, invocation prompts, relevant expertise conventions, and project context into a single comprehensive prompt. |
+| **ai/generated/members/** | The compiled team member prompts. Each merges the persona's identity, outputs contract, invocation prompts, and project context, plus an inline Defaults excerpt of each expertise that applies to the persona (with a pointer to the full conventions under `ai/generated/expertise/`). |
 | **ai/team/composition.yml** | The full composition spec, preserved in the project for traceability. |
 | **ai/outputs/** | Per-role output directories where each agent writes its deliverables. |
 | **ai/tasks/seeded-tasks.md** | Starter task list following a wave-based dependency model: Developer → Tech-QA (default), with BA and Architect included when criteria are met. Parallel lanes for Security, DevOps, Code Quality, and Docs. |

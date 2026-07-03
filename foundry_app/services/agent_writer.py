@@ -243,10 +243,13 @@ def write_agents(
     # Gather expertise info. Only list expertise whose source file will
     # actually be emitted — a missing-source expertise produces a warning
     # elsewhere but must not appear as a "zombie" entry in agent headers.
+    # Keep (id, info) pairs so each persona's header can list only the
+    # expertise that actually applies to it (SPEC-012 over-claim fix).
     emitted_expertise_ids = _get_emitted_expertise_ids(spec, library_index)
-    expertise_names = (
-        ", ".join(emitted_expertise_ids) if emitted_expertise_ids else "General"
-    )
+    emitted_expertise_infos = [
+        (eid, library_index.expertise_by_id(eid))
+        for eid in emitted_expertise_ids
+    ]
 
     # Shared context — used to render non-persona-scoped fragments such as
     # expertise conventions. Persona-scoped fragments get their own context
@@ -365,6 +368,17 @@ def write_agents(
         )
         if agent_model == "inherit":
             agent_model = None
+
+        # Header lists only expertise applicable to THIS persona — the
+        # inlined sections below are ADR-012-filtered, so a full-project
+        # list would over-claim (SPEC-012).
+        applicable_ids = [
+            eid for eid, info in emitted_expertise_infos
+            if info is not None and _expertise_applies_to(persona_sel.id, info)
+        ]
+        expertise_names = (
+            ", ".join(applicable_ids) if applicable_ids else "General"
+        )
 
         context = {
             "agent_name": leaf,
