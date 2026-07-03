@@ -192,9 +192,24 @@ def _get_emitted_expertise_ids(
         info = library_index.expertise_by_id(sel.id)
         if info is None:
             continue
-        if (Path(info.path) / "conventions.md").is_file():
+        if _expertise_entry_file(Path(info.path)) is not None:
             emitted.append(sel.id)
     return emitted
+
+
+def _expertise_entry_file(expertise_dir: Path) -> Path | None:
+    """Resolve the entry file for an expertise pack.
+
+    ``conventions.md`` is the canonical entry file. Packs without one
+    (all compliance/cloud/business packs as of 2026-07) fall back to their
+    first ``.md`` file alphabetically — matching the indexer's primary-file
+    rule — so no pack silently compiles to nothing (SPEC-003).
+    """
+    conventions = expertise_dir / "conventions.md"
+    if conventions.is_file():
+        return conventions
+    candidates = sorted(expertise_dir.glob("*.md"))
+    return candidates[0] if candidates else None
 
 
 def _build_context(
@@ -474,12 +489,28 @@ def _compile_expertise_section(
 
     expertise_dir = Path(expertise_info.path)
 
-    # Read conventions.md (primary file for each expertise)
+    # conventions.md is the canonical entry file; packs without one compile
+    # from ALL their .md files (sorted) so authored content is never silently
+    # dropped (SPEC-003). Packs with conventions.md keep entry-only emission
+    # to preserve the established token profile.
     conventions = _read_file(expertise_dir / "conventions.md")
     if conventions is not None:
         return _substitute(conventions.strip(), context)
 
-    warnings.append(f"Expertise '{expertise_id}' missing conventions.md")
+    sibling_files = sorted(expertise_dir.glob("*.md"))
+    if sibling_files:
+        parts = [
+            _read_file(path) or "" for path in sibling_files
+        ]
+        combined = "\n\n---\n\n".join(p.strip() for p in parts if p.strip())
+        if combined:
+            warnings.append(
+                f"Expertise '{expertise_id}' has no conventions.md; "
+                f"compiled from {len(sibling_files)} pack file(s) instead"
+            )
+            return _substitute(combined, context)
+
+    warnings.append(f"Expertise '{expertise_id}' has no compilable .md files")
     return None
 
 

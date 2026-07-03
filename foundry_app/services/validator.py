@@ -91,6 +91,17 @@ def _check_expertise(
                     f"contribute nothing."
                 ),
             ))
+        elif "conventions.md" not in expertise.files:
+            messages.append(ValidationMessage(
+                severity=Severity.WARNING,
+                code="expertise-no-conventions",
+                message=(
+                    f"The '{ss.id}' expertise pack has no conventions.md entry "
+                    f"file — its full pack contents will be compiled instead "
+                    f"(SPEC-003 fallback). Consider adding a conventions.md to "
+                    f"the pack for a curated, token-efficient entry file."
+                ),
+            ))
 
 
 def _check_hook_packs(

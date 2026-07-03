@@ -763,6 +763,9 @@ class TestCompileWarnings:
         assert any("nonexistent" in w and "not found" in w for w in result.warnings)
 
     def test_warns_on_missing_conventions_md(self, tmp_path: Path):
+        """A pack without conventions.md compiles from its sibling files
+        (SPEC-003 fallback) and surfaces a warning about the fallback.
+        """
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
@@ -771,12 +774,16 @@ class TestCompileWarnings:
         )
         spec = _make_spec()
         result = compile_project(spec, index, lib_root, output)
-        assert any("missing conventions.md" in w for w in result.warnings)
+        assert any("no conventions.md" in w for w in result.warnings)
+        # The pack still compiles — its content is not silently dropped.
+        emitted = output / "ai/generated/expertise/python.md"
+        assert emitted.is_file()
+        assert "Not conventions" in emitted.read_text(encoding="utf-8")
 
     def test_missing_expertise_excluded_from_claude_md(self, tmp_path: Path):
-        """When an expertise has no conventions.md, CLAUDE.md must not
-        reference the expertise's ai/generated/expertise/<id>.md path
-        (the file is never written). The warning is still emitted.
+        """A conventions-less pack compiles via the SPEC-003 fallback: its
+        ai/generated/expertise/<id>.md IS written (from sibling files) and
+        CLAUDE.md references it.
         """
         output = tmp_path / "project"
         index, lib_root = _make_library(
@@ -795,17 +802,16 @@ class TestCompileWarnings:
         )
         result = compile_project(spec, index, lib_root, output)
 
-        # Warning is still surfaced.
-        assert any("clean-code" in w and "missing" in w for w in result.warnings)
+        # Fallback warning is surfaced.
+        assert any(
+            "clean-code" in w and "no conventions.md" in w
+            for w in result.warnings
+        )
 
-        # Missing-source file must not exist on disk.
-        assert not (output / "ai/generated/expertise/clean-code.md").exists()
-
-        # Generated CLAUDE.md must not reference the missing file.
+        # The fallback-compiled file exists and is referenced.
+        assert (output / "ai/generated/expertise/clean-code.md").is_file()
         claude_md = (output / "CLAUDE.md").read_text(encoding="utf-8")
-        assert "ai/generated/expertise/clean-code.md" not in claude_md
-
-        # The present expertise is still referenced.
+        assert "ai/generated/expertise/clean-code.md" in claude_md
         assert "ai/generated/expertise/python.md" in claude_md
 
     def test_all_expertise_references_in_claude_md_exist_on_disk(
@@ -847,9 +853,9 @@ class TestCompileWarnings:
             )
 
     def test_missing_expertise_excluded_from_member_file(self, tmp_path: Path):
-        """When an expertise has no conventions.md, the generated member
-        file's ``{{ expertise | join(", ") }}`` substitution must not list
-        the missing-source expertise ID.
+        """A conventions-less pack still compiles (SPEC-003 fallback), so it
+        appears in the member file's ``{{ expertise | join(", ") }}`` list.
+        Only an expertise with no source at all is excluded.
         """
         output = tmp_path / "project"
         index, lib_root = _make_library(
@@ -870,6 +876,7 @@ class TestCompileWarnings:
             expertise=[
                 ExpertiseSelection(id="python", order=10),
                 ExpertiseSelection(id="clean-code", order=20),
+                ExpertiseSelection(id="ghost", order=30),
             ],
         )
         compile_project(spec, index, lib_root, output)
@@ -877,10 +884,10 @@ class TestCompileWarnings:
         member = (output / "ai/generated/members/developer.md").read_text(
             encoding="utf-8",
         )
-        # Missing-source expertise must not appear in the substituted list.
-        assert "clean-code" not in member
-        # Present expertise is still rendered.
-        assert "Stack: **python**" in member
+        # Truly missing expertise must not appear in the substituted list.
+        assert "ghost" not in member
+        # Present + fallback-compiled expertise are both rendered.
+        assert "Stack: **python, clean-code**" in member
 
     def test_warns_on_unresolved_placeholders(self, tmp_path: Path):
         output = tmp_path / "project"

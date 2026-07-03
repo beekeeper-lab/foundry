@@ -314,14 +314,14 @@ class TestWriteAgents:
         assert result.warnings == []
 
     def test_missing_expertise_excluded_from_agent_header(self, tmp_path: Path):
-        """When an expertise has no conventions.md, its ID must not appear
-        in the agent header's ``**Expertise:** ...`` line. Regression guard
-        for BEAN-261: the CLAUDE.md drop must propagate to agent files.
+        """An expertise with NO source files must not appear in the agent
+        header's ``**Expertise:** ...`` line. A conventions-less pack with
+        sibling files still compiles (SPEC-003 fallback) and is listed.
         """
         lib_root, index = _make_library(tmp_path)
 
-        # Add a second expertise directory without conventions.md so it is
-        # indexed (present on disk) but not emittable.
+        # A pack with sibling files but no conventions.md — emittable via
+        # the SPEC-003 fallback.
         clean_code_dir = lib_root / "stacks" / "clean-code"
         clean_code_dir.mkdir(parents=True)
         (clean_code_dir / "readme.md").write_text("not conventions", encoding="utf-8")
@@ -330,10 +330,19 @@ class TestWriteAgents:
             name="Clean Code",
             path=str(clean_code_dir),
         ))
+        # A pack directory with no .md files at all — never emittable.
+        ghost_dir = lib_root / "stacks" / "ghost"
+        ghost_dir.mkdir(parents=True)
+        index.expertise.append(ExpertiseInfo(
+            id="ghost",
+            name="Ghost",
+            path=str(ghost_dir),
+        ))
 
         spec = _make_spec(expertise=[
-            ExpertiseSelection(id="python"),
-            ExpertiseSelection(id="clean-code"),
+            ExpertiseSelection(id="python", order=10),
+            ExpertiseSelection(id="clean-code", order=20),
+            ExpertiseSelection(id="ghost", order=30),
         ])
         output = tmp_path / "output"
         output.mkdir()
@@ -341,10 +350,10 @@ class TestWriteAgents:
         write_agents(spec, index, lib_root, output)
 
         content = (output / ".claude" / "agents" / "developer.md").read_text()
-        # Missing-source expertise must be absent from the header.
-        assert "clean-code" not in content
-        # Present expertise still renders, as does the role name.
-        assert "**Expertise:** python" in content
+        # Source-less expertise must be absent from the header.
+        assert "ghost" not in content
+        # Present and fallback-compiled expertise both render.
+        assert "**Expertise:** python, clean-code" in content
         assert "# Python Developer" in content
 
 

@@ -19,6 +19,7 @@ from foundry_app.services.compiler import (
     _build_context,
     _build_persona_context,
     _expertise_applies_to,
+    _expertise_entry_file,
     _get_emitted_expertise_ids,
     _substitute,
 )
@@ -207,10 +208,10 @@ def write_agents(
                 seen_missing.add(expertise_sel.id)
             continue
 
-        conventions_path = Path(expertise_info.path) / "conventions.md"
-        if conventions_path.is_file():
+        entry_path = _expertise_entry_file(Path(expertise_info.path))
+        if entry_path is not None:
             conventions_text = _substitute(
-                conventions_path.read_text(encoding="utf-8"), shared_context,
+                entry_path.read_text(encoding="utf-8"), shared_context,
             )
             highlights = _extract_expertise_highlights(conventions_text)
             if highlights:
