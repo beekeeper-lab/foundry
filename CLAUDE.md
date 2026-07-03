@@ -106,4 +106,4 @@ scripts/claude-publish.sh
 - **Run tests** before marking any task done (`uv run pytest`)
 - **Run ruff** before committing (`uv run ruff check foundry_app/`)
 - **Bean tasks** live in `ai/beans/BEAN-NNN-<slug>/tasks/`
-- **ADRs** go in `ai/context/decisions.md`
+- **ADRs** go in `ai/context/decisions/ADR-NNN-<slug>.md` (register in the `ai/context/decisions.md` index)
