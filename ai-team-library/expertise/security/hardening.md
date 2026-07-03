@@ -1,3 +1,10 @@
+---
+id: security
+category: Compliance & Governance
+entry: true
+last-reviewed: 2026-07
+---
+
 # Hardening
 
 ## Category

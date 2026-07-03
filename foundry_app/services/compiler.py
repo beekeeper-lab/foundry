@@ -197,6 +197,20 @@ def _get_emitted_expertise_ids(
     return emitted
 
 
+def _strip_frontmatter(text: str) -> str:
+    """Drop a leading YAML frontmatter block (SPEC-019 pack metadata).
+
+    Frontmatter is indexer metadata, not prompt content — compiled
+    expertise files must not carry it.
+    """
+    if not text.startswith("---\n"):
+        return text
+    end = text.find("\n---\n", 4)
+    if end < 0:
+        return text
+    return text[end + 5:].lstrip("\n")
+
+
 def _expertise_entry_file(expertise_dir: Path) -> Path | None:
     """Resolve the entry file for an expertise pack.
 
@@ -515,12 +529,12 @@ def _compile_expertise_section(
     # to preserve the established token profile.
     conventions = _read_file(expertise_dir / "conventions.md")
     if conventions is not None:
-        return _substitute(conventions.strip(), context)
+        return _substitute(_strip_frontmatter(conventions).strip(), context)
 
     sibling_files = sorted(expertise_dir.glob("*.md"))
     if sibling_files:
         parts = [
-            _read_file(path) or "" for path in sibling_files
+            _strip_frontmatter(_read_file(path) or "") for path in sibling_files
         ]
         combined = "\n\n---\n\n".join(p.strip() for p in parts if p.strip())
         if combined:

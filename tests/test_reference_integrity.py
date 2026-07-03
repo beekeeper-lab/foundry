@@ -78,3 +78,35 @@ def test_kit_agent_command_references_exist():
             missing.setdefault(agent.name, set()).add(ref)
 
     assert missing == {}, f"agents reference nonexistent commands: {missing}"
+
+
+def test_expertise_entry_files_have_frontmatter():
+    """SPEC-019: every pack's entry file carries valid frontmatter whose id
+    matches the pack directory."""
+    import yaml
+
+    problems = []
+    for pack in sorted((LIBRARY / "expertise").iterdir()):
+        if not pack.is_dir():
+            continue
+        entry = pack / "conventions.md"
+        if not entry.is_file():
+            mds = sorted(pack.glob("*.md"))
+            if not mds:
+                continue
+            entry = mds[0]
+        text = entry.read_text(encoding="utf-8")
+        if not text.startswith("---\n"):
+            problems.append(f"{pack.name}: no frontmatter on {entry.name}")
+            continue
+        end = text.find("\n---\n", 4)
+        try:
+            data = yaml.safe_load(text[4:end])
+        except yaml.YAMLError as exc:
+            problems.append(f"{pack.name}: malformed frontmatter ({exc})")
+            continue
+        if not isinstance(data, dict) or data.get("id") != pack.name:
+            problems.append(f"{pack.name}: frontmatter id != directory name")
+        elif not data.get("entry"):
+            problems.append(f"{pack.name}: entry file missing 'entry: true'")
+    assert problems == []

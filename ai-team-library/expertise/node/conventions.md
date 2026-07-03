@@ -1,3 +1,10 @@
+---
+id: node
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # Node.js Stack Conventions
 
 ## Category

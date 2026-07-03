@@ -1,3 +1,10 @@
+---
+id: clean-code
+category: Architecture & Patterns
+entry: true
+last-reviewed: 2026-07
+---
+
 # Clean Code Conventions
 
 ## Category

@@ -1,3 +1,15 @@
+---
+id: typescript
+category: Languages
+applies_to:
+  - developer
+  - tech-qa
+  - architect
+  - code-quality-reviewer
+entry: true
+last-reviewed: 2026-07
+---
+
 # TypeScript Conventions
 
 ## Category

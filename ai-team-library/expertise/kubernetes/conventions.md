@@ -1,3 +1,10 @@
+---
+id: kubernetes
+category: Infrastructure & Platforms
+entry: true
+last-reviewed: 2026-07
+---
+
 # Kubernetes Stack Conventions
 
 ## Category

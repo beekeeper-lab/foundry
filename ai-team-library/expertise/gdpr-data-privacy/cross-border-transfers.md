@@ -1,3 +1,10 @@
+---
+id: gdpr-data-privacy
+category: Compliance & Governance
+entry: true
+last-reviewed: 2026-07
+---
+
 # Cross-Border Data Transfers & Breach Notification
 
 ## Category

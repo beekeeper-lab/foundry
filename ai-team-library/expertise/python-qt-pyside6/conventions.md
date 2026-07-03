@@ -1,3 +1,10 @@
+---
+id: python-qt-pyside6
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # PySide6 Conventions
 
 ## Category

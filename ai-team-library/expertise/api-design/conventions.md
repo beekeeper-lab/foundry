@@ -1,3 +1,10 @@
+---
+id: api-design
+category: Architecture & Patterns
+entry: true
+last-reviewed: 2026-07
+---
+
 # API Design Stack Conventions
 
 ## Category

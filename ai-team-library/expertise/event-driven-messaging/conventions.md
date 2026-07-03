@@ -1,3 +1,10 @@
+---
+id: event-driven-messaging
+category: Architecture & Patterns
+entry: true
+last-reviewed: 2026-07
+---
+
 # Event-Driven / Messaging Stack Conventions
 
 ## Category

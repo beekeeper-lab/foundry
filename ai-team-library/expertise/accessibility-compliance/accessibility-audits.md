@@ -1,3 +1,16 @@
+---
+id: accessibility-compliance
+category: Compliance & Governance
+applies_to:
+  - ux-ui-designer
+  - developer
+  - tech-qa
+  - compliance-risk
+  - product-owner
+entry: true
+last-reviewed: 2026-07
+---
+
 # Accessibility Audits and Remediation
 
 ## Category

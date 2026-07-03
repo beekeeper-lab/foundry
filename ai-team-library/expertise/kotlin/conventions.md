@@ -1,3 +1,10 @@
+---
+id: kotlin
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # Kotlin Stack Conventions
 
 ## Category

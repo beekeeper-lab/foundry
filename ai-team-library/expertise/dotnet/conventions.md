@@ -1,3 +1,10 @@
+---
+id: dotnet
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # .NET Stack Conventions
 
 ## Category

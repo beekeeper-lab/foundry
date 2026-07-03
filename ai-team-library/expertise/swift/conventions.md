@@ -1,3 +1,10 @@
+---
+id: swift
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # Swift Stack Conventions
 
 ## Category

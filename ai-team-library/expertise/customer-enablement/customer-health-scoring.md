@@ -1,3 +1,10 @@
+---
+id: customer-enablement
+category: Business Practices
+entry: true
+last-reviewed: 2026-07
+---
+
 # Customer Health Scoring
 
 ## Category

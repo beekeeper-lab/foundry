@@ -1,3 +1,16 @@
+---
+id: python
+category: Languages
+applies_to:
+  - developer
+  - tech-qa
+  - architect
+  - code-quality-reviewer
+  - data-engineer
+entry: true
+last-reviewed: 2026-07
+---
+
 # Python Stack Conventions
 
 ## Category

@@ -330,19 +330,58 @@ def _scan_personas(
     return personas
 
 
+def _expertise_entry_file(expertise_dir: Path) -> Path | None:
+    """The pack's entry file: conventions.md, else first .md alphabetically."""
+    target = expertise_dir / "conventions.md"
+    if target.is_file():
+        return target
+    md_files = sorted(f for f in expertise_dir.iterdir() if f.suffix == ".md")
+    return md_files[0] if md_files else None
+
+
+def _parse_expertise_frontmatter(expertise_dir: Path) -> dict:
+    """Parse YAML frontmatter from the pack's entry file (SPEC-019).
+
+    Frontmatter is the canonical metadata source (category, applies_to,
+    last-reviewed); the heading-scrape parsers below remain as fallback for
+    packs that haven't adopted it. Returns {} when absent or malformed.
+    """
+    target = _expertise_entry_file(expertise_dir)
+    if target is None:
+        return {}
+    try:
+        text = target.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    if not text.startswith("---\n"):
+        return {}
+    end = text.find("\n---\n", 4)
+    if end < 0:
+        return {}
+    try:
+        import yaml
+
+        data = yaml.safe_load(text[4:end])
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        logger.warning("Malformed expertise frontmatter in %s", target)
+        return {}
+
+
 def _parse_expertise_category(expertise_dir: Path) -> str:
     """Extract the category from an expertise directory's primary markdown file.
 
-    Checks ``conventions.md`` first, then falls back to the first ``.md`` file
-    alphabetically.  Looks for a ``## Category`` heading followed by the category
-    value on the next line.  Returns empty string if not found.
+    Prefers frontmatter ``category:`` (SPEC-019); falls back to a
+    ``## Category`` heading followed by the category value on the next line.
+    Returns empty string if not found.
     """
-    target = expertise_dir / "conventions.md"
-    if not target.is_file():
-        md_files = sorted(f for f in expertise_dir.iterdir() if f.suffix == ".md")
-        if not md_files:
-            return ""
-        target = md_files[0]
+    fm = _parse_expertise_frontmatter(expertise_dir)
+    if isinstance(fm.get("category"), str) and fm["category"].strip():
+        return fm["category"].strip()
+
+    target = _expertise_entry_file(expertise_dir)
+    if target is None:
+        return ""
     try:
         lines = target.read_text(encoding="utf-8").splitlines()
     except OSError:
@@ -368,13 +407,16 @@ def _parse_expertise_applies_to(expertise_dir: Path) -> list[str]:
     file is unreadable. Per ADR-012, an empty list signals "applies to every
     persona" — that interpretation lives in
     ``compiler._expertise_applies_to``, not here.
+
+    Frontmatter ``applies_to:`` (SPEC-019) wins over the heading scrape.
     """
-    target = expertise_dir / "conventions.md"
-    if not target.is_file():
-        md_files = sorted(f for f in expertise_dir.iterdir() if f.suffix == ".md")
-        if not md_files:
-            return []
-        target = md_files[0]
+    fm = _parse_expertise_frontmatter(expertise_dir)
+    if isinstance(fm.get("applies_to"), list):
+        return [str(x).strip("` ") for x in fm["applies_to"] if str(x).strip()]
+
+    target = _expertise_entry_file(expertise_dir)
+    if target is None:
+        return []
     try:
         lines = target.read_text(encoding="utf-8").splitlines()
     except OSError:

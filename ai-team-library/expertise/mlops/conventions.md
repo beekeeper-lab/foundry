@@ -1,3 +1,10 @@
+---
+id: mlops
+category: Data & ML
+entry: true
+last-reviewed: 2026-07
+---
+
 # MLOps Stack Conventions
 
 ## Category

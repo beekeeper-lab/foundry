@@ -1,3 +1,15 @@
+---
+id: r
+category: Languages
+applies_to:
+  - data-scientist
+  - data-analyst
+  - data-engineer
+  - developer
+entry: true
+last-reviewed: 2026-07
+---
+
 # R Stack Conventions
 
 ## Category
