@@ -1366,7 +1366,12 @@ class TestLeanClaudeMd:
             "tech-qa": {"persona.md": "# QA"},
             "architect": {"persona.md": "# Arch"},
         })
-        spec = _make_spec()
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="team-lead"),
+            PersonaSelection(id="developer"),
+            PersonaSelection(id="tech-qa"),
+            PersonaSelection(id="architect"),
+        ]))
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
         assert "## Team Orchestration Model" in content
@@ -1375,8 +1380,28 @@ class TestLeanClaudeMd:
         # Mandatory roles for software development
         assert "**Developer**" in content
         assert "**Tech-QA**" in content
-        # At least one opt-in specialist named
+        # SPEC-018: bench lists only specialists actually on the team,
+        # and merge ownership is stated explicitly (fallback = Team Lead).
         assert "**Architect**" in content
+        assert "UX/UI Designer" not in content
+        assert "no Merge Captain on this team" in content
+
+    def test_orchestration_names_merge_captain_when_present(
+        self, tmp_path: Path,
+    ):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+            "extended/integrator-merge-captain": {"persona.md": "# IMC"},
+        })
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer"),
+            PersonaSelection(id="extended/integrator-merge-captain"),
+        ]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "Integrator Merge Captain" in content
+        assert "no Merge Captain on this team" not in content
 
     def test_claude_md_orchestration_model_emitted_without_personas(
         self, tmp_path: Path,

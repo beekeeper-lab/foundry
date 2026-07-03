@@ -13,6 +13,7 @@ from foundry_app.core.models import (
     Strictness,
     ValidationMessage,
     ValidationResult,
+    _persona_dirname,
 )
 from foundry_app.services.artifact_labels import (
     artifact_label,
@@ -138,6 +139,41 @@ def _check_hook_packs(
                     f"or add a registry entry in safety_writer."
                 ),
             ))
+
+
+def _check_workflow_ownership(
+    composition: CompositionSpec,
+    messages: list[ValidationMessage],
+) -> None:
+    """Advise when workflow-mandatory steps fall back to the Team Lead.
+
+    Merge and deploy are mandatory closure steps but their primary owners
+    (Integrator/Merge Captain, DevOps/Release) are opt-in extended personas.
+    The fallback table lives in workflows/task-taxonomy.md (SPEC-018);
+    surfacing it here keeps the composition author aware. Non-blocking,
+    consistent with the contract-graph warning-only stance (BEAN-292).
+    """
+    leaves = {_persona_dirname(p.id) for p in composition.team.personas}
+    if "integrator-merge-captain" not in leaves:
+        messages.append(ValidationMessage(
+            severity=Severity.INFO,
+            code="merge-ownership-fallback",
+            message=(
+                "No Integrator/Merge Captain on the team — /merge-bean "
+                "falls back to the Team Lead (see task-taxonomy.md "
+                "'Fallback When Absent')."
+            ),
+        ))
+    if "devops-release" not in leaves:
+        messages.append(ValidationMessage(
+            severity=Severity.INFO,
+            code="deploy-ownership-fallback",
+            message=(
+                "No DevOps/Release Engineer on the team — /deploy falls "
+                "back to the Team Lead as a manual step requiring explicit "
+                "user confirmation (see task-taxonomy.md)."
+            ),
+        ))
 
 
 def _check_hook_conflicts(
@@ -338,6 +374,7 @@ def run_pre_generation_validation(
     _check_personas(composition, library_index, messages)
     _check_expertise(composition, library_index, messages)
     _check_hook_packs(composition, library_index, messages)
+    _check_workflow_ownership(composition, messages)
     _check_hook_conflicts(composition, library_index, messages)
     _check_hook_posture_compatibility(composition, library_index, messages)
     _check_duplicates(composition, messages)

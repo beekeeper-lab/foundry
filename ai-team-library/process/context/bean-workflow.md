@@ -138,13 +138,13 @@ Once all acceptance criteria are met:
 1. Update bean status to `Done`
 2. Update `ai/beans/_index.md`
 3. Note any follow-up beans spawned during execution
-4. **Merge feature branch to `main`** using `/merge-bean` (Merge Captain). This step is mandatory — a bean is not fully closed until its branch has been merged to `main` and tests pass on the integrated branch
+4. **Merge feature branch to `main`** using `/merge-bean` (Merge Captain when on the team, otherwise the Team Lead). This step is mandatory — a bean is not fully closed until its branch has been merged to `main` and tests pass on the integrated branch
 
 ## Branch Strategy
 
 **Every bean MUST have its own feature branch.** No exceptions. All work happens on the feature branch, never directly on `main`.
 
-Feature branches merge directly to `main` (trunk-based development). The `/deploy` command creates release tags on `main`.
+Feature branches merge directly to `main` (trunk-based development). The `/deploy` command creates release tags on `main` (DevOps/Release Engineer when on the team; otherwise the Team Lead runs it as a manual step requiring explicit user confirmation). Compliance work has no silent fallback: when no Compliance/Risk Analyst is on the team, the bean blocks and escalates to the user with a named reason. Full routing fallbacks: see `ai-team-library/workflows/task-taxonomy.md` "Fallback When Absent".
 
 ### Naming Convention
 
@@ -162,7 +162,7 @@ Examples: `bean/BEAN-006-backlog-refinement`, `bean/BEAN-012-user-auth`
    ```
    This is the **first action** after picking a bean. No work happens before the branch exists.
 2. **Work on the branch** — All task commits for this bean happen on the feature branch. Never commit to `main`.
-3. **Merge to main** — After the bean is verified and closed, the Merge Captain merges the feature branch into `main` using `/merge-bean`.
+3. **Merge to main** — After the bean is verified and closed, the Merge Captain (or, on teams without one, the Team Lead) merges the feature branch into `main` using `/merge-bean`.
 4. **Cleanup** — After a successful merge, the feature branch is deleted (local + remote).
 
 ### Branch Creation Rules

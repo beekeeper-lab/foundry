@@ -20,6 +20,23 @@ A classification system that maps task types to personas, workflow stages, and e
 | Research        | Investigate options, compare alternatives, summarize findings      | Researcher / Librarian   | Architect, BA                                | Research memo, decision matrix, annotated bibliography|
 | UX Design       | Define user flows, interaction patterns, and content structure     | UX / UI Designer         | BA, Developer, Technical Writer              | Wireframes, component spec, user flows, accessibility checklist|
 
+## Fallback When Absent
+
+Several primary personas above are opt-in (`personas/extended/`). When the
+composed team lacks the primary, ownership falls back explicitly — no
+category is ever silently ownerless (SPEC-018):
+
+| Category | Primary | Fallback When Absent |
+|---|---|---|
+| Integration / merge | Integrator / Merge Captain | **Team Lead** (runs `/merge-bean` itself) |
+| Deployment / release | DevOps / Release Engineer | **Team Lead**, with `/deploy` demoted to a manual step requiring explicit user confirmation |
+| Security | Security Engineer | **Developer** implements + **Tech-QA** verifies; Team Lead escalates material threat-model decisions to the user |
+| Compliance | Compliance / Risk Analyst | **Escalate to the user** — no silent fallback; the bean blocks with a named reason |
+| Review | Code Quality Reviewer | **Tech-QA** |
+| Documentation | Technical Writer | **Developer** (docs land with the change) |
+| Research | Researcher / Librarian | **Architect** |
+| UX Design | UX / UI Designer | **BA** (flows and acceptance criteria only; no visual design) |
+
 ## Task Lifecycle States
 
 Every task moves through a defined set of states. Transitions are governed by the stage gates enforced by the Team Lead.

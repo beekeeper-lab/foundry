@@ -620,6 +620,18 @@ def _build_lean_claude_md(
         sections.append("\n".join(team_lines))
 
     # --- Team Orchestration Model ---
+    # Render only personas actually on the team (SPEC-018): name-dropping
+    # absent specialists sent readers hunting for roles that don't exist.
+    team_leaves = {_persona_dirname(pid) for pid, _, _ in persona_descriptions}
+    bench = sorted(
+        _display_name_from_id(leaf)
+        for leaf in team_leaves - {"team-lead", "developer", "tech-qa"}
+    )
+    merge_owner = (
+        "the **Integrator Merge Captain**"
+        if "integrator-merge-captain" in team_leaves
+        else "the **Team Lead** (no Merge Captain on this team)"
+    )
     orchestration_lines = [
         "## Team Orchestration Model",
         "",
@@ -631,10 +643,18 @@ def _build_lean_claude_md(
         "assign:",
         "  - **Developer**",
         "  - **Tech-QA**",
-        "- Other specialists such as **Architect**, **UX/UI Designer**, "
-        "**Integrator Merge Captain**, and **BA** are assigned only when "
-        "the bean or task requires them.",
     ]
+    if bench:
+        orchestration_lines.append(
+            "- Other specialists on this team — "
+            + ", ".join(f"**{name}**" for name in bench)
+            + " — are assigned only when the bean or task requires them.",
+        )
+    orchestration_lines.append(
+        f"- Merges to `main` (`/merge-bean`) are owned by {merge_owner}; "
+        "see the library task taxonomy's 'Fallback When Absent' table for "
+        "other role fallbacks.",
+    )
     sections.append("\n".join(orchestration_lines))
 
     # --- Workflow (BEAN-268) ---
