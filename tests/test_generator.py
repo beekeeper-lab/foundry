@@ -1319,7 +1319,10 @@ class TestStageCallback:
     """Verify the stage_callback parameter fires with correct keys, statuses, and payloads."""
 
     # The default stages that always run (seed_tasks and diff_report are optional)
-    DEFAULT_STAGES = {"scaffold", "compile", "agent_writer", "copy_assets", "mcp_config", "safety"}
+    DEFAULT_STAGES = {
+        "scaffold", "compile", "agent_writer", "copy_assets", "mcp_config",
+        "safety", "permissions",
+    }
 
     def test_callback_fires_twice_per_stage(self, tmp_path: Path):
         lib_root = _make_library_dir(tmp_path)

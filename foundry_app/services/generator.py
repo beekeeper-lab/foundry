@@ -31,7 +31,7 @@ from foundry_app.services.compiler import compile_project
 from foundry_app.services.diff_reporter import write_diff_report
 from foundry_app.services.library_indexer import build_library_index
 from foundry_app.services.mcp_writer import write_mcp_config
-from foundry_app.services.safety_writer import write_safety
+from foundry_app.services.safety_writer import write_permissions, write_safety
 from foundry_app.services.scaffold import scaffold_project
 from foundry_app.services.seeder import seed_tasks
 from foundry_app.services.subtree_setup import setup_subtree
@@ -347,8 +347,9 @@ def _run_pipeline(
     elif stage_callback:
         stage_callback("seed_tasks", "skipped", 0)
 
-    # Stage 7: Write safety config
+    # Stage 7: Write safety config (hooks) + posture-derived permissions
     _run_stage("safety", write_safety, spec, output_dir, library)
+    _run_stage("permissions", write_permissions, spec, output_dir, library)
 
     # Stage 8: Diff report (only if enabled)
     if spec.generation.write_diff_report:

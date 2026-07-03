@@ -537,6 +537,118 @@ def _missing_hook_scripts(root: Path, settings: dict[str, Any]) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# Permissions from SafetyConfig (SPEC-016)
+#
+# Mapping table (SafetyConfig -> permission rules):
+#   git.protected_branches   -> deny  Bash(git push origin <branch>:*)
+#                                     (glob branches like release/* skipped —
+#                                     permission rules are prefix-based)
+#   git.allow_force_push=F   -> deny  Bash(git push --force:*), Bash(git push -f:*)
+#   shell.blocked_commands   -> deny  Bash(<command>:*)
+#   secrets.block_on_secret  -> deny  Read(./.env), Read(./.env.*),
+#                                     Read(~/.ssh/**), Read(~/.aws/**),
+#                                     Write(./.env)
+#   filesystem.protected_paths -> deny Write(<path>/**), Edit(<path>/**)
+#   network.allow_network=F  -> deny  WebFetch, WebSearch
+#   (always)                 -> allow uv run pytest/ruff, git status/diff/log
+# Fields with no mapping (shell.blocked_patterns — regex, not prefix;
+# destructive_ops.blocked_operations — SQL, enforced by hooks) are
+# intentionally not rendered here; the hook layer covers them.
+# ---------------------------------------------------------------------------
+
+_BASE_ALLOW_RULES = [
+    "Bash(uv run pytest:*)",
+    "Bash(uv run ruff:*)",
+    "Bash(git status)",
+    "Bash(git diff:*)",
+    "Bash(git log:*)",
+]
+
+
+def _derive_permission_rules(safety) -> tuple[list[str], list[str]]:
+    """Map a SafetyConfig to (allow, deny) permission rule lists."""
+    allow = list(_BASE_ALLOW_RULES)
+    deny: list[str] = []
+
+    for branch in safety.git.protected_branches:
+        if any(ch in branch for ch in "*?["):
+            continue
+        deny.append(f"Bash(git push origin {branch}:*)")
+    if not safety.git.allow_force_push:
+        deny.append("Bash(git push --force:*)")
+        deny.append("Bash(git push -f:*)")
+
+    for cmd in safety.shell.blocked_commands:
+        deny.append(f"Bash({cmd}:*)")
+
+    if safety.secrets.block_on_secret:
+        deny.extend([
+            "Read(./.env)",
+            "Read(./.env.*)",
+            "Read(~/.ssh/**)",
+            "Read(~/.aws/**)",
+            "Write(./.env)",
+        ])
+
+    for path in safety.filesystem.protected_paths:
+        deny.append(f"Write({path}/**)")
+        deny.append(f"Edit({path}/**)")
+
+    if not safety.network.allow_network:
+        deny.extend(["WebFetch", "WebSearch"])
+
+    return allow, deny
+
+
+def write_permissions(
+    spec: CompositionSpec,
+    output_dir: str | Path,
+    library: LibraryIndex | None = None,
+) -> StageResult:
+    """Render ``.claude/settings.local.json`` from the effective SafetyConfig.
+
+    The library's static copy (placed by the asset copier) is the base;
+    derived rules overlay it as a UNION — library rules are never dropped
+    (the permissions analogue of the SPEC-004 settings.json merge). The
+    result is posture-differentiated permissions instead of one static
+    file for every project (SPEC-016).
+    """
+    root = Path(output_dir)
+    settings_dir = root / ".claude"
+    settings_dir.mkdir(parents=True, exist_ok=True)
+    path = settings_dir / "settings.local.json"
+
+    base: dict[str, Any] = {}
+    if path.is_file():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                base = loaded
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    allow, deny = _derive_permission_rules(spec.effective_safety())
+    perms = base.setdefault("permissions", {})
+    for key, rules in (("allow", allow), ("deny", deny)):
+        existing = list(perms.get(key) or [])
+        seen = set(existing)
+        for rule in rules:
+            if rule not in seen:
+                existing.append(rule)
+                seen.add(rule)
+        perms[key] = existing
+
+    path.write_text(json.dumps(base, indent=2) + "\n", encoding="utf-8")
+    rel = str(path.relative_to(root))
+    logger.info(
+        "Permissions written: posture=%s, allow=%d, deny=%d",
+        spec.hooks.posture.value,
+        len(perms["allow"]), len(perms["deny"]),
+    )
+    return StageResult(wrote=[rel], warnings=[])
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 

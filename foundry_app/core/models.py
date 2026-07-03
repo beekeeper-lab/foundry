@@ -426,6 +426,36 @@ class SafetyConfig(BaseModel):
             ),
         )
 
+    @staticmethod
+    def regulated_safety() -> SafetyConfig:
+        """Factory: maximum controls for regulated/compliance projects.
+
+        A strict superset of :meth:`hardened_safety` — every hardened
+        restriction plus deployment-branch protection, broader command and
+        path blocks (SPEC-016).
+        """
+        hardened = SafetyConfig.hardened_safety()
+        return hardened.model_copy(update={
+            "git": GitPolicy(
+                allow_push=True, allow_force_push=False,
+                allow_branch_delete=False,
+                protected_branches=[
+                    "main", "master", "release/*", "test", "prod",
+                ],
+            ),
+            "shell": ShellPolicy(
+                allow_shell=True,
+                blocked_commands=[
+                    "rm -rf /", "mkfs", "dd", "shutdown", "reboot",
+                ],
+                blocked_patterns=[r"curl.*\|.*sh", r"wget.*\|.*bash"],
+            ),
+            "filesystem": FileSystemPolicy(
+                allow_write=True, allow_delete=False,
+                protected_paths=["/etc", "/usr", "/var", "/boot", "/root"],
+            ),
+        })
+
 
 # ---------------------------------------------------------------------------
 # Generation options
@@ -473,6 +503,20 @@ class CompositionSpec(BaseModel):
         default=None,
         description="Inline safety config; if omitted, derived from hooks posture",
     )
+
+    def effective_safety(self) -> SafetyConfig:
+        """The safety config generation should apply (SPEC-016).
+
+        An explicit ``safety:`` block wins; otherwise the factory matching
+        ``hooks.posture`` supplies posture-appropriate defaults.
+        """
+        if self.safety is not None:
+            return self.safety
+        if self.hooks.posture == Posture.REGULATED:
+            return SafetyConfig.regulated_safety()
+        if self.hooks.posture == Posture.HARDENED:
+            return SafetyConfig.hardened_safety()
+        return SafetyConfig.baseline_safety()
 
 
 # ---------------------------------------------------------------------------
