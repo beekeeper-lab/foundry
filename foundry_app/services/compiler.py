@@ -578,10 +578,13 @@ def _build_lean_claude_md(
         team_lines.append("| Persona | Role | Agent | Full Prompt |")
         team_lines.append("|---------|------|-------|-------------|")
         for pid, display, desc in persona_descriptions:
+            # Links must use the flattened leaf dirname (ADR-014): agents and
+            # members are written flat regardless of extended/ tier.
+            leaf = _persona_dirname(pid)
             team_lines.append(
                 f"| {display} | {desc} "
-                f"| `.claude/agents/{pid}.md` "
-                f"| `ai/generated/members/{pid}.md` |"
+                f"| `.claude/agents/{leaf}.md` "
+                f"| `ai/generated/members/{leaf}.md` |"
             )
         sections.append("\n".join(team_lines))
 

@@ -1,8 +1,13 @@
+---
+name: {{ agent_name }}
+description: "{{ agent_description }}"
+---
+
 # {{ role_name }}
 
 **Role:** {{ role_description }}
 **Expertise:** {{ expertise_names }}
-**Output directory:** `ai/outputs/{{ persona_id }}/`
+**Output directory:** `ai/outputs/{{ agent_name }}/`
 
 ## Mission
 
@@ -24,4 +29,4 @@
 {% endfor %}
 {% endif %}
 ---
-*Full compiled prompt:* `ai/generated/members/{{ persona_id }}.md`
+*Full compiled prompt:* `ai/generated/members/{{ agent_name }}.md`

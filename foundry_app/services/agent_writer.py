@@ -225,6 +225,8 @@ def write_agents(
     agents_dir.mkdir(parents=True, exist_ok=True)
 
     for persona_sel in spec.team.personas:
+        if not persona_sel.include_agent:
+            continue
         persona_info = library_index.persona_by_id(persona_sel.id)
         if persona_info is None:
             warnings.append(f"Persona '{persona_sel.id}' not found in library index")
@@ -276,11 +278,21 @@ def write_agents(
             if _expertise_applies_to(persona_sel.id, entry["info"])
         ]
 
+        leaf = _persona_dirname(persona_sel.id)
+        role_description = _extract_role_description(persona_text)
+        # Frontmatter description drives Claude Code's delegation routing;
+        # it must be single-line and safe inside double quotes.
+        agent_description = (
+            f"{role_name}. {role_description}" if role_description else role_name
+        )
+        agent_description = " ".join(agent_description.split()).replace('"', "'")
+
         context = {
+            "agent_name": leaf,
+            "agent_description": agent_description,
             "role_name": role_name,
-            "role_description": _extract_role_description(persona_text),
+            "role_description": role_description,
             "expertise_names": expertise_names,
-            "persona_id": persona_sel.id,
             "mission": _extract_mission(persona_text),
             "key_rules": _extract_key_rules(persona_text),
             "expertise_sections": expertise_sections,
@@ -289,7 +301,7 @@ def write_agents(
         content = template.render(**context)
         # Use the leaf directory name so .claude/agents/ stays a flat
         # directory regardless of tier (ADR-014).
-        agent_file = agents_dir / f"{_persona_dirname(persona_sel.id)}.md"
+        agent_file = agents_dir / f"{leaf}.md"
         agent_file.write_text(content, encoding="utf-8")
 
         rel_path = str(agent_file.relative_to(out_root))

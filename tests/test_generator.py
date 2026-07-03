@@ -1123,8 +1123,14 @@ class TestEndToEnd:
         output_dir, _, spec = generated_project
         claude_md = (output_dir / "CLAUDE.md").read_text(encoding="utf-8")
         for persona in spec.team.personas:
-            assert persona.id in claude_md, (
-                f"CLAUDE.md missing reference to persona: {persona.id}"
+            # Links use the flattened leaf name (ADR-014), never the
+            # tiered extended/ id — agents and members are written flat.
+            leaf = _persona_dirname(persona.id)
+            assert f".claude/agents/{leaf}.md" in claude_md, (
+                f"CLAUDE.md missing agent link for persona: {persona.id}"
+            )
+            assert f"ai/generated/members/{leaf}.md" in claude_md, (
+                f"CLAUDE.md missing member link for persona: {persona.id}"
             )
 
     def test_claude_md_contains_expertise_content(self, generated_project):
