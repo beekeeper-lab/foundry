@@ -560,6 +560,29 @@ def _extract_first_sentence(text: str) -> str:
     return ""
 
 
+def _project_header_section(spec: CompositionSpec) -> str:
+    """Render the ``# <name>`` header (plus optional description) for CLAUDE.md."""
+    header = f"# {spec.project.name}"
+    if spec.project.description:
+        header += f"\n\n{spec.project.description}"
+    return header
+
+
+def _tech_stack_section(expertise_ids: list[str]) -> str | None:
+    """Render the Tech Stack table, or None when no expertise is emitted."""
+    if not expertise_ids:
+        return None
+    tech_lines = ["## Tech Stack", ""]
+    tech_lines.append("| Technology | Source |")
+    tech_lines.append("|------------|--------|")
+    for eid in expertise_ids:
+        display = _display_name_from_id(eid)
+        tech_lines.append(
+            f"| {display} | `ai/generated/expertise/{eid}.md` |"
+        )
+    return "\n".join(tech_lines)
+
+
 def _build_lean_claude_md(
     spec: CompositionSpec,
     persona_descriptions: list[tuple[str, str, str]],
@@ -581,10 +604,7 @@ def _build_lean_claude_md(
     sections: list[str] = []
 
     # --- Project header ---
-    header = f"# {spec.project.name}"
-    if spec.project.description:
-        header += f"\n\n{spec.project.description}"
-    sections.append(header)
+    sections.append(_project_header_section(spec))
 
     # --- Scope (BEAN-251 + BEAN-253) ---
     # Paired policy: the AI team works under ai/ (matching the narrow
@@ -611,16 +631,9 @@ def _build_lean_claude_md(
     sections.append("\n".join(scope_lines))
 
     # --- Tech Stack ---
-    if expertise_ids:
-        tech_lines = ["## Tech Stack", ""]
-        tech_lines.append("| Technology | Source |")
-        tech_lines.append("|------------|--------|")
-        for eid in expertise_ids:
-            display = _display_name_from_id(eid)
-            tech_lines.append(
-                f"| {display} | `ai/generated/expertise/{eid}.md` |"
-            )
-        sections.append("\n".join(tech_lines))
+    tech_stack = _tech_stack_section(expertise_ids)
+    if tech_stack is not None:
+        sections.append(tech_stack)
 
     # --- Directory Structure ---
     dir_lines = [
@@ -741,6 +754,108 @@ def _build_lean_claude_md(
     sections.append("\n".join(pointer_lines))
 
     return "\n\n".join(sections) + "\n"
+
+
+def _build_local_model_claude_md(
+    spec: CompositionSpec,
+    persona_descriptions: list[tuple[str, str, str]],
+    expertise_ids: list[str],
+) -> str:
+    """Build the compact CLAUDE.md for the ``local-model`` harness profile.
+
+    Small local models drown in the full roster + orchestration document, so
+    this variant keeps every section short and imperative: a one-paragraph
+    preamble naming the Claude Code -> Ollama lane, a name+one-line persona
+    roster, a handful of rules, and pointers instead of inlined detail.
+    Shares ``_project_header_section`` / ``_tech_stack_section`` with the
+    standard builder.
+    """
+    sections: list[str] = []
+
+    # --- Project header (shared with the standard builder) ---
+    sections.append(_project_header_section(spec))
+
+    # --- Target harness preamble ---
+    sections.append(
+        "## Target Harness\n"
+        "\n"
+        "This project targets **local models** run through a Claude Code -> "
+        "Ollama backend (`claude-local`). Context is scarce: read only the "
+        "files a task needs, keep answers short, and finish one step before "
+        "starting the next."
+    )
+
+    # --- Rules (short, imperative — sized for small models) ---
+    rules = [
+        "## Rules",
+        "",
+        "- Write only under `ai/`. The human owns the application source code.",
+        "- Do one task at a time. Keep each step small and explicit.",
+        "- Track work as beans under `ai/beans/`. The backlog index is "
+        "`ai/beans/_index.md`.",
+        "- Before acting as a persona, read that persona's file under "
+        "`ai/generated/members/` — nothing else.",
+        "- Check `ai/team/model-clearances.md` before deciding which local "
+        "model may work on this project.",
+    ]
+    sections.append("\n".join(rules))
+
+    # --- Team roster: name + one line, no tables, no orchestration essay ---
+    if persona_descriptions:
+        team_lines = ["## Team", ""]
+        for pid, display, desc in persona_descriptions:
+            leaf = _persona_dirname(pid)
+            line = f"- **{display}**"
+            if desc:
+                line += f" — {desc}"
+            line += f" (`ai/generated/members/{leaf}.md`)"
+            team_lines.append(line)
+        sections.append("\n".join(team_lines))
+
+    # --- Tech Stack (shared with the standard builder) ---
+    tech_stack = _tech_stack_section(expertise_ids)
+    if tech_stack is not None:
+        sections.append(tech_stack)
+
+    # --- Pointers ---
+    pointer_lines = [
+        "## Pointers",
+        "",
+        "- Persona prompts: `ai/generated/members/`",
+        "- Expertise conventions: `ai/generated/expertise/`",
+        "- Project context: `ai/context/`",
+        "- Model clearances: `ai/team/model-clearances.md`",
+    ]
+    sections.append("\n".join(pointer_lines))
+
+    return "\n\n".join(sections) + "\n"
+
+
+def _build_model_clearances_md(spec: CompositionSpec) -> str:
+    """Render ``ai/team/model-clearances.md`` for the ``local-model`` profile.
+
+    Static template content: names the project's (placeholder) data class and
+    points at forgeSetup's model registry + security model, which together
+    decide which local models are cleared to work on this project.
+    """
+    return (
+        f"# Model Clearances — {spec.project.name}\n"
+        "\n"
+        "**Data class:** TODO — set this project's data class "
+        "(e.g. public / internal / confidential).\n"
+        "\n"
+        "Which local models may work on this project depends on the "
+        "project's data class and each model's trust class. The "
+        "authoritative references live in the forgeSetup repo:\n"
+        "\n"
+        "- `docs/model-registry.md` — registered local models and their "
+        "trust classes\n"
+        "- `docs/security-model.md` — the data-class / trust-class "
+        "clearance policy\n"
+        "\n"
+        "Before routing a task to a local model, confirm that the model's "
+        "trust class clears this project's data class.\n"
+    )
 
 
 class AgnosticCompileResult(NamedTuple):
@@ -876,10 +991,18 @@ def compile_claude_outputs(
 ) -> StageResult:
     """Compile the Claude-specific outputs of the compile stage.
 
-    Writes the lean CLAUDE.md entry-point document. This is the harness-
-    specific half of the compile stage (IMP-08): a future HarnessTarget
-    adapter replaces this function without touching
-    ``compile_agnostic_outputs``.
+    Writes the CLAUDE.md entry-point document. This is the harness-specific
+    half of the compile stage (IMP-08): a future HarnessTarget adapter
+    replaces this function without touching ``compile_agnostic_outputs``.
+
+    The ``spec.generation.harness_profile`` option selects the variant:
+
+    - ``"standard"`` (default): the existing lean CLAUDE.md, byte-identical
+      to pre-profile output.
+    - ``"local-model"`` (IMP-08 outcome A): the compact
+      ``_build_local_model_claude_md`` variant, plus
+      ``ai/team/model-clearances.md``, plus a WARNING (non-blocking) when
+      the composition selects more than 3 personas.
 
     Args:
         spec: The composition spec describing the project.
@@ -893,15 +1016,41 @@ def compile_claude_outputs(
         A StageResult listing written files and any warnings.
     """
     root = Path(output_dir)
+    wrote: list[str] = []
+    warnings: list[str] = []
+    local_profile = spec.generation.harness_profile == "local-model"
 
-    content = _build_lean_claude_md(spec, persona_descriptions, emitted_expertise_ids)
+    if local_profile:
+        content = _build_local_model_claude_md(
+            spec, persona_descriptions, emitted_expertise_ids,
+        )
+        persona_count = len(spec.team.personas)
+        if persona_count > 3:
+            warnings.append(
+                "local-model profile works best with 1-3 personas; "
+                f"{persona_count} selected"
+            )
+    else:
+        content = _build_lean_claude_md(
+            spec, persona_descriptions, emitted_expertise_ids,
+        )
 
     claude_md_path = root / "CLAUDE.md"
     claude_md_path.parent.mkdir(parents=True, exist_ok=True)
     claude_md_path.write_text(content, encoding="utf-8")
+    wrote.append("CLAUDE.md")
     logger.info("Wrote: %s", claude_md_path)
 
-    return StageResult(wrote=["CLAUDE.md"], warnings=[])
+    if local_profile:
+        clearances_path = root / "ai" / "team" / "model-clearances.md"
+        clearances_path.parent.mkdir(parents=True, exist_ok=True)
+        clearances_path.write_text(
+            _build_model_clearances_md(spec), encoding="utf-8",
+        )
+        wrote.append(str(clearances_path.relative_to(root)))
+        logger.info("Wrote: %s", clearances_path)
+
+    return StageResult(wrote=wrote, warnings=warnings)
 
 
 def compile_project(

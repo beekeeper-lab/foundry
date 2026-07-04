@@ -265,10 +265,19 @@ class TestGenerationOptions:
         assert g.seed_mode == SeedMode.DETAILED
         assert g.write_manifest is True
         assert g.write_diff_report is False
+        assert g.harness_profile == "standard"
 
     def test_kickoff_mode(self):
         g = GenerationOptions(seed_mode="kickoff")
         assert g.seed_mode == SeedMode.KICKOFF
+
+    def test_local_model_profile(self):
+        g = GenerationOptions(harness_profile="local-model")
+        assert g.harness_profile == "local-model"
+
+    def test_unknown_harness_profile_rejected(self):
+        with pytest.raises(ValidationError):
+            GenerationOptions(harness_profile="pi")
 
 
 # ---------------------------------------------------------------------------

@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import PurePosixPath
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_serializer
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -484,6 +484,31 @@ class GenerationOptions(BaseModel):
         description="Git URL for claude-kit subtree repo. When set, .claude/ is added via "
         "git subtree instead of copying from the library.",
     )
+    harness_profile: Literal["standard", "local-model"] = Field(
+        default="standard",
+        description=(
+            "Generation profile for the Claude Code harness (IMP-08 outcome A). "
+            "'standard' is the full output; 'local-model' emits a compact "
+            "CLAUDE.md tuned for small local models (Claude Code -> Ollama "
+            "backend), warns when more than 3 personas are selected, and "
+            "writes ai/team/model-clearances.md."
+        ),
+    )
+
+    @model_serializer(mode="wrap")
+    def _omit_default_profile(self, handler):
+        """Drop ``harness_profile`` from dumps when it is the default.
+
+        Keeps the serialized shape of 'standard' compositions (the
+        generated ``composition.yml`` snapshot and the manifest's
+        ``composition_snapshot``) byte-identical to output produced before
+        this field existed. Round-trip is lossless: a missing key loads
+        back as the default.
+        """
+        data = handler(self)
+        if data.get("harness_profile") == "standard":
+            data.pop("harness_profile")
+        return data
 
 
 # ---------------------------------------------------------------------------
