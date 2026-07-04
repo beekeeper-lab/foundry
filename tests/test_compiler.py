@@ -10,6 +10,7 @@ from foundry_app.core.models import (
     CompositionSpec,
     ExpertiseInfo,
     ExpertiseSelection,
+    GenerationOptions,
     LibraryIndex,
     PersonaInfo,
     PersonaSelection,
@@ -2670,3 +2671,146 @@ class TestCompileStageSplit:
         assert set(after) - set(before) == {"CLAUDE.md"}
         # The Claude half must not rewrite any agnostic file.
         assert all(after[p] == before[p] for p in before)
+
+
+# ---------------------------------------------------------------------------
+# local-model harness profile (IMP-08 outcome A)
+# ---------------------------------------------------------------------------
+
+
+class TestLocalModelProfile:
+    """The ``harness_profile`` generation option: 'standard' must remain
+    byte-identical to pre-profile output; 'local-model' emits the compact
+    CLAUDE.md, the >3-persona warning, and ai/team/model-clearances.md."""
+
+    def _fixture(self, tmp_path: Path, persona_count: int = 2):
+        persona_ids = [
+            "team-lead", "developer", "tech-qa", "architect", "ba",
+        ][:persona_count]
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                pid: {
+                    "persona.md": (
+                        f"# Persona: {pid.title()}\n\n"
+                        f"Works on {{{{ project_name }}}} as {pid}."
+                    ),
+                }
+                for pid in persona_ids
+            },
+            expertise={
+                "python": {"conventions.md": "# Python\n\nUse type hints."},
+            },
+        )
+        return index, lib_root, persona_ids
+
+    def _spec(self, persona_ids: list[str], profile: str | None = None):
+        kwargs = {}
+        if profile is not None:
+            kwargs["generation"] = GenerationOptions(harness_profile=profile)
+        return _make_spec(
+            team=TeamConfig(
+                personas=[PersonaSelection(id=pid) for pid in persona_ids],
+            ),
+            expertise=[ExpertiseSelection(id="python", order=10)],
+            **kwargs,
+        )
+
+    @staticmethod
+    def _tree(root: Path) -> dict[str, bytes]:
+        return {
+            str(f.relative_to(root)): f.read_bytes()
+            for f in sorted(root.rglob("*"))
+            if f.is_file()
+        }
+
+    def test_default_profile_is_standard_and_unchanged(self, tmp_path: Path):
+        """Omitting harness_profile and passing 'standard' explicitly must
+        produce identical trees with no model-clearances file."""
+        index, lib_root, persona_ids = self._fixture(tmp_path)
+
+        default_out = tmp_path / "default"
+        default_result = compile_project(
+            self._spec(persona_ids), index, lib_root, default_out,
+        )
+
+        explicit_out = tmp_path / "explicit"
+        explicit_result = compile_project(
+            self._spec(persona_ids, profile="standard"),
+            index, lib_root, explicit_out,
+        )
+
+        assert self._tree(default_out) == self._tree(explicit_out)
+        assert default_result.wrote == explicit_result.wrote
+        assert default_result.warnings == explicit_result.warnings
+        assert not (default_out / "ai" / "team" / "model-clearances.md").exists()
+
+    def test_local_profile_emits_lean_claude_md(self, tmp_path: Path):
+        index, lib_root, persona_ids = self._fixture(tmp_path)
+        out = tmp_path / "local"
+        compile_project(
+            self._spec(persona_ids, profile="local-model"),
+            index, lib_root, out,
+        )
+
+        content = (out / "CLAUDE.md").read_text(encoding="utf-8")
+        # Preamble names the local lane.
+        assert "## Target Harness" in content
+        assert "local models" in content
+        assert "Ollama" in content
+        # Roster is name + one line, pointing at the member prompt.
+        assert "## Team" in content
+        assert "`ai/generated/members/team-lead.md`" in content
+        # The heavyweight standard sections are gone.
+        assert "## Team Orchestration Model" not in content
+        assert "## Workflow" not in content
+        # Shared Tech Stack block is reused.
+        assert "`ai/generated/expertise/python.md`" in content
+        # Compact variant is materially smaller than the standard one.
+        std_out = tmp_path / "std"
+        compile_project(self._spec(persona_ids), index, lib_root, std_out)
+        standard = (std_out / "CLAUDE.md").read_text(encoding="utf-8")
+        assert len(content) < len(standard)
+
+    def test_local_profile_warns_above_three_personas(self, tmp_path: Path):
+        index, lib_root, persona_ids = self._fixture(tmp_path, persona_count=5)
+        out = tmp_path / "local-big-team"
+        result = compile_project(
+            self._spec(persona_ids, profile="local-model"),
+            index, lib_root, out,
+        )
+
+        assert (
+            "local-model profile works best with 1-3 personas; 5 selected"
+            in result.warnings
+        )
+        # Non-blocking: outputs are still written.
+        assert (out / "CLAUDE.md").is_file()
+
+    def test_local_profile_no_warning_at_three_personas(self, tmp_path: Path):
+        index, lib_root, persona_ids = self._fixture(tmp_path, persona_count=3)
+        out = tmp_path / "local-small-team"
+        result = compile_project(
+            self._spec(persona_ids, profile="local-model"),
+            index, lib_root, out,
+        )
+
+        assert not any("local-model profile" in w for w in result.warnings)
+
+    def test_local_profile_emits_model_clearances(self, tmp_path: Path):
+        index, lib_root, persona_ids = self._fixture(tmp_path)
+        out = tmp_path / "local-clearances"
+        result = compile_project(
+            self._spec(persona_ids, profile="local-model"),
+            index, lib_root, out,
+        )
+
+        clearances = out / "ai" / "team" / "model-clearances.md"
+        assert clearances.is_file()
+        assert "ai/team/model-clearances.md" in result.wrote
+
+        text = clearances.read_text(encoding="utf-8")
+        assert "# Model Clearances — Test Project" in text
+        assert "docs/model-registry.md" in text
+        assert "docs/security-model.md" in text
+        assert "data class" in text
