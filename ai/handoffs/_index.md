@@ -20,3 +20,4 @@ packet itself is stored at the path in the **Packet** column.
 |------|------|----|------|--------|
 | 2026-05-01 | developer | tech-qa | BEAN-274 | [developer-to-tech-qa-BEAN-274-task-02.md](developer-to-tech-qa-BEAN-274-task-02.md) |
 | 2026-07-03 | developer | tech-qa | BEAN-295 | developer-to-tech-qa-BEAN-295-task-05.md |
+| 2026-07-04 | developer | tech-qa | BEAN-296 | developer-to-tech-qa-BEAN-296-task-01.md |

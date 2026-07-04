@@ -1,30 +1,33 @@
 # Orchestration Report — 2026-07
 
-**Generated:** 2026-07-03 22:08 UTC
-**Generated-through:** BEAN-294
+**Generated:** 2026-07-04 05:10 UTC
+**Generated-through:** BEAN-297
 
 ## Throughput
 
-- Beans total: 295
+- Beans total: 298
   - (missing): 1
-  - Done: 292
+  - Done: 294
   - In Progress: 1
   - New: 1
+  - Unapproved: 1
 
 ## Duration (Done beans, minutes)
 
-- With parseable duration: 178 / 292
+- With parseable duration: 180 / 294
 - Median: 4
 - p90: 18
 
 ## Telemetry completeness
 
-- Beans with an Orchestration Telemetry block: 10 / 295
-- Measured (non-template-default) blocks: 1 / 10
+- Beans with an Orchestration Telemetry block: 13 / 298
+- Measured (non-template-default) blocks: 4 / 13
 
 ## Dispatch mode mix
 
 - in-process: 9
+- mixed: 2
+- —: 1
 
 ## Gate waivers and escape hatches
 

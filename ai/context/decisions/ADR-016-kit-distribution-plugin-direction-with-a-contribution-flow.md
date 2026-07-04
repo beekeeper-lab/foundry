@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-07-03 |
-| **Status** | Accepted |
+| **Status** | Accepted — phase 2 (plugin packaging) shipped 2026-07-04 via BEAN-296: plugin.json + hooks.json + self-hosted marketplace in claude-kit; install flow documented in the kit README. Pilot consumer migration pending (phase 3). |
 | **Bean** | SPEC-026 (2026-07 agentic excellence audit) |
 | **Deciders** | Gregg (direction), Claude (analysis) |
 

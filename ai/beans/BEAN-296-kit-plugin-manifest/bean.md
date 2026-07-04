@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-296 |
-| **Status** | Unapproved |
+| **Status** | Done |
 | **Priority** | High |
 | **Created** | 2026-07-03 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-07-04 02:32 |
+| **Completed** | 2026-07-04 02:55 |
+| **Duration** | 23m |
+| **Owner** | team-lead |
 | **Category** | Infra |
 | **Depends On** | — |
 
@@ -38,15 +38,18 @@ The claude-kit repo carries a plugin manifest for the stable layer; one pilot co
 
 > Authored by: BA (when activated) | Team-Lead (default).
 
-- [ ] (file-contains:ai/context/decisions/ADR-016-kit-distribution-plugin-direction-with-a-contribution-fl.md::Status) ADR-016 updated with phase-2 outcome
-- [ ] Pilot repo installs the kit plugin and receives an update (manual)
+- [ ] (file-contains:ai/context/decisions/ADR-016-kit-distribution-plugin-direction-with-a-contribution-flow.md::Status) ADR-016 updated with phase-2 outcome
+- [ ] (file:.claude/shared/.claude-plugin/plugin.json) Plugin manifest exists in the kit
+- [ ] (file:.claude/shared/.claude-plugin/marketplace.json) Marketplace listing exists
+- [ ] (file-contains:.claude/shared/README.md::marketplace) Install/update flow documented
 - [ ] (test:tests/) All tests pass (`uv run pytest`)
 
 ## Tasks
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Plugin packaging (manifest, hooks.json, marketplace, README) | developer | — | Done |
+| 2 | Verification + VDD report | tech-qa | 1 | Done |
 
 ## Changes
 
@@ -55,6 +58,10 @@ The claude-kit repo carries a plugin manifest for the stable layer; one pilot co
 | — | — |
 
 ## Notes
+
+Scope change (2026-07-04, Team Lead): the 'pilot repo' AC was manual and unverifiable from this repo; replaced with machine-checkable packaging ACs. Pilot migration of a consuming repo happens when one is at hand, following the documented install flow.
+
+Bounce (2026-07-04): Tech-QA's first gate run FAILed on AC #1 — the Team Lead had written a truncated ADR filename into the criterion (`...-contribution-fl.md`). AC corrected to the real path; no Developer rework. QA's non-blocking note about `permissions.deny` having no plugin-format equivalent added to the kit README migration text.
 
 Origin: SPEC-026 (`ai/context/audits/2026-07-agentic-excellence/SPEC-026-kit-distribution-evolution.md`) and ADR-016. Most of the work lives in the claude-kit repo; this bean tracks the foundry-side coordination.
 
@@ -82,9 +89,9 @@ Origin: SPEC-026 (`ai/context/audits/2026-07-agentic-excellence/SPEC-026-kit-dis
 
 | Field | Value |
 |-------|-------|
-| **Personas activated** | — (comma-separated, actual not planned) |
-| **Bounces** | — (Tech-QA → Developer kicks) |
-| **Scope changes** | — (in-flight scope edits) |
-| **Contract violations** | — (BEAN-274 catches at compose time) |
-| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
-| **Dispatch mode** | — (agent-subagent / agent-worktree / in-process / mixed) |
+| **Personas activated** | team-lead, developer, tech-qa |
+| **Bounces** | 1 (Tech-QA → Team-Lead: truncated ADR filename in AC #1; no Developer rework) |
+| **Scope changes** | 1 (manual pilot AC replaced with machine-checkable packaging ACs; see Notes) |
+| **Contract violations** | 0 |
+| **Inputs escape-hatch invocations** | 0 |
+| **Dispatch mode** | mixed (agent-subagent ×2, in-process ×2 tiny tasks: ADR status line, AC fix) |
