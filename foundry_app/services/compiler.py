@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
+from typing import NamedTuple
 
 from foundry_app.core.models import (
     CompositionSpec,
@@ -742,17 +743,31 @@ def _build_lean_claude_md(
     return "\n\n".join(sections) + "\n"
 
 
-def compile_project(
+class AgnosticCompileResult(NamedTuple):
+    """Result of the harness-agnostic half of the compile stage.
+
+    Carries the ``StageResult`` for the emitted files plus the derived
+    metadata (persona descriptions, emitted expertise IDs) that harness-
+    specific emitters need to render their entry-point document.
+    """
+
+    result: StageResult
+    persona_descriptions: list[tuple[str, str, str]]
+    emitted_expertise_ids: list[str]
+
+
+def compile_agnostic_outputs(
     spec: CompositionSpec,
     library_index: LibraryIndex,
     library_root: str | Path,
     output_dir: str | Path,
-) -> StageResult:
-    """Compile CLAUDE.md and persona/expertise files from library components.
+) -> AgnosticCompileResult:
+    """Compile the harness-agnostic outputs of the compile stage.
 
-    Generates a lean CLAUDE.md (~100 lines) with project summary, tech stack,
-    directory overview, team table, and pointers to detailed docs. Full persona
-    and expertise content is written to separate files under ai/generated/.
+    Writes the full persona prompts to ``ai/generated/members/`` and the
+    expertise conventions to ``ai/generated/expertise/``, then checks the
+    generated tree for unresolved placeholders. These files are consumed by
+    any harness (IMP-08) — nothing Claude-specific is emitted here.
 
     Args:
         spec: The composition spec describing the project.
@@ -761,7 +776,9 @@ def compile_project(
         output_dir: Root directory for the generated project.
 
     Returns:
-        A StageResult listing written files and any warnings.
+        An AgnosticCompileResult with the StageResult plus the persona
+        descriptions and emitted expertise IDs needed by harness-specific
+        emitters (e.g. ``compile_claude_outputs``).
     """
     root = Path(output_dir)
     lib_root = Path(library_root)
@@ -832,17 +849,6 @@ def compile_project(
                 wrote.append(rel)
                 logger.info("Wrote: %s", exp_path)
 
-    # --- Build and write lean CLAUDE.md ---
-    # Only reference expertise whose source was actually written to avoid
-    # broken links in the generated CLAUDE.md.
-    content = _build_lean_claude_md(spec, persona_descriptions, emitted_expertise_ids)
-
-    claude_md_path = root / "CLAUDE.md"
-    claude_md_path.parent.mkdir(parents=True, exist_ok=True)
-    claude_md_path.write_text(content, encoding="utf-8")
-    wrote.append("CLAUDE.md")
-    logger.info("Wrote: %s", claude_md_path)
-
     # Check for unresolved placeholders in member/expertise files
     generated_dir = root / "ai" / "generated"
     for fpath in generated_dir.rglob("*.md") if generated_dir.exists() else []:
@@ -854,6 +860,86 @@ def compile_project(
             warnings.append(
                 f"Unresolved placeholders in {rel}: {', '.join(unique)}"
             )
+
+    return AgnosticCompileResult(
+        result=StageResult(wrote=wrote, warnings=warnings),
+        persona_descriptions=persona_descriptions,
+        emitted_expertise_ids=emitted_expertise_ids,
+    )
+
+
+def compile_claude_outputs(
+    spec: CompositionSpec,
+    output_dir: str | Path,
+    persona_descriptions: list[tuple[str, str, str]],
+    emitted_expertise_ids: list[str],
+) -> StageResult:
+    """Compile the Claude-specific outputs of the compile stage.
+
+    Writes the lean CLAUDE.md entry-point document. This is the harness-
+    specific half of the compile stage (IMP-08): a future HarnessTarget
+    adapter replaces this function without touching
+    ``compile_agnostic_outputs``.
+
+    Args:
+        spec: The composition spec describing the project.
+        output_dir: Root directory for the generated project.
+        persona_descriptions: ``(persona_id, display_name, description)``
+            tuples produced by ``compile_agnostic_outputs``.
+        emitted_expertise_ids: Expertise IDs whose source was actually
+            written, so the generated CLAUDE.md never carries broken links.
+
+    Returns:
+        A StageResult listing written files and any warnings.
+    """
+    root = Path(output_dir)
+
+    content = _build_lean_claude_md(spec, persona_descriptions, emitted_expertise_ids)
+
+    claude_md_path = root / "CLAUDE.md"
+    claude_md_path.parent.mkdir(parents=True, exist_ok=True)
+    claude_md_path.write_text(content, encoding="utf-8")
+    logger.info("Wrote: %s", claude_md_path)
+
+    return StageResult(wrote=["CLAUDE.md"], warnings=[])
+
+
+def compile_project(
+    spec: CompositionSpec,
+    library_index: LibraryIndex,
+    library_root: str | Path,
+    output_dir: str | Path,
+) -> StageResult:
+    """Compile CLAUDE.md and persona/expertise files from library components.
+
+    Orchestrates the two halves of the compile stage: the harness-agnostic
+    emission (``compile_agnostic_outputs`` — members + expertise under
+    ai/generated/) and the Claude-specific emission
+    (``compile_claude_outputs`` — the lean CLAUDE.md). The split keeps the
+    agnostic half reusable when a future HarnessTarget adapter (IMP-08)
+    supplies a different harness-specific emitter.
+
+    Args:
+        spec: The composition spec describing the project.
+        library_index: Index of available library components.
+        library_root: Path to the root of the library directory.
+        output_dir: Root directory for the generated project.
+
+    Returns:
+        A StageResult listing written files and any warnings.
+    """
+    agnostic = compile_agnostic_outputs(
+        spec, library_index, library_root, output_dir,
+    )
+    claude = compile_claude_outputs(
+        spec,
+        output_dir,
+        agnostic.persona_descriptions,
+        agnostic.emitted_expertise_ids,
+    )
+
+    wrote = list(agnostic.result.wrote) + list(claude.wrote)
+    warnings = list(agnostic.result.warnings) + list(claude.warnings)
 
     logger.info(
         "Compile complete: %d files written, %d warnings",

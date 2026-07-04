@@ -30,6 +30,8 @@ from foundry_app.services.compiler import (
     _persona_display_name,
     _resolve_persona_name,
     _substitute,
+    compile_agnostic_outputs,
+    compile_claude_outputs,
     compile_project,
 )
 from foundry_app.services.library_indexer import build_library_index
@@ -2565,3 +2567,106 @@ class TestBean294RExpertiseIntegration:
             "Generated r.md must surface the tidyverse default from the "
             "real ai-team-library/expertise/r/conventions.md"
         )
+
+
+# ---------------------------------------------------------------------------
+# compile stage split — agnostic vs Claude-specific emission (IMP-08)
+# ---------------------------------------------------------------------------
+
+
+class TestCompileStageSplit:
+    """Lock the agnostic/Claude split: calling the two halves explicitly
+    must produce exactly the same files, bytes, and StageResult as the
+    combined ``compile_project`` orchestrator."""
+
+    def _fixture(self, tmp_path: Path):
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "developer": {
+                    "persona.md": "# Persona: Developer\n\nBuilds {{ project_name }}.",
+                    "outputs.md": "# Outputs",
+                },
+                "architect": {"persona.md": "# Persona: Architect\n\nDesigns."},
+            },
+            expertise={
+                "python": {"conventions.md": "# Python\n\nUse type hints."},
+                "typescript": {"conventions.md": "# TS"},
+            },
+        )
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="architect"),
+            ]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+            ],
+        )
+        return spec, index, lib_root
+
+    @staticmethod
+    def _tree(root: Path) -> dict[str, bytes]:
+        return {
+            str(f.relative_to(root)): f.read_bytes()
+            for f in sorted(root.rglob("*"))
+            if f.is_file()
+        }
+
+    def test_split_halves_reproduce_combined_output(self, tmp_path: Path):
+        spec, index, lib_root = self._fixture(tmp_path)
+
+        combined_out = tmp_path / "combined"
+        combined = compile_project(spec, index, lib_root, combined_out)
+
+        split_out = tmp_path / "split"
+        agnostic = compile_agnostic_outputs(spec, index, lib_root, split_out)
+        claude = compile_claude_outputs(
+            spec,
+            split_out,
+            agnostic.persona_descriptions,
+            agnostic.emitted_expertise_ids,
+        )
+
+        # Same file set with byte-identical content.
+        assert self._tree(split_out) == self._tree(combined_out)
+
+        # Same StageResult when the two halves are concatenated.
+        assert (
+            list(agnostic.result.wrote) + list(claude.wrote)
+            == list(combined.wrote)
+        )
+        assert (
+            list(agnostic.result.warnings) + list(claude.warnings)
+            == list(combined.warnings)
+        )
+
+    def test_agnostic_half_emits_no_claude_md(self, tmp_path: Path):
+        spec, index, lib_root = self._fixture(tmp_path)
+        out = tmp_path / "agnostic-only"
+        agnostic = compile_agnostic_outputs(spec, index, lib_root, out)
+
+        assert not (out / "CLAUDE.md").exists()
+        assert "CLAUDE.md" not in agnostic.result.wrote
+        assert (out / "ai" / "generated" / "members" / "developer.md").is_file()
+        assert (out / "ai" / "generated" / "expertise" / "python.md").is_file()
+
+    def test_claude_half_emits_only_claude_md(self, tmp_path: Path):
+        spec, index, lib_root = self._fixture(tmp_path)
+        out = tmp_path / "claude-only"
+        agnostic = compile_agnostic_outputs(spec, index, lib_root, out)
+
+        before = self._tree(out)
+        claude = compile_claude_outputs(
+            spec,
+            out,
+            agnostic.persona_descriptions,
+            agnostic.emitted_expertise_ids,
+        )
+        after = self._tree(out)
+
+        assert claude.wrote == ["CLAUDE.md"]
+        assert set(after) - set(before) == {"CLAUDE.md"}
+        # The Claude half must not rewrite any agnostic file.
+        assert all(after[p] == before[p] for p in before)
