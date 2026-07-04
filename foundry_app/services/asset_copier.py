@@ -44,6 +44,10 @@ _DEV_LOOP_STACK_BY_EXPERTISE: dict[str, str] = {
     "swift": "swift",
     "r": "r",
     "llm-applications": "python",
+    "fastapi": "python",
+    "nextjs": "node",
+    "vue": "node",
+    "spring-boot": "jvm",
 }
 
 # Directory name (under claude/commands/) holding stack-keyed dev-loop command sets.
