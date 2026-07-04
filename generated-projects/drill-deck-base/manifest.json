@@ -1,7 +1,7 @@
 {
-  "run_id": "20260703-183924",
-  "generated_at": "2026-07-03T22:39:24.316799Z",
-  "library_version": "ec5a548",
+  "run_id": "20260703-205533",
+  "generated_at": "2026-07-04T00:55:33.103201Z",
+  "library_version": "6a53929",
   "composition_snapshot": {
     "project": {
       "name": "Drill_Deck_Base",
@@ -187,10 +187,7 @@
         "ai/generated/expertise/security.md",
         "CLAUDE.md"
       ],
-      "warnings": [
-        "Expertise 'accessibility-compliance' has no conventions.md; compiled from 6 pack file(s) instead",
-        "Expertise 'security' has no conventions.md; compiled from 4 pack file(s) instead"
-      ]
+      "warnings": []
     },
     "agent_writer": {
       "wrote": [
@@ -209,11 +206,7 @@
     },
     "copy_assets": {
       "wrote": [
-        ".claude/commands/build.md",
-        ".claude/commands/dev.md",
-        ".claude/commands/format.md",
-        ".claude/commands/lint.md",
-        ".claude/commands/test.md"
+        ".claude/hooks/handoff-reminder.py"
       ],
       "warnings": [
         "File already exists with different content: .claude/commands/backlog-consolidate.md",

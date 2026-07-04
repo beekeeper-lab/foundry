@@ -85,24 +85,36 @@ The primary expertise for this project is **flutter, dart, clean-code, accessibi
 
 ### Accessibility Compliance
 
-| Area | Default | Alternatives |
-|------|---------|--------------|
-| **Audit methodology** | WCAG-EM (Website Accessibility Conformance Evaluation Methodology) | Section 508 ICT Testing Baseline, Trusted Tester methodology |
-| **Issue tracker** | Dedicated accessibility backlog in existing project tracker | Standalone accessibility register, Siteimprove, Level Access AMP |
-| **Severity model** | Critical / Major / Minor / Best Practice | CVSS-style scoring, business-impact weighting |
-| **Reporting format** | VPAT 2.5 / ACR (Accessibility Conformance Report) | Custom audit report, Siteimprove dashboard, Deque WorldSpace |
-| **Audit cadence** | Quarterly full audit, continuous automated scanning | Annual (minimum legal), per-release, continuous |
+| Concern | Default | Notes |
+|---------|---------|-------|
+| Conformance target | WCAG 2.2 Level AA | Level A is not sufficient for ADA / Section 508 / EN 301 549 |
+| Automated testing | axe-core (+ jest-axe / cypress-axe in CI) | Catches only ~30-40% of issues — manual testing is mandatory |
+| Screen readers | NVDA + Firefox and VoiceOver + Safari | Test with at least two, from different platforms |
+| Contrast — normal text | 4.5:1 (AA) | 3:1 for large text (≥18pt / ≥14pt bold) |
+| Contrast — UI components | 3:1 (WCAG 1.4.11) | Borders, icons, focus indicators, chart segments |
+| ARIA policy | Native HTML elements first | ARIA only when no native element provides the semantics |
+| Focus indicator | `:focus-visible`, ≥2px solid outline, 3:1 contrast | Never `outline: none` without a replacement |
+| Audit methodology | WCAG-EM; quarterly full audit + continuous scanning | Findings rated Critical / Major / Minor / Best Practice |
+| Reporting | VPAT 2.5 / ACR with evaluation date and version | Update quarterly; a VPAT is a snapshot, not a certificate |
 
 
 ### Security
 
-- **TLS:** TLS 1.2 minimum. TLS 1.3 preferred. No SSL, no TLS 1.0/1.1.
-- **HTTP security headers:** Applied at the reverse proxy or API gateway level.
-Enforced in CI via header-check tests.
-- **Dependencies:** No known Critical/High CVEs in production dependencies.
-Scanned daily.
-- **Attack surface:** Debug endpoints, admin panels, and development tools are
-disabled in production. Verified by automated checks.
+| Concern              | Default Approach                                        |
+|----------------------|---------------------------------------------------------|
+| Reference framework  | OWASP ASVS Level 2 minimum for production applications  |
+| Design posture       | Defense in depth — no single control trusted alone      |
+| Trust model          | Zero trust — every request authenticated and authorized |
+| Data classification  | All data classified (public/internal/confidential/restricted) before storage decisions |
+| Threat modeling      | STRIDE, for every new feature/service/architecture change |
+| SAST                 | Every PR; blocks merge on Critical/High findings        |
+| SCA                  | Every PR + daily schedule for new CVE disclosures       |
+| DAST                 | Against staging after every deployment                  |
+| Secret scanning      | Pre-commit hook + CI pipeline check                     |
+| TLS                  | 1.2 minimum, 1.3 preferred; no SSL, no TLS 1.0/1.1      |
+| Security headers     | Applied at reverse proxy/gateway; enforced by CI tests  |
+| Dependencies         | No known Critical/High CVEs in production; scanned daily |
+| Attack surface       | Debug endpoints/admin panels disabled in production, verified by automated checks |
 
 
 

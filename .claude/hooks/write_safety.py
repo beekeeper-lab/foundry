@@ -1,0 +1,1 @@
+../shared/hooks/write_safety.py

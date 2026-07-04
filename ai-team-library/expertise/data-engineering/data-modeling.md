@@ -1,10 +1,3 @@
----
-id: data-engineering
-category: Data & ML
-entry: true
-last-reviewed: 2026-07
----
-
 # Data Modeling
 
 ## Category

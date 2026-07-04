@@ -1,10 +1,3 @@
----
-id: pci-dss-compliance
-category: Compliance & Governance
-entry: true
-last-reviewed: 2026-07
----
-
 # Audit Logging and Monitoring
 
 ## Category

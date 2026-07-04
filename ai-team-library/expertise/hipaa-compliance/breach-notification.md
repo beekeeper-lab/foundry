@@ -1,10 +1,3 @@
----
-id: hipaa-compliance
-category: Compliance & Governance
-entry: true
-last-reviewed: 2026-07
----
-
 # Breach Notification
 
 ## Category

@@ -997,6 +997,7 @@ class TestMissingHookScripts:
         (hooks_dir / "validate-task-inputs.py").write_text("# stub")
         (hooks_dir / "telemetry-stamp.py").write_text("# stub")
         (hooks_dir / "vdd-gate.py").write_text("# stub")
+        (hooks_dir / "handoff-reminder.py").write_text("# stub")
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="hook-policy")],
             replace_defaults=True,

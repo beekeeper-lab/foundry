@@ -1,10 +1,3 @@
----
-id: finops
-category: Business Practices
-entry: true
-last-reviewed: 2026-07
----
-
 # Budgets & Commitment Planning
 
 ## Category

@@ -1,10 +1,3 @@
----
-id: devops
-category: Infrastructure & Platforms
-entry: true
-last-reviewed: 2026-07
----
-
 # Environment Management
 
 ## Category

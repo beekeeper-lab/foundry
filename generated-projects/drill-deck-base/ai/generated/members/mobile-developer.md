@@ -685,12 +685,20 @@ Full conventions: `ai/generated/expertise/clean-code.md`
 
 ### Security
 
-- **TLS:** TLS 1.2 minimum. TLS 1.3 preferred. No SSL, no TLS 1.0/1.1.
-- **HTTP security headers:** Applied at the reverse proxy or API gateway level.
-Enforced in CI via header-check tests.
-- **Dependencies:** No known Critical/High CVEs in production dependencies.
-Scanned daily.
-- **Attack surface:** Debug endpoints, admin panels, and development tools are
-disabled in production. Verified by automated checks.
+| Concern              | Default Approach                                        |
+|----------------------|---------------------------------------------------------|
+| Reference framework  | OWASP ASVS Level 2 minimum for production applications  |
+| Design posture       | Defense in depth — no single control trusted alone      |
+| Trust model          | Zero trust — every request authenticated and authorized |
+| Data classification  | All data classified (public/internal/confidential/restricted) before storage decisions |
+| Threat modeling      | STRIDE, for every new feature/service/architecture change |
+| SAST                 | Every PR; blocks merge on Critical/High findings        |
+| SCA                  | Every PR + daily schedule for new CVE disclosures       |
+| DAST                 | Against staging after every deployment                  |
+| Secret scanning      | Pre-commit hook + CI pipeline check                     |
+| TLS                  | 1.2 minimum, 1.3 preferred; no SSL, no TLS 1.0/1.1      |
+| Security headers     | Applied at reverse proxy/gateway; enforced by CI tests  |
+| Dependencies         | No known Critical/High CVEs in production; scanned daily |
+| Attack surface       | Debug endpoints/admin panels disabled in production, verified by automated checks |
 
 Full conventions: `ai/generated/expertise/security.md`

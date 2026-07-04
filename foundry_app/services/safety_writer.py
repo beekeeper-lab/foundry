@@ -207,6 +207,10 @@ _HOOK_PACK_REGISTRY: dict[str, tuple[list[dict[str, Any]], list[dict[str, Any]]]
                 "Edit|Write",
                 "python3 .claude/hooks/vdd-gate.py",
             ),
+            _hook_entry(
+                "Edit|Write",
+                "python3 .claude/hooks/handoff-reminder.py",
+            ),
         ],
         [
             _hook_entry(

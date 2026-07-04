@@ -1,10 +1,3 @@
----
-id: frontend-build-tooling
-category: Architecture & Patterns
-entry: true
-last-reviewed: 2026-07
----
-
 # Frontend Bundlers
 
 ## Category

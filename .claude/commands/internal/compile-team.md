@@ -1,0 +1,1 @@
+../../shared/commands/internal/compile-team.md

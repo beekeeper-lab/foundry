@@ -1,10 +1,3 @@
----
-id: product-strategy
-category: Business Practices
-entry: true
-last-reviewed: 2026-07
----
-
 # Competitive Analysis
 
 ## Category

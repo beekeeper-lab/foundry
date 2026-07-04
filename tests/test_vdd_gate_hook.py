@@ -118,3 +118,40 @@ class TestGateAllows:
             "new_string": _PENDING_ROW,
         })
         assert proc.returncode == 0
+
+
+class TestHandoffReminder:
+    """SPEC-008 follow-through: non-blocking reminder when a bean closes
+    with no typed handoff packet."""
+
+    _REMINDER_HOOK = _HOOK.parent / "handoff-reminder.py"
+
+    def _run_reminder(self, tool_input: dict) -> subprocess.CompletedProcess:
+        payload = json.dumps({"tool_name": "Edit", "tool_input": tool_input})
+        return subprocess.run(
+            [sys.executable, str(self._REMINDER_HOOK)],
+            input=payload, capture_output=True, text=True, timeout=15,
+        )
+
+    def test_reminds_without_packet_but_never_blocks(self, tmp_path):
+        bean = _project(tmp_path)
+        proc = self._run_reminder({
+            "file_path": str(bean),
+            "old_string": _PENDING_ROW,
+            "new_string": _DONE_ROW,
+        })
+        assert proc.returncode == 0
+        assert "handoff" in proc.stderr.lower()
+
+    def test_silent_when_packet_exists(self, tmp_path):
+        bean = _project(tmp_path)
+        handoffs = tmp_path / "ai" / "handoffs"
+        handoffs.mkdir(parents=True)
+        (handoffs / "developer-to-tech-qa-BEAN-042-task-01.md").write_text("x")
+        proc = self._run_reminder({
+            "file_path": str(bean),
+            "old_string": _PENDING_ROW,
+            "new_string": _DONE_ROW,
+        })
+        assert proc.returncode == 0
+        assert proc.stderr.strip() == ""

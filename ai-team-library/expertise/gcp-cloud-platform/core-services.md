@@ -1,10 +1,3 @@
----
-id: gcp-cloud-platform
-category: Infrastructure & Platforms
-entry: true
-last-reviewed: 2026-07
----
-
 # GCP Core Services
 
 ## Category

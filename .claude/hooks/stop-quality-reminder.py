@@ -1,0 +1,1 @@
+../shared/hooks/stop-quality-reminder.py

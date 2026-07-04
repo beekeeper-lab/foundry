@@ -1,10 +1,3 @@
----
-id: change-management
-category: Business Practices
-entry: true
-last-reviewed: 2026-07
----
-
 # Communication Plans
 
 ## Category

@@ -1,10 +1,3 @@
----
-id: iso-9000
-category: Compliance & Governance
-entry: true
-last-reviewed: 2026-07
----
-
 # Audit Procedures
 
 ## Category

@@ -36,6 +36,15 @@
             "command": "branch=$(git branch --show-current 2>/dev/null); if [ -n \"$branch\" ] && ! echo \"$branch\" | grep -qE '^(feature|fix|bean|hotfix|chore)/[a-z0-9-]+$'; then echo \"WARNING: Branch '$branch' does not follow naming convention (feature|fix|bean|hotfix|chore)/<name>.\"; fi"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/handoff-reminder.py"
+          }
+        ]
       }
     ],
     "PostToolUse": [

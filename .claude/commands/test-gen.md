@@ -1,0 +1,1 @@
+../shared/commands/test-gen.md
