@@ -3,13 +3,13 @@
 | Field | Value |
 |-------|-------|
 | **Bean ID** | BEAN-295 |
-| **Status** | Unapproved |
+| **Status** | Done |
 | **Priority** | Medium |
 | **Created** | 2026-07-03 |
-| **Started** | — |
-| **Completed** | — |
-| **Duration** | — |
-| **Owner** | (unassigned) |
+| **Started** | 2026-07-04 02:05 |
+| **Completed** | 2026-07-04 02:21 |
+| **Duration** | 16m |
+| **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | — |
 
@@ -45,7 +45,12 @@ The library ships framework packs for the most-requested web and backend stacks,
 
 | # | Task | Owner | Depends On | Status |
 |---|------|-------|------------|--------|
-| 1 | | | | Pending |
+| 1 | Author fastapi pack | developer | — | Done |
+| 2 | Author nextjs pack | developer | — | Done |
+| 3 | Author vue pack | developer | — | Done |
+| 4 | Author spring-boot pack | developer | — | Done |
+| 5 | Integration (indexer tests, dev-loop map) | developer | 1,2,3,4 | Done |
+| 6 | Verification + VDD report | tech-qa | 5 | Done |
 
 ## Changes
 
@@ -81,9 +86,9 @@ Origin: SPEC-021 deferred scope (`ai/context/audits/2026-07-agentic-excellence/S
 
 | Field | Value |
 |-------|-------|
-| **Personas activated** | — (comma-separated, actual not planned) |
-| **Bounces** | — (Tech-QA → Developer kicks) |
-| **Scope changes** | — (in-flight scope edits) |
-| **Contract violations** | — (BEAN-274 catches at compose time) |
-| **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
-| **Dispatch mode** | — (agent-subagent / agent-worktree / in-process / mixed) |
+| **Personas activated** | team-lead, developer, tech-qa |
+| **Bounces** | 0 |
+| **Scope changes** | 1 (category value normalized to existing `Frameworks` taxonomy during integration) |
+| **Contract violations** | 0 |
+| **Inputs escape-hatch invocations** | 0 |
+| **Dispatch mode** | mixed (agent-subagent ×5, in-process ×1 tiny integration task) |

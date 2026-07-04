@@ -13,7 +13,7 @@ Delete entries that stop being true.
 
 ## Personas
 
-- (none yet)
+- Tech-QA verification catches real defects outside the bean's own scope when given license to report them: BEAN-295's QA found the /vdd headless-Qt failure (filed as BEAN-297).
 
 ## Expertise
 
