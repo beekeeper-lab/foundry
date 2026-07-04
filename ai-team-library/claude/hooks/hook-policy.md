@@ -1,5 +1,8 @@
 # Hook Policy
 
+> **Status (2026-07, SPEC-015):** Partially implemented — branch protection, validate-task-inputs, telemetry, and the VDD gate are real wired hooks (see settings.json and the generator's hook-policy pack). The `.foundry/hooks.yml` posture framework below is DESIGN, not implemented.
+
+
 Policy governing when and how hooks fire during the Foundry team workflow. Hooks are automated checks and actions that run at defined points in the task lifecycle to enforce quality, consistency, and compliance without requiring manual intervention.
 
 ## Overview

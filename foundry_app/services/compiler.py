@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
+from typing import NamedTuple
 
 from foundry_app.core.models import (
     CompositionSpec,
@@ -192,9 +193,38 @@ def _get_emitted_expertise_ids(
         info = library_index.expertise_by_id(sel.id)
         if info is None:
             continue
-        if (Path(info.path) / "conventions.md").is_file():
+        if _expertise_entry_file(Path(info.path)) is not None:
             emitted.append(sel.id)
     return emitted
+
+
+def _strip_frontmatter(text: str) -> str:
+    """Drop a leading YAML frontmatter block (SPEC-019 pack metadata).
+
+    Frontmatter is indexer metadata, not prompt content — compiled
+    expertise files must not carry it.
+    """
+    if not text.startswith("---\n"):
+        return text
+    end = text.find("\n---\n", 4)
+    if end < 0:
+        return text
+    return text[end + 5:].lstrip("\n")
+
+
+def _expertise_entry_file(expertise_dir: Path) -> Path | None:
+    """Resolve the entry file for an expertise pack.
+
+    ``conventions.md`` is the canonical entry file. Packs without one
+    (all compliance/cloud/business packs as of 2026-07) fall back to their
+    first ``.md`` file alphabetically — matching the indexer's primary-file
+    rule — so no pack silently compiles to nothing (SPEC-003).
+    """
+    conventions = expertise_dir / "conventions.md"
+    if conventions.is_file():
+        return conventions
+    candidates = sorted(expertise_dir.glob("*.md"))
+    return candidates[0] if candidates else None
 
 
 def _build_context(
@@ -433,20 +463,40 @@ def _compile_persona_section(
         parts.append(_substitute(prompts_md.strip(), context))
         files_read += 1
 
-    # Forward-compat guard (ADR-012): if a future revision inlines expertise
-    # content into persona sections, the same `_expertise_applies_to` filter
-    # used by `agent_writer.write_agents` must gate that inlining. Today the
-    # persona section embeds no expertise, so the guard is a no-op — but we
-    # exercise the lookup here so the path is wired and reviewers see the
-    # filtering decision is intentional, not forgotten.
+    # SPEC-012: member prompts carry their persona-relevant expertise —
+    # the high-signal Defaults excerpt inline (token-budgeted by
+    # _extract_expertise_highlights) plus a pointer to the full compiled
+    # conventions file. The ADR-012 `_expertise_applies_to` filter gates
+    # which expertise reaches which persona.
     if spec is not None:
-        for sel in spec.expertise:
+        # Function-level import: agent_writer imports compiler at module
+        # load, so this direction must stay lazy to avoid a cycle.
+        from foundry_app.services.agent_writer import (
+            _extract_expertise_highlights,
+        )
+
+        expertise_blocks: list[str] = []
+        for sel in sorted(spec.expertise, key=lambda s: (s.order, s.id)):
             info = index.expertise_by_id(sel.id)
-            if info is None:
+            if info is None or not _expertise_applies_to(persona_id, info):
                 continue
-            # No-op today: nothing is appended either way. The presence of
-            # this loop is the contract.
-            _ = _expertise_applies_to(persona_id, info)
+            entry = _expertise_entry_file(Path(info.path))
+            if entry is None:
+                continue
+            highlights = _extract_expertise_highlights(
+                _substitute(entry.read_text(encoding="utf-8"), context)
+            )
+            block = [f"### {_display_name_from_id(sel.id)}"]
+            if highlights:
+                block.append(highlights)
+            block.append(
+                f"Full conventions: `ai/generated/expertise/{sel.id}.md`"
+            )
+            expertise_blocks.append("\n\n".join(block))
+        if expertise_blocks:
+            parts.append(
+                "## Expertise Conventions\n\n" + "\n\n".join(expertise_blocks)
+            )
 
     if files_read == 0:
         warnings.append(f"Persona '{persona_id}' has no source files")
@@ -474,12 +524,28 @@ def _compile_expertise_section(
 
     expertise_dir = Path(expertise_info.path)
 
-    # Read conventions.md (primary file for each expertise)
+    # conventions.md is the canonical entry file; packs without one compile
+    # from ALL their .md files (sorted) so authored content is never silently
+    # dropped (SPEC-003). Packs with conventions.md keep entry-only emission
+    # to preserve the established token profile.
     conventions = _read_file(expertise_dir / "conventions.md")
     if conventions is not None:
-        return _substitute(conventions.strip(), context)
+        return _substitute(_strip_frontmatter(conventions).strip(), context)
 
-    warnings.append(f"Expertise '{expertise_id}' missing conventions.md")
+    sibling_files = sorted(expertise_dir.glob("*.md"))
+    if sibling_files:
+        parts = [
+            _strip_frontmatter(_read_file(path) or "") for path in sibling_files
+        ]
+        combined = "\n\n---\n\n".join(p.strip() for p in parts if p.strip())
+        if combined:
+            warnings.append(
+                f"Expertise '{expertise_id}' has no conventions.md; "
+                f"compiled from {len(sibling_files)} pack file(s) instead"
+            )
+            return _substitute(combined, context)
+
+    warnings.append(f"Expertise '{expertise_id}' has no compilable .md files")
     return None
 
 
@@ -578,14 +644,29 @@ def _build_lean_claude_md(
         team_lines.append("| Persona | Role | Agent | Full Prompt |")
         team_lines.append("|---------|------|-------|-------------|")
         for pid, display, desc in persona_descriptions:
+            # Links must use the flattened leaf dirname (ADR-014): agents and
+            # members are written flat regardless of extended/ tier.
+            leaf = _persona_dirname(pid)
             team_lines.append(
                 f"| {display} | {desc} "
-                f"| `.claude/agents/{pid}.md` "
-                f"| `ai/generated/members/{pid}.md` |"
+                f"| `.claude/agents/{leaf}.md` "
+                f"| `ai/generated/members/{leaf}.md` |"
             )
         sections.append("\n".join(team_lines))
 
     # --- Team Orchestration Model ---
+    # Render only personas actually on the team (SPEC-018): name-dropping
+    # absent specialists sent readers hunting for roles that don't exist.
+    team_leaves = {_persona_dirname(pid) for pid, _, _ in persona_descriptions}
+    bench = sorted(
+        _display_name_from_id(leaf)
+        for leaf in team_leaves - {"team-lead", "developer", "tech-qa"}
+    )
+    merge_owner = (
+        "the **Integrator Merge Captain**"
+        if "integrator-merge-captain" in team_leaves
+        else "the **Team Lead** (no Merge Captain on this team)"
+    )
     orchestration_lines = [
         "## Team Orchestration Model",
         "",
@@ -597,10 +678,18 @@ def _build_lean_claude_md(
         "assign:",
         "  - **Developer**",
         "  - **Tech-QA**",
-        "- Other specialists such as **Architect**, **UX/UI Designer**, "
-        "**Integrator Merge Captain**, and **BA** are assigned only when "
-        "the bean or task requires them.",
     ]
+    if bench:
+        orchestration_lines.append(
+            "- Other specialists on this team — "
+            + ", ".join(f"**{name}**" for name in bench)
+            + " — are assigned only when the bean or task requires them.",
+        )
+    orchestration_lines.append(
+        f"- Merges to `main` (`/merge-bean`) are owned by {merge_owner}; "
+        "see the library task taxonomy's 'Fallback When Absent' table for "
+        "other role fallbacks.",
+    )
     sections.append("\n".join(orchestration_lines))
 
     # --- Workflow (BEAN-268) ---
@@ -654,17 +743,31 @@ def _build_lean_claude_md(
     return "\n\n".join(sections) + "\n"
 
 
-def compile_project(
+class AgnosticCompileResult(NamedTuple):
+    """Result of the harness-agnostic half of the compile stage.
+
+    Carries the ``StageResult`` for the emitted files plus the derived
+    metadata (persona descriptions, emitted expertise IDs) that harness-
+    specific emitters need to render their entry-point document.
+    """
+
+    result: StageResult
+    persona_descriptions: list[tuple[str, str, str]]
+    emitted_expertise_ids: list[str]
+
+
+def compile_agnostic_outputs(
     spec: CompositionSpec,
     library_index: LibraryIndex,
     library_root: str | Path,
     output_dir: str | Path,
-) -> StageResult:
-    """Compile CLAUDE.md and persona/expertise files from library components.
+) -> AgnosticCompileResult:
+    """Compile the harness-agnostic outputs of the compile stage.
 
-    Generates a lean CLAUDE.md (~100 lines) with project summary, tech stack,
-    directory overview, team table, and pointers to detailed docs. Full persona
-    and expertise content is written to separate files under ai/generated/.
+    Writes the full persona prompts to ``ai/generated/members/`` and the
+    expertise conventions to ``ai/generated/expertise/``, then checks the
+    generated tree for unresolved placeholders. These files are consumed by
+    any harness (IMP-08) — nothing Claude-specific is emitted here.
 
     Args:
         spec: The composition spec describing the project.
@@ -673,7 +776,9 @@ def compile_project(
         output_dir: Root directory for the generated project.
 
     Returns:
-        A StageResult listing written files and any warnings.
+        An AgnosticCompileResult with the StageResult plus the persona
+        descriptions and emitted expertise IDs needed by harness-specific
+        emitters (e.g. ``compile_claude_outputs``).
     """
     root = Path(output_dir)
     lib_root = Path(library_root)
@@ -744,17 +849,6 @@ def compile_project(
                 wrote.append(rel)
                 logger.info("Wrote: %s", exp_path)
 
-    # --- Build and write lean CLAUDE.md ---
-    # Only reference expertise whose source was actually written to avoid
-    # broken links in the generated CLAUDE.md.
-    content = _build_lean_claude_md(spec, persona_descriptions, emitted_expertise_ids)
-
-    claude_md_path = root / "CLAUDE.md"
-    claude_md_path.parent.mkdir(parents=True, exist_ok=True)
-    claude_md_path.write_text(content, encoding="utf-8")
-    wrote.append("CLAUDE.md")
-    logger.info("Wrote: %s", claude_md_path)
-
     # Check for unresolved placeholders in member/expertise files
     generated_dir = root / "ai" / "generated"
     for fpath in generated_dir.rglob("*.md") if generated_dir.exists() else []:
@@ -766,6 +860,86 @@ def compile_project(
             warnings.append(
                 f"Unresolved placeholders in {rel}: {', '.join(unique)}"
             )
+
+    return AgnosticCompileResult(
+        result=StageResult(wrote=wrote, warnings=warnings),
+        persona_descriptions=persona_descriptions,
+        emitted_expertise_ids=emitted_expertise_ids,
+    )
+
+
+def compile_claude_outputs(
+    spec: CompositionSpec,
+    output_dir: str | Path,
+    persona_descriptions: list[tuple[str, str, str]],
+    emitted_expertise_ids: list[str],
+) -> StageResult:
+    """Compile the Claude-specific outputs of the compile stage.
+
+    Writes the lean CLAUDE.md entry-point document. This is the harness-
+    specific half of the compile stage (IMP-08): a future HarnessTarget
+    adapter replaces this function without touching
+    ``compile_agnostic_outputs``.
+
+    Args:
+        spec: The composition spec describing the project.
+        output_dir: Root directory for the generated project.
+        persona_descriptions: ``(persona_id, display_name, description)``
+            tuples produced by ``compile_agnostic_outputs``.
+        emitted_expertise_ids: Expertise IDs whose source was actually
+            written, so the generated CLAUDE.md never carries broken links.
+
+    Returns:
+        A StageResult listing written files and any warnings.
+    """
+    root = Path(output_dir)
+
+    content = _build_lean_claude_md(spec, persona_descriptions, emitted_expertise_ids)
+
+    claude_md_path = root / "CLAUDE.md"
+    claude_md_path.parent.mkdir(parents=True, exist_ok=True)
+    claude_md_path.write_text(content, encoding="utf-8")
+    logger.info("Wrote: %s", claude_md_path)
+
+    return StageResult(wrote=["CLAUDE.md"], warnings=[])
+
+
+def compile_project(
+    spec: CompositionSpec,
+    library_index: LibraryIndex,
+    library_root: str | Path,
+    output_dir: str | Path,
+) -> StageResult:
+    """Compile CLAUDE.md and persona/expertise files from library components.
+
+    Orchestrates the two halves of the compile stage: the harness-agnostic
+    emission (``compile_agnostic_outputs`` — members + expertise under
+    ai/generated/) and the Claude-specific emission
+    (``compile_claude_outputs`` — the lean CLAUDE.md). The split keeps the
+    agnostic half reusable when a future HarnessTarget adapter (IMP-08)
+    supplies a different harness-specific emitter.
+
+    Args:
+        spec: The composition spec describing the project.
+        library_index: Index of available library components.
+        library_root: Path to the root of the library directory.
+        output_dir: Root directory for the generated project.
+
+    Returns:
+        A StageResult listing written files and any warnings.
+    """
+    agnostic = compile_agnostic_outputs(
+        spec, library_index, library_root, output_dir,
+    )
+    claude = compile_claude_outputs(
+        spec,
+        output_dir,
+        agnostic.persona_descriptions,
+        agnostic.emitted_expertise_ids,
+    )
+
+    wrote = list(agnostic.result.wrote) + list(claude.wrote)
+    warnings = list(agnostic.result.warnings) + list(claude.warnings)
 
     logger.info(
         "Compile complete: %d files written, %d warnings",

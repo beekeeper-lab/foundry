@@ -8,7 +8,7 @@
 | **Created** | 2026-05-01 |
 | **Started** | 2026-05-01 11:43 |
 | **Completed** | 2026-05-01 11:47 |
-| **Duration** | 1598h 40m |
+| **Duration** | 4m (corrected 2026-07) |
 | **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | — |

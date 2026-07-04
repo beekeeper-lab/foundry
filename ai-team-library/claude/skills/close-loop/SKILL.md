@@ -1,3 +1,8 @@
+---
+name: close-loop
+description: "- Invoked automatically when a persona marks a task as complete. - Invoked by the /close-loop slash command for on-demand status verification. - Called programmatically by the orchestration layer after artifact production."
+---
+
 # Skill: Close Loop
 
 ## Description
@@ -34,6 +39,8 @@ enforces the quality contract that keeps the autonomous team reliable.
 6. **Generate a verification report** -- Produce a structured report listing each criterion, its status, and supporting evidence or failure reasons.
 7. **If all criteria pass** -- Mark the task as `complete`. Identify downstream tasks that were blocked and notify the consuming persona(s) that the dependency is satisfied.
 8. **If any criteria fail** -- Mark the task as `returned`. Send the verification report back to the producing persona with specific, actionable failure descriptions.
+9. **Retro + memory (SPEC-009)** -- After marking the final task of a bean complete, ask: did this bean surface a lesson that generalizes beyond it? If yes, append a one-line entry to `MEMORY.md` (Process / Personas / Expertise / Kit section). When the lesson implicates a persona, expertise pack, or kit asset, also draft an Unapproved improvement bean naming the file to change.
+10. **Report cadence (SPEC-009)** -- Every 10th closed bean, regenerate the telemetry roll-up before completing: run `uv run foundry-cli orchestration-report` (or `/orchestration-report`). Cheap check: if the newest `ai/outputs/team-lead/orchestration-report-*.md` has a `Generated-through:` more than 10 beans behind the bean being closed, the close is not done until the report is refreshed.
 
 ## Outputs
 

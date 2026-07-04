@@ -1,3 +1,10 @@
+---
+id: node
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # Node.js Stack Conventions
 
 ## Category
@@ -33,7 +40,7 @@ project-root/
     helpers/                # Test utility functions
   package.json
   tsconfig.json
-  .nvmrc                    # Pin the Node.js major version (e.g., 22)
+  .nvmrc                    # Pin the current LTS major (24 as of late 2025)
   .env.example              # Documented env var template (no real values)
   README.md
 ```
@@ -58,8 +65,8 @@ project-root/
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

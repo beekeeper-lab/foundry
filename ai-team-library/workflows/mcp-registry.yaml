@@ -46,10 +46,14 @@ servers:
     package: "@delorenj/mcp-server-trello"
     notes: "Third-party Trello MCP server published on npm."
 
+# Baseline is intentionally minimal (SPEC-022): obsidian and trello are
+# workflow-specific and were previously force-installed into every project
+# (born broken without credentials). Opt in via composition.yml:
+#   mcp:
+#     add:
+#       trello:        # null = use this registry's definition
 baseline:
   - filesystem
-  - obsidian
-  - trello
 
 # Expertise-specific servers. Each key is an expertise ID from the
 # library; each value is the list of server IDs to add on top of the

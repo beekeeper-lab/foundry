@@ -1,3 +1,8 @@
+---
+name: validate-repo
+description: "- Invoked by the /validate-repo slash command. - Can be run at any point during a project's lifecycle as a health check. - Useful as a pre-export gate before sharing a generated project."
+---
+
 # Skill: Validate Repo
 
 ## Description

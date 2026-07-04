@@ -17,7 +17,7 @@ architecture, so standard .NET conventions require significant adaptation.
 | Input system            | New Input System (Input Actions)                 | Legacy Input Manager                        |
 | UI toolkit              | UI Toolkit (runtime UI)                          | Unity UI (uGUI/Canvas)                      |
 | Serialization           | Unity JSON (`JsonUtility`)                       | Newtonsoft.Json, Odin Serializer            |
-| Async                   | UniTask                                          | Coroutines, Awaitable (Unity 2023+)         |
+| Async                   | UniTask                                          | Coroutines, Awaitable (Unity 6+)         |
 | State machines          | ScriptableObject-based states                    | Animator-driven, custom FSM                 |
 | Logging                 | `Debug.Log` with conditional compilation         | Unity Logging package, custom logger        |
 | Testing                 | Unity Test Framework (NUnit + Play Mode)         | —                                           |

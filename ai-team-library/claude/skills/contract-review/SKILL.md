@@ -1,3 +1,8 @@
+---
+name: contract-review
+description: "- Invoked by the /contract-review slash command. - Called by the Legal Counsel persona when a new contract or renewal is under consideration. - Should be re-run when contract amendments or addenda are proposed."
+---
+
 # Skill: Contract Review
 
 ## Description

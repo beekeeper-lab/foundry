@@ -1,3 +1,8 @@
+---
+name: new-bean
+description: "- Invoked by the /new-bean slash command. - Called by the Team Lead when new work is identified. - Can be invoked by any persona who identifies work that needs a bean."
+---
+
 # Skill: New Bean
 
 ## Description

@@ -171,7 +171,7 @@ application compatibility), Architect (for schema governance).
 
 ## Output Format Guidelines
 
-- Code follows the stack-specific conventions document (`stacks/<stack>/conventions.md`).
+- Code follows the stack-specific conventions document (`expertise/<expertise>/conventions.md`).
 - Tests follow the same conventions as production code: same linting, same
   formatting, same naming rules.
 - Pipeline documentation is written as if the reader has no prior context about

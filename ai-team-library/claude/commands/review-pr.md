@@ -1,20 +1,14 @@
-# /review-pr Command
+---
+name: review-pr
+description: "Performs a structured, checklist-driven code review covering readability, correctness, maintainability, convention consistency, test coverage, and security. Produces a clear verdict (ship / ship with comments / request changes) with actionable line-level feedback."
+---
 
-Performs a structured, checklist-driven code review covering readability, correctness, maintainability, convention consistency, test coverage, and security. Produces a clear verdict (ship / ship with comments / request changes) with actionable line-level feedback.
+# /review-pr
 
-## Usage
+This command is a thin entry point; the canonical process lives in the
+`review-pr` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-```
-/review-pr [diff-or-pr] [--skip-checks] [--checklist <path>] [--output <path>] [--self-review] [--security-only]
-```
+Read `.claude/skills/review-pr/SKILL.md` and execute its process with these arguments:
 
-- `diff-or-pr` -- A diff file, directory of changed files, PR number, or PR URL. Defaults to the current branch's uncommitted changes.
-- `--skip-checks` -- Skip test and lint prerequisite checks.
-- `--checklist <path>` -- Custom review checklist.
-- `--output <path>` -- Override the output directory (default: `ai/outputs/code-quality-reviewer/`).
-- `--self-review` -- Self-review mode: same rigor, author-facing language.
-- `--security-only` -- Only run the security checks.
-
-## See Also
-
-- Skill: `claude/skills/review-pr/SKILL.md` — canonical execution spec.
+$ARGUMENTS

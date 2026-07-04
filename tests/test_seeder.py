@@ -475,3 +475,26 @@ class TestAllPersonas:
         )
         result = seed_tasks(spec, tmp_path)
         assert result.warnings == [], f"Unexpected warnings: {result.warnings}"
+
+
+class TestVddReadyAcceptanceCriteria:
+    """SPEC-013: seeded ACs carry VDD evidence prefixes so /vdd can reach a
+    programmatic verdict on a freshly generated project."""
+
+    def test_all_seed_acs_are_programmatic(self, tmp_path: Path):
+        from foundry_app.services.vdd import parse_acceptance_criteria
+
+        seed_tasks(_make_spec(), tmp_path)
+        criteria = parse_acceptance_criteria(_read_bean(tmp_path))
+        assert criteria, "seed bean must declare acceptance criteria"
+        kinds = {c.kind for c in criteria}
+        assert "manual" not in kinds, (
+            f"seed ACs must all be machine-checkable, got kinds: {kinds}"
+        )
+
+    def test_seed_acs_reference_expected_evidence(self, tmp_path: Path):
+        seed_tasks(_make_spec(), tmp_path)
+        bean = _read_bean(tmp_path)
+        assert "(file-contains:ai/beans/BEAN-001-bootstrap/tasks/*.md::" in bean
+        assert "(file:ai/outputs/*/*.md)" in bean
+        assert "(file:ai/beans/BEAN-002-*/bean.md)" in bean

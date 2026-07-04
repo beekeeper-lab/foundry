@@ -42,6 +42,31 @@ _AI_DIRS = [
     "ai/team",
 ]
 
+_MEMORY_SCAFFOLD = """\
+# MEMORY — Durable Lessons
+
+Curated, small, and load-bearing: one line per lesson, appended by the
+bean-closure retro step (see `/close-loop`). When a lesson implicates a
+persona, expertise pack, or kit asset, also draft an improvement bean.
+Delete entries that stop being true.
+
+## Process
+
+- (none yet)
+
+## Personas
+
+- (none yet)
+
+## Expertise
+
+- (none yet)
+
+## Kit
+
+- (none yet)
+"""
+
 _ORCHESTRATION_YAML_BLOCK = """
 orchestration:
   orchestrator_role: team-lead
@@ -434,6 +459,14 @@ def scaffold_project(
         charter_path.write_text(_render_project_charter(spec), encoding="utf-8")
         created.append(str(charter_path.relative_to(root)))
         logger.info("Wrote starter project charter: %s", charter_path)
+
+    # MEMORY.md — durable lessons the retro step appends to (SPEC-009).
+    # Overlay-safe: never clobber accumulated memory.
+    memory_path = root / "MEMORY.md"
+    if not memory_path.exists():
+        memory_path.write_text(_MEMORY_SCAFFOLD, encoding="utf-8")
+        created.append("MEMORY.md")
+        logger.info("Wrote MEMORY.md scaffold: %s", memory_path)
 
     # Stamp media plan skeletons (BEAN-284) when the project opts in.
     if spec.generation.include_media_skills:

@@ -1,3 +1,10 @@
+---
+id: java
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # Java Stack Conventions
 
 ## Category

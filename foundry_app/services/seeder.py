@@ -222,9 +222,14 @@ def _render_bean_md(spec: CompositionSpec, charter_present: bool) -> str:
         "\n"
         "## Acceptance Criteria\n"
         "\n"
-        "- [ ] Every task under `tasks/` is marked Done.\n"
-        "- [ ] The Team Lead has created the next bean(s) from project "
-        "requirements.\n"
+        # VDD evidence prefixes (SPEC-013): machine-checkable so /vdd can
+        # reach a programmatic verdict on a freshly generated project.
+        "- [ ] (file-contains:ai/beans/BEAN-001-bootstrap/tasks/*.md::"
+        "**Status** | Done) Kickoff tasks under `tasks/` are marked Done.\n"
+        "- [ ] (file:ai/outputs/*/*.md) Personas have written kickoff "
+        "outputs to their `ai/outputs/<persona>/` directories.\n"
+        "- [ ] (file:ai/beans/BEAN-002-*/bean.md) The Team Lead has created "
+        "the next bean(s) from project requirements.\n"
         "\n"
         "## Tasks\n"
         "\n"

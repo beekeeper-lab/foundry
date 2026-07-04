@@ -1,19 +1,14 @@
-# /validate-repo Command
+---
+name: validate-repo
+description: "Runs a comprehensive health check on a Foundry project — verifies structure, files, internal links, and stack-specific tooling. Catches missing files, broken references, secrets exposure, and configuration drift."
+---
 
-Runs a comprehensive health check on a Foundry project — verifies structure, files, internal links, and stack-specific tooling. Catches missing files, broken references, secrets exposure, and configuration drift.
+# /validate-repo
 
-## Usage
+This command is a thin entry point; the canonical process lives in the
+`validate-repo` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-```
-/validate-repo [project-dir] [--check-level <structure|content|full>] [--output <path>] [--strict] [--fix]
-```
+Read `.claude/skills/validate-repo/SKILL.md` and execute its process with these arguments:
 
-- `project-dir` -- Path to the project root. Defaults to the current working directory.
-- `--check-level <level>` -- `structure`, `content`, or `full` (default).
-- `--output <path>` -- Write the report to a file instead of stdout.
-- `--strict` -- Treat warnings as errors.
-- `--fix` -- Attempt to auto-fix simple issues (create missing directories, add missing READMEs).
-
-## See Also
-
-- Skill: `claude/skills/validate-repo/SKILL.md` — canonical execution spec.
+$ARGUMENTS

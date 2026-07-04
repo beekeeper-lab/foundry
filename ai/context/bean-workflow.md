@@ -67,6 +67,25 @@ Every API turn sends the full conversation context. A 20-turn session at ~250K t
 - Workers must follow it: read only task Inputs, commit after each task, exit on completion.
 - Never read the full bean backlog or other beans' files from a worker.
 
+**Essential vs. optional context by task type:**
+
+| Task Type | Essential (always read) | Optional (read only if needed) |
+|-----------|------------------------|-------------------------------|
+| **App — Developer** | Task file, source files being modified, relevant test files | bean.md (already summarized in task), other module source, full project.md |
+| **App — Tech-QA** | Task file, developer's changed files, existing tests | Full module source, architecture docs |
+| **Process — Developer** | Task file, document being modified, referenced docs | Full bean-workflow.md (use targeted reads), other process docs |
+| **Process — Tech-QA** | Task file, developer's changed documents | Full workflow spec (use targeted reads) |
+| **Infra — Developer** | Task file, config/script being modified | Full hook policy, all hook files |
+| **Infra — Tech-QA** | Task file, developer's changed configs | Other infra configs |
+
+**Anti-patterns to avoid:**
+
+- Reading `_index.md` repeatedly during task execution (only needed during picking)
+- Reading all agent persona files when only one persona is active
+- Reading `bean-workflow.md` in full when you only need one section
+- Including the full project architecture in every task prompt
+- Re-reading files after trivial edits just to "verify" (use the edit tool's feedback instead)
+
 ## BA Engagement Mode
 
 | Setting | Value |
@@ -341,7 +360,11 @@ Each task file should include:
 - **Example Output:** A concrete example of the expected output format (see below)
 - **Definition of Done:** Concrete checklist
 
-#### Examples-First Principle
+#### Examples-First Principle (optional)
+
+> **Status (2026-07, SPEC-029):** demoted to optional — 21 of 342 task
+> files used it. Include an Example Output when the task's deliverable
+> shape is genuinely ambiguous; skip it for routine tasks.
 
 Every task should include or reference a concrete example of the expected output format. Abstract instructions alone can be ambiguous — examples eliminate guesswork and improve first-attempt quality.
 
@@ -387,35 +410,20 @@ def validate_example(spec: CompositionSpec) -> StageResult:
 
 **If no example is available**, note it explicitly: `> Example Output: No existing pattern — define format in this task's Goal section.` This signals to the executor that they should flag any format ambiguity before starting.
 
-### 6. Comprehension Gate
+### 6. Comprehension Gate (retired as a mandatory step)
 
-Before implementation begins, each persona must demonstrate understanding of the codebase area they will modify. This prevents implementations that conflict with established patterns, introduce redundancy, or miss important context.
-
-**When it applies:** Every task that modifies or creates files in the codebase (code, configuration, documentation). Pure review tasks (e.g., Tech-QA verification) are exempt.
-
-**Comprehension criteria — the persona must understand:**
-
-- **Existing patterns:** How similar functionality is currently implemented (naming conventions, data flow, error handling)
-- **Module boundaries:** Which modules own the relevant functionality and how they interact
-- **Constraints:** Any project rules, architectural decisions (ADRs), or conventions that apply to the area
-- **Impact surface:** What other files or features could be affected by the change
-
-**How to demonstrate comprehension:**
-
-Before writing any implementation code, the persona writes a brief **comprehension note** in their task file or output directory (`ai/outputs/<persona>/`). The note must include:
-
-1. **Area summary** (2-3 sentences) — what the relevant code area does and how it is structured
-2. **Patterns identified** — key patterns, conventions, or idioms used in that area (bullet list)
-3. **Constraints noted** — relevant rules, ADRs, or project conventions that apply
-4. **Approach alignment** — how the planned implementation fits within the existing patterns
-
-**Format:** Add a `## Comprehension Note` section to the task file before updating its status to `In Progress`, or write a separate file at `ai/outputs/<persona>/comprehension-BEAN-NNN.md`.
-
-**Gate check:** The comprehension note must exist before implementation work begins. If a persona skips this step, Tech-QA should flag it during review.
+> **Status (2026-07, SPEC-029):** retired as written. Across 342 task
+> files, 3 carried a Comprehension Note — a ~99% skip rate with no
+> enforcement and no observed quality signal. The INTENT survives in
+> lighter forms: read the task's Inputs before acting (enforced by
+> validate-task-inputs), follow existing patterns (persona operating
+> principles), and Tech-QA flags pattern violations at review. A persona
+> MAY still write a `## Comprehension Note` for genuinely unfamiliar
+> areas; it is no longer required and its absence is not a review flag.
 
 ### 7. Execution
 
-Tasks are executed by **specialist workers dispatched via `/spawn-task`** (BEAN-270, ADR-008). The orchestrator does not play the role inline by default. `/spawn-task` auto-detects tmux: in tmux it spawns a worktree-isolated tmux child window; outside tmux it invokes the `Agent` tool with `subagent_type=<persona>`. The worker reads only the task's `Inputs:` plus the persona's own context bundle.
+Tasks are executed by **specialist workers dispatched via `/spawn-task`** (BEAN-270; ADR-017, superseding ADR-008's tmux transport). The orchestrator does not play the role inline by default. `/spawn-task` issues a background `Agent` call with `subagent_type=<persona>` — with worktree isolation when a wave's tasks run in parallel — under the standard permission mode (never permission-bypass flags). The worker reads only the task's `Inputs:` plus the persona's own context bundle.
 
 In-conversation role-switching (the orchestrator reading the task and executing it itself in the same window) remains a fallback for tiny tasks where dispatch overhead is not justified. It is not the default.
 
@@ -456,34 +464,24 @@ When a task's verification checks fail, the executing persona applies a structur
 
 ### 8. Context Diet
 
-Workers MUST minimize context consumption during execution. Every file read and every prompt line costs tokens and shrinks the available context window. Follow these rules:
+See **§6a Context Diet** near the top of this document — the single canonical statement of the rules (SPEC-029 removed the duplicate copy that lived here).
 
-**Core principles:**
+### Gate Enforcement Status (SPEC-029)
 
-1. **Read only what the task requires.** The task file lists its Inputs — read those. Do not speculatively read files "for background."
-2. **Never re-read a file you already have in context.** If you read `bean.md` during decomposition, do not read it again during execution unless it may have changed (multi-agent scenario).
-3. **Use targeted reads.** When you need a specific section of a large file, use offset/limit parameters. Do not read a 300-line file to find a 10-line section.
-4. **Keep prompts focused.** When delegating to a persona, include only the task-relevant context — not the full bean history, not the full backlog, not the full workflow spec.
-5. **Prefer Grep/Glob over exploratory reads.** When searching for something, use search tools first to locate it, then read only the relevant file.
+One table, so nobody has to guess which gates are machinery and which are
+convention:
 
-**Essential vs. optional context by task type:**
-
-| Task Type | Essential (always read) | Optional (read only if needed) |
-|-----------|------------------------|-------------------------------|
-| **App — Developer** | Task file, source files being modified, relevant test files | bean.md (already summarized in task), other module source, full project.md |
-| **App — Tech-QA** | Task file, developer's changed files, existing tests | Full module source, architecture docs |
-| **Process — Developer** | Task file, document being modified, referenced docs | Full bean-workflow.md (use targeted reads), other process docs |
-| **Process — Tech-QA** | Task file, developer's changed documents | Full workflow spec (use targeted reads) |
-| **Infra — Developer** | Task file, config/script being modified | Full hook policy, all hook files |
-| **Infra — Tech-QA** | Task file, developer's changed configs | Other infra configs |
-
-**Anti-patterns to avoid:**
-
-- Reading `_index.md` repeatedly during task execution (only needed during picking)
-- Reading all agent persona files when only one persona is active
-- Reading `bean-workflow.md` in full when you only need one section
-- Including the full project architecture in every task prompt
-- Re-reading files after trivial edits just to "verify" (use the edit tool's feedback instead)
+| Gate | Enforcement |
+|------|-------------|
+| Branch protection (no edits on main) | **Hook** (settings.json PreToolUse) |
+| Task `Inputs:` present at dispatch | **Hook** (validate-task-inputs.py) |
+| Bean Done requires passing VDD report | **Hook** (vdd-gate.py, SPEC-008) |
+| Telemetry stamping | **Hook** (telemetry-stamp.py) |
+| Format/lint on save | **Hook** (format-on-save.py, non-blocking) |
+| Typed handoff packets (/handoff) | Convention (skill prose) — candidate for a future hook |
+| Molecularity / Blast-Radius / Bottleneck checks | Convention (Team Lead judgment) |
+| Comprehension Gate | **Retired** (see §6) |
+| Examples-First | Optional (see Task Specification) |
 
 ### 9. Verification (VDD Gate)
 

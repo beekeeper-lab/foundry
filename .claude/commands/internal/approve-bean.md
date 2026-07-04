@@ -1,0 +1,1 @@
+../../local/commands/internal/approve-bean.md

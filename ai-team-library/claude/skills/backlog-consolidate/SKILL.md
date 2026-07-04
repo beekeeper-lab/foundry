@@ -1,3 +1,8 @@
+---
+name: backlog-consolidate
+description: "- Invoked by the /backlog-consolidate slash command. - Should only be used by the Team Lead persona. - Requires ai/beans/_index.md and at least 2 beans matching the status filter."
+---
+
 # Skill: Backlog Consolidation
 
 ## Description

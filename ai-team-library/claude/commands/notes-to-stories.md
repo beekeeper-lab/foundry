@@ -1,19 +1,14 @@
-# /notes-to-stories Command
+---
+name: notes-to-stories
+description: "Converts unstructured notes (meeting notes, feature requests, brainstorming output) into properly formatted user stories with testable acceptance criteria, flagged open questions, and identified risks."
+---
 
-Converts unstructured notes (meeting notes, feature requests, brainstorming output) into properly formatted user stories with testable acceptance criteria, flagged open questions, and identified risks.
+# /notes-to-stories
 
-## Usage
+This command is a thin entry point; the canonical process lives in the
+`notes-to-stories` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-```
-/notes-to-stories <notes-file-or-text> [--template <path>] [--existing <dir>] [--output <dir>] [--format <brief|full>]
-```
+Read `.claude/skills/notes-to-stories/SKILL.md` and execute its process with these arguments:
 
-- `notes-file-or-text` -- Path to a notes file, or inline text.
-- `--template <path>` -- Custom story template (default: BA persona template).
-- `--existing <dir>` -- Directory of existing stories for deduplication (default: `ai/outputs/ba/`).
-- `--output <dir>` -- Override output directory (default: `ai/outputs/ba/user-stories/`).
-- `--format <brief|full>` -- `brief` produces inline stories; `full` produces individual files. Default `full`.
-
-## See Also
-
-- Skill: `claude/skills/notes-to-stories/SKILL.md` — canonical execution spec.
+$ARGUMENTS

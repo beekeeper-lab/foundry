@@ -1,3 +1,8 @@
+---
+name: new-work
+description: "- Invoked by the /new-work slash command. - Called by the Team Lead persona when new work enters the pipeline. - Can be invoked by any persona who identifies work that needs to be done."
+---
+
 # Skill: New Work
 
 ## Description

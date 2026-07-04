@@ -1,0 +1,1 @@
+../../shared/commands/internal/spawn-bean.md

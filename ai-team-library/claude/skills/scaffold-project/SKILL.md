@@ -1,3 +1,8 @@
+---
+name: scaffold-project
+description: "- Invoked by the /scaffold-project slash command. - Called programmatically by foundry_app/services/scaffold.py during pipeline execution. - Runs automatically as part of foundry-cli generate."
+---
+
 # Skill: Scaffold Project
 
 ## Description

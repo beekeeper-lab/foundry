@@ -13,6 +13,7 @@ from foundry_app.core.models import (
     Strictness,
     ValidationMessage,
     ValidationResult,
+    _persona_dirname,
 )
 from foundry_app.services.artifact_labels import (
     artifact_label,
@@ -91,6 +92,17 @@ def _check_expertise(
                     f"contribute nothing."
                 ),
             ))
+        elif "conventions.md" not in expertise.files:
+            messages.append(ValidationMessage(
+                severity=Severity.WARNING,
+                code="expertise-no-conventions",
+                message=(
+                    f"The '{ss.id}' expertise pack has no conventions.md entry "
+                    f"file — its full pack contents will be compiled instead "
+                    f"(SPEC-003 fallback). Consider adding a conventions.md to "
+                    f"the pack for a curated, token-efficient entry file."
+                ),
+            ))
 
 
 def _check_hook_packs(
@@ -98,7 +110,10 @@ def _check_hook_packs(
     library_index: LibraryIndex,
     messages: list[ValidationMessage],
 ) -> None:
-    """Validate that all referenced hook packs exist in the library."""
+    """Validate that all referenced hook packs exist and render hooks."""
+    # Imported here to avoid a circular import at module load time.
+    from foundry_app.services.safety_writer import _HOOK_PACK_REGISTRY
+
     for hp in composition.hooks.packs:
         pack = library_index.hook_pack_by_id(hp.id)
         if pack is None:
@@ -110,6 +125,107 @@ def _check_hook_packs(
                     f"spelling, or remove it from your selection."
                 ),
             ))
+        elif hp.enabled and hp.id not in _HOOK_PACK_REGISTRY:
+            # A pack documented in the library but absent from the hook
+            # registry renders zero hooks — the composition asked for
+            # protection it won't get (SPEC-004).
+            messages.append(ValidationMessage(
+                severity=Severity.ERROR,
+                code="hook-pack-renders-nothing",
+                message=(
+                    f"The '{hp.id}' hook pack exists in the library but has "
+                    f"no hook definitions in the generator registry — it "
+                    f"would render zero hooks in settings.json. Remove it "
+                    f"or add a registry entry in safety_writer."
+                ),
+            ))
+
+
+def _check_persona_model_tools(
+    composition: CompositionSpec,
+    messages: list[ValidationMessage],
+) -> None:
+    """Validate PersonaSelection model tiers and tool presets (SPEC-011).
+
+    Unknown tier/preset names are ERRORs (typo protection); unknown tool
+    names in an explicit list only WARN — the harness tool set evolves.
+    """
+    from foundry_app.services.agent_writer import (
+        _CONCRETE_MODELS,
+        KNOWN_TOOLS,
+        MODEL_TIERS,
+        TOOL_PRESETS,
+    )
+
+    for ps in composition.team.personas:
+        if ps.model is not None and ps.model not in MODEL_TIERS \
+                and ps.model not in _CONCRETE_MODELS:
+            messages.append(ValidationMessage(
+                severity=Severity.ERROR,
+                code="unknown-model-tier",
+                message=(
+                    f"Persona '{ps.id}' sets model '{ps.model}' — expected a "
+                    f"tier ({', '.join(sorted(MODEL_TIERS))}) or alias "
+                    f"({', '.join(sorted(_CONCRETE_MODELS))})."
+                ),
+            ))
+        if isinstance(ps.tools, str) and ps.tools not in TOOL_PRESETS:
+            messages.append(ValidationMessage(
+                severity=Severity.ERROR,
+                code="unknown-tools-preset",
+                message=(
+                    f"Persona '{ps.id}' sets tools preset '{ps.tools}' — "
+                    f"expected one of: {', '.join(sorted(TOOL_PRESETS))}, "
+                    f"or an explicit tool list."
+                ),
+            ))
+        elif isinstance(ps.tools, list):
+            unknown = [t for t in ps.tools if t not in KNOWN_TOOLS]
+            if unknown:
+                messages.append(ValidationMessage(
+                    severity=Severity.WARNING,
+                    code="unknown-tool-name",
+                    message=(
+                        f"Persona '{ps.id}' tool list contains names not in "
+                        f"the known set (as of 2026-07): "
+                        f"{', '.join(unknown)}. They will be emitted as-is."
+                    ),
+                ))
+
+
+def _check_workflow_ownership(
+    composition: CompositionSpec,
+    messages: list[ValidationMessage],
+) -> None:
+    """Advise when workflow-mandatory steps fall back to the Team Lead.
+
+    Merge and deploy are mandatory closure steps but their primary owners
+    (Integrator/Merge Captain, DevOps/Release) are opt-in extended personas.
+    The fallback table lives in workflows/task-taxonomy.md (SPEC-018);
+    surfacing it here keeps the composition author aware. Non-blocking,
+    consistent with the contract-graph warning-only stance (BEAN-292).
+    """
+    leaves = {_persona_dirname(p.id) for p in composition.team.personas}
+    if "integrator-merge-captain" not in leaves:
+        messages.append(ValidationMessage(
+            severity=Severity.INFO,
+            code="merge-ownership-fallback",
+            message=(
+                "No Integrator/Merge Captain on the team — /merge-bean "
+                "falls back to the Team Lead (see task-taxonomy.md "
+                "'Fallback When Absent')."
+            ),
+        ))
+    if "devops-release" not in leaves:
+        messages.append(ValidationMessage(
+            severity=Severity.INFO,
+            code="deploy-ownership-fallback",
+            message=(
+                "No DevOps/Release Engineer on the team — /deploy falls "
+                "back to the Team Lead as a manual step requiring explicit "
+                "user confirmation (see task-taxonomy.md)."
+            ),
+        ))
 
 
 def _check_hook_conflicts(
@@ -310,6 +426,8 @@ def run_pre_generation_validation(
     _check_personas(composition, library_index, messages)
     _check_expertise(composition, library_index, messages)
     _check_hook_packs(composition, library_index, messages)
+    _check_persona_model_tools(composition, messages)
+    _check_workflow_ownership(composition, messages)
     _check_hook_conflicts(composition, library_index, messages)
     _check_hook_posture_compatibility(composition, library_index, messages)
     _check_duplicates(composition, messages)

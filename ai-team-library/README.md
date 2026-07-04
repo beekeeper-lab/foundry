@@ -67,7 +67,11 @@ Personas are split into two tiers (see ADR-014):
 
 ## Expertise
 
-Each expertise directory contains a `conventions.md` file defining domain standards, plus additional skill files as needed. Items span languages, architecture patterns, infrastructure, data/ML, compliance, and business practices.
+Each expertise directory has an **entry file** — `conventions.md` when present, otherwise its first `.md` alphabetically — plus additional skill files as needed. Items span languages, architecture patterns, infrastructure, data/ML, compliance, and business practices.
+
+**Conflict precedence (SPEC-020):** when a generic practices pack (e.g. `clean-code`) and a language/framework pack give conflicting guidance in the same composition, the language pack wins — idiom beats generality.
+
+**Pack authoring contract (SPEC-019):** the entry file starts with YAML frontmatter — `id` (must match the directory name), `category`, optional `applies_to` (persona ids; omitted = applies to all), `entry: true`, and `last-reviewed` — which the indexer reads in preference to heading scraping. The compiler emits the entry file (packs without `conventions.md` fall back to compiling all their `.md` files, SPEC-003); frontmatter is stripped from compiled output. The `## Defaults` table is the high-signal excerpt inlined into agent files and member prompts — keep it decision-dense.
 
 | Expertise          | Scope                                           |
 |--------------------|-------------------------------------------------|
@@ -161,7 +165,7 @@ The `claude/hooks/validate-task-inputs.py` hook (BEAN-272) blocks task dispatch 
 To extend the library with new building blocks:
 
 - **Add a persona:** New personas always land under `personas/extended/<name>/` — the core five are a closed set. Create the directory there with `persona.md`, `outputs.md`, `prompts.md`, and a `templates/` subdirectory containing at least one template. Reference the new persona from `composition.yml` as `extended/<name>`. Follow the structure and tone of existing personas.
-- **Add expertise:** Create a directory under `expertise/` with `conventions.md` and any skill files. Name the directory after the domain (lowercase, hyphenated).
+- **Add expertise:** Create a directory under `expertise/` with `conventions.md` (frontmatter per the pack authoring contract above) and any skill files. Name the directory after the domain (lowercase, hyphenated). `tests/test_reference_integrity.py` enforces the frontmatter contract.
 - **Add a shared template:** Place a new `.md` file in `templates/shared/`. Include a metadata table, placeholder fields, and a Definition of Done checklist.
 - **Add a workflow:** Place a new `.md` document in `workflows/`. Use it as a reference document, not a template.
 

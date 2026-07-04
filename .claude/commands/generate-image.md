@@ -1,0 +1,1 @@
+../shared/commands/generate-image.md

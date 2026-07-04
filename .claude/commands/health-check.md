@@ -1,0 +1,1 @@
+../local/commands/health-check.md

@@ -42,6 +42,10 @@ team:
       include_agent: true
       include_templates: true
       strictness: standard
+      # SPEC-011: reviewer is read-only over source (Read/Grep/Glob/Bash);
+      # model/tools accept tiers (strongest|standard|fast), presets
+      # (full|read-review|docs-only), or explicit tool lists.
+      tools: read-review
     - id: extended/technical-writer
       include_agent: true
       include_templates: true

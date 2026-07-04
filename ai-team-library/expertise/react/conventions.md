@@ -1,3 +1,16 @@
+---
+id: react
+category: Languages
+applies_to:
+  - developer
+  - tech-qa
+  - ux-ui-designer
+  - architect
+  - code-quality-reviewer
+entry: true
+last-reviewed: 2026-07
+---
+
 # React Stack Conventions
 
 ## Category

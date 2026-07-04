@@ -1,3 +1,8 @@
+---
+name: build
+description: "Build the project's production bundle."
+---
+
 # /build Command
 
 Build the project's production bundle.

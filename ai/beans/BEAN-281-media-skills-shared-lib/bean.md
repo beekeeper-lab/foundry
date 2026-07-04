@@ -8,7 +8,7 @@
 | **Created** | 2026-04-29 |
 | **Started** | 2026-04-29 18:46 |
 | **Completed** | 2026-04-29 19:15 |
-| **Duration** | 1558h 8m |
+| **Duration** | 29m (corrected 2026-07) |
 | **Owner** | (unassigned) |
 | **Category** | Infra |
 | **Depends On** | BEAN-280 |

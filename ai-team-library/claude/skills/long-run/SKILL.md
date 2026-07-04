@@ -1,3 +1,8 @@
+---
+name: long-run
+description: "- Invoked by the /long-run slash command. - Should only be used by the Team Lead persona. - Requires at least one bean in _index.md with status Approved."
+---
+
 # Skill: Long Run
 
 ## Description
@@ -172,7 +177,7 @@ When `fast N` is provided, the Team Lead orchestrates N parallel workers instead
    cat > "$LAUNCHER" << 'SCRIPT_EOF'
    #!/bin/bash
    cd /tmp/agentic-worktree-BEAN-NNN
-   claude --dangerously-skip-permissions --agent team-lead \
+   claude --agent team-lead \
      "Process BEAN-NNN-slug through the assigned team wave.
 
    You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.

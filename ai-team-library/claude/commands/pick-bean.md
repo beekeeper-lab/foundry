@@ -1,15 +1,14 @@
-# /pick-bean Command
+---
+name: pick-bean
+description: "Lets the Team Lead pick a bean from the backlog for decomposition and execution. Updates the bean's status from Approved to In Progress in both bean.md and _index.md, and creates the feature branch."
+---
 
-Lets the Team Lead pick a bean from the backlog for decomposition and execution. Updates the bean's status from `Approved` to `In Progress` in both `bean.md` and `_index.md`, and creates the feature branch.
+# /pick-bean
 
-## Usage
+This command is a thin entry point; the canonical process lives in the
+`pick-bean` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-```
-/pick-bean <bean-id>
-```
+Read `.claude/skills/pick-bean/SKILL.md` and execute its process with these arguments:
 
-- `bean-id` -- The bean ID to pick (e.g., `BEAN-006` or just `6`).
-
-## See Also
-
-- Skill: `claude/skills/pick-bean/SKILL.md` — canonical execution spec.
+$ARGUMENTS

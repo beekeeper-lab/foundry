@@ -104,4 +104,4 @@ What is the desired outcome when this bean is complete?
 | **Scope changes** | — (in-flight scope edits) |
 | **Contract violations** | — (BEAN-274 catches at compose time) |
 | **Inputs escape-hatch invocations** | — (BEAN-272's NONE-justified) |
-| **Dispatch mode** | — (in-process / tmux-worker / mixed) |
+| **Dispatch mode** | — (agent-subagent / agent-worktree / in-process / mixed) |

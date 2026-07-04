@@ -210,7 +210,7 @@ expectation setting).
 - Technical claims are precise and verifiable. State specific numbers,
   versions, and configurations rather than vague qualitative statements.
 - Artifacts follow the stack-specific conventions document
-  (`stacks/<stack>/conventions.md`) where applicable.
+  (`expertise/<expertise>/conventions.md`) where applicable.
 - All outputs are version-controlled. No deliverables live in personal
   folders or email threads only.
 - Customer-specific materials are stored in the designated deal folder

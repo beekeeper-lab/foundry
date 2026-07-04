@@ -1,3 +1,8 @@
+---
+name: release-notes
+description: "- Invoked by the /release-notes slash command. - Called by the DevOps/Release Engineer persona during release packaging. - Called by the Technical Writer persona for external-facing communication."
+---
+
 # Skill: Release Notes
 
 ## Description

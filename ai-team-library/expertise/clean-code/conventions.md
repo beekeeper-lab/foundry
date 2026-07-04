@@ -1,3 +1,10 @@
+---
+id: clean-code
+category: Architecture & Patterns
+entry: true
+last-reviewed: 2026-07
+---
+
 # Clean Code Conventions
 
 ## Category
@@ -164,6 +171,12 @@ work that motivates it.
   piece behind an interface) beat rewrites nine times out of ten.
 
 ---
+
+## Precedence
+
+When this pack's generic guidance conflicts with a language or framework
+pack selected in the same composition, the **language pack wins** — idiom
+beats generality (e.g. Dart's camelCase constants over UPPER_SNAKE).
 
 ## Do / Don't
 

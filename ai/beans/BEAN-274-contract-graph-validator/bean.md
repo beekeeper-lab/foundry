@@ -8,7 +8,7 @@
 | **Created** | 2026-04-28 |
 | **Started** | 2026-05-01 00:27 |
 | **Completed** | 2026-05-01 00:47 |
-| **Duration** | 1587h 40m |
+| **Duration** | 20m (corrected 2026-07) |
 | **Owner** | team-lead |
 | **Category** | App |
 | **Depends On** | BEAN-273 |

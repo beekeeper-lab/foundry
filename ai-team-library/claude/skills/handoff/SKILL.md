@@ -1,3 +1,8 @@
+---
+name: handoff
+description: "- Invoked by the /handoff slash command (see claude/commands/handoff.md). - Called by any persona when its phase completes and a downstream persona needs to begin. - Suggested automatically by close-loop after verification passes if the task has a downstream dependent."
+---
+
 # Skill: Handoff (Typed)
 
 ## Description
@@ -217,8 +222,8 @@ The packet renderer never collapses them into a single namespace.
 
 | Error | Cause | Resolution |
 |-------|-------|------------|
-| `FromPersonaNotFound` | `from_persona` is not a known core persona | Use one of `team-lead, ba, architect, developer, tech-qa` |
-| `ToPersonaNotFound` | `to_persona` is not a known core persona | Use one of `team-lead, ba, architect, developer, tech-qa` |
+| `FromPersonaNotFound` | `from_persona` has no persona directory | Use any persona on the team with a `contracts.yml` (core or `extended/<id>`; SPEC-017 extended contracts to all personas) |
+| `ToPersonaNotFound` | `to_persona` has no persona directory | Use any persona on the team with a `contracts.yml` (core or `extended/<id>`) |
 | `SamePersona` | `from == to` | A handoff requires two different personas |
 | `NoContractsFile` | A persona's `contracts.yml` is missing or unparseable | Restore the persona's `contracts.yml` (validated by `library_indexer._load_persona_contracts`) |
 | `NoSharedArtifactTypes` | `produces ∩ consumes == ∅` | Wave is misconfigured for this edge — escalate to Team Lead |

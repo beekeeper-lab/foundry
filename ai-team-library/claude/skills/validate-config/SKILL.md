@@ -1,3 +1,8 @@
+---
+name: validate-config
+description: "- Invoked by the /validate-config slash command. - Called by the Security Engineer or DevOps persona during pre-release checks. - Useful as a pre-commit hook for catching secrets before they enter version control."
+---
+
 # Skill: Validate Config
 
 ## Description

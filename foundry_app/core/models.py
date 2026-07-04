@@ -224,6 +224,25 @@ class PersonaSelection(BaseModel):
         default=Strictness.STANDARD,
         description="Validation strictness for this persona",
     )
+    model: str | None = Field(
+        default=None,
+        description=(
+            "Model for this persona's agent: a semantic tier ('strongest', "
+            "'standard', 'fast') or a concrete alias ('opus', 'sonnet', "
+            "'haiku'). Overrides the persona's library default (defaults.yml). "
+            "None -> library default; neither -> no model frontmatter "
+            "(inherit session model). SPEC-011."
+        ),
+    )
+    tools: str | list[str] | None = Field(
+        default=None,
+        description=(
+            "Tool access for this persona's agent: a preset name ('full', "
+            "'read-review', 'docs-only') or an explicit tool list. Overrides "
+            "the persona's library default. None -> library default; "
+            "neither/'full' -> no tools frontmatter (all tools). SPEC-011."
+        ),
+    )
 
 
 class TeamConfig(BaseModel):
@@ -260,6 +279,14 @@ class HooksConfig(BaseModel):
     packs: list[HookPackSelection] = Field(
         default_factory=list,
         description="Selected hook packs",
+    )
+    replace_defaults: bool = Field(
+        default=False,
+        description=(
+            "When true, explicit pack selections REPLACE the posture's "
+            "stack-aware default packs instead of extending them. Dropping "
+            "base packs (e.g. branch protection) is surfaced as a warning."
+        ),
     )
 
 
@@ -399,6 +426,36 @@ class SafetyConfig(BaseModel):
             ),
         )
 
+    @staticmethod
+    def regulated_safety() -> SafetyConfig:
+        """Factory: maximum controls for regulated/compliance projects.
+
+        A strict superset of :meth:`hardened_safety` — every hardened
+        restriction plus deployment-branch protection, broader command and
+        path blocks (SPEC-016).
+        """
+        hardened = SafetyConfig.hardened_safety()
+        return hardened.model_copy(update={
+            "git": GitPolicy(
+                allow_push=True, allow_force_push=False,
+                allow_branch_delete=False,
+                protected_branches=[
+                    "main", "master", "release/*", "test", "prod",
+                ],
+            ),
+            "shell": ShellPolicy(
+                allow_shell=True,
+                blocked_commands=[
+                    "rm -rf /", "mkfs", "dd", "shutdown", "reboot",
+                ],
+                blocked_patterns=[r"curl.*\|.*sh", r"wget.*\|.*bash"],
+            ),
+            "filesystem": FileSystemPolicy(
+                allow_write=True, allow_delete=False,
+                protected_paths=["/etc", "/usr", "/var", "/boot", "/root"],
+            ),
+        })
+
 
 # ---------------------------------------------------------------------------
 # Generation options
@@ -433,6 +490,22 @@ class GenerationOptions(BaseModel):
 # CompositionSpec — the top-level spec
 # ---------------------------------------------------------------------------
 
+class McpConfig(BaseModel):
+    """Composition-level MCP server selection (SPEC-022).
+
+    ``add`` maps server id -> definition; a ``None`` value means "use the
+    library registry's definition for this id". Inline definitions carry
+    type/command/args and optional env (credential passthrough uses
+    ``${VAR}`` references, never literal secrets). ``remove`` drops
+    baseline/expertise-derived servers. ``env`` overlays environment
+    variables onto emitted servers by id.
+    """
+
+    add: dict[str, dict[str, Any] | None] = Field(default_factory=dict)
+    remove: list[str] = Field(default_factory=list)
+    env: dict[str, dict[str, str]] = Field(default_factory=dict)
+
+
 class CompositionSpec(BaseModel):
     """Top-level composition specification — the input to the generation pipeline."""
 
@@ -446,6 +519,24 @@ class CompositionSpec(BaseModel):
         default=None,
         description="Inline safety config; if omitted, derived from hooks posture",
     )
+    mcp: McpConfig = Field(
+        default_factory=McpConfig,
+        description="MCP server selection overrides (SPEC-022)",
+    )
+
+    def effective_safety(self) -> SafetyConfig:
+        """The safety config generation should apply (SPEC-016).
+
+        An explicit ``safety:`` block wins; otherwise the factory matching
+        ``hooks.posture`` supplies posture-appropriate defaults.
+        """
+        if self.safety is not None:
+            return self.safety
+        if self.hooks.posture == Posture.REGULATED:
+            return SafetyConfig.regulated_safety()
+        if self.hooks.posture == Posture.HARDENED:
+            return SafetyConfig.hardened_safety()
+        return SafetyConfig.baseline_safety()
 
 
 # ---------------------------------------------------------------------------

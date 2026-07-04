@@ -1,0 +1,256 @@
+project:
+  name: Drill_Deck_Base
+  description: Flutter mobile app — Drill Deck base build
+  slug: drill-deck-base
+  output_root: ./generated-projects
+expertise:
+- id: flutter
+  order: 10
+- id: dart
+  order: 20
+- id: clean-code
+  order: 30
+- id: accessibility-compliance
+  order: 40
+- id: security
+  order: 50
+team:
+  personas:
+  - id: team-lead
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: ba
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: architect
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: developer
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: tech-qa
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: extended/mobile-developer
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: extended/ux-ui-designer
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: extended/code-quality-reviewer
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: extended/devops-release
+    include_agent: true
+    include_templates: true
+    strictness: standard
+  - id: extended/technical-writer
+    include_agent: true
+    include_templates: true
+    strictness: standard
+architecture:
+  patterns:
+  - modular-monolith
+  cloud_providers:
+  - gcp
+hooks:
+  posture: hardened
+  packs:
+  - id: hook-policy
+    category: ''
+    enabled: true
+    mode: enforcing
+  - id: pre-commit-lint
+    category: ''
+    enabled: true
+    mode: enforcing
+  - id: security-scan
+    category: ''
+    enabled: true
+    mode: enforcing
+  replace_defaults: false
+generation:
+  seed_tasks: true
+  seed_mode: detailed
+  write_manifest: true
+  write_diff_report: true
+  include_media_skills: true
+mcp:
+  add: {}
+  remove: []
+  env: {}
+
+orchestration:
+  orchestrator_role: team-lead
+  team_model: available-bench
+  required_roles:
+    software-development:
+      - developer
+      - tech-qa
+  optional_roles:
+    - architect
+    - ux-ui-designer
+    - integrator-merge-captain
+    - ba
+
+contracts:
+  personas:
+    - id: team-lead
+      produces:
+        - bean-spec
+        - task-spec
+        - acceptance-criteria
+        - merge-summary
+      consumes:
+        - handoff-packet
+        - vdd-report
+        - traceability-matrix
+        - code-change
+        - design-spec
+        - adr
+        - risk-register
+    - id: ba
+      produces:
+        - user-story
+        - acceptance-criteria
+        - scope-definition
+        - risk-register
+        - handoff-packet
+      consumes:
+        - bean-spec
+        - scope-definition
+    - id: architect
+      produces:
+        - adr
+        - design-spec
+        - risk-register
+        - handoff-packet
+      consumes:
+        - bean-spec
+        - user-story
+        - acceptance-criteria
+        - scope-definition
+    - id: developer
+      produces:
+        - code-change
+        - dev-decision
+        - handoff-packet
+      consumes:
+        - task-spec
+        - user-story
+        - acceptance-criteria
+        - design-spec
+        - adr
+    - id: tech-qa
+      produces:
+        - test-suite
+        - traceability-matrix
+        - vdd-report
+        - handoff-packet
+      consumes:
+        - acceptance-criteria
+        - design-spec
+        - code-change
+        - bean-spec
+    - id: extended/mobile-developer
+      produces:
+        - code-change
+        - dev-decision
+        - handoff-packet
+      consumes:
+        - task-spec
+        - user-story
+        - acceptance-criteria
+        - design-spec
+        - adr
+    - id: extended/ux-ui-designer
+      produces:
+        - design-spec
+        - handoff-packet
+      consumes:
+        - user-story
+        - acceptance-criteria
+    - id: extended/code-quality-reviewer
+      produces:
+        - code-review
+        - handoff-packet
+      consumes:
+        - code-change
+        - design-spec
+        - adr
+    - id: extended/devops-release
+      produces:
+        - dev-decision
+        - handoff-packet
+      consumes:
+        - code-change
+        - adr
+        - bean-spec
+    - id: extended/technical-writer
+      produces:
+        - analysis-report
+        - handoff-packet
+      consumes:
+        - code-change
+        - design-spec
+        - adr
+  artifact-types:
+    - name: acceptance-criteria
+      format: markdown
+      template-path: personas/core/ba/templates/acceptance-criteria.md
+    - name: adr
+      format: markdown
+      template-path: personas/core/architect/templates/adr.md
+    - name: analysis-report
+      format: markdown
+      template-path: personas/extended/researcher-librarian/templates/analysis-report.md
+    - name: bean-spec
+      format: markdown
+      template-path: process/beans/_bean-template.md
+    - name: code-change
+      format: markdown
+      template-path: personas/core/developer/templates/pr-description.md
+    - name: code-review
+      format: markdown
+      template-path: personas/extended/code-quality-reviewer/templates/code-review.md
+    - name: design-spec
+      format: markdown
+      template-path: personas/core/architect/templates/design-spec.md
+    - name: dev-decision
+      format: markdown
+      template-path: personas/core/developer/templates/dev-design-decision.md
+    - name: handoff-packet
+      format: markdown
+      template-path: personas/core/team-lead/templates/handoff-packet.md
+    - name: merge-summary
+      format: markdown
+      template-path: personas/core/team-lead/templates/merge-summary.md
+    - name: risk-register
+      format: markdown
+      template-path: personas/core/architect/templates/risk-register.md
+    - name: scope-definition
+      format: markdown
+      template-path: personas/core/ba/templates/scope-definition.md
+    - name: task-spec
+      format: markdown
+      template-path: personas/core/team-lead/templates/task-spec.md
+    - name: test-suite
+      format: markdown
+      template-path: personas/core/tech-qa/templates/test-plan.md
+    - name: traceability-matrix
+      format: markdown
+      template-path: personas/core/tech-qa/templates/traceability-matrix.md
+    - name: user-story
+      format: markdown
+      template-path: personas/core/ba/templates/user-story.md
+    - name: vdd-report
+      format: markdown
+      template-path: personas/core/tech-qa/templates/test-report.md

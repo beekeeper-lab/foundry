@@ -33,6 +33,17 @@ _DEV_LOOP_STACK_BY_EXPERTISE: dict[str, str] = {
     "typescript": "node",
     "react-native": "node",
     "frontend-build-tooling": "node",
+    # SPEC-021: every language pack gets a dev-loop command set.
+    "go": "go",
+    "rust": "rust",
+    "dotnet": "dotnet",
+    "java": "jvm",
+    "kotlin": "jvm",
+    "dart": "dart",
+    "flutter": "flutter",
+    "swift": "swift",
+    "r": "r",
+    "llm-applications": "python",
 }
 
 # Directory name (under claude/commands/) holding stack-keyed dev-loop command sets.
@@ -84,6 +95,28 @@ _KIT_DISTRIBUTED_SKILLS: tuple[str, ...] = (
     "generate-image",
     "generate-screen",
 )
+
+
+def _kit_distributed_skills(kit_root: Path) -> tuple[str, ...]:
+    """Resolve the kit-distributed skill list.
+
+    The kit's own ``kit-manifest.json`` (``distributed_skills``) is the
+    source of truth (SPEC-027) — a hardcoded tuple here silently drifted
+    whenever the kit added or moved a skill. The tuple above remains as a
+    fallback for kit checkouts predating the manifest.
+    """
+    manifest = kit_root / "kit-manifest.json"
+    if manifest.is_file():
+        try:
+            import json
+
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            skills = data.get("distributed_skills")
+            if isinstance(skills, list) and all(isinstance(s, str) for s in skills):
+                return tuple(skills)
+        except (ValueError, OSError):
+            logger.warning("Unreadable kit-manifest.json at %s", manifest)
+    return _KIT_DISTRIBUTED_SKILLS
 
 
 def _default_claude_kit_root() -> Path:
@@ -164,8 +197,17 @@ def copy_assets(
     # --- Other global assets (settings, process dirs) ---
     for src_subdir, dest_subdir in _GLOBAL_ASSET_DIRS:
         if subtree_mode and dest_subdir.startswith(_CLAUDE_DEST_PREFIX):
-            logger.debug("Subtree mode: skipping .claude/ asset dir %s", dest_subdir)
-            continue
+            # SPEC-027: settings must land in BOTH modes — the subtree brings
+            # the kit's settings.json but never settings.local.json, so
+            # subtree projects shipped with no permissions at all. The
+            # copier's overlay logic handles files the subtree already has.
+            if src_subdir == "claude/settings":
+                logger.debug("Subtree mode: still copying %s", src_subdir)
+            else:
+                logger.debug(
+                    "Subtree mode: skipping .claude/ asset dir %s", dest_subdir
+                )
+                continue
         _copy_directory_files(
             lib_root / src_subdir,
             out_root / dest_subdir,
@@ -321,6 +363,9 @@ def _copy_skills(
 ) -> None:
     """Copy skills to ``.claude/skills/`` with governance gating.
 
+    Kit-distributed skill names come from the kit's manifest via
+    ``_kit_distributed_skills`` (SPEC-027).
+
     Resolves each skill's source from one of two roots:
 
     - **Kit-distributed skills** (names in ``_KIT_DISTRIBUTED_SKILLS``) resolve
@@ -341,6 +386,7 @@ def _copy_skills(
     their unlocking personas is on the team.  The governance gate applies
     equally to both sources.
     """
+    kit_distributed = _kit_distributed_skills(kit_root)
     lib_skills_root = lib_root / "claude" / "skills"
     kit_skills_root = kit_root / "skills"
     dest_root = out_root / ".claude" / "skills"
@@ -358,7 +404,7 @@ def _copy_skills(
             if not (src_entry.is_dir() or src_entry.is_file()):
                 continue
             skill_id = src_entry.name if src_entry.is_dir() else src_entry.stem
-            if skill_id in _KIT_DISTRIBUTED_SKILLS:
+            if skill_id in kit_distributed:
                 # Registry overrides library: skip the library copy entirely.
                 logger.debug(
                     "Skill '%s' is kit-distributed; ignoring library copy at %s",
@@ -371,7 +417,7 @@ def _copy_skills(
         logger.debug("Skills source directory does not exist: %s", lib_skills_root)
 
     # Resolve kit-distributed skills from the kit.
-    for skill_id in _KIT_DISTRIBUTED_SKILLS:
+    for skill_id in kit_distributed:
         kit_skill_path = kit_skills_root / skill_id
         if not kit_skill_path.exists():
             warnings.append(
@@ -443,17 +489,15 @@ def _copy_selected_hooks(
     wrote: list[str],
     warnings: list[str],
 ) -> None:
-    """Copy only hook files matching enabled hook packs from the spec.
+    """Copy hook files matching enabled hook packs, plus all hook scripts.
 
     Each hook pack ID maps to a file named ``{pack_id}.md`` in the library's
-    ``claude/hooks/`` directory.  Only files whose stem matches an enabled pack
-    are copied.  If no packs are enabled, no hooks are copied at all.
+    ``claude/hooks/`` directory; only docs whose stem matches an enabled pack
+    are copied. Executable hook scripts (``*.py``) are ALWAYS copied — the
+    settings.json hook wiring references them regardless of pack selection
+    (SPEC-004).
     """
     enabled_ids = {p.id for p in spec.hooks.packs if p.enabled}
-
-    if not enabled_ids:
-        logger.debug("No hook packs enabled — skipping hook copy")
-        return
 
     src_dir = lib_root / "claude" / "hooks"
     if not src_dir.is_dir():
@@ -471,7 +515,7 @@ def _copy_selected_hooks(
         if not src_entry.is_file():
             continue
 
-        if src_entry.stem not in enabled_ids:
+        if src_entry.suffix != ".py" and src_entry.stem not in enabled_ids:
             logger.debug("Hook '%s' not in enabled packs, skipping", src_entry.stem)
             continue
 

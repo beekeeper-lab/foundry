@@ -1,17 +1,14 @@
-# /telemetry-report Command
+---
+name: telemetry-report
+description: "Produces an aggregate summary of project telemetry: total time invested, average bean duration, breakdowns by category and owner, and outlier identification."
+---
 
-Produces an aggregate summary of project telemetry: total time invested, average bean duration, breakdowns by category and owner, and outlier identification.
+# /telemetry-report
 
-## Usage
+This command is a thin entry point; the canonical process lives in the
+`telemetry-report` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-```
-/telemetry-report [--category <cat>] [--status <status>] [--since YYYY-MM-DD]
-```
+Read `.claude/skills/telemetry-report/SKILL.md` and execute its process with these arguments:
 
-- `--category <cat>` -- Filter by category: `App`, `Process`, `Infra`. Case-insensitive.
-- `--status <status>` -- Filter by bean status. Default: `Done`. Use `all` for everything.
-- `--since YYYY-MM-DD` -- Only include beans created on or after this date.
-
-## See Also
-
-- Skill: `claude/skills/telemetry-report/SKILL.md` — canonical execution spec.
+$ARGUMENTS

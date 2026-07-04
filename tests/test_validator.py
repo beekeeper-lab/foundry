@@ -132,6 +132,30 @@ class TestMissingReferences:
         assert not result.is_valid
         assert result.errors[0].code == "missing-hook-pack"
 
+    def test_pack_without_registry_entry_is_error(self):
+        """SPEC-004: a pack that exists in the library as a doc but has no
+        generator registry entry renders zero hooks -> ERROR."""
+        lib = _make_library()
+        lib.hook_packs.append(HookPackInfo(
+            id="doc-only-pack",
+            path="/fake/library/claude/hooks/doc-only-pack.md",
+        ))
+        spec = _make_spec(
+            hooks=HooksConfig(packs=[HookPackSelection(id="doc-only-pack")]),
+        )
+        result = run_pre_generation_validation(spec, lib)
+        assert not result.is_valid
+        codes = {e.code for e in result.errors}
+        assert "hook-pack-renders-nothing" in codes
+
+    def test_registry_backed_pack_passes_render_check(self):
+        spec = _make_spec(
+            hooks=HooksConfig(packs=[HookPackSelection(id="security-scan")]),
+        )
+        result = run_pre_generation_validation(spec, _make_library())
+        codes = {e.code for e in result.errors}
+        assert "hook-pack-renders-nothing" not in codes
+
     def test_multiple_missing_references(self):
         spec = _make_spec(
             expertise=[ExpertiseSelection(id="cobol")],
@@ -1279,3 +1303,62 @@ class TestValidatorVocabulary:
         # Reads as a suggestion, not a diagnostic.
         assert "Either add" in msg.message or "remove the" in msg.message
 
+
+
+class TestWorkflowOwnership:
+    """SPEC-018: merge/deploy fallback advisories for core-only teams."""
+
+    def test_core_only_team_gets_fallback_advisories(self):
+        result = run_pre_generation_validation(_make_spec(), _make_library())
+        codes = {m.code for m in result.infos}
+        assert "merge-ownership-fallback" in codes
+        assert "deploy-ownership-fallback" in codes
+
+    def test_merge_captain_silences_merge_advisory(self):
+        lib = _make_library()
+        lib.personas.append(PersonaInfo(
+            id="extended/integrator-merge-captain",
+            path="/fake/library/personas/extended/integrator-merge-captain",
+        ))
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer"),
+            PersonaSelection(id="extended/integrator-merge-captain"),
+        ]))
+        result = run_pre_generation_validation(spec, lib)
+        codes = {m.code for m in result.infos}
+        assert "merge-ownership-fallback" not in codes
+        assert "deploy-ownership-fallback" in codes
+
+
+class TestPersonaModelTools:
+    """SPEC-011: model tier / tools preset validation."""
+
+    def test_unknown_model_tier_is_error(self):
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", model="gpt-4"),
+        ]))
+        result = run_pre_generation_validation(spec, _make_library())
+        assert "unknown-model-tier" in {e.code for e in result.errors}
+
+    def test_unknown_tools_preset_is_error(self):
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", tools="everything"),
+        ]))
+        result = run_pre_generation_validation(spec, _make_library())
+        assert "unknown-tools-preset" in {e.code for e in result.errors}
+
+    def test_unknown_tool_name_is_warning(self):
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", tools=["Read", "Teleport"]),
+        ]))
+        result = run_pre_generation_validation(spec, _make_library())
+        assert "unknown-tool-name" in {w.code for w in result.warnings}
+
+    def test_valid_tier_and_preset_pass(self):
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", model="strongest", tools="read-review"),
+        ]))
+        result = run_pre_generation_validation(spec, _make_library())
+        codes = {m.code for m in result.errors} | {m.code for m in result.warnings}
+        assert "unknown-model-tier" not in codes
+        assert "unknown-tools-preset" not in codes

@@ -1,3 +1,8 @@
+---
+name: approve-bean
+description: "- Invoked by the /internal:approve-bean slash command. - Called by a reviewer (user or Team Lead) during the approval step of the bean lifecycle (see §2 Approval in ai/context/bean-workflow.md)."
+---
+
 # Skill: Approve Bean
 
 ## Description

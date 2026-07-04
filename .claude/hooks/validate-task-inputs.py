@@ -1,0 +1,1 @@
+../shared/hooks/validate-task-inputs.py

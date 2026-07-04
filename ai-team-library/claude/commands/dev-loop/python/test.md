@@ -1,3 +1,8 @@
+---
+name: test
+description: "Run the project's Python test suite."
+---
+
 # /test Command
 
 Run the project's Python test suite.

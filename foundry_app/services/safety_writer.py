@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -180,6 +181,43 @@ _HOOK_PACK_REGISTRY: dict[str, tuple[list[dict[str, Any]], list[dict[str, Any]]]
             ),
         )],
         [],
+    ),
+    # Meta-pack: the core workflow policy hooks every bean-workflow project
+    # relies on — branch protection, task-input validation, telemetry.
+    # Mirrors ai-team-library/claude/settings/settings.json so the merged
+    # settings dedup cleanly (SPEC-004). The referenced scripts are copied
+    # by asset_copier (hook .py scripts are always copied).
+    "hook-policy": (
+        [
+            _hook_entry(
+                "Edit|Write|NotebookEdit",
+                (
+                    'branch=$(git branch --show-current 2>/dev/null); '
+                    'if [ "$branch" = "main" ] || [ "$branch" = "master" ] '
+                    '|| [ "$branch" = "test" ] || [ "$branch" = "prod" ]; then '
+                    "echo 'BLOCKED: Cannot edit files on a protected branch "
+                    "($branch). Create a feature branch first.'; exit 1; fi"
+                ),
+            ),
+            _hook_entry(
+                "Edit|Write",
+                "python3 .claude/hooks/validate-task-inputs.py",
+            ),
+            _hook_entry(
+                "Edit|Write",
+                "python3 .claude/hooks/vdd-gate.py",
+            ),
+            _hook_entry(
+                "Edit|Write",
+                "python3 .claude/hooks/handoff-reminder.py",
+            ),
+        ],
+        [
+            _hook_entry(
+                "Edit|Write",
+                "python3 .claude/hooks/telemetry-stamp.py",
+            ),
+        ],
     ),
     # Workflow packs — no native hooks (managed by workflow, not tool guards)
     "git-generate-pr": ([], []),
@@ -354,6 +392,28 @@ def _resolve_packs(
             if p.enabled and p.mode != HookMode.DISABLED
         ]
         warnings = _mismatch_warnings(spec, active)
+        default_ids = _stack_aware_default_packs(spec)
+        if spec.hooks.replace_defaults:
+            dropped = [
+                pid for pid in default_ids
+                if pid not in {p.id for p in active}
+            ]
+            if dropped:
+                warnings.append(
+                    "hooks.replace_defaults is set — posture default packs "
+                    f"dropped: {', '.join(dropped)}"
+                )
+        else:
+            # Explicit selections EXTEND the stack-aware defaults (SPEC-004).
+            # Pre-change behavior silently dropped base packs like
+            # git-commit-branch whenever any pack was selected explicitly.
+            # Packs the user explicitly listed (even disabled ones) are
+            # never re-added — disabling a default is an explicit opt-out.
+            seen_ids = {p.id for p in spec.hooks.packs}
+            for pid in default_ids:
+                if pid not in seen_ids:
+                    active.append(HookPackSelection(id=pid))
+                    seen_ids.add(pid)
     else:
         default_ids = _stack_aware_default_packs(spec)
         active = [HookPackSelection(id=pid) for pid in default_ids]
@@ -391,15 +451,31 @@ def _build_hooks(
 
     packs, warnings = _resolve_packs(spec, library)
 
+    seen_entries: set[str] = set()
+
+    def _add(target: list[dict[str, Any]], entries: list[dict[str, Any]]) -> None:
+        for entry in entries:
+            key = json.dumps(entry, sort_keys=True)
+            if key not in seen_entries:
+                seen_entries.add(key)
+                target.append(entry)
+
     for pack in packs:
         registry_entry = _HOOK_PACK_REGISTRY.get(pack.id)
         if registry_entry is None:
+            # Surface at result level, not just the log — a selected pack
+            # producing nothing is how examples silently lost their branch
+            # protection (SPEC-004).
+            warnings.append(
+                f"Hook pack '{pack.id}' has no hook definitions in the "
+                f"registry — it contributed no hooks to settings.json"
+            )
             logger.warning("Unknown hook pack '%s' — skipping", pack.id)
             continue
 
         pre_entries, post_entries = registry_entry
-        pre_tool_use.extend(pre_entries)
-        post_tool_use.extend(post_entries)
+        _add(pre_tool_use, pre_entries)
+        _add(post_tool_use, post_entries)
 
     settings = {
         "hooks": {
@@ -408,6 +484,172 @@ def _build_hooks(
         },
     }
     return settings, warnings
+
+
+def _merge_settings(
+    settings_path: Path, new_settings: dict[str, Any],
+) -> dict[str, Any]:
+    """Merge registry-derived hooks into an existing settings.json.
+
+    Non-hook keys from the existing file are preserved; hook entries are
+    unioned per event with dedup on the full entry (matcher + commands).
+    Returns ``new_settings`` unchanged when no existing file is readable.
+    """
+    if not settings_path.is_file():
+        return new_settings
+    try:
+        existing = json.loads(settings_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return new_settings
+    if not isinstance(existing, dict):
+        return new_settings
+
+    merged = dict(existing)
+    merged_hooks = dict(existing.get("hooks") or {})
+    for event, new_entries in new_settings.get("hooks", {}).items():
+        entries = list(merged_hooks.get(event) or [])
+        seen = {json.dumps(e, sort_keys=True) for e in entries}
+        for entry in new_entries:
+            key = json.dumps(entry, sort_keys=True)
+            if key not in seen:
+                seen.add(key)
+                entries.append(entry)
+        merged_hooks[event] = entries
+    merged["hooks"] = merged_hooks
+    return merged
+
+
+_HOOK_SCRIPT_RE = re.compile(r"\.claude/hooks/([\w.-]+\.\w+)")
+
+
+def _missing_hook_scripts(root: Path, settings: dict[str, Any]) -> list[str]:
+    """Warn for every hook command referencing a script absent on disk."""
+    missing: list[str] = []
+    for entries in settings.get("hooks", {}).values():
+        for entry in entries:
+            for hook in entry.get("hooks", []):
+                for script in _HOOK_SCRIPT_RE.findall(hook.get("command", "")):
+                    if not (root / ".claude" / "hooks" / script).is_file():
+                        msg = (
+                            f"Hook command references .claude/hooks/{script} "
+                            f"but the script is not present in the generated "
+                            f"project"
+                        )
+                        if msg not in missing:
+                            missing.append(msg)
+    return missing
+
+
+# ---------------------------------------------------------------------------
+# Permissions from SafetyConfig (SPEC-016)
+#
+# Mapping table (SafetyConfig -> permission rules):
+#   git.protected_branches   -> deny  Bash(git push origin <branch>:*)
+#                                     (glob branches like release/* skipped —
+#                                     permission rules are prefix-based)
+#   git.allow_force_push=F   -> deny  Bash(git push --force:*), Bash(git push -f:*)
+#   shell.blocked_commands   -> deny  Bash(<command>:*)
+#   secrets.block_on_secret  -> deny  Read(./.env), Read(./.env.*),
+#                                     Read(~/.ssh/**), Read(~/.aws/**),
+#                                     Write(./.env)
+#   filesystem.protected_paths -> deny Write(<path>/**), Edit(<path>/**)
+#   network.allow_network=F  -> deny  WebFetch, WebSearch
+#   (always)                 -> allow uv run pytest/ruff, git status/diff/log
+# Fields with no mapping (shell.blocked_patterns — regex, not prefix;
+# destructive_ops.blocked_operations — SQL, enforced by hooks) are
+# intentionally not rendered here; the hook layer covers them.
+# ---------------------------------------------------------------------------
+
+_BASE_ALLOW_RULES = [
+    "Bash(uv run pytest:*)",
+    "Bash(uv run ruff:*)",
+    "Bash(git status)",
+    "Bash(git diff:*)",
+    "Bash(git log:*)",
+]
+
+
+def _derive_permission_rules(safety) -> tuple[list[str], list[str]]:
+    """Map a SafetyConfig to (allow, deny) permission rule lists."""
+    allow = list(_BASE_ALLOW_RULES)
+    deny: list[str] = []
+
+    for branch in safety.git.protected_branches:
+        if any(ch in branch for ch in "*?["):
+            continue
+        deny.append(f"Bash(git push origin {branch}:*)")
+    if not safety.git.allow_force_push:
+        deny.append("Bash(git push --force:*)")
+        deny.append("Bash(git push -f:*)")
+
+    for cmd in safety.shell.blocked_commands:
+        deny.append(f"Bash({cmd}:*)")
+
+    if safety.secrets.block_on_secret:
+        deny.extend([
+            "Read(./.env)",
+            "Read(./.env.*)",
+            "Read(~/.ssh/**)",
+            "Read(~/.aws/**)",
+            "Write(./.env)",
+        ])
+
+    for path in safety.filesystem.protected_paths:
+        deny.append(f"Write({path}/**)")
+        deny.append(f"Edit({path}/**)")
+
+    if not safety.network.allow_network:
+        deny.extend(["WebFetch", "WebSearch"])
+
+    return allow, deny
+
+
+def write_permissions(
+    spec: CompositionSpec,
+    output_dir: str | Path,
+    library: LibraryIndex | None = None,
+) -> StageResult:
+    """Render ``.claude/settings.local.json`` from the effective SafetyConfig.
+
+    The library's static copy (placed by the asset copier) is the base;
+    derived rules overlay it as a UNION — library rules are never dropped
+    (the permissions analogue of the SPEC-004 settings.json merge). The
+    result is posture-differentiated permissions instead of one static
+    file for every project (SPEC-016).
+    """
+    root = Path(output_dir)
+    settings_dir = root / ".claude"
+    settings_dir.mkdir(parents=True, exist_ok=True)
+    path = settings_dir / "settings.local.json"
+
+    base: dict[str, Any] = {}
+    if path.is_file():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                base = loaded
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    allow, deny = _derive_permission_rules(spec.effective_safety())
+    perms = base.setdefault("permissions", {})
+    for key, rules in (("allow", allow), ("deny", deny)):
+        existing = list(perms.get(key) or [])
+        seen = set(existing)
+        for rule in rules:
+            if rule not in seen:
+                existing.append(rule)
+                seen.add(rule)
+        perms[key] = existing
+
+    path.write_text(json.dumps(base, indent=2) + "\n", encoding="utf-8")
+    rel = str(path.relative_to(root))
+    logger.info(
+        "Permissions written: posture=%s, allow=%d, deny=%d",
+        spec.hooks.posture.value,
+        len(perms["allow"]), len(perms["deny"]),
+    )
+    return StageResult(wrote=[rel], warnings=[])
 
 
 # ---------------------------------------------------------------------------
@@ -447,6 +689,11 @@ def write_safety(
     settings, warnings = _build_hooks(spec, library)
 
     settings_path = settings_dir / "settings.json"
+    # Merge with any settings.json already placed by the asset copier
+    # (the library ships hook wiring there); overwriting it silently
+    # discarded those hooks pre-SPEC-004.
+    settings = _merge_settings(settings_path, settings)
+    warnings.extend(_missing_hook_scripts(root, settings))
     settings_path.write_text(
         json.dumps(settings, indent=2) + "\n",
         encoding="utf-8",

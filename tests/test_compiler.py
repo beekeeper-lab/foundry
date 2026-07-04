@@ -30,6 +30,8 @@ from foundry_app.services.compiler import (
     _persona_display_name,
     _resolve_persona_name,
     _substitute,
+    compile_agnostic_outputs,
+    compile_claude_outputs,
     compile_project,
 )
 from foundry_app.services.library_indexer import build_library_index
@@ -763,6 +765,9 @@ class TestCompileWarnings:
         assert any("nonexistent" in w and "not found" in w for w in result.warnings)
 
     def test_warns_on_missing_conventions_md(self, tmp_path: Path):
+        """A pack without conventions.md compiles from its sibling files
+        (SPEC-003 fallback) and surfaces a warning about the fallback.
+        """
         output = tmp_path / "project"
         index, lib_root = _make_library(
             tmp_path,
@@ -771,12 +776,16 @@ class TestCompileWarnings:
         )
         spec = _make_spec()
         result = compile_project(spec, index, lib_root, output)
-        assert any("missing conventions.md" in w for w in result.warnings)
+        assert any("no conventions.md" in w for w in result.warnings)
+        # The pack still compiles — its content is not silently dropped.
+        emitted = output / "ai/generated/expertise/python.md"
+        assert emitted.is_file()
+        assert "Not conventions" in emitted.read_text(encoding="utf-8")
 
     def test_missing_expertise_excluded_from_claude_md(self, tmp_path: Path):
-        """When an expertise has no conventions.md, CLAUDE.md must not
-        reference the expertise's ai/generated/expertise/<id>.md path
-        (the file is never written). The warning is still emitted.
+        """A conventions-less pack compiles via the SPEC-003 fallback: its
+        ai/generated/expertise/<id>.md IS written (from sibling files) and
+        CLAUDE.md references it.
         """
         output = tmp_path / "project"
         index, lib_root = _make_library(
@@ -795,17 +804,16 @@ class TestCompileWarnings:
         )
         result = compile_project(spec, index, lib_root, output)
 
-        # Warning is still surfaced.
-        assert any("clean-code" in w and "missing" in w for w in result.warnings)
+        # Fallback warning is surfaced.
+        assert any(
+            "clean-code" in w and "no conventions.md" in w
+            for w in result.warnings
+        )
 
-        # Missing-source file must not exist on disk.
-        assert not (output / "ai/generated/expertise/clean-code.md").exists()
-
-        # Generated CLAUDE.md must not reference the missing file.
+        # The fallback-compiled file exists and is referenced.
+        assert (output / "ai/generated/expertise/clean-code.md").is_file()
         claude_md = (output / "CLAUDE.md").read_text(encoding="utf-8")
-        assert "ai/generated/expertise/clean-code.md" not in claude_md
-
-        # The present expertise is still referenced.
+        assert "ai/generated/expertise/clean-code.md" in claude_md
         assert "ai/generated/expertise/python.md" in claude_md
 
     def test_all_expertise_references_in_claude_md_exist_on_disk(
@@ -847,9 +855,9 @@ class TestCompileWarnings:
             )
 
     def test_missing_expertise_excluded_from_member_file(self, tmp_path: Path):
-        """When an expertise has no conventions.md, the generated member
-        file's ``{{ expertise | join(", ") }}`` substitution must not list
-        the missing-source expertise ID.
+        """A conventions-less pack still compiles (SPEC-003 fallback), so it
+        appears in the member file's ``{{ expertise | join(", ") }}`` list.
+        Only an expertise with no source at all is excluded.
         """
         output = tmp_path / "project"
         index, lib_root = _make_library(
@@ -870,6 +878,7 @@ class TestCompileWarnings:
             expertise=[
                 ExpertiseSelection(id="python", order=10),
                 ExpertiseSelection(id="clean-code", order=20),
+                ExpertiseSelection(id="ghost", order=30),
             ],
         )
         compile_project(spec, index, lib_root, output)
@@ -877,10 +886,10 @@ class TestCompileWarnings:
         member = (output / "ai/generated/members/developer.md").read_text(
             encoding="utf-8",
         )
-        # Missing-source expertise must not appear in the substituted list.
-        assert "clean-code" not in member
-        # Present expertise is still rendered.
-        assert "Stack: **python**" in member
+        # Truly missing expertise must not appear in the substituted list.
+        assert "ghost" not in member
+        # Present + fallback-compiled expertise are both rendered.
+        assert "Stack: **python, clean-code**" in member
 
     def test_warns_on_unresolved_placeholders(self, tmp_path: Path):
         output = tmp_path / "project"
@@ -1359,7 +1368,12 @@ class TestLeanClaudeMd:
             "tech-qa": {"persona.md": "# QA"},
             "architect": {"persona.md": "# Arch"},
         })
-        spec = _make_spec()
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="team-lead"),
+            PersonaSelection(id="developer"),
+            PersonaSelection(id="tech-qa"),
+            PersonaSelection(id="architect"),
+        ]))
         compile_project(spec, index, lib_root, output)
         content = (output / "CLAUDE.md").read_text()
         assert "## Team Orchestration Model" in content
@@ -1368,8 +1382,28 @@ class TestLeanClaudeMd:
         # Mandatory roles for software development
         assert "**Developer**" in content
         assert "**Tech-QA**" in content
-        # At least one opt-in specialist named
+        # SPEC-018: bench lists only specialists actually on the team,
+        # and merge ownership is stated explicitly (fallback = Team Lead).
         assert "**Architect**" in content
+        assert "UX/UI Designer" not in content
+        assert "no Merge Captain on this team" in content
+
+    def test_orchestration_names_merge_captain_when_present(
+        self, tmp_path: Path,
+    ):
+        output = tmp_path / "project"
+        index, lib_root = _make_library(tmp_path, personas={
+            "developer": {"persona.md": "# Dev"},
+            "extended/integrator-merge-captain": {"persona.md": "# IMC"},
+        })
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer"),
+            PersonaSelection(id="extended/integrator-merge-captain"),
+        ]))
+        compile_project(spec, index, lib_root, output)
+        content = (output / "CLAUDE.md").read_text()
+        assert "Integrator Merge Captain" in content
+        assert "no Merge Captain on this team" not in content
 
     def test_claude_md_orchestration_model_emitted_without_personas(
         self, tmp_path: Path,
@@ -2378,12 +2412,12 @@ class TestCompilerExpertiseFilterIntegration:
 
 
 class TestCompilePersonaSectionForwardCompat:
-    """The forward-compat guard in _compile_persona_section is wired but a
-    no-op today. Verify that passing spec= does not change persona file
-    contents (regression guard for the no-op).
+    """SPEC-012: passing spec= inlines persona-relevant expertise (the
+    ADR-012 applies_to filter gates which packs land in which persona);
+    without spec the persona section stays persona-only.
     """
 
-    def test_persona_section_unchanged_with_or_without_spec(self, tmp_path: Path):
+    def test_persona_section_inlines_applicable_expertise(self, tmp_path: Path):
         from foundry_app.services.compiler import _compile_persona_section
 
         index, lib_root = _make_library(
@@ -2428,9 +2462,43 @@ class TestCompilePersonaSectionForwardCompat:
         with_spec = _compile_persona_section(
             "developer", Path(lib_root), index, ctx, warnings_b, spec=spec,
         )
-        assert without_spec == with_spec
+        # Without spec: persona-only (no expertise section).
+        assert "## Expertise Conventions" not in without_spec
+        # With spec: applicable expertise inlined — Defaults excerpt plus
+        # a pointer to the full compiled conventions file.
+        assert "## Expertise Conventions" in with_spec
+        assert "ruff" in with_spec
+        assert "tsconfig" in with_spec
+        assert "ai/generated/expertise/python.md" in with_spec
         # No additional warnings produced by passing spec.
         assert warnings_a == warnings_b
+
+    def test_expertise_inlining_respects_applies_to(self, tmp_path: Path):
+        from foundry_app.services.compiler import _compile_persona_section
+
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "ba": {"persona.md": "# Persona: BA\n\n## Mission\nAnalyze."},
+            },
+            expertise={
+                "python": {
+                    "conventions.md": "# Python\n\n## Defaults\n- ruff\n",
+                },
+            },
+        )
+        # python applies only to developer — the BA must not receive it.
+        for e in index.expertise:
+            e.applies_to = ["developer"]
+        spec = _make_spec(
+            team=TeamConfig(personas=[PersonaSelection(id="ba")]),
+            expertise=[ExpertiseSelection(id="python", order=10)],
+        )
+        ctx = _build_persona_context(spec, spec.team.personas[0], ["python"])
+        section = _compile_persona_section(
+            "ba", Path(lib_root), index, ctx, [], spec=spec,
+        )
+        assert "## Expertise Conventions" not in section
 
 
 # ---------------------------------------------------------------------------
@@ -2499,3 +2567,106 @@ class TestBean294RExpertiseIntegration:
             "Generated r.md must surface the tidyverse default from the "
             "real ai-team-library/expertise/r/conventions.md"
         )
+
+
+# ---------------------------------------------------------------------------
+# compile stage split — agnostic vs Claude-specific emission (IMP-08)
+# ---------------------------------------------------------------------------
+
+
+class TestCompileStageSplit:
+    """Lock the agnostic/Claude split: calling the two halves explicitly
+    must produce exactly the same files, bytes, and StageResult as the
+    combined ``compile_project`` orchestrator."""
+
+    def _fixture(self, tmp_path: Path):
+        index, lib_root = _make_library(
+            tmp_path,
+            personas={
+                "developer": {
+                    "persona.md": "# Persona: Developer\n\nBuilds {{ project_name }}.",
+                    "outputs.md": "# Outputs",
+                },
+                "architect": {"persona.md": "# Persona: Architect\n\nDesigns."},
+            },
+            expertise={
+                "python": {"conventions.md": "# Python\n\nUse type hints."},
+                "typescript": {"conventions.md": "# TS"},
+            },
+        )
+        spec = _make_spec(
+            team=TeamConfig(personas=[
+                PersonaSelection(id="developer"),
+                PersonaSelection(id="architect"),
+            ]),
+            expertise=[
+                ExpertiseSelection(id="python", order=10),
+                ExpertiseSelection(id="typescript", order=20),
+            ],
+        )
+        return spec, index, lib_root
+
+    @staticmethod
+    def _tree(root: Path) -> dict[str, bytes]:
+        return {
+            str(f.relative_to(root)): f.read_bytes()
+            for f in sorted(root.rglob("*"))
+            if f.is_file()
+        }
+
+    def test_split_halves_reproduce_combined_output(self, tmp_path: Path):
+        spec, index, lib_root = self._fixture(tmp_path)
+
+        combined_out = tmp_path / "combined"
+        combined = compile_project(spec, index, lib_root, combined_out)
+
+        split_out = tmp_path / "split"
+        agnostic = compile_agnostic_outputs(spec, index, lib_root, split_out)
+        claude = compile_claude_outputs(
+            spec,
+            split_out,
+            agnostic.persona_descriptions,
+            agnostic.emitted_expertise_ids,
+        )
+
+        # Same file set with byte-identical content.
+        assert self._tree(split_out) == self._tree(combined_out)
+
+        # Same StageResult when the two halves are concatenated.
+        assert (
+            list(agnostic.result.wrote) + list(claude.wrote)
+            == list(combined.wrote)
+        )
+        assert (
+            list(agnostic.result.warnings) + list(claude.warnings)
+            == list(combined.warnings)
+        )
+
+    def test_agnostic_half_emits_no_claude_md(self, tmp_path: Path):
+        spec, index, lib_root = self._fixture(tmp_path)
+        out = tmp_path / "agnostic-only"
+        agnostic = compile_agnostic_outputs(spec, index, lib_root, out)
+
+        assert not (out / "CLAUDE.md").exists()
+        assert "CLAUDE.md" not in agnostic.result.wrote
+        assert (out / "ai" / "generated" / "members" / "developer.md").is_file()
+        assert (out / "ai" / "generated" / "expertise" / "python.md").is_file()
+
+    def test_claude_half_emits_only_claude_md(self, tmp_path: Path):
+        spec, index, lib_root = self._fixture(tmp_path)
+        out = tmp_path / "claude-only"
+        agnostic = compile_agnostic_outputs(spec, index, lib_root, out)
+
+        before = self._tree(out)
+        claude = compile_claude_outputs(
+            spec,
+            out,
+            agnostic.persona_descriptions,
+            agnostic.emitted_expertise_ids,
+        )
+        after = self._tree(out)
+
+        assert claude.wrote == ["CLAUDE.md"]
+        assert set(after) - set(before) == {"CLAUDE.md"}
+        # The Claude half must not rewrite any agnostic file.
+        assert all(after[p] == before[p] for p in before)

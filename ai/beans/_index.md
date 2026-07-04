@@ -316,3 +316,5 @@
 | BEAN-292 | Relax Contract-Graph "Missing Producer" from Error to Warning | App | High | Done | team-lead |
 | BEAN-293 | Compliance-Gate Hook Pack Should Not Default-On at Baseline Posture | App | High | Done | team-lead |
 | BEAN-294 | R Language Expertise | App | Medium | Done | team-lead |
+| BEAN-295 | Web and backend framework expertise packs | App | Medium | Unapproved | (unassigned) |
+| BEAN-296 | ClaudeKit plugin packaging (ADR-016 phase 2) | Infra | High | Unapproved | (unassigned) |

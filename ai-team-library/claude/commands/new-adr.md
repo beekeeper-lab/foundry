@@ -1,19 +1,14 @@
-# /new-adr Command
+---
+name: new-adr
+description: "Creates a new Architecture Decision Record documenting a significant technical decision with context, options, tradeoffs, rationale, and consequences."
+---
 
-Creates a new Architecture Decision Record documenting a significant technical decision with context, options, tradeoffs, rationale, and consequences.
+# /new-adr
 
-## Usage
+This command is a thin entry point; the canonical process lives in the
+`new-adr` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-```
-/new-adr "<decision title>" [--context <text-or-file>] [--related <item-ids>] [--output <dir>] [--template <path>]
-```
+Read `.claude/skills/new-adr/SKILL.md` and execute its process with these arguments:
 
-- `decision title` -- Short title for the decision (required).
-- `--context <text-or-file>` -- Provide context inline instead of being prompted.
-- `--related <ids>` -- Comma-separated story/task/issue IDs related to this decision.
-- `--output <dir>` -- Override the ADR output directory (default: `ai/context/decisions/`).
-- `--template <path>` -- Custom ADR template (default: Architect's ADR template).
-
-## See Also
-
-- Skill: `claude/skills/new-adr/SKILL.md` — canonical execution spec.
+$ARGUMENTS

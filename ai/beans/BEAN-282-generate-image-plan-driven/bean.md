@@ -8,7 +8,7 @@
 | **Created** | 2026-04-29 |
 | **Started** | 2026-04-29 19:49 |
 | **Completed** | 2026-04-29 20:10 |
-| **Duration** | 1559h 3m |
+| **Duration** | 21m (corrected 2026-07) |
 | **Owner** | (unassigned) |
 | **Category** | App |
 | **Depends On** | BEAN-280, BEAN-281 |

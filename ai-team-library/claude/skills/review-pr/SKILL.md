@@ -1,3 +1,8 @@
+---
+name: review-pr
+description: "- Invoked by the /review-pr slash command. - Called by the Code Quality Reviewer persona after a PR is submitted. - Can be invoked by any persona for self-review before requesting formal review."
+---
+
 # Skill: Review PR
 
 ## Description

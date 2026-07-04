@@ -314,14 +314,14 @@ class TestWriteAgents:
         assert result.warnings == []
 
     def test_missing_expertise_excluded_from_agent_header(self, tmp_path: Path):
-        """When an expertise has no conventions.md, its ID must not appear
-        in the agent header's ``**Expertise:** ...`` line. Regression guard
-        for BEAN-261: the CLAUDE.md drop must propagate to agent files.
+        """An expertise with NO source files must not appear in the agent
+        header's ``**Expertise:** ...`` line. A conventions-less pack with
+        sibling files still compiles (SPEC-003 fallback) and is listed.
         """
         lib_root, index = _make_library(tmp_path)
 
-        # Add a second expertise directory without conventions.md so it is
-        # indexed (present on disk) but not emittable.
+        # A pack with sibling files but no conventions.md — emittable via
+        # the SPEC-003 fallback.
         clean_code_dir = lib_root / "stacks" / "clean-code"
         clean_code_dir.mkdir(parents=True)
         (clean_code_dir / "readme.md").write_text("not conventions", encoding="utf-8")
@@ -330,10 +330,19 @@ class TestWriteAgents:
             name="Clean Code",
             path=str(clean_code_dir),
         ))
+        # A pack directory with no .md files at all — never emittable.
+        ghost_dir = lib_root / "stacks" / "ghost"
+        ghost_dir.mkdir(parents=True)
+        index.expertise.append(ExpertiseInfo(
+            id="ghost",
+            name="Ghost",
+            path=str(ghost_dir),
+        ))
 
         spec = _make_spec(expertise=[
-            ExpertiseSelection(id="python"),
-            ExpertiseSelection(id="clean-code"),
+            ExpertiseSelection(id="python", order=10),
+            ExpertiseSelection(id="clean-code", order=20),
+            ExpertiseSelection(id="ghost", order=30),
         ])
         output = tmp_path / "output"
         output.mkdir()
@@ -341,10 +350,10 @@ class TestWriteAgents:
         write_agents(spec, index, lib_root, output)
 
         content = (output / ".claude" / "agents" / "developer.md").read_text()
-        # Missing-source expertise must be absent from the header.
-        assert "clean-code" not in content
-        # Present expertise still renders, as does the role name.
-        assert "**Expertise:** python" in content
+        # Source-less expertise must be absent from the header.
+        assert "ghost" not in content
+        # Present and fallback-compiled expertise both render.
+        assert "**Expertise:** python, clean-code" in content
         assert "# Python Developer" in content
 
 
@@ -1061,3 +1070,62 @@ class TestBean259TokenSavings:
             f"BEAN-259 acceptance failed: largest non-Developer reduction "
             f"is {biggest_pid}={biggest_pct:.1f}%, expected >=20%"
         )
+
+
+class TestModelToolTiering:
+    """SPEC-011: per-persona model/tools resolution into frontmatter."""
+
+    def _library_with_defaults(self, tmp_path, defaults_yml: str):
+        lib_root, index = _make_library(tmp_path)
+        dev_dir = Path(index.personas[0].path)
+        (dev_dir / "defaults.yml").write_text(defaults_yml, encoding="utf-8")
+        return lib_root, index
+
+    def _agent_text(self, tmp_path, lib_root, index, spec) -> str:
+        output = tmp_path / "out"
+        output.mkdir(exist_ok=True)
+        write_agents(spec, index, lib_root, output)
+        return (output / ".claude" / "agents" / "developer.md").read_text()
+
+    def test_library_defaults_resolve_to_frontmatter(self, tmp_path):
+        lib_root, index = self._library_with_defaults(
+            tmp_path, "model: strongest\ntools: read-review\n",
+        )
+        content = self._agent_text(tmp_path, lib_root, index, _make_spec())
+        assert "model: opus" in content
+        assert "tools: Read, Grep, Glob, Bash" in content
+
+    def test_composition_override_wins(self, tmp_path):
+        lib_root, index = self._library_with_defaults(
+            tmp_path, "model: strongest\ntools: read-review\n",
+        )
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", model="fast", tools=["Read"]),
+        ]))
+        content = self._agent_text(tmp_path, lib_root, index, spec)
+        assert "model: haiku" in content
+        assert "tools: Read\n" in content
+
+    def test_no_defaults_omits_keys(self, tmp_path):
+        lib_root, index = _make_library(tmp_path)
+        content = self._agent_text(tmp_path, lib_root, index, _make_spec())
+        assert "model:" not in content.split("---")[1]
+        assert "tools:" not in content.split("---")[1]
+
+    def test_full_preset_omits_tools_key(self, tmp_path):
+        lib_root, index = self._library_with_defaults(
+            tmp_path, "model: standard\ntools: full\n",
+        )
+        content = self._agent_text(tmp_path, lib_root, index, _make_spec())
+        assert "model: sonnet" in content
+        assert "tools:" not in content.split("---")[1]
+
+    def test_include_agent_false_writes_no_file(self, tmp_path):
+        lib_root, index = _make_library(tmp_path)
+        spec = _make_spec(team=TeamConfig(personas=[
+            PersonaSelection(id="developer", include_agent=False),
+        ]))
+        output = tmp_path / "out"
+        output.mkdir()
+        write_agents(spec, index, lib_root, output)
+        assert not (output / ".claude" / "agents" / "developer.md").exists()

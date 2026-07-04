@@ -1,16 +1,14 @@
-# /backlog-consolidate Command
+---
+name: backlog-consolidate
+description: "Detects and resolves duplicates, overlaps, contradictions, missing dependencies, and merge opportunities across recently created beans. Designed for post-refinement cleanup after running multiple /backlog-refinement sessions in parallel."
+---
 
-Detects and resolves duplicates, overlaps, contradictions, missing dependencies, and merge opportunities across recently created beans. Designed for post-refinement cleanup after running multiple `/backlog-refinement` sessions in parallel.
+# /backlog-consolidate
 
-## Usage
+This command is a thin entry point; the canonical process lives in the
+`backlog-consolidate` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-```
-/backlog-consolidate [--status <status>] [--dry-run]
-```
+Read `.claude/skills/backlog-consolidate/SKILL.md` and execute its process with these arguments:
 
-- `--status <value>` — Filter which beans to analyze. Default: `Unapproved`. Also accepts `open` (Unapproved + Approved + In Progress), `all`, or any single status value.
-- `--dry-run` — Show findings and proposed changes without applying them.
-
-## See Also
-
-- Skill: `claude/skills/backlog-consolidate/SKILL.md` — canonical execution spec.
+$ARGUMENTS

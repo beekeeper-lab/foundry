@@ -1,3 +1,10 @@
+---
+id: react-native
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # React Native Stack Conventions
 
 ## Category

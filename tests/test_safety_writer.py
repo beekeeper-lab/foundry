@@ -96,6 +96,7 @@ class TestHookEntryFormat:
     def test_pre_tool_use_entry_has_matcher(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="git-commit-branch")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -105,6 +106,7 @@ class TestHookEntryFormat:
     def test_pre_tool_use_entry_has_hooks_array(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="git-commit-branch")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -114,6 +116,7 @@ class TestHookEntryFormat:
     def test_hook_has_type_and_command(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="git-commit-branch")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -133,6 +136,7 @@ class TestGitCommitBranch:
     def test_generates_pre_tool_use(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="git-commit-branch")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -142,6 +146,7 @@ class TestGitCommitBranch:
     def test_matcher_targets_edit_write(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="git-commit-branch")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -152,6 +157,7 @@ class TestGitCommitBranch:
     def test_command_checks_branch(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="git-commit-branch")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -166,6 +172,7 @@ class TestPreCommitLint:
     def test_generates_post_tool_use(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="pre-commit-lint")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -175,6 +182,7 @@ class TestPreCommitLint:
     def test_command_runs_linter(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="pre-commit-lint")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -187,6 +195,7 @@ class TestSecurityScan:
     def test_generates_post_tool_use(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="security-scan")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -195,6 +204,7 @@ class TestSecurityScan:
     def test_command_scans_for_secrets(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="security-scan")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -207,6 +217,7 @@ class TestAzReadOnly:
     def test_generates_pre_tool_use_on_bash(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="az-read-only")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -216,6 +227,7 @@ class TestAzReadOnly:
     def test_command_blocks_mutations(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="az-read-only")],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -330,22 +342,44 @@ class TestRegulatedPosture:
 
 class TestPackSelection:
 
-    def test_explicit_packs_override_posture(self, tmp_path: Path):
+    def test_explicit_packs_extend_posture_defaults(self, tmp_path: Path):
+        """SPEC-004: explicit packs UNION with posture defaults — selecting
+        one pack no longer silently drops the posture's base packs."""
         spec = _make_spec(hooks=HooksConfig(
             posture=Posture.REGULATED,
-            packs=[HookPackSelection(id="git-commit-branch")],
+            packs=[HookPackSelection(id="security-scan")],
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
-        # Only one pack selected, so only its hooks appear
+        commands = "\n".join(
+            h["command"]
+            for key in ("PreToolUse", "PostToolUse")
+            for e in data["hooks"][key]
+            for h in e["hooks"]
+        )
+        # Regulated base packs survive the explicit selection.
+        assert "protected branch" in commands  # git-commit-branch
+        assert "Compliance" in commands  # compliance-gate
+
+    def test_replace_defaults_uses_explicit_packs_only(self, tmp_path: Path):
+        spec = _make_spec(hooks=HooksConfig(
+            posture=Posture.REGULATED,
+            packs=[HookPackSelection(id="git-commit-branch")],
+            replace_defaults=True,
+        ))
+        result = write_safety(spec, tmp_path)
+        data = _read_settings(tmp_path)
         assert len(data["hooks"]["PreToolUse"]) == 1
         assert len(data["hooks"]["PostToolUse"]) == 0
+        # Dropping posture base packs is surfaced, not silent.
+        assert any("replace_defaults" in w for w in result.warnings)
 
     def test_disabled_pack_produces_no_hooks(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[
                 HookPackSelection(id="git-commit-branch", mode=HookMode.DISABLED),
             ],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -357,6 +391,7 @@ class TestPackSelection:
             packs=[
                 HookPackSelection(id="git-commit-branch", enabled=False),
             ],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -390,6 +425,7 @@ class TestPackSelection:
                 HookPackSelection(id="git-merge-to-test"),
                 HookPackSelection(id="git-merge-to-prod"),
             ],
+            replace_defaults=True,
         ))
         write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
@@ -436,11 +472,14 @@ class TestEdgeCases:
     def test_unknown_pack_id_skipped(self, tmp_path: Path):
         spec = _make_spec(hooks=HooksConfig(
             packs=[HookPackSelection(id="nonexistent-pack")],
+            replace_defaults=True,
         ))
-        write_safety(spec, tmp_path)
+        result = write_safety(spec, tmp_path)
         data = _read_settings(tmp_path)
         assert len(data["hooks"]["PreToolUse"]) == 0
         assert len(data["hooks"]["PostToolUse"]) == 0
+        # SPEC-004: the no-op selection is surfaced as a warning.
+        assert any("no hook definitions" in w for w in result.warnings)
 
 
 # ---------------------------------------------------------------------------
@@ -852,3 +891,116 @@ class TestPostureCompatibilityFilter:
             entry["hooks"][0]["command"] for entry in data["hooks"]["PostToolUse"]
         ]
         assert any("Compliance:" in c for c in post_commands)
+
+
+# ---------------------------------------------------------------------------
+# SPEC-004: hook-policy pack, settings merge, script references
+# ---------------------------------------------------------------------------
+
+
+class TestHookPolicyPack:
+
+    def test_renders_workflow_hooks(self, tmp_path: Path):
+        spec = _make_spec(hooks=HooksConfig(
+            packs=[HookPackSelection(id="hook-policy")],
+            replace_defaults=True,
+        ))
+        write_safety(spec, tmp_path)
+        data = _read_settings(tmp_path)
+        commands = "\n".join(
+            h["command"]
+            for key in ("PreToolUse", "PostToolUse")
+            for e in data["hooks"][key]
+            for h in e["hooks"]
+        )
+        assert "protected branch" in commands
+        assert "validate-task-inputs.py" in commands
+        assert "telemetry-stamp.py" in commands
+
+
+class TestSettingsMerge:
+
+    def test_preserves_existing_hooks_and_keys(self, tmp_path: Path):
+        """Hooks placed by the asset copier (library settings.json) must
+        survive write_safety instead of being overwritten (SPEC-004)."""
+        claude_dir = tmp_path / ".claude"
+        claude_dir.mkdir()
+        existing = {
+            "permissions": {"deny": ["Bash(git push origin main:*)"]},
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Edit|Write",
+                        "hooks": [{
+                            "type": "command",
+                            "command": "python3 .claude/hooks/validate-task-inputs.py",
+                        }],
+                    },
+                ],
+            },
+        }
+        (claude_dir / "settings.json").write_text(
+            json.dumps(existing), encoding="utf-8",
+        )
+
+        spec = _make_spec(hooks=HooksConfig(
+            packs=[HookPackSelection(id="git-commit-branch")],
+            replace_defaults=True,
+        ))
+        write_safety(spec, tmp_path)
+        data = _read_settings(tmp_path)
+
+        # Non-hook keys preserved.
+        assert data["permissions"]["deny"] == ["Bash(git push origin main:*)"]
+        # Library hook preserved AND registry hook added.
+        commands = "\n".join(
+            h["command"]
+            for e in data["hooks"]["PreToolUse"]
+            for h in e["hooks"]
+        )
+        assert "validate-task-inputs.py" in commands
+        assert "protected branch" in commands
+
+    def test_merge_dedups_identical_entries(self, tmp_path: Path):
+        """hook-policy mirrors the library settings entries — merging both
+        must not duplicate them."""
+        claude_dir = tmp_path / ".claude"
+        claude_dir.mkdir()
+        spec = _make_spec(hooks=HooksConfig(
+            packs=[HookPackSelection(id="hook-policy")],
+            replace_defaults=True,
+        ))
+        # First write produces the file; second write must not duplicate.
+        write_safety(spec, tmp_path)
+        first = _read_settings(tmp_path)
+        write_safety(spec, tmp_path)
+        second = _read_settings(tmp_path)
+        assert first == second
+
+
+class TestMissingHookScripts:
+
+    def test_warns_when_referenced_script_absent(self, tmp_path: Path):
+        spec = _make_spec(hooks=HooksConfig(
+            packs=[HookPackSelection(id="hook-policy")],
+            replace_defaults=True,
+        ))
+        result = write_safety(spec, tmp_path)
+        assert any(
+            "validate-task-inputs.py" in w and "not present" in w
+            for w in result.warnings
+        )
+
+    def test_no_warning_when_script_present(self, tmp_path: Path):
+        hooks_dir = tmp_path / ".claude" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "validate-task-inputs.py").write_text("# stub")
+        (hooks_dir / "telemetry-stamp.py").write_text("# stub")
+        (hooks_dir / "vdd-gate.py").write_text("# stub")
+        (hooks_dir / "handoff-reminder.py").write_text("# stub")
+        spec = _make_spec(hooks=HooksConfig(
+            packs=[HookPackSelection(id="hook-policy")],
+            replace_defaults=True,
+        ))
+        result = write_safety(spec, tmp_path)
+        assert not any("not present" in w for w in result.warnings)

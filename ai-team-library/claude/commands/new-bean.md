@@ -1,16 +1,14 @@
-# /new-bean Command
+---
+name: new-bean
+description: "Creates a new bean in the backlog with the correct ID, directory structure, and index entry. Auto-assigns the next sequential BEAN-NNN ID, populates bean.md from the template, and appends to _index.md."
+---
 
-Creates a new bean in the backlog with the correct ID, directory structure, and index entry. Auto-assigns the next sequential `BEAN-NNN` ID, populates `bean.md` from the template, and appends to `_index.md`.
+# /new-bean
 
-## Usage
+This command is a thin entry point; the canonical process lives in the
+`new-bean` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-```
-/new-bean "<title>" [--priority <level>]
-```
+Read `.claude/skills/new-bean/SKILL.md` and execute its process with these arguments:
 
-- `title` -- Short descriptive title for the bean (quoted string).
-- `--priority <level>` -- Priority: `Low`, `Medium`, `High`. Default: `Medium`.
-
-## See Also
-
-- Skill: `claude/skills/new-bean/SKILL.md` — canonical execution spec.
+$ARGUMENTS

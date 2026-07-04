@@ -1,3 +1,8 @@
+---
+name: new-adr
+description: "- Invoked by the /new-adr slash command. - Called by the Architect persona when a significant design decision is made. - Can be invoked by any persona when a technical decision warrants formal documentation."
+---
+
 # Skill: New ADR
 
 ## Description

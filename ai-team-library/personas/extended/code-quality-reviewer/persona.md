@@ -53,7 +53,7 @@ The Team Lead pulls the Code Quality Reviewer from the bench when **ANY** of the
 
 ## Scope Boundaries
 
-The review space between Code-Quality-Reviewer and Tech-QA is partitioned so that no bean needs to re-negotiate ownership. CQR owns the *structural and stylistic* quality of the change; Tech-QA owns the *behavioural and coverage* quality. See also `ai-team-library/personas/tech-qa/persona.md`.
+The review space between Code-Quality-Reviewer and Tech-QA is partitioned so that no bean needs to re-negotiate ownership. CQR owns the *structural and stylistic* quality of the change; Tech-QA owns the *behavioural and coverage* quality. See also `ai-team-library/personas/core/tech-qa/persona.md`.
 
 ### Owns (CQR)
 

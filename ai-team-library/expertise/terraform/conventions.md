@@ -1,3 +1,10 @@
+---
+id: terraform
+category: Infrastructure & Platforms
+entry: true
+last-reviewed: 2026-07
+---
+
 # Terraform Stack Conventions
 
 ## Category

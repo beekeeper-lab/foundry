@@ -1,3 +1,8 @@
+---
+name: review-beans
+description: "- Invoked by the /review-beans slash command. - Can be invoked by any persona or by the user directly."
+---
+
 # Skill: Review Beans
 
 ## Description

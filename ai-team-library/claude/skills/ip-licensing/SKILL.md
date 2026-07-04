@@ -1,3 +1,8 @@
+---
+name: ip-licensing
+description: "- Invoked by the /ip-licensing slash command. - Called by the Legal Counsel persona when a project introduces new dependencies, changes its license, or onboards external contributors. - Should be re-run when the dependency tree changes significantly or when new contribution agreements are needed."
+---
+
 # Skill: IP & Licensing Analysis
 
 ## Description

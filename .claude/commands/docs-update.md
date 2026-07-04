@@ -1,0 +1,1 @@
+../shared/commands/docs-update.md

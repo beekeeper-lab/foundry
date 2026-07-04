@@ -1,3 +1,10 @@
+---
+id: rust
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # Rust Stack Conventions
 
 ## Category

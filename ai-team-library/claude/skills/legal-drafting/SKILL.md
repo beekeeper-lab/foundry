@@ -1,3 +1,8 @@
+---
+name: legal-drafting
+description: "- Invoked by the /legal-drafting slash command. - Called by the Legal Counsel persona when a project requires legal documentation. - Should be invoked when a new product launches, a feature changes data collection practices, or when existing legal documents need review or update."
+---
+
 # Skill: Legal Drafting
 
 ## Description

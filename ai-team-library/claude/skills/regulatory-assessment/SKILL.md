@@ -1,3 +1,8 @@
+---
+name: regulatory-assessment
+description: "- Invoked by the /regulatory-assessment slash command. - Called by the Legal Counsel persona when a product enters a new market, handles new data categories, or when regulatory landscape changes. - Should be re-run when the product's jurisdictional footprint, data processing activities, or user demographics change materially."
+---
+
 # Skill: Regulatory Compliance Assessment
 
 ## Description

@@ -1,3 +1,8 @@
+---
+name: show-backlog
+description: "Displays the bean backlog in a concise table format showing each bean's ID, a one-sentence summary, and category."
+---
+
 # /show-backlog Command
 
 Displays the bean backlog in a concise table format showing each bean's ID, a one-sentence summary, and category.

@@ -1,0 +1,1 @@
+../shared/hooks/pre-commit-lint.md

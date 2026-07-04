@@ -1,0 +1,1 @@
+../../shared/commands/internal/merge-bean.md

@@ -1,3 +1,10 @@
+---
+id: go
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # Go Stack Conventions
 
 ## Category

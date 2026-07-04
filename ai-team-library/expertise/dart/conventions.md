@@ -1,3 +1,10 @@
+---
+id: dart
+category: Languages
+entry: true
+last-reviewed: 2026-07
+---
+
 # Dart Stack Conventions
 
 ## Category

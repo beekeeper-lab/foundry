@@ -1,3 +1,8 @@
+---
+name: spawn-bean
+description: "Spawns one or more tmux workers, each running a Team Lead Claude Code agent that picks and executes a bean autonomously. Workers report progress via status files; the main window displays a live dashboard. Workers auto-submit and auto-close when done."
+---
+
 # /spawn-bean Command
 
 Spawns one or more tmux workers, each running a Team Lead Claude Code agent that picks and executes a bean autonomously. Workers report progress via status files; the main window displays a live dashboard. Workers auto-submit and auto-close when done.

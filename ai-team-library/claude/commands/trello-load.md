@@ -1,18 +1,14 @@
-# /trello-load Command
+---
+name: trello-load
+description: "Connects to Trello, pulls cards from a board's Sprint_Backlog list, and feeds each card into /backlog-refinement to create well-formed beans. Cards are moved to In_Progress after refinement."
+---
 
-Connects to Trello, pulls cards from a board's Sprint_Backlog list, and feeds each card into `/backlog-refinement` to create well-formed beans. Cards are moved to In_Progress after refinement.
+# /trello-load
 
-## Usage
+This command is a thin entry point; the canonical process lives in the
+`trello-load` skill — single source of truth (SPEC-023). The two used to be
+maintained as parallel prose copies and drifted.
 
-```
-/trello-load [--dry-run] [--board <id>]
-```
+Read `.claude/skills/trello-load/SKILL.md` and execute its process with these arguments:
 
-No arguments required — the command prompts for board selection interactively.
-
-- `--dry-run` -- Show which cards would be processed without creating beans or moving cards.
-- `--board <id>` -- Skip board selection and use the specified board ID directly.
-
-## See Also
-
-- Skill: `claude/skills/trello-load/SKILL.md` — canonical execution spec.
+$ARGUMENTS

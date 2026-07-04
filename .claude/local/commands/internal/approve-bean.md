@@ -1,3 +1,8 @@
+---
+name: approve-bean
+description: "Makes bean approval a deliberate, audited action. Without this command, beans move from Unapproved to Approved via manual edits that can skip validation. The command refuses to approve beans with missing required fields, eliminating the 'approved but incomplete' failure mode called out by the 2026-04-17 external audit."
+---
+
 # /internal:approve-bean Command
 
 Approve a bean — gate the `Unapproved → Approved` transition behind a criteria check, then update `bean.md` and `_index.md` atomically.

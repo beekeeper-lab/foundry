@@ -1,3 +1,8 @@
+---
+name: run
+description: "- Invoked by the /run slash command."
+---
+
 # Skill: Run
 
 ## Description

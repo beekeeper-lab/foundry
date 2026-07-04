@@ -1,3 +1,8 @@
+---
+name: build-traceability
+description: "- Invoked by the /build-traceability slash command. - Called by the Tech-QA persona during test planning or after new stories are added. - Should be re-run whenever the story set or test set changes significantly."
+---
+
 # Skill: Build Traceability
 
 ## Description

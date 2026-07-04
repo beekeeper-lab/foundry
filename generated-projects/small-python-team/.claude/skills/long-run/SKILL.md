@@ -1,0 +1,400 @@
+# Skill: Long Run
+
+## Description
+
+Puts the Team Lead into autonomous backlog processing mode. The Team Lead reads the bean backlog, selects the best bean to work on, decomposes it into tasks, executes the assigned wave (Developer and Tech-QA are mandatory; other specialists are assigned only when the bean needs them), verifies acceptance criteria, commits the result, and loops to the next bean. Continues until no actionable beans remain or an unrecoverable error occurs.
+
+## Trigger
+
+- Invoked by the `/long-run` slash command.
+- Should only be used by the Team Lead persona.
+- Requires at least one bean in `_index.md` with status `Approved`.
+
+## Inputs
+
+| Input | Type | Required | Description |
+|-------|------|----------|-------------|
+| backlog | Markdown file | Yes | `ai/beans/_index.md` — master bean index |
+| bean_workflow | Markdown file | Yes | `ai/context/bean-workflow.md` — lifecycle reference |
+| bean_files | Markdown files | Yes | Individual `bean.md` files in `ai/beans/BEAN-NNN-<slug>/` |
+| fast | Integer | No | Number of parallel workers. When provided, enables parallel mode via tmux. |
+| category | String | No | Filter beans by category: `App`, `Process`, or `Infra`. Case-insensitive. When provided, only beans matching this category are processed. |
+| tmux_session | Environment | No | `$TMUX` — required only when `fast` is provided |
+
+## Process
+
+### Phase 0: Branch Prerequisite & Mode Detection
+
+0a. **Ensure on `main` branch** — Run `git branch --show-current`.
+   - If already on `main`: proceed.
+   - If on any other branch or the working tree is dirty: display "⚠ /long-run requires a clean working tree on the `main` branch. Current branch: `<branch>`. Please switch to `main` and retry." Then stop.
+0b. **Check mode** — If `fast` input is provided, go to **Parallel Mode** (below). Otherwise, continue with sequential mode (Phase 1).
+
+### Phase 0.5: Trello Sync
+
+0c. **Import sprint backlog from Trello** — Invoke `/trello-load` to pull any
+    cards from the Trello Sprint_Backlog list into the beans backlog. This runs
+    non-interactively (auto-selects board, creates beans with Approved status,
+    moves processed cards to In_Progress on Trello). If the Trello MCP server
+    is unavailable or Sprint_Backlog is empty, log the result and continue —
+    this step is best-effort and must not block the run.
+
+### Phase 1: Backlog Assessment
+
+1. **Read the backlog index** — Parse `ai/beans/_index.md` to get all beans and their statuses.
+2. **Filter actionable beans** — Select beans with status `Approved`. Exclude `Done`, `Deferred`, `Unapproved`, beans blocked by unfinished dependencies, and beans locked by another agent (status `In Progress` with a different Owner). If `category` is provided, further filter to only beans whose Category column matches (case-insensitive).
+3. **Check stop condition** — If no actionable beans exist (or none match the category filter), report final summary and exit. If category is active, mention it: "No actionable beans matching category: Process."
+
+### Phase 2: Bean Selection
+
+4. **Read candidate beans** — For each actionable bean, read its `bean.md` to understand priority, scope, dependencies, and notes.
+5. **Apply selection heuristics** — Choose the single best bean:
+   - **Priority first:** High beats Medium beats Low.
+   - **Dependencies second:** If Bean A depends on Bean B (stated in Notes or Scope), select B first.
+   - **Logical order third:** Infrastructure and foundational work before features. Data models before UI. Shared utilities before consumers.
+   - **ID order last:** Lower bean IDs first as a tiebreaker.
+6. **Announce selection** — Print the **Header Block** and **Task Progress Table** from the Team Lead Communication Template (see `.claude/agents/team-lead.md`). If a category filter is active, include it in the header: `[Category: Process]`. This is the first thing visible in the tmux pane.
+
+### Phase 3: Bean Execution
+
+7. **Pick the bean** — Update status to `In Progress` in `bean.md`. Update `_index.md` to set status to `In Progress` and owner to `team-lead`. (In sequential mode the orchestrator is also the worker, so both updates happen here.)
+8. **Create feature branch** — Create and checkout the feature branch (mandatory for every bean):
+   - Branch name: `bean/BEAN-NNN-<slug>` (derived from the bean directory name)
+   - Command: `git checkout -b bean/BEAN-NNN-<slug>`
+   - If the branch already exists (e.g., resuming after an error), check it out instead.
+   - All work happens on this branch. Never commit directly to `main`.
+10. **Decompose into tasks** — Read the bean's Problem Statement, Goal, Scope, and Acceptance Criteria. Create numbered task files in `ai/beans/BEAN-NNN-<slug>/tasks/`:
+    - Name: `01-<owner>-<slug>.md`, `02-<owner>-<slug>.md`, etc.
+    - Default wave: **Developer → Tech-QA**. Include BA or Architect only when their activation criteria are met (see the Team Lead persona's Orchestration Rules).
+    - **Tech-QA is mandatory for every bean — no exceptions.** All categories (App, Process, Infra) require independent Tech-QA review. Even documentation-only beans get reviewed for completeness and accuracy.
+    - BA and Architect are opt-in. When skipped, document the reason with an inline tag under the task table, e.g. `> Skipped: BA (default), Architect (default)`.
+    - Each task file includes: Owner, Depends On, Goal, Inputs, Acceptance Criteria, Definition of Done.
+11. **Update bean task table** — Fill in the Tasks table in `bean.md` with the created tasks.
+
+### Phase 4: Wave Execution
+
+**Preferred dispatch: `/spawn-task`.** For each task in the bean's wave,
+prefer dispatching with `/spawn-task <task-file>`. The command auto-detects
+tmux and chooses a worktree-isolated worker (in tmux) or a fresh `Agent`-tool
+subagent (not in tmux). The dispatched worker reads only the task's
+`Inputs:` plus its persona context, preserving the supervisor pattern's
+context isolation. See `claude/skills/spawn-task/SKILL.md` and ADR-008.
+
+In-conversation role-switching (you reading the task and playing the
+persona yourself in this same window) remains a fallback for tiny tasks
+where dispatch overhead is not justified. Do not use it as the default.
+
+12. **Execute tasks in dependency order** — For each task:
+    - Record the `Started` timestamp (`YYYY-MM-DD HH:MM`) in the task file metadata when beginning execution.
+    - Dispatch the task with `/spawn-task` (preferred) or read the task file and execute in-conversation as the assigned persona (fallback).
+    - On completion, run the `/close-loop` telemetry recording: record `Completed` timestamp, compute `Duration`, prompt for token self-report, and update the bean's Telemetry per-task table row.
+    - Update the task status to `Done` in the task file and the bean's task table.
+    - Reprint the **Header Block + Task Progress Table** after each status change.
+13. **Skip inapplicable roles** — BA and Architect may be skipped when they have no meaningful contribution (e.g., Architect for a documentation-only bean). Document the skip reason with an inline tag under the task table. **Tech-QA must never be skipped for any bean** — it provides independent verification regardless of category.
+
+### Phase 5: Verification & Closure
+
+14. **Verify acceptance criteria** — Check every criterion in the bean's Acceptance Criteria section. For code beans: run tests (`uv run pytest`) and lint (`uv run ruff check`).
+15. **Close the bean** — Update status to `Done` in `bean.md`. (The orchestrator updates `_index.md` after the merge — see step 17.)
+16. **Commit on feature branch** — Stage all files changed during this bean's execution. Commit with message: `BEAN-NNN: <bean title>`. The commit goes on the `bean/BEAN-NNN-<slug>` branch.
+
+### Phase 5.5: Merge Captain
+
+17. **Merge to main branch and update index** — Execute the `/merge-bean` skill to merge the feature branch into `main`:
+    - Checkout `main`, pull latest, merge `bean/BEAN-NNN-<slug>` with `--no-ff`, push.
+    - If merge conflicts occur: report the conflicts, abort the merge, leave the bean on its feature branch, and stop the loop.
+    - If merge succeeds: update `_index.md` to set the bean's status to `Done`, commit the index update on `main`, and push.
+17b. **Move Trello card to Completed** — After a successful merge, update the
+    source Trello card if one exists:
+    a. Check the bean's Notes section for a "Source: Trello card" reference.
+    b. If found, call `mcp__trello__get_lists` to find the In_Progress and
+       Completed lists (using the same flexible name matching as `/trello-load`).
+    c. Call `mcp__trello__get_cards_by_list_id` on the In_Progress list.
+    d. Find the card whose name matches the bean title or the card name from
+       the Notes reference (case-insensitive, flexible matching).
+    e. Call `mcp__trello__move_card` to move the card to the Completed list.
+    f. Log the move: `Trello: Moved "[Card Name]" → Completed`
+    g. If no matching card is found, or the Trello MCP is unavailable, log a
+       warning and continue — this is best-effort and must not block the run.
+18. **Stay on main** — Remain on the `main` branch.
+19. **Report progress** — Print the **Completion Summary** from the Team Lead Communication Template: bean title, task counts, branch name, files changed, notes, and remaining backlog status.
+
+### Phase 6: Loop
+
+20. **Return to Phase 1** — Read the backlog again. If actionable beans remain, process the next one. If not, report final summary including: `All work merged to main.` Then exit.
+
+---
+
+## Parallel Mode
+
+When `fast N` is provided, the Team Lead orchestrates N parallel workers instead of processing beans sequentially.
+
+### Parallel Phase 1: Prerequisites
+
+1. **Ensure on `main` branch** — Same check as Phase 0a above. Must be on `main` with a clean working tree. Otherwise stop.
+2. **Check tmux** — Verify `$TMUX` environment variable is set.
+   - If not set: display "Parallel mode requires tmux. Please restart Claude Code inside a tmux session and re-run `/long-run --fast N`." Then exit.
+   - If set: proceed.
+
+### Parallel Phase 1.5: Trello Sync
+
+1b. **Import sprint backlog from Trello** — Same as sequential Phase 0.5:
+    invoke `/trello-load` non-interactively. Best-effort; do not block on
+    failure.
+
+### Parallel Phase 2: Backlog Assessment
+
+2. **Read the backlog index** — Same as sequential Phase 1: parse `_index.md`, filter actionable beans with status `Approved` (skip `Unapproved`, locked beans owned by other agents). Apply `category` filter if provided.
+3. **Check stop condition** — If no actionable beans (or none matching category), report and exit.
+4. **Read candidate beans** — Read each actionable bean's `bean.md` to understand dependencies.
+
+### Parallel Phase 3: Worker Spawning
+
+5. **Select independent beans** — From the actionable set, select up to N beans that have no unmet inter-bean dependencies. Beans that depend on other pending or in-progress beans are queued, not parallelized.
+6. **Update bean statuses** — For each selected bean, update `_index.md` to set status to `In Progress` and owner to `team-lead`. Commit this index update on `main` before spawning workers. (Workers will update their own `bean.md` independently; they must NOT touch `_index.md`.)
+7. **Write initial status files** — For each selected bean, create a status file at `/tmp/agentic-worker-BEAN-NNN.status` with `status: starting`. This allows the dashboard to track the worker immediately. See the **Status File Protocol** section below for the full file format and status values.
+8. **Create worktrees and spawn workers** — For each selected bean, create an isolated git worktree, then create a launcher script and open a tmux child window:
+   ```bash
+   WORKTREE_DIR="/tmp/agentic-worktree-BEAN-NNN"
+   BRANCH_NAME="bean/BEAN-NNN-slug"
+
+   # Clean stale worktree from a prior run
+   git worktree remove --force "$WORKTREE_DIR" 2>/dev/null
+
+   # Create feature branch + worktree
+   if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
+     git worktree add "$WORKTREE_DIR" "$BRANCH_NAME"
+   else
+     git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" main
+   fi
+
+   LAUNCHER=$(mktemp /tmp/agentic-bean-XXXXXX.sh)
+   cat > "$LAUNCHER" << 'SCRIPT_EOF'
+   #!/bin/bash
+   cd /tmp/agentic-worktree-BEAN-NNN
+   claude --dangerously-skip-permissions --agent team-lead \
+     "Process BEAN-NNN-slug through the assigned team wave.
+
+   You are running in an ISOLATED GIT WORKTREE. Your feature branch is already checked out.
+   - Do NOT create or checkout branches.
+   - Do NOT run /merge-bean — the orchestrator handles merging after you finish.
+   - Do NOT checkout main — the orchestrator handles merging after you finish.
+   - Do NOT edit _index.md — the orchestrator is the sole writer of the backlog index.
+
+   1. Update bean.md status to In Progress
+   2. Decompose into tasks
+   3. Execute the wave (Developer → Tech-QA default; include BA/Architect per activation criteria)
+      — COMMIT AFTER EACH TASK. Do not wait until the end. If you stall on task 3 of 4,
+        tasks 1-2 should already be committed and pushed.
+   4. Verify acceptance criteria
+   5. Update bean.md status to Done
+   6. Final commit and push on the feature branch
+
+   RELIABILITY RULES:
+   - COMMIT AND PUSH after completing each task, not just at the end.
+   - On unrecoverable error: commit any completed work, push, set status file to error with a clear message, then EXIT immediately. Do NOT retry indefinitely or spin in loops.
+   - If you have been running for more than 30 minutes, commit and push whatever is done, set status appropriately, and exit.
+   - Update the status file updated timestamp after every task completion as a heartbeat signal.
+
+   STATUS FILE PROTOCOL — You MUST update /tmp/agentic-worker-BEAN-NNN.status at every transition.
+   See the Status File Protocol section in this skill for full status file format and update rules."
+   SCRIPT_EOF
+   chmod +x "$LAUNCHER"
+   tmux new-window -n "bean-NNN" "bash $LAUNCHER; rm -f $LAUNCHER"
+   ```
+   The prompt is passed as a positional argument to `claude`, so it auto-submits immediately. The window auto-closes when claude exits (no bare shell left behind). The launcher script self-deletes after use. No stagger delay needed — worktrees provide full isolation.
+9. **Record worker assignments** — Track which window name maps to which bean, worktree path, and status file.
+
+### Parallel Phase 4: Continuous Assignment Dashboard Loop
+
+The main window enters a **persistent dashboard loop** that monitors workers, merges completed beans, and spawns replacements until the backlog is exhausted. This is the mechanism that keeps assigning beans — it is not just a passive monitor. See `/spawn-bean` Step 4 for the full specification.
+
+**Every iteration** of the loop performs these steps:
+
+10. **Read status files** — Read all `/tmp/agentic-worker-*.status` files and parse key-value pairs. Cross-reference with `tmux list-windows` to detect closed windows.
+11. **Process completed workers** — For each status file showing `status: done` (or whose tmux window has closed) that has not yet been merged:
+    a. Remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
+    b. Sync before merging: `git fetch origin && git pull origin main`
+    c. Merge the bean: run `/merge-bean NNN` from the main repo.
+    d. Update `_index.md` on `main`: set the bean's status to `Done`. Commit and push.
+    e. Move the Trello card to Completed (same logic as sequential step 17b). Best-effort; do not block on failure.
+    f. Mark this worker as merged in the orchestrator's tracking.
+12. **Assign replacement workers** — **Re-read `_index.md` fresh** (do NOT use a pre-computed queue — the backlog may have changed). For each merged worker slot with no replacement:
+    a. Find the next bean with status `Approved` that has no unmet inter-bean dependencies.
+    b. If found: update `_index.md` to mark it `In Progress`, commit and push on `main`, create a new worktree, write its status file, and spawn a new tmux window using the same launcher script pattern.
+    c. If no approved unblocked bean exists, leave the slot empty.
+13. **Render dashboard** — Display progress bars (█/░), percentages (tasks_done/tasks_total), and color-coded status emoji.
+14. **Alert and recover** — Flag `blocked` workers (🔴 with message and window switch shortcut). For `stale` workers (no status update for 10+ minutes): (a) kill the tmux window: `tmux kill-window -t "bean-NNN"`, (b) remove the worktree: `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`, (c) update the status file to `status: error`, `message: Killed by orchestrator (stale for 10+ minutes)`, (d) log the event. The bean stays `In Progress` for manual retry.
+15. **Check exit condition** — Exit the loop only when **both**: all workers are done/merged, AND no approved beans remain in `_index.md`. If either condition is false, continue.
+16. **Sleep ~30 seconds** — Then go back to step 10.
+
+The loop runs indefinitely until the backlog is exhausted. There is no maximum bean limit. To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`.
+    - To force-kill a stuck worker: `tmux kill-window -t "bean-NNN"`, then `git worktree remove --force /tmp/agentic-worktree-BEAN-NNN`
+
+### Parallel Phase 5: Completion
+
+17. **Exit reached** — All workers are done/merged and no approved beans remain.
+18. **Final report** — Output: total beans processed, parallel vs sequential breakdown, all branch names created, remaining backlog status. End with: `All work merged to main.`
+19. **Cleanup** — Remove status files: `rm -f /tmp/agentic-worker-*.status`. Run `git worktree prune` to clean up any stale worktree references.
+20. **Sync local branches** — Worktrees pushed to the remote, so the original repo's refs are stale. Bring them up to date:
+    - `git fetch origin && git pull origin main` (the orchestrator is already on `main`).
+    - This ensures the repo that launched `/long-run` has current refs when the user resumes work.
+
+### Bean Assignment Rules
+
+- Only assign beans with no unmet dependencies on other in-progress or pending beans.
+- If fewer than N independent beans are available, spawn only as many workers as there are beans.
+- Never assign the same bean to multiple workers.
+- The main window orchestrates only — it does not process beans itself.
+
+---
+
+## Status File Protocol
+
+Workers communicate progress back to the main window via status files in `/tmp/`. This enables the orchestrator's dashboard to display live state without polling the workers directly. The protocol is shared with `/spawn-bean` (which is a thin invocation wrapper that uses the same workers and the same files).
+
+### File Location
+
+Each worker writes to: `/tmp/agentic-worker-BEAN-NNN.status`
+
+For a single auto-pick worker (e.g., `/spawn-bean` with no args), the initial filename is `/tmp/agentic-worker-auto-1.status`. Once the worker picks a bean it renames the file to the real bean ID. When using pre-assigned beans (`--fast N` or `/spawn-bean <ids>` or `--count N`), all status files use the real bean ID from the start.
+
+### File Format
+
+```
+bean: BEAN-018
+title: Library Indexer Service
+tasks_total: 4
+tasks_done: 2
+current_task: 03-developer-implement
+status: running
+message:
+worktree: /tmp/agentic-worktree-BEAN-018
+updated: 2026-02-07T14:32:01
+```
+
+### Status Values
+
+| Status | Meaning | Dashboard Color |
+|--------|---------|-----------------|
+| `starting` | Worker launched, claude initializing | ⚪ White/dim |
+| `decomposing` | Breaking bean into tasks | 🔵 Blue |
+| `running` | Executing tasks normally | 🟢 Green |
+| `blocked` | Needs human input — see `message` field | 🔴 Red |
+| `error` | Hit an unrecoverable error — see `message` | 🟠 Orange |
+| `done` | Bean completed successfully | ✅ Done |
+
+### When Workers Update the Status File
+
+Workers must update their status file at each of these transitions:
+
+1. **After picking a bean** — Set `status: decomposing`, fill in `bean`, `title`.
+2. **After decomposing into tasks** — Set `status: running`, fill in `tasks_total`, `tasks_done: 0`, `current_task`.
+3. **After completing each task** — Increment `tasks_done`, update `current_task` to the next task.
+4. **On blocker** — Set `status: blocked`, write explanation in `message`.
+5. **On error** — Set `status: error`, write error details in `message`.
+6. **On completion** — Set `status: done`, `tasks_done` equals `tasks_total`, clear `current_task`.
+
+Always update the `updated` timestamp when writing.
+
+### Dashboard Display Format
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  Bean Workers — 3 active                          14:32:01     ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                 ║
+║  BEAN-018  Library Indexer Service     ████████░░  50% (2/4)    ║
+║  🟢 Running — 03-developer-implement                           ║
+║                                                                 ║
+║  BEAN-019  Wizard Project Identity     ██████████░ 75% (3/4)    ║
+║  🟢 Running — 04-tech-qa-tests                                 ║
+║                                                                 ║
+║  BEAN-020  Wizard Persona Selection    ███░░░░░░░  25% (1/4)    ║
+║  🔴 FEEDBACK NEEDED — Need clarification on persona filter UX   ║
+║     → Switch to worker: Alt-3                                   ║
+║                                                                 ║
+╚══════════════════════════════════════════════════════════════════╝
+
+⚠  1 worker needs attention — see 🔴 above
+```
+
+Render with simple `print()` output and Unicode box-drawing characters. The progress bar uses `█` (filled) and `░` (empty) with 10 segments. Color indicators use emoji since they render in all terminals.
+
+### Alerting on Blocked Workers
+
+When a worker has `status: blocked`:
+- The dashboard highlights that row with 🔴 and shows the `message` text.
+- Below the table, print a prominent alert: `⚠  N worker(s) need attention`.
+- Include the window switch shortcut so the user can jump there immediately.
+
+### Tiled (`--wide`) Mode for `/spawn-bean`
+
+When invoked via `/spawn-bean --wide`, all workers share a single tmux window as tiled panes (instead of separate windows):
+
+```bash
+# First worker creates the window
+tmux new-window -n "workers" "bash $LAUNCHER_1; rm -f $LAUNCHER_1"
+
+# Additional workers split into panes within that window
+tmux split-window -t "workers" "bash $LAUNCHER_2; rm -f $LAUNCHER_2"
+tmux split-window -t "workers" "bash $LAUNCHER_3; rm -f $LAUNCHER_3"
+
+# Auto-arrange into an even grid
+tmux select-layout -t "workers" tiled
+```
+
+The `tiled` layout automatically arranges panes into a grid: 2 = side-by-side, 4 = 2x2, 6 = 2x3, etc. Each pane auto-closes when its claude exits. To force-kill a pane: switch to the "workers" window, select the pane, and use the kill-pane shortcut. Then also remove the worktree.
+
+The default (non-`--wide`) mode gives each worker its own tmux window — easier to navigate one bean at a time, while `--wide` is ideal for monitoring all workers on a wide monitor.
+
+---
+
+## Outputs
+
+| Output | Type | Description |
+|--------|------|-------------|
+| task_files | Markdown files | Task decompositions in each bean's `tasks/` directory |
+| persona_outputs | Various files | Work products in `ai/outputs/<persona>/` |
+| updated_beans | Markdown files | Bean status updated through lifecycle |
+| updated_index | Markdown file | `_index.md` kept in sync with bean statuses |
+| git_commits | Git commits | One commit per completed bean |
+| progress_reports | Console text | Summary after each bean and at completion |
+
+## Quality Criteria
+
+- Each bean goes through the complete lifecycle: approved → in progress → decompose → execute → verify → close.
+- No bean is skipped without explanation.
+- Bean selection follows the documented heuristics consistently.
+- All acceptance criteria are verified before marking a bean as Done.
+- Tests and lint pass for every code bean before closing.
+- Each bean is committed separately for clean git history.
+- The loop terminates cleanly when the backlog is empty.
+- In parallel mode: dependent beans are never assigned simultaneously.
+- In parallel mode: the main window orchestrates only, never processes beans itself.
+
+## Error Conditions
+
+| Error | Cause | Resolution |
+|-------|-------|------------|
+| `EmptyBacklog` | No beans in `_index.md` | Report and exit cleanly |
+| `NoActionableBeans` | All remaining beans are `Done`, `Deferred`, or blocked | Report status summary and exit |
+| `TaskFailure` | A task cannot be completed | Report failure details, leave bean `In Progress`, stop loop |
+| `TestFailure` | Tests or lint fail | Attempt to fix; if unresolvable, report and stop |
+| `CommitFailure` | Git error during commit | Report error and stop for manual resolution |
+| `MergeConflict` | Merge to main branch fails due to conflicts | Report conflicting files, abort merge, stop loop |
+| `NotInTmux` | `--fast` used but `$TMUX` is not set | Instruct user to restart in tmux |
+| `WorkerFailure` | A parallel worker fails on its bean | Report which worker/bean failed; other workers continue |
+
+On error in sequential mode: the current bean stays `In Progress` and the loop stops. The user can inspect the state, fix the issue, and either re-run `/long-run` or manually complete the bean.
+
+On error in parallel mode: a single worker failure does not stop other workers. The failed bean stays `In Progress`. The main window reports the failure and continues monitoring remaining workers.
+
+## Dependencies
+
+- Backlog index at `ai/beans/_index.md`
+- Bean workflow at `ai/context/bean-workflow.md`
+- Individual bean files at `ai/beans/BEAN-NNN-<slug>/bean.md`
+- Git repository in a clean state (no uncommitted changes)
+- Trello MCP server (optional — used for `/trello-load` sync and card completion; best-effort)
+- `/trello-load` skill for sprint backlog import

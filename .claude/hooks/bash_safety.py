@@ -1,0 +1,1 @@
+../shared/hooks/bash_safety.py

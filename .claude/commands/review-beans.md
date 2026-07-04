@@ -1,0 +1,1 @@
+../shared/commands/review-beans.md

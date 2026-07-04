@@ -1,3 +1,8 @@
+---
+name: pick-bean
+description: "- Invoked by the /pick-bean slash command. - Called by the Team Lead during sprint planning or backlog grooming. - Should only be used by the Team Lead persona."
+---
+
 # Skill: Pick Bean
 
 ## Description
