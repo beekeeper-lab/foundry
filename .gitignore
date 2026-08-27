@@ -49,3 +49,6 @@ generated-projects/*/
 
 # Test artifacts: generated images and skill specs
 images/test/
+
+# AEP: activity logs live outside the repo; this is a safety net
+.agentic/*.jsonl
